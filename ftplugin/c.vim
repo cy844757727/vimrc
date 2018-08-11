@@ -8,7 +8,49 @@ setlocal cindent
 
 function s:GenerateMakeFile()
     let s:dir = matchstr(getcwd(), '[^/]\+$')
-    let s:makeFile = ['# Basic ############################################', 'COMPILER := g++', 'FLAGS := -Wall -O0 -g3', 'LIBS := ', 'EXEF := ' . s:dir, '', '####################################################', 'INCDIR := ' . b:incDirFlag, 'CC := $(COMPILER) $(INCDIR) $(FLAGS)', 'LINK := $(COMPILER) -Wall $(LIBS)', 'ALLTARGET := $(EXEF)', '', '# GDB Configure ####################################', 'DBGFILE := .breakpoint', 'ifeq ($(DBGFILE), $(wildcard $(DBGFILE)))', "\tGDBFLAGS := -x \$(DBGFILE)", 'endif', '', '# Main Target ######################################', 'all: $(ALLTARGET)', "\t@echo '    [ALL DONE]'", '', 'include $(wildcard .d/*.d)','# Bin Targets:Linking ##############################', '$(EXEF): $(OBJS)', "\t@echo", "\t@echo 'Building target: $@'", "\t$(LINK) $^ -o $@", '', '# Other Targets ####################################', '.PHONY: all run dbg clean', '', 'run: $(ALLTARGET)', "\tclear;./$(EXEF)", '', 'dbg: $(ALLTARGET)', "\tclear;gdb $(EXEF) $(GDBFLAGS)", '', 'clean:', "\t@rm -f build/*.o", '']
+    let s:makeFile = [
+        \ '# Basic ############################################',
+        \ 'COMPILER := g++',
+        \ 'FLAGS := -Wall -O0 -g3',
+        \ 'LIBS := ',
+        \ 'EXEF := ' . s:dir,
+        \ '',
+        \ '####################################################',
+        \ 'INCDIR := ' . b:incDirFlag,
+        \ 'CC := $(COMPILER) $(INCDIR) $(FLAGS)',
+        \ 'LINK := $(COMPILER) -Wall $(LIBS)',
+        \ 'ALLTARGET := $(EXEF)',
+        \ '',
+        \ '# GDB Configure ####################################',
+        \ 'DBGFILE := .breakpoint',
+        \ 'ifeq ($(DBGFILE), $(wildcard $(DBGFILE)))',
+        \ "\tGDBFLAGS := -x \$(DBGFILE)",
+        \ 'endif',
+        \ '',
+        \ '# Main Target ######################################',
+        \ 'all: $(ALLTARGET)',
+        \ "\t@echo",
+        \ "\t@echo '    [ALL DONE]'",
+        \ '',
+        \ 'include $(wildcard .d/*.d)',
+        \ '# Bin Targets:Linking ##############################',
+        \ '$(EXEF): $(OBJS)',
+        \ "\t@echo",
+        \ "\t@echo 'Building target: $@'",
+        \ "\t$(LINK) $^ -o $@",
+        \ '',
+        \ '# Other Targets ####################################',
+        \ '.PHONY: all run dbg clean',
+        \ '',
+        \ 'run: $(ALLTARGET)',
+        \ "\tclear;./$(EXEF)",
+        \ '',
+        \ 'dbg: $(ALLTARGET)',
+        \ "\tclear;gdb $(EXEF) $(GDBFLAGS)",
+        \ '',
+        \ 'clean:',
+        \ "\t@rm -f build/*.o",
+        \ '']
     call writefile(s:makeFile, 'Makefile')
     unlet s:dir|unlet s:makeFile
 endfunction

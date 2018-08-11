@@ -70,7 +70,7 @@ command! -range=% CFormat :<line1>,<line2>call CodeFormat()
 command! -range RComment :<line1>,<line2>call ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* "删除多余空行，多个空行转一个 && 尾部空白字符
 command! Qs call BMBPSign_SaveWorkSpace('') | wall | qall
-command! -nargs=+ -complete=shellcmd Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 
 command! -nargs=* Amake :AsyncRun make
 command! Actags :call job_start('ctags -R -f .tags', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
@@ -224,7 +224,7 @@ let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 let g:ale_statusline_format = ['⨉ %d', '⚠ %d', '⬥ ok']
 let g:ale_sign_column_always = 1
-let g:ale_lint_delay = 1000
+"let g:ale_lint_delay = 1000
 let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1

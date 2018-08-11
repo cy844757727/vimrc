@@ -4,6 +4,6 @@ misc/
 *.breakpoint
 *.bookmark
 
-ftplugin/cpp.vim
-ftplugin/dbg.vim
+#ftplugin/cpp.vim
+#ftplugin/dbg.vim
 
