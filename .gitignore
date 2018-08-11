@@ -3,6 +3,7 @@ misc/
 *.session
 *.breakpoint
 *.bookmark
+
 ftplugin/cpp.vim
 ftplugin/dbg.vim
 
