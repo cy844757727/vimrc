@@ -1,0 +1,83 @@
+snippet mod
+	module ${1:`Filename("$1")`} (
+		${2:// IOPorts}
+	);
+		
+		${3}
+	
+	endmodule
+	
+snippet modp
+	module ${1:`Filename("$1")`} #(
+		parameter
+		${2:// paramDef}
+	) (
+		${3:// IOPorts}
+	);
+		
+		${4}
+
+	endmodule
+
+snippet tb
+	module ${1:`Filename("$1")`};
+		
+		reg clk,rst_;
+		${2}
+		
+		always #5 clk = ~clk;
+		
+		initial begin
+			clk=0;
+			rst_=1;
+			#10 rsr_=0;
+			#10 rst_=1;
+
+			
+			
+			#10000 $stop;
+		end
+		
+	endmodule
+
+snippet alw
+	always @* begin
+		${1}
+	end
+
+snippet alwa
+	always @(posedge clk, negedge rst_) begin
+		if(!rst_)${1}
+	end
+
+snippet alws
+	always @(posedge clk) begin
+		${1}
+	end
+
+snippet begin
+	begin
+		${1}
+	end${2}
+snippet case
+	case(${1:switch})
+		${2}
+	endcase
+snippet pos
+	(posedge clk,
+snippet neg
+	negedge rst_)
+snippet gen
+	genvar ${1:i};
+	generate
+		${2}
+	endgenerate
+
+snippet for
+	for(${1:i} = ${2:0}; $1${3: < 10}; $1 = $1 + 1) begin
+		${5:/* code */}
+	end
+snippet ini
+	initial begin
+		${1}
+	end
