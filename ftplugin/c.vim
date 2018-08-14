@@ -7,13 +7,16 @@ let b:incDirFlag = system("find -maxdepth 2 -type d -iname 'inc*'|sed 's/^/-I/'|
 setlocal cindent
 
 function s:GenerateMakeFile()
-    let s:dir = matchstr(getcwd(), '[^/]\+$')
-    let s:makeFile = [
+    if getcwd() =~ '^/[^/]\+/[^/]\+$'
+        return
+    endif
+    let l:dir = matchstr(getcwd(), '[^/]\+$')
+    let l:makeFile = [
         \ '# Basic ############################################',
         \ 'COMPILER := g++',
         \ 'FLAGS := -Wall -O0 -g3',
         \ 'LIBS := ',
-        \ 'EXEF := ' . s:dir,
+        \ 'EXEF := ' . l:dir,
         \ '',
         \ '####################################################',
         \ 'INCDIR := ' . b:incDirFlag,
@@ -52,7 +55,6 @@ function s:GenerateMakeFile()
         \ "\t@rm -f build/*.o",
         \ '']
     call writefile(s:makeFile, 'Makefile')
-    unlet s:dir|unlet s:makeFile
 endfunction
 
 if !filereadable('Makefile') && !filereadable('makefile')
