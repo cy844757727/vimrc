@@ -78,25 +78,27 @@ if !exists("*s:DependencyFile")
     endfunction
 endif
 
-function s:RefreshAll(arg)
-    let b:incDirFlag = system("find -maxdepth 2 -type d -iname 'inc*'|sed 's/^/-I/'|tr '\\n' ' '")[:-2]
-    let l:sourceFile = systemlist("find . -type f -iname '*.c*'|sed -n 's+^\./++p'")
-    if !empty(l:sourceFile)
-        for l:file in l:sourceFile
-            call s:DependencyFile(l:file)
-        endfor
-    endif
-    if !filereadable('Makefile') && !filereadable('makefile')
-        call s:GenerateMakeFile()
-    else
-        call system("sed -i 's/^INCDIR :=.*/INCDIR := " . b:incDirFlag . "/' Makefile")
-    endif
-endfunction
+if !exists("*s:RefreshAll")
+    function s:RefreshAll(arg)
+        let b:incDirFlag = system("find -maxdepth 2 -type d -iname 'inc*'|sed 's/^/-I/'|tr '\\n' ' '")[:-2]
+        let l:sourceFile = systemlist("find . -type f -iname '*.c*'|sed -n 's+^\./++p'")
+        if !empty(l:sourceFile)
+            for l:file in l:sourceFile
+                call s:DependencyFile(l:file)
+            endfor
+        endif
+        if !filereadable('Makefile') && !filereadable('makefile')
+            call s:GenerateMakeFile()
+        else
+            call system("sed -i 's/^INCDIR :=.*/INCDIR := " . b:incDirFlag . "/' Makefile")
+        endif
+    endfunction
+endif
 
 augroup c_cpp_project
     autocmd!
     autocmd BufWritePost *.c,*.cpp call s:DependencyFile(expand('%'))
 augroup END
 
-command -buffer -nargs=? RMakefile :call s:RefreshAll('<args>')
+command! -buffer -nargs=? RMakefile :call s:RefreshAll('<args>')
 
