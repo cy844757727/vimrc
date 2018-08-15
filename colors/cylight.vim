@@ -3,7 +3,7 @@
 " Last Change:	2017-05-18
 
 set background=light
-hi clear
+"hi clear
 set t_Co=256
 let g:colors_name = "light"
 
