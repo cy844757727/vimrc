@@ -83,7 +83,7 @@ function s:TestBenchRefresh(file)
 endfunction
 " ==========================================================
 " ==========================================================
-function HDLVTestBench()
+function! HDLVTestBench()
     if &filetype != 'verilog'
         return
     endif
@@ -109,7 +109,7 @@ function HDLVTestBench()
     endif
 endfunction
 
-function HDLVInsertInstance()
+function! HDLVInsertInstance()
     if &filetype != 'verilog'
         return
     endif
@@ -127,7 +127,7 @@ function HDLVInsertInstance()
     %retab!
 endfunction
 
-function HDLVAllFileInclude()
+function! HDLVAllFileInclude()
     call system("find . -maxdepth 2 -name '*.v'|sed '/\\(_bb\\|_inst\\)\\.v/d'|sed 's/^/`include \\\"/'|sed 's/$/\\\"/'>_All.vt")
 endfunction
 
@@ -149,8 +149,8 @@ endfunction
 
 " ==========================================================
 " ==========================================================
-command -buffer TBench :call HDLVTestBench()
-command -buffer IInstance :call HDLVInsertInstance()
-command -buffer AFInclude :call HDLVAllFileInclude()
+command! -buffer TBench :call HDLVTestBench()
+command! -buffer IInstance :call HDLVInsertInstance()
+command! -buffer AFInclude :call HDLVAllFileInclude()
 "command CompileRun :call HDLVCompileRun()
 "command -range=% CFormat :<line1>,<line2>call HDLVCodeFormat()

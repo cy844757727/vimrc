@@ -6,6 +6,8 @@ if exists('loaded_INTERACTIVEVim')
 endif
 let loaded_INTERACTIVEVim = 1
 
+" 标记组定义
+hi DBGSignHl  ctermbg=38  ctermfg=231
 sign define DBGSignDef text=➤  texthl=DBGSignHl
 
 let s:newSignId = 100
@@ -87,7 +89,7 @@ function s:SendMsg(msg, action)
     catch
         call win_gotoid(s:cmdWinId)
         write
-        bdelete
+        bwipeout
         let s:jobBusy = 0
         if s:taskType == 'dbg'
             if !empty(s:dbgSign)

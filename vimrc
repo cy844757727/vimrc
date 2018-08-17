@@ -69,13 +69,8 @@ augroup END
 command! -range=% CFormat :<line1>,<line2>call CodeFormat()
 command! -range RComment :<line1>,<line2>call ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* "删除多余空行，多个空行转一个 && 尾部空白字符
-command! Qs call BMBPSign_SaveWorkSpace('') | wall | qall
+command! Qs call GIT_CloseTab() | call BMBPSign_SaveWorkSpace('') | wall | qall
 command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
-command! -nargs=+ Gadd :echo system('git add ' . '<args>')
-command! -nargs=* Gstatus :echo system('git status ' . '<args>')
-command! -nargs=* Glog :echo system('git log --oneline' . '<args>')
-command! -nargs=* Greflog :echo system('git reflog ' . '<args>')
-command! -nargs=+ Gcommit :echo system('git commit ' . '<args>')
 
 command! -nargs=* Amake :AsyncRun make
 command! Actags :call job_start('ctags -R -f .tags', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})

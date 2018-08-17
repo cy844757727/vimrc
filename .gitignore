@@ -3,6 +3,10 @@ misc/
 *.session
 *.breakpoint
 *.bookmark
+.Git_log
+.Git_commit
+.Git_status
+.Git_branch
 
 #ftplugin/cpp.vim
 #ftplugin/dbg.vim
