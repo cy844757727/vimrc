@@ -17,6 +17,7 @@ setlocal statusline=[file\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\
 
 if !exists('*<SID>Refresh')
     function s:Refresh(lin)
+        call delete('.Git_status')
         silent edit!
         call setline(1, GIT_FormatStatus())
         call cursor(a:lin, 1)

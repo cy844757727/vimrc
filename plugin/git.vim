@@ -141,12 +141,15 @@ endfunction
 function! GIT_Refresh()
     if bufwinnr('.Git_log') != -1
         4wincmd w
+        call delete('.Git_branch')
         silent edit!
         call setline(1, GIT_FormatBranch())
         wincmd W
+        call delete('.Git_status')
         silent edit!
         call setline(1, GIT_FormatStatus())
         1wincmd w
+        call delete('.Git_log')
         silent edit!
         call setline(1, GIT_FormatLog())
     endif

@@ -14,16 +14,17 @@ setlocal nowrap
 setlocal statusline=[log]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 if !exists('*s:RefreshCommit')
-function s:RefreshCommit()
-    let l:hash = matchstr(getline('.'), ' [a-z0-9]\{7} ')
-    if !empty(l:hash)
-        wincmd w
-        silent edit!
-        silent call setline(1, GIT_FormatCommit(l:hash))
-        set filetype=gitcommit
-        wincmd W
-    endif
-endfunction
+    function s:RefreshCommit()
+        let l:hash = matchstr(getline('.'), ' [a-z0-9]\{7} ')
+        if !empty(l:hash)
+            wincmd w
+            call delete('.Git_commit')
+            silent edit!
+            silent call setline(1, GIT_FormatCommit(l:hash))
+            set filetype=gitcommit
+            wincmd W
+        endif
+    endfunction
 endif
 
 autocmd! CursorMoved <buffer> call s:RefreshCommit()
