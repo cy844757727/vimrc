@@ -8,6 +8,7 @@ endif
 let loaded_BMBPSign = 1
 
 " 标记组定义
+hi NormalSign  ctermbg=253  ctermfg=16
 sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
 sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
 

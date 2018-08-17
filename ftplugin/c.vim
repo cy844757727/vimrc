@@ -6,56 +6,58 @@ let b:did_ftplugin = 1
 let b:incDirFlag = system("find -maxdepth 2 -type d -iname 'inc*'|sed 's/^/-I/'|tr '\\n' ' '")[:-2]
 setlocal cindent
 
-function s:GenerateMakeFile()
-    if getcwd() =~ '^/[^/]\+/[^/]\+$'
-        return
-    endif
-    let l:dir = matchstr(getcwd(), '[^/]\+$')
-    let l:makeFile = [
-        \ '# Basic ############################################',
-        \ 'COMPILER := g++',
-        \ 'FLAGS := -Wall -O0 -g3',
-        \ 'LIBS := ',
-        \ 'EXEF := ' . l:dir,
-        \ '',
-        \ '####################################################',
-        \ 'INCDIR := ' . b:incDirFlag,
-        \ 'CC := $(COMPILER) $(INCDIR) $(FLAGS)',
-        \ 'LINK := $(COMPILER) -Wall $(LIBS)',
-        \ 'ALLTARGET := $(EXEF)',
-        \ '',
-        \ '# GDB Configure ####################################',
-        \ 'DBGFILE := .breakpoint',
-        \ 'ifeq ($(DBGFILE), $(wildcard $(DBGFILE)))',
-        \ "\tGDBFLAGS := -x \$(DBGFILE)",
-        \ 'endif',
-        \ '',
-        \ '# Main Target ######################################',
-        \ 'all: $(ALLTARGET)',
-        \ "\t@echo",
-        \ "\t@echo '    [ALL DONE]'",
-        \ '',
-        \ 'include $(wildcard .d/*.d)',
-        \ '# Bin Targets:Linking ##############################',
-        \ '$(EXEF): $(OBJS)',
-        \ "\t@echo",
-        \ "\t@echo 'Building target: $@'",
-        \ "\t$(LINK) $^ -o $@",
-        \ '',
-        \ '# Other Targets ####################################',
-        \ '.PHONY: all run dbg clean',
-        \ '',
-        \ 'run: $(ALLTARGET)',
-        \ "\tclear;./$(EXEF)",
-        \ '',
-        \ 'dbg: $(ALLTARGET)',
-        \ "\tclear;gdb $(EXEF) $(GDBFLAGS)",
-        \ '',
-        \ 'clean:',
-        \ "\t@rm -f build/*.o",
-        \ '']
-    call writefile(s:makeFile, 'Makefile')
-endfunction
+if !exists("*s:GenerateMakeFile()")
+    function s:GenerateMakeFile()
+        if getcwd() =~ '^/[^/]\+/[^/]\+$'
+            return
+        endif
+        let l:dir = matchstr(getcwd(), '[^/]\+$')
+        let l:makeFile = [
+                    \ '# Basic ############################################',
+                    \ 'COMPILER := g++',
+                    \ 'FLAGS := -Wall -O0 -g3',
+                    \ 'LIBS := ',
+                    \ 'EXEF := ' . l:dir,
+                    \ '',
+                    \ '####################################################',
+                    \ 'INCDIR := ' . b:incDirFlag,
+                    \ 'CC := $(COMPILER) $(INCDIR) $(FLAGS)',
+                    \ 'LINK := $(COMPILER) -Wall $(LIBS)',
+                    \ 'ALLTARGET := $(EXEF)',
+                    \ '',
+                    \ '# GDB Configure ####################################',
+                    \ 'DBGFILE := .breakpoint',
+                    \ 'ifeq ($(DBGFILE), $(wildcard $(DBGFILE)))',
+                    \ "\tGDBFLAGS := -x \$(DBGFILE)",
+                    \ 'endif',
+                    \ '',
+                    \ '# Main Target ######################################',
+                    \ 'all: $(ALLTARGET)',
+                    \ "\t@echo",
+                    \ "\t@echo '    [ALL DONE]'",
+                    \ '',
+                    \ 'include $(wildcard .d/*.d)',
+                    \ '# Bin Targets:Linking ##############################',
+                    \ '$(EXEF): $(OBJS)',
+                    \ "\t@echo",
+                    \ "\t@echo 'Building target: $@'",
+                    \ "\t$(LINK) $^ -o $@",
+                    \ '',
+                    \ '# Other Targets ####################################',
+                    \ '.PHONY: all run dbg clean',
+                    \ '',
+                    \ 'run: $(ALLTARGET)',
+                    \ "\tclear;./$(EXEF)",
+                    \ '',
+                    \ 'dbg: $(ALLTARGET)',
+                    \ "\tclear;gdb $(EXEF) $(GDBFLAGS)",
+                    \ '',
+                    \ 'clean:',
+                    \ "\t@rm -f build/*.o",
+                    \ '']
+        call writefile(s:makeFile, 'Makefile')
+    endfunction
+endif
 
 if !filereadable('Makefile') && !filereadable('makefile')
     call s:GenerateMakeFile()

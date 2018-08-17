@@ -38,6 +38,9 @@ hi PMenuSel         ctermfg=232  ctermbg=250  cterm=NONE
 hi PMenuSbar        ctermfg=NONE ctermbg=239  cterm=NONE
 hi PMenuThumb       ctermfg=NONE ctermbg=250  cterm=NONE
 
+hi Folded           ctermfg=222  ctermbg=234
+hi FoldColumn       ctermfg=223  ctermbg=234
+
 " Language highlight
 hi PreProc          ctermfg=176  ctermbg=NONE cterm=NONE
 hi Type             ctermfg=75   ctermbg=NONE cterm=NONE
@@ -50,10 +53,6 @@ hi Statement        ctermfg=220  ctermbg=NONE cterm=NONE
 hi String           ctermfg=215  ctermbg=NONE cterm=NONE
 hi Character        ctermfg=215  ctermbg=NONE cterm=NONE
 hi Operator         ctermfg=230  ctermbg=NONE cterm=NONE
-
-" interactive.vim
-hi DBGSignHl        ctermbg=38   ctermfg=231
-hi NormalSign       ctermbg=253  ctermfg=16
 
 " ale.vim
 hi ALEErrorSign     ctermbg=238  ctermfg=9
