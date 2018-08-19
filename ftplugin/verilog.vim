@@ -7,6 +7,14 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 
+command! -buffer TBench :call HDLVTestBench()
+command! -buffer IInstance :call HDLVInsertInstance()
+command! -buffer AFInclude :call HDLVAllFileInclude()
+
+if exists(*s:ModuleName')
+    finish
+endif
+
 function s:ModuleName(file)
     let l:name=system("sed -n 's/\\s*module\\s*\\(\\w\\+\\).*/\\1/p' " . a:file)
     let l:name=substitute(l:name, '\n', '', '')
@@ -83,7 +91,7 @@ function s:TestBenchRefresh(file)
 endfunction
 " ==========================================================
 " ==========================================================
-function! HDLVTestBench()
+function HDLVTestBench()
     if &filetype != 'verilog'
         return
     endif
@@ -109,7 +117,7 @@ function! HDLVTestBench()
     endif
 endfunction
 
-function! HDLVInsertInstance()
+function HDLVInsertInstance()
     if &filetype != 'verilog'
         return
     endif
@@ -127,30 +135,7 @@ function! HDLVInsertInstance()
     %retab!
 endfunction
 
-function! HDLVAllFileInclude()
+function HDLVAllFileInclude()
     call system("find . -maxdepth 2 -name '*.v'|sed '/\\(_bb\\|_inst\\)\\.v/d'|sed 's/^/`include \\\"/'|sed 's/$/\\\"/'>_All.vt")
 endfunction
 
-"function HDLVCompileRun()
-"    write
-"    if empty(finddir('work','.;..'))
-"        !vlib work && vmap work work
-"    endif
-"    AsyncRun vlog -work work %
-"endfunction
-"
-"function HDLVCodeFormat()
-"    silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge
-"    silent! s/\((\)\s*\|\s*\()\)/\1\2/ge
-"    silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
-"    silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-"    silent! /`!`!`!`!`@#$%^&
-"endfunction
-
-" ==========================================================
-" ==========================================================
-command! -buffer TBench :call HDLVTestBench()
-command! -buffer IInstance :call HDLVInsertInstance()
-command! -buffer AFInclude :call HDLVAllFileInclude()
-"command CompileRun :call HDLVCompileRun()
-"command -range=% CFormat :<line1>,<line2>call HDLVCodeFormat()
