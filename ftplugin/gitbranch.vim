@@ -8,7 +8,7 @@ let b:did_ftplugin = 1
 setlocal nonu
 setlocal tabstop=1
 setlocal nowrap
-setlocal statusline=[branch\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=[Branch\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
@@ -18,12 +18,12 @@ nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddRemote()<Cr>
 nnoremap <buffer> b :call <SID>NewBranch()<Cr>
 nnoremap <buffer> n :call <SID>NewBranch(1)<Cr>
-nnoremap <buffer> ? :call <SID>HelpDOc()<Cr>
+nnoremap <buffer> <silent> \d :call <SID>DeleteOperate()<Cr>
+nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
 
-augroup Git_branch
-	autocmd!
-	autocmd BufWritePost <buffer> call delete('.Git_branch')
-augroup END
+"augroup Git_branch
+"	autocmd!
+"augroup END
 
 if exists('*<SID>CheckOutBranch')
     finish
@@ -41,29 +41,33 @@ function <SID>Refresh(lin, arg)
 endfunction
 
 function <SID>CheckOutBranch()
-    let l:str = split(getline('.'))
-    let l:lin = search('^Remote:', 'n')
-    if len(l:str) > 2 && l:str[0] != '*' && line('.') < l:lin
+    call system('git stash')
+    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+    if len(l:str) !=0 && l:str[0] != '*' && line('.') < search('^[^L]\w*:', 'n')
         let l:msg = system("git checkout " . l:str[0])
-        if l:msg =~ '^error:'
+        if l:msg =~ '^error:\|^fatal:'
             echo l:msg
         else
+            for l:item in systemlist('git stash list')
+                if l:item =~ ' ' . l:str[0] . ':'
+                    let l:id = matchstr(l:item, '^[^:]\+')
+                    call system('git stash apply ' . l:id . ' && git stash drop ' . l:id)
+                    break
+                endif
+            endfor
             call <SID>Refresh(line('.'), 1)
         endif
     endif
 endfunction
 
 function <SID>AddRemote()
-	let l:name = input('Enter a name(Default origin)： ')
-	if empty(l:name)
-		let l:name = 'origin'
-	endif
+	let l:name = input('Enter a name(Default origin)： ', 'origin')
 	let l:addr = input('Enter remote URL: ')
 	if empty(l:addr)
 		echo "    Abort"
     else
-        let l:msg = system("git remote add " . l:name . ' ' . l:addr)
-        if l:msg =~ '^error:'
+        let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
+        if l:msg =~ '^error:\|^fatal:'
             echo l:msg
         else
             call <SID>Refresh(line('.'), 0)
@@ -72,22 +76,48 @@ function <SID>AddRemote()
 endfunction
 
 function <SID>NewBranch(...)
+    let l:op = a:0 > 0 ? ' checkout -b ' : ' branch '
     let l:name = input('Enter new branch name: ')
-    if a:0 > 0
-        let l:msg = system('git checkout -b ' . l:name)
-    else
-        let l:msg = system('git branch ' . l:name)
+    if l:name == ''
+        echo '    Abort!'
+        return
     endif
-    if l:msg =~ '^error:'
+    let l:msg = system('git' . l:op . l:name)
+    if l:msg =~ '^error:\|^fatal:'
         echo "\n" . l:msg
-    elseif a:0 > 0
-        call <SID>Refresh(line('.'), 1)
     else
-        call <SID>Refresh(line('.'), 0 )
+        call <SID>Refresh(line('.'), a:0 > 0 ? 1 : 0 )
     endif
 endfunction
 
-function <SID>HelpDOc()
+function <SID>DeleteOperate()
+    let l:msg = 'none'
+    let l:curL = line('.')
+    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+    if len(l:str) == 0
+        return
+    elseif len(l:str) == 1
+        let l:msg = system('git tag -d ' . l:str[0])
+    else
+        let l:linS = search('^Stash:', 'n')
+        let l:linR = search('^Remote:', 'n')
+        if l:linS != 0 && l:curL > l:linS
+            let l:msg = system('git stash drop ' . strpart(l:str[0], 0, len(l:str[0])-1))
+        elseif l:linR != 0 && l:curL > l:linR
+            let l:msg = system('git remote remove ' . l:str[0])
+        elseif l:str[0] != '*'
+            let l:msg = system('git branch -d ' . l:str[0])
+        endif
+        if l:msg =~ '^error:\|^fatal:'
+            echo l:msg
+        elseif l:msg != 'none'
+            call <SID>Refresh(l:curL, 0)
+        endif
+    endif
+endfunction
+
+
+function <SID>HelpDoc()
     let l:help = [
                 \ '* Git branch quick help',
                 \ '============================',
@@ -98,7 +128,8 @@ function <SID>HelpDOc()
                 \ '    c:       checkout branch',
                 \ '    a:       add remote branch',
                 \ '    b:       new branch',
-                \ '    n:       new branch & checkout branch'
+                \ '    n:       new branch & checkout branch',
+                \ '    \d:      delete current item'
                 \ ]
     echo join(l:help, "\n")
 endfunction

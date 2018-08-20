@@ -19,10 +19,9 @@ nnoremap <buffer> d :call <SID>FileDiff()<Cr>
 nnoremap <buffer> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
 
-augroup Git_commit
-	autocmd!
-	autocmd BufWritePost <buffer> call delete('.Git_commit')
-augroup END
+"augroup Git_commit
+"	autocmd!
+"augroup END
 
 if exists('*Git_MyCommitFoldInfo')
     finish
@@ -46,7 +45,7 @@ endfunction
 function <SID>FileDiff()
     let l:file = getline('.')
     if l:file =~ '^diff --git '
-        let l:file = strpart(split(l:file)[-1], 2)
+    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))
         exec '!git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
     endif
@@ -55,7 +54,7 @@ endfunction
 function <SID>CheckOutFile()
     let l:file = getline('.')
     if l:file =~ '^diff --git '
-        let l:file = strpart(split(l:file)[-1], 2)
+    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
         if l:msg =~ '^error:\|^fatal:'

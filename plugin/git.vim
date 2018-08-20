@@ -28,10 +28,10 @@ command! GClose :call GIT_CloseTab()
 
 augroup Git_manager
 	autocmd!
-	autocmd BufRead,BufNewFile .Git_log    set filetype=gitlog
-	autocmd BufRead,BufNewFile .Git_commit set filetype=gitcommit
-	autocmd BufRead,BufNewFile .Git_status set filetype=gitstatus
-	autocmd BufRead,BufNewFile .Git_branch set filetype=gitbranch
+	autocmd BufRead,BufNewFile .Git_log    set filetype=gitlog|set buftype=nofile
+	autocmd BufRead,BufNewFile .Git_commit set filetype=gitcommit|set buftype=nofile
+	autocmd BufRead,BufNewFile .Git_status set filetype=gitstatus|set buftype=nofile
+	autocmd BufRead,BufNewFile .Git_branch set filetype=gitbranch|set buftype=nofile
 augroup END
 
 " For merge complete
@@ -103,10 +103,22 @@ function! GIT_FormatBranch()
     let l:local = systemlist('git branch -v')
     let l:remote = systemlist('git remote -v')
     let l:tag = systemlist('git tag')
+    let l:stash = systemlist('git stash list')
     call map(l:local, "'    ' . v:val")
-    call map(l:remote, "'    ' . v:val")
-    call map(l:tag, "'    ' . v:val")
-    return ['Local:', ''] + l:local + ['', 'Remote:', ''] + l:remote + ['', 'Tag:', ''] + l:tag
+    let l:local = ['Local:', ''] + l:local
+    if !empty(l:remote)
+        call map(l:remote, "'    ' . v:val")
+        let l:remote = ['', 'Remote:', ''] + l:remote
+    endif
+    if !empty(l:tag)
+        call map(l:tag, "'    ' . v:val")
+        let l:tag = ['', 'Tag:', ''] + l:tag
+    endif
+    if !empty(l:stash)
+        call map(l:stash, "'    ' . v:val")
+        let l:stash = ['', 'Stash:', '' ] + l:stash
+    endif
+    return l:local + l:remote + l:tag + l:stash
 endfunction
 
 function! GIT_FormatCommit(hash)

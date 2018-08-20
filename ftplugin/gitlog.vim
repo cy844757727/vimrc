@@ -13,7 +13,7 @@ setlocal statusline=[log]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
-nnoremap <buffer> <space> :echo substitute(getline('.'), '^[^💬]*', '    ','')<Cr>
+nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<Cr>
@@ -22,27 +22,26 @@ nnoremap <buffer> ?     :call <SID>HelpDoc()<Cr>
 augroup Git_log
 	autocmd!
 	autocmd CursorMoved <buffer> call s:RefreshCommit()
-	autocmd BufWritePost <buffer> call delete('.Git_log')
 augroup END
 
-if exists('*s:RefreshCommit')
+if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
 
 function s:RefreshCommit()
-    let l:hash = matchstr(getline('.'), ' \w\{7} ')
-    if l:hash != ""
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+    if l:hash != ''
         wincmd w
         silent edit!
         call setline(1, GIT_FormatCommit(l:hash))
-        set filetype=gitcommit
+        filetype detect
         wincmd W
     endif
 endfunction
 
 function <SID>Reset_Revert_Commit(...)
-    let l:hash = matchstr(getline('.'), ' \w\{7} ')
-    if l:hash != ""
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+    if l:hash != ''
         let l:op = a:0 > 0 ? ' reset --hard ' : ' revert '
         let l:msg = system('git' . l:op . l:hash)
         if l:msg =~ '^error:\|^fatal:'
@@ -54,10 +53,10 @@ function <SID>Reset_Revert_Commit(...)
 endfunction
 
 function <SID>CheckOutNewBranck()
-    let l:hash = matchstr(getline('.'), ' \w\{7} ')
-    if l:hash != ""
-        let l:name = input('Enter new branch name( start frome ' . l:hash . '): ')
-        if !empty(l:name)
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+    if l:hash != ''
+        let l:name = input('Enter new branch name(start from ' . l:hash . '): ')
+        if l:name != ''
             let l:msg = system('git checkout -b ' . l:name . ' ' . l:hash)
             if l:msg =~ '^error:\|^fatal:'
                 echo l:msg

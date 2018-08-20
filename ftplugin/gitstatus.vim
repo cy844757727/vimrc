@@ -22,10 +22,9 @@ nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 
-augroup Git_status
-	autocmd!
-	autocmd BufWritePost <buffer> call delete('.Git_status')
-augroup END
+"augroup Git_status
+"	autocmd!
+"augroup END
 
 if exists('*<SID>Refresh')
     finish
@@ -35,7 +34,6 @@ function <SID>Refresh(lin)
     silent edit!
     call setline(1, GIT_FormatStatus())
     call cursor(a:lin, 1)
-    set filetype=gitstatue
 endfunction
 
 function <SID>FileDiff()
@@ -44,56 +42,48 @@ function <SID>FileDiff()
         let [l:sign, l:file] = split(system("git status -s -- " . l:str[1]))
         if l:sign =~ 'M' "&& l:sign !～ 'A'
             let l:lin = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
-            if l:lin == 0 || line('.') < l:lin
-                let l:flag = ' -y --cached '
-            else
-                let l:flag = ' -y '
-            endif
+            let l:flag = (l:lin == 0) || (line('.') < l:lin) ? ' -y --cached ' : ' -y '
             exec '!git difftool' . l:flag . l:file
         endif
     endif
 endfunction
 
 function <SID>CancelStaged(...)
+	let l:msg = 'none'
     if a:0 > 0
         let l:msg = system('git reset HEAD')
     else
-        let l:str = split(getline('.'))
+        let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
         let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
         if len(l:str) == 2 && (l:lin == 0 || line('.') < l:lin)
             let l:msg = system("git reset HEAD -- " . l:str[1])
         endif
     endif
-    if !exists('l:msg')
-        return
-    elseif l:msg =~ '^error:\|^fatal'
+    if l:msg =~ '^error:\|^fatal'
         echo l:msg
-    else
+    elseif l:msg != 'none'
         call <SID>Refresh(line('.'))
     endif
 endfunction
 
 function <SID>AddFile(...)
+	let l:msg = 'none'
     if a:0 > 0
         let l:msg = system('git add .')
     else
-        let l:curL = line('.')
-        let l:lin = search('^未跟踪的文件\|^Untracked files', 'n')
-        if l:lin != 0 && l:curL > l:lin
-            let l:msg = system('git add -- ' . getline('.'))
-        else
+    	let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+    	if len(l:str) == 1
+            let l:msg = system('git add -- ' . l:str[0])
+        elseif len(l:str) == 2
             let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-            let l:str = split(getline('.'))
-            if l:lin != 0 && l:curL > l:lin && len(l:str) == 2
+            if l:lin != 0 && line('.') > l:lin
                 let l:msg = system('git add -- ' . l:str[1])
             endif
         endif
     endif
-    if !exists('l:msg')
-        return
-    elseif l:msg =~ '^error:\|^fatal'
+    if l:msg =~ '^error:\|^fatal'
         echo l:msg
-    else
+    elseif l:msg != 'none'
         call <SID>Refresh(line('.'))
     endif
 endfunction
@@ -102,7 +92,7 @@ function <SID>CheckOutFile()
     let l:str = split(getline('.'))
     if len(l:str) == 2
         let l:msg = system('git checkout HEAD -- ' . l:str[1])
-        if l:msg =~ '^error:'
+        if l:msg =~ '^error:\|^fatal:'
             echo l:msg
         else
             call <SID>Refresh(line('.'))
