@@ -5,6 +5,7 @@ if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
+let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
@@ -29,13 +30,16 @@ if exists('*<SID>Reset_Revert_Commit')
 endif
 
 function s:RefreshCommit()
-    let l:hash = matchstr(getline('.'), '\w\{7}')
-    if l:hash != ''
-        wincmd w
-        silent edit!
-        call setline(1, GIT_FormatCommit(l:hash))
-        filetype detect
-        wincmd W
+    if line('.') != b:curL
+        let b:curL = line('.')
+        let l:hash = matchstr(getline('.'), '\w\{7}')
+        if l:hash != ''
+            wincmd w
+            silent edit!
+            call setline(1, GIT_FormatCommit(l:hash))
+            filetype detect
+            wincmd W
+        endif
     endif
 endfunction
 

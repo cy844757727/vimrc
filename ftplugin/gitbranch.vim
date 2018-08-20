@@ -18,7 +18,7 @@ nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddRemote()<Cr>
 nnoremap <buffer> b :call <SID>NewBranch()<Cr>
 nnoremap <buffer> n :call <SID>NewBranch(1)<Cr>
-nnoremap <buffer> <silent> \d :call <SID>DeleteOperate()<Cr>
+nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
 nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
 
 "augroup Git_branch
@@ -90,7 +90,7 @@ function <SID>NewBranch(...)
     endif
 endfunction
 
-function <SID>DeleteOperate()
+function <SID>DeleteItem()
     let l:msg = 'none'
     let l:curL = line('.')
     let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
