@@ -8,7 +8,7 @@ endif
 let b:did_ftplugin = 1
 
 setlocal nonu
-setlocal statusline=[file\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=[3-File\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
@@ -21,6 +21,10 @@ nnoremap <buffer> <silent> a :call <SID>AddFile()<Cr>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
+nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
+nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
+nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
+nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 
 "augroup Git_status
 "	autocmd!
@@ -30,10 +34,11 @@ if exists('*<SID>Refresh')
     finish
 endif
 
-function <SID>Refresh(lin)
+function <SID>Refresh()
+    let l:pos = getpos('.')
     silent edit!
     call setline(1, GIT_FormatStatus())
-    call cursor(a:lin, 1)
+    call setpos('.', l:pos)
 endfunction
 
 function <SID>FileDiff()
@@ -62,7 +67,7 @@ function <SID>CancelStaged(...)
     if l:msg =~ '^error:\|^fatal'
         echo l:msg
     elseif l:msg != 'none'
-        call <SID>Refresh(line('.'))
+        call <SID>Refresh()
     endif
 endfunction
 
@@ -84,7 +89,7 @@ function <SID>AddFile(...)
     if l:msg =~ '^error:\|^fatal'
         echo l:msg
     elseif l:msg != 'none'
-        call <SID>Refresh(line('.'))
+        call <SID>Refresh()
     endif
 endfunction
 
@@ -95,7 +100,7 @@ function <SID>CheckOutFile()
         if l:msg =~ '^error:\|^fatal:'
             echo l:msg
         else
-            call <SID>Refresh(line('.'))
+            call <SID>Refresh()
         endif
     endif
 endfunction
@@ -113,7 +118,8 @@ function <SID>HelpDoc()
                 \ '    R:     reset all file staging',
                 \ '    a:     add file (git add)',
                 \ '    A:     add all file',
-                \ '    \co:   checkout file (git checkout)'
+                \ '    \co:   checkout file (git checkout)',
+                \ '    1234:    jump to 1234 wimdow'
                 \ ]
     echo join(l:help, "\n")
 endfunction

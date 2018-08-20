@@ -9,7 +9,7 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
-setlocal statusline=[log]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=[1-Log]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
@@ -19,6 +19,10 @@ nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<Cr>
 nnoremap <buffer> ?     :call <SID>HelpDoc()<Cr>
+nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
+nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
+nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
+nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 
 augroup Git_log
 	autocmd!
@@ -83,7 +87,8 @@ function <SID>HelpDoc()
                 \ '    <space>: echo',
                 \ '    \rs:     reset commit (carefull)',
                 \ '    \rv:     revert commit',
-                \ '    \co:     checkout new branch'
+                \ '    \co:     checkout new branch',
+                \ '    1234:    jump to 1234 wimdow'
                 \ ]
     echo join(l:help, "\n")
 endfunction

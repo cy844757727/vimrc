@@ -119,6 +119,7 @@ map  \c <Esc>:call CutMouseBehavior()<CR>
 map  <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
 map! <f3> <Esc><f3>
 " 窗口切换
+map  <f7> <Esc>:call GIT_Toggle()<CR>
 map  <f8> <Esc>:call ToggleTagbar()<CR>
 map  <f9> <Esc>:call ToggleNERDTree()<CR>
 map  <f10> <ESC>:call ToggleQuickFix()<CR>

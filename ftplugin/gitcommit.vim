@@ -6,7 +6,7 @@ let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
 setlocal nonu
-setlocal statusline=[commit\ info]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=[2-Commit\ info]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 setlocal foldmethod=marker
 setlocal foldmarker=diff\ --git\ a/,enddiff\ --git
 setlocal foldtext=Git_MyCommitFoldInfo()
@@ -18,6 +18,10 @@ nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> d :call <SID>FileDiff()<Cr>
 nnoremap <buffer> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
+nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
+nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
+nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
+nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 
 "augroup Git_commit
 "	autocmd!
@@ -60,10 +64,10 @@ function <SID>CheckOutFile()
         if l:msg =~ '^error:\|^fatal:'
             echo l:msg
         else
-            3wincmd w
+            wincmd w
             silent edit!
             call setline(1, GIT_FormatStatus())
-            2wincmd w
+            wincmd W
         endif
     endif
 endfunction
@@ -77,7 +81,8 @@ function <SID>HelpDoc()
                 \ '    <S-t>:   close tabpage',
                 \ '    <f5>:    refresh tabpage',
                 \ '    d:       diff file',
-                \ '    \co:     checkout file'
+                \ '    \co:     checkout file',
+                \ '    1234:    jump to 1234 wimdow'
                 \ ]
     echo join(l:help, "\n")
 endfunction

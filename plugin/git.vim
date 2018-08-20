@@ -165,8 +165,18 @@ function! GIT_TabPage()
     endif
 endfunction
 
+function! GIT_Toggle()
+    if bufwinnr('.Git_log') != -1
+        call GIT_CloseTab()
+    else
+        call GIT_TabPage()
+    endif
+endfunction
+
 function! GIT_Refresh(...)
     if bufwinnr('.Git_log') != -1
+        let l:winnr = winnr()
+        let l:pos = getpos('.')
     	if a:0 > 0
         	let l:col = float2nr(0.4 * &columns)
         	let l:lin = float2nr(0.4 * &lines)
@@ -183,6 +193,8 @@ function! GIT_Refresh(...)
         1wincmd w
         silent edit!
         call setline(1, GIT_FormatLog())
+        exec l:winnr . 'wincmd w'
+        call setpos('.', l:pos)
     endif
 endfunction
 
