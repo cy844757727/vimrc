@@ -3,26 +3,27 @@
 "
 "
 "
-command! -nargs=+ -complete=custom,GIT_CompleteCommand Git :echo system('git ' . "<args>")
-command! -nargs=* -complete=file Gadd :call GIT_Add_Rm_Mv("<args>", 0)
-command! -nargs=+ -complete=file Grm :call GIT_Add_Rm_Mv("<args>", 1)
-command! -nargs=+ -complete=file Gmv :call GIT_Add_Rm_Mv("<args>", 2)
-command! -nargs=* Gstatus :echo system('git status ' . '<args>')
-command! -nargs=* Glog :echo system("git log --oneline --graph --pretty=format:\"%h - 👦%an 📆%ar  💬%s\" " . '<args>')
-command! -nargs=* Greflog :echo system('git reflog ' . '<args>')
-command! -nargs=* -complete=file Gmergetool :!git mergetool <args>
-command! -nargs=* -complete=file Gdifftool :!git difftool <args>
-command! -nargs=* -complete=custom,GIT_CompleteBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
-command! -nargs=* Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
-command! -nargs=* Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
-command! -nargs=+ Gcommit :echo system('git commit ' . "<args>")|call GIT_Refresh()
-command! -nargs=+ -complete=file Greset :echo system('git reset ' . '<args>')|call GIT_Refresh()
-command! -nargs=+ -complete=file Gcheckout :echo system('git checkout ' . '<args>')[:-2]|call GIT_Refresh()
-command! -nargs=* -complete=custom,GIT_CompleteBranch Gmerge :echo system('git merge ' . '<args>')[:-2]
-command! -nargs=* Gpush :echo 'Waiting...' | echo system('git push ' . '<args>')[:-2]
-command! -nargs=* Gpull :echo system('git pull ' . '<args>')[:-2]|call GIT_Refresh()
-command! -nargs=* Gfetch :echo system('git fetch ' . '<args>')[:-2]|call GIT_Refresh()
-command! -nargs=* -complete=file Gdiff :echo system('git diff ' . 'args>')
+command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
+command! -nargs=* -complete=customlist,GIT_Complete Gadd :call GIT_Add_Rm_Mv("<args>", 0)
+command! -nargs=+ -complete=customlist,GIT_Complete Grm :call GIT_Add_Rm_Mv("<args>", 1)
+command! -nargs=+ -complete=customlist,GIT_Complete Gmv :call GIT_Add_Rm_Mv("<args>", 2)
+command! -nargs=* -complete=customlist,GIT_Complete Gstatus :echo system('git status ' . "<args>")[:-2]
+command! -nargs=* -complete=customlist,GIT_Complete Glog :echo system("git log --oneline --graph --pretty=format:\"%h - 👦%an 📆%ar  💬%s\" " . '<args>')[:-2]
+command! -nargs=* Greflog :echo system('git reflog ' . "<args>")[:-2]
+command! -nargs=* -complete=customlist,GIT_Complete Gmergetool :!git mergetool <args>
+command! -nargs=* -complete=customlist,GIT_Complete Gdifftool :!git difftool <args>
+command! -nargs=* -complete=custom,GIT_CompleteMerge Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
+command! -nargs=* -complete=customlist,GIT_Complete Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
+command! -nargs=* -complete=custom,GIT_CompleteMerge Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
+command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut("<args>", 0)
+command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut("<args>", 1)
+command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut("<args>", 2)
+command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut("<args>", 3)
+command! -nargs=* -complete=custom,GIT_CompleteMerge Gmerge :echo system('git merge ' . "<args>")[:-2]
+command! -nargs=* Gpush :call GIT_Push_Pull_Fetch("<args>", 0)
+command! -nargs=* Gpull :call GIT_Push_Pull_Fetch("<args>", 1)
+command! -nargs=* Gfetch :call GIT_Push_Pull_Fetch("<args>", 2)
+command! -nargs=* -complete=customlist,GIT_Complete Gdiff :call GIT_Diff(<f-args>)
 command! GTab :call GIT_TabPage()
 command! GClose :call GIT_CloseTab()
 
@@ -35,40 +36,97 @@ augroup Git_manager
 augroup END
 
 " For merge complete
-function! GIT_CompleteBranch(A, L, P)
-    return system("git branch|grep '^[^*]'|sed -n 's/^ \\+//p'")
+function! GIT_CompleteMerge(L, C, P)
+    if a:L =~ '^-'
+        return system("git help merge|sed -n 's/ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'")
+    else
+        return system("git branch|grep '^[^*]'|sed -n 's/^ \\+//p'")
+    endif
 endfunction
 
-function! GIT_CompleteCommand(A, L, P)
-    return system("git help|sed -n 's/^  \\+\\(\\w\\+\\) \\+.*/\\1/p'")
+function! GIT_Complete(L, C, P)
+    let l:cmd = split(strpart(a:C, 0, a:P))
+    if l:cmd[0] == 'Git' && (len(l:cmd) == 1 || (len(l:cmd) == 2 && a:L != ''))
+        let l:list = systemlist("man git|sed -n 's/^ \\+git-\\([-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
+    elseif a:C =~ ' -- '
+        let l:D = matchstr(a:L, '^.*/')
+        let l:L = matchstr(a:L, '[^/]*$')
+        let l:list = map(systemlist('ls -1F ' . l:D . "|grep '^" . l:L . "'"), "'" . l:D . "' . v:val")
+    elseif a:L =~ '^-' && l:cmd[0] == 'Git'
+        let l:list = systemlist("git help " . l:cmd[1] . "|sed -n 's/^ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
+    elseif a:L =~ '^-'
+        let l:list = systemlist("git help " . strpart(l:cmd[0], 1) . "|sed -n 's/^ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
+    else
+        if a:L != ''
+            call remove(l:cmd, -1)
+        endif
+        if l:cmd[0] == 'Git' && len(l:cmd) == 2
+            let l:str = 'g' . strpart(l:cmd[0], 1) . ' ' .l:cmd[1]
+        elseif len(l:cmd) == 1
+            let l:str = 'git ' . strpart(l:cmd[0], 1)
+        else
+            return []
+        endif
+        let l:list = systemlist("man " . l:str . "|sed -n '1,50s/^ \\+" . l:str . " \\(\\w[-a-z]\\+\\).*/\\1/p'|grep '^" . a:L . "'")
+    endif
+    return l:list
 endfunction
 
 function! GIT_Add_Rm_Mv(arg, flag)
     let l:op = a:flag == 0 ? ' add ' :
                 \ a:flag == 1 ? ' rm ' : ' mv '
-    let l:arg = a:arg == '' ? '.' : a:arg
+    let l:arg = a:arg == '' ? '.' :
+                \ a:arg == '%' ? expand('%') : a:arg
     let l:msg = system('git' . l:op . l:arg)[:-2]
-    if l:msg =~ '^error:\|^fatal:'
-        echo l:msg
-    elseif bufwinnr('.Git_status') != -1
+    if l:msg =~ '^error:\|^fatal:' && bufwinnr('.Git_status') != -1
         3wincmd w
         silent edit!
         call setline(1, GIT_FormatStatus())
-        echo l:msg
     endif
+    echo l:msg
 endfunction
 
 function! GIT_Branch_Remote_Tag(arg, flag)
     let l:op = a:flag == 0 ? ' branch ' :
                 \ a:flag == 1 ? ' remote ' : ' tag '
     let l:msg = system('git' . l:op . a:arg)[:-2]
-    if a:arg == '' || l:msg =~ '^error:\|^fatal:'
-        echo l:msg
-    elseif bufwinnr('.Git_branch') != -1
+    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_branch') != -1
         4wincmd w
         silent edit!
         call setline(1, GIT_FormatBranch())
-        echo l:msg
+    endif
+    echo l:msg
+endfunction
+
+function! GIT_Commit_Reset_Revert_CheckOut(arg, flag)
+    let l:op = a:flag == 0 ? ' commit ' :
+                \ a:flag == 1 ? ' reset ' :
+                \ a:falg == 2 ? ' revert ' : ' checkout '
+    let l:msg = system('git' . l:op . a:arg)[:-2]
+    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_log') != -1
+        call GIT_Refresh()
+    endif
+    echo l:msg
+endfunction
+
+function! GIT_Push_Pull_Fetch(arg, flag)
+    let l:op = a:flag == 0 ? ' push ' :
+                \ a:flag == 1 ? ' pull ' : ' fetch '
+    echo '    Waiting...'
+    let l:msg = system('git' . l:op . a:arg)
+    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_log') != -1
+        call GIT_Refresh()
+    endif
+    echo l:msg
+endfunction
+
+function! GIT_Diff(...)
+    if a:0 == 0
+        exec '!git difftool -y HEAD -- ' . expand('%')
+    elseif a:0 == 1
+        exec '!git difftool -y HEAD -- ' . a:1
+    else
+        exec '!git difftool -y ' . join(a:000, ' ')
     endif
 endfunction
 
@@ -130,7 +188,7 @@ function! GIT_FormatCommit(hash)
             \ '         %s'
     let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash . "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
     if len(l:commit) > 12
-        let l:commit += ['enddiff --git', '@@ ================= @@']
+        let l:commit += ['enddiff --git', '']
     endif
     return l:commit
 endfunction
