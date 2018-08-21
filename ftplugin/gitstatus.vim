@@ -20,6 +20,7 @@ nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddFile()<Cr>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
+nnoremap <buffer> <silent> \ct :call <SID>Commit()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
@@ -105,6 +106,20 @@ function <SID>CheckOutFile()
     endif
 endfunction
 
+function <SID>Commit()
+    let l:m = input('Input message(git commit -m): ')
+    if l:m == ''
+        echo '   Abort!'
+    else
+        let l:msg = system("git commit -m '" . l:m . "'")
+        if l:msg =~ '^error:\|^fatal:'
+            echo l:msg
+        else
+            call GIT_Refresh()
+        endif
+    endif
+endfunction
+
 function <SID>HelpDoc()
     let l:help = [
                 \ '* Git Status quick help *',
@@ -119,6 +134,7 @@ function <SID>HelpDoc()
                 \ '    a:     add file (git add)',
                 \ '    A:     add all file',
                 \ '    \co:   checkout file (git checkout)',
+                \ '    \ct:   commit',
                 \ '    1234:    jump to 1234 wimdow'
                 \ ]
     echo join(l:help, "\n")

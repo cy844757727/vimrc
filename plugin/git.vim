@@ -128,7 +128,11 @@ function! GIT_FormatCommit(hash)
             \ 'Commit:  %cn  <%ce>%n' .
             \ 'Date:    %cd%n%n' .
             \ '         %s'
-    return systemlist("git show --pretty='" . l:format . "' " . a:hash . "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
+    let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash . "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
+    if len(l:commit) > 12
+        let l:commit += ['enddiff --git', '@@ ================= @@']
+    endif
+    return l:commit
 endfunction
 
 function! GIT_FormatStatus()
