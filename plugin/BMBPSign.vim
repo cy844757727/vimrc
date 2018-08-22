@@ -138,7 +138,6 @@ function s:LoadWorkSpace(pre)
 endfunction
 " ==========================================================
 " ============== 全局量定义 ================================
-" 切换标记
 function BMBPSign_Project(...)
     if a:0 > 1
         let l:item = printf('%-20s  Type: %-12s  Path: ', a:1, a:2)
@@ -152,6 +151,9 @@ function BMBPSign_Project(...)
             else
                 let l:item .= '~/Documents/' . a:1
             endif
+        else
+            echo '** Too many args!!!'
+            return
         endif
         let l:dir = split(l:item)[-1]
         if l:dir =~ '^\~'
@@ -168,11 +170,17 @@ function BMBPSign_Project(...)
         if a:0 == 1
             let l:sel == a:1
         else
-            let l:option = "Select option:\n==============================\n"
+            let l:option = "Select option:(eg: -1 - Delte item 1)\n" .
+                        \ "======================================" .
+                        \ "======================================" .
+                        \ "======================================\n"
             for l:i in range(len(s:projectItem))
                 let l:option .= '  ' . l:i . ':  ' . s:projectItem[l:i] . "\n"
             endfor
             let l:sel = input(l:option . '!?: ')
+            if l:sel == ''
+                let l:sel = '0'
+            endif
         endif
         if l:sel =~ '^\d' && l:sel < len(s:projectItem)
             let l:dir = split(s:projectItem[l:sel])[-1]
@@ -182,11 +190,16 @@ function BMBPSign_Project(...)
             exec 'cd ' . l:dir
             call s:LoadWorkSpace('')
             call insert(s:projectItem, remove(s:projectItem, l:sel))
-            call writefile(s:projectItem, s:projectFile)
+        elseif l:sel =~ '^\-\d' && strpart(l:sel, 1) < len(s:projectItem)
+            call remove(s:projectItem, strpart(l:sel, 1))
+        else
+            return
         endif
+        call writefile(s:projectItem, s:projectFile)
     endif
 endfunction
 
+" 切换标记
 function BMBPSign_Toggle(name)
     if expand('%') == ''
         echo 'Invalid file name!'
