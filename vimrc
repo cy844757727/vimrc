@@ -55,7 +55,7 @@ set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8         "显示用的编码
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1 "检测编码集
-set statusline=[%{mode('2')}]%t%m%r%h%w%<%=%{ALEGetStatusLine()}\ \ \ \ \ %{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ \ \ \ \ %{&ff}\ \ \ \ \ %Y\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=%{ALEGetStatusLine()}\ \ \ \ \ %{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ │\ %{&ff}\ │\ %Y\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 "自定义命令/自动命令=====================
 augroup UsrDefCmd

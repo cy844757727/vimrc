@@ -8,7 +8,7 @@ endif
 let b:did_ftplugin = 1
 
 setlocal nonu
-setlocal statusline=[3-File\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=\ \ 3-File\ status%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
@@ -31,7 +31,7 @@ nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 "	autocmd!
 "augroup END
 
-if exists('*<SID>Refresh')
+if exists('*<SID>FileDiff')
     finish
 endif
 

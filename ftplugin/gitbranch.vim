@@ -8,7 +8,7 @@ let b:did_ftplugin = 1
 setlocal nonu
 setlocal tabstop=1
 setlocal nowrap
-setlocal statusline=[4-Branch\ status]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=\ \ 4-Branch\ status%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>

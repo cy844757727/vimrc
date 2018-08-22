@@ -6,7 +6,7 @@ let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
 setlocal nonu
-setlocal statusline=[2-Commit\ info]%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=\ \ 2-Commit\ info%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
 setlocal foldmethod=marker
 setlocal foldmarker=diff\ --git\ a/,enddiff\ --git
 setlocal foldtext=Git_MyCommitFoldInfo()

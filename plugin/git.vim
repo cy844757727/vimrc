@@ -12,14 +12,14 @@ command! -nargs=* -complete=customlist,GIT_Complete Glog :echo system("git log -
 command! -nargs=* Greflog :echo system('git reflog ' . "<args>")[:-2]
 command! -nargs=* -complete=customlist,GIT_Complete Gmergetool :!git mergetool <args>
 command! -nargs=* -complete=customlist,GIT_Complete Gdifftool :!git difftool <args>
-command! -nargs=* -complete=custom,GIT_CompleteMerge Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
+command! -nargs=* -complete=custom,GIT_completeBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
 command! -nargs=* -complete=customlist,GIT_Complete Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
-command! -nargs=* -complete=custom,GIT_CompleteMerge Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
+command! -nargs=* -complete=custom,GIT_completeBranch Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
 command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut("<args>", 0)
 command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut("<args>", 1)
 command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut("<args>", 2)
 command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut("<args>", 3)
-command! -nargs=* -complete=custom,GIT_CompleteMerge Gmerge :echo system('git merge ' . "<args>")[:-2]
+command! -nargs=* -complete=custom,GIT_completeBranch Gmerge :echo system('git merge ' . "<args>")[:-2]
 command! -nargs=* Gpush :call GIT_Push_Pull_Fetch("<args>", 0)
 command! -nargs=* Gpull :call GIT_Push_Pull_Fetch("<args>", 1)
 command! -nargs=* Gfetch :call GIT_Push_Pull_Fetch("<args>", 2)
@@ -36,7 +36,7 @@ augroup Git_manager
 augroup END
 
 " For merge complete
-function! GIT_CompleteMerge(L, C, P)
+function! GIT_completeBranch(L, C, P)
     if a:L =~ '^-'
         return system("git help merge|sed -n 's/ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'")
     else

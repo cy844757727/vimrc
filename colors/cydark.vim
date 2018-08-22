@@ -25,7 +25,7 @@ hi VertSplit        ctermfg=253  ctermbg=253  cterm=NONE
 hi LineNr           ctermfg=242  ctermbg=NONE cterm=NONE
 hi CursorLine       ctermfg=NONE ctermbg=236  cterm=NONE
 hi CursorLineNr     ctermfg=242  ctermbg=236 cterm=NONE
-hi StatusLine       ctermfg=16  ctermbg=252  cterm=bold
+hi StatusLine       ctermfg=16  ctermbg=253  cterm=bold
 hi StatusLineNC     ctermfg=16  ctermbg=252  cterm=NONE
 
 hi DiffAdd          ctermfg=230  ctermbg=65   cterm=NONE
