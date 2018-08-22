@@ -20,6 +20,7 @@ nnoremap <buffer> b :call <SID>NewBranch()<Cr>
 nnoremap <buffer> n :call <SID>NewBranch(1)<Cr>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
+nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
 nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
@@ -51,7 +52,7 @@ function <SID>CheckOutBranch()
     if len(l:str) > 0 && l:str[0] != '*' && (l:lin == 0 || l:lin > line('.'))
         call system('git stash')
         let l:msg = system("git checkout " . l:str[0])
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             for l:item in systemlist('git stash list')
@@ -73,7 +74,7 @@ function <SID>AddRemote()
 		echo "    Abort!"
     else
         let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             call <SID>Refresh(0)
@@ -93,7 +94,7 @@ function <SID>NewBranch(...)
     else
         let l:msg = system('git branch ' . l:name)
     endif
-    if l:msg =~ '^error:\|^fatal:'
+    if l:msg =~ 'error:\|fatal:'
         echo "\n" . l:msg
     else
         call <SID>Refresh(a:0 > 0 ? 1 : 0 )
@@ -123,7 +124,7 @@ function <SID>DeleteItem(...)
             endif
         endif
     endif
-    if l:msg =~ '^error:\|^fatal:'
+    if l:msg =~ 'error:\|fatal:'
         echo l:msg
     elseif l:msg != 'none'
         call <SID>Refresh(0)
@@ -133,12 +134,13 @@ endfunction
 
 function <SID>HelpDoc()
     let l:help = [
-                \ '* Git branch quick help',
-                \ '============================',
+                \ 'Git branch quick help !?',
+                \ '==================================================',
                 \ '    <C-w>:   close tabpage',
                 \ '    <S-t>:   close tabpage',
                 \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
+                \ '    m:       git menu',
                 \ '    c:       checkout branch',
                 \ '    a:       add remote branch',
                 \ '    b:       new branch',

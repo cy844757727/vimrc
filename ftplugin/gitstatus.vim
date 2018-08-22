@@ -20,7 +20,7 @@ nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddFile()<Cr>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
-nnoremap <buffer> <silent> \ct :call <SID>Commit()<Cr>
+nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
@@ -65,7 +65,7 @@ function <SID>CancelStaged(...)
             let l:msg = system("git reset HEAD -- " . l:str[1])
         endif
     endif
-    if l:msg =~ '^error:\|^fatal'
+    if l:msg =~ 'error:\|fatal'
         echo l:msg
     elseif l:msg != 'none'
         call <SID>Refresh()
@@ -87,7 +87,7 @@ function <SID>AddFile(...)
             endif
         endif
     endif
-    if l:msg =~ '^error:\|^fatal'
+    if l:msg =~ 'error:\|fatal'
         echo l:msg
     elseif l:msg != 'none'
         call <SID>Refresh()
@@ -98,7 +98,7 @@ function <SID>CheckOutFile()
     let l:str = split(getline('.'))
     if len(l:str) == 2
         let l:msg = system('git checkout HEAD -- ' . l:str[1])
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             call <SID>Refresh()
@@ -112,7 +112,7 @@ function <SID>Commit()
         echo '   Abort!'
     else
         let l:msg = system("git commit -m '" . l:m . "'")
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             call GIT_Refresh()
@@ -122,19 +122,19 @@ endfunction
 
 function <SID>HelpDoc()
     let l:help = [
-                \ '* Git Status quick help *',
-                \ '===========================================',
-                \ '    <C-w>: close tabpage',
-                \ '    <S-t>: close tabpage',
-                \ '    <f5>:  refresh tabpage',
+                \ 'Git Status quick help !?',
+                \ '==================================================',
+                \ '    <C-w>:   close tabpage',
+                \ '    <S-t>:   close tabpage',
+                \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
-                \ '    d:     diff file (difftool: vimdiff)',
-                \ '    r:     reset file staging (git reset)',
-                \ '    R:     reset all file staging',
-                \ '    a:     add file (git add)',
-                \ '    A:     add all file',
-                \ '    \co:   checkout file (git checkout)',
-                \ '    \ct:   commit',
+                \ '    m:       git menu',
+                \ '    d:       diff file (difftool: vimdiff)',
+                \ '    r:       reset file staging (git reset)',
+                \ '    R:       reset all file staging',
+                \ '    a:       add file (git add)',
+                \ '    A:       add all file',
+                \ '    \co:     checkout file (git checkout)',
                 \ '    1234:    jump to 1234 wimdow'
                 \ ]
     echo join(l:help, "\n")

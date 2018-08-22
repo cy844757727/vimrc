@@ -20,6 +20,15 @@ let s:breakPointFile = '.breakpoint'
 let s:sessionFile = '.session'
 let s:vimInfoFile = '.viminfo'
 
+"let s:projectType = {}
+let s:home = system('echo ~')[:-2]
+let s:projectFile = s:home . '/.vim/.projectitem'
+if filereadable(s:projectFile)
+    let s:projectItem = readfile(s:projectFile)
+else
+    let s:projectItem = []
+endif
+
 " 在指定文件对应行切换断点/书签
 function s:ToggleSign(file,line,name)
     let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
@@ -86,6 +95,15 @@ function s:SaveWorkSpace(pre)
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
     call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
     call system("sed -i \"s/^file __Tagbar__.*/close\\\\nif bufwinnr('NERD_tree') != -1\\\\n    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n    TagbarOpen\\\\nelse\\\\n    let g:tagbar_vertical=0\\\\n    let g:tagbar_left=1\\\\n    TagbarOpen\\\\n    let g:tagbar_vertical=19\\\\n    let g:tagbar_left=0\\\\nendif\\\\nexec bufwinnr('Tagbar') . 'wincmd w'/\" " . a:pre . s:sessionFile)
+    let l:curDir = matchstr(getcwd(), '[^/]*$')
+    for l:i in range(len(s:projectItem))
+        if l:curDir == split(s:projectItem[l:i])[0]
+            call remove(s:projectItem, l:i)
+            break
+        endif
+    endfor
+    call insert(s:projectItem, printf('%-20s  Type: undef         Path: %s', l:curDir, getcwd()))
+    call writefile(s:projectItem, s:projectFile)
 endfunction
 
 " 恢复工作空间
@@ -121,6 +139,54 @@ endfunction
 " ==========================================================
 " ============== 全局量定义 ================================
 " 切换标记
+function BMBPSign_Project(...)
+    if a:0 > 1
+        let l:item = printf('%-20s  Type: %-12s  Path: ', a:1, a:2)
+        if a:0 == 3
+            let l:item .= a:3
+        elseif a:0 == 2
+            if a:2 =~ 'fpag' || a:2 =~ 'verilog'
+                let l:item .= '~/Documents/Altera/' . a:1
+            elseif a:2 =~ 'c\|cpp'
+                let l:item .= '~/Documents/WorkSpace/' . a:1
+            else
+                let l:item .= '~/Documents/' . a:1
+            endif
+        endif
+        let l:dir = split(l:item)[-1]
+        if l:dir =~ '^\~'
+            let l:dir = s:home . strpart(l:dir, 1)
+        endif
+        if !isdirectory(l:dir)
+            call mkdir(l:dir, 'p')
+        endif
+        exec 'cd ' . l:dir
+        %bwipeout
+        call insert(s:projectItem, l:item)
+        call writefile(s:projectItem, s:projectFile)
+    elseif !empty(s:projectItem)
+        if a:0 == 1
+            let l:sel == a:1
+        else
+            let l:option = "Select option:\n==============================\n"
+            for l:i in range(len(s:projectItem))
+                let l:option .= '  ' . l:i . ':  ' . s:projectItem[l:i] . "\n"
+            endfor
+            let l:sel = input(l:option . '!?: ')
+        endif
+        if l:sel =~ '^\d' && l:sel < len(s:projectItem)
+            let l:dir = split(s:projectItem[l:sel])[-1]
+            if l:dir =~ '^\~'
+                let l:dir = s:home . strpart(l:dir, 1)
+            endif
+            exec 'cd ' . l:dir
+            call s:LoadWorkSpace('')
+            call insert(s:projectItem, remove(s:projectItem, l:sel))
+            call writefile(s:projectItem, s:projectFile)
+        endif
+    endif
+endfunction
+
 function BMBPSign_Toggle(name)
     if expand('%') == ''
         echo 'Invalid file name!'
@@ -229,4 +295,5 @@ command BMBPSignNextBookMark :call BMBPSign_Jump('next')
 command -nargs=? -complete=file SWorkSpace :call BMBPSign_SaveWorkSpace('<args>')
 command -nargs=? -complete=file CWorkSpace :call BMBPSign_ClearWorkSpace('<args>')
 command -nargs=? -complete=file LWorkSpace :call BMBPSign_LoadWorkSpace('<args>')
+command -nargs=* -complete=dir  Project :call BMBPSign_Project(<f-args>)
 

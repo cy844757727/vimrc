@@ -17,6 +17,7 @@ nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> d :call <SID>FileDiff()<Cr>
 nnoremap <buffer> \co :call <SID>CheckOutFile()<Cr>
+nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
 nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
@@ -61,7 +62,7 @@ function <SID>CheckOutFile()
     	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             wincmd w
@@ -74,12 +75,13 @@ endfunction
 
 function <SID>HelpDoc()
     let l:help = [
-                \ '* Git commit quick help',
-                \ '====================================',
+                \ 'Git commit quick help !?',
+                \ '==================================================',
                 \ '    <spcae>: code fold | unfold',
                 \ '    <C-w>:   close tabpage',
                 \ '    <S-t>:   close tabpage',
                 \ '    <f5>:    refresh tabpage',
+                \ '    m:       git menu',
                 \ '    d:       diff file',
                 \ '    \co:     checkout file',
                 \ '    1234:    jump to 1234 wimdow'

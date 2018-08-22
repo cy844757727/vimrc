@@ -53,9 +53,11 @@ function! GIT_Complete(L, C, P)
         let l:L = matchstr(a:L, '[^/]*$')
         let l:list = map(systemlist('ls -1F ' . l:D . "|grep '^" . l:L . "'"), "'" . l:D . "' . v:val")
     elseif a:L =~ '^-' && l:cmd[0] == 'Git'
-        let l:list = systemlist("git help " . l:cmd[1] . "|sed -n 's/^ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
+        let l:list = systemlist("git help " . l:cmd[1] .
+                    \ "|sed -n 's/^ \\+\\(-\\{1,2\\}\\w[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
     elseif a:L =~ '^-'
-        let l:list = systemlist("git help " . strpart(l:cmd[0], 1) . "|sed -n 's/^ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
+        let l:list = systemlist("git help " . strpart(l:cmd[0], 1) .
+                    \ "|sed -n 's/^ \\+\\(-\\{1,2\\}\\w[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
     else
         if a:L != ''
             call remove(l:cmd, -1)
@@ -67,7 +69,8 @@ function! GIT_Complete(L, C, P)
         else
             return []
         endif
-        let l:list = systemlist("man " . l:str . "|sed -n '1,50s/^ \\+" . l:str . " \\(\\w[-a-z]\\+\\).*/\\1/p'|grep '^" . a:L . "'")
+        let l:list = systemlist("man " . l:str .
+                    \ "|sed -n '7,30s/^ \\+" . l:str . " \\(\\w[-a-z]\\+\\).*\\[.*/\\1/p'|grep '^" . a:L . "'")
     endif
     return l:list
 endfunction
@@ -186,7 +189,8 @@ function! GIT_FormatCommit(hash)
             \ 'Commit:  %cn  <%ce>%n' .
             \ 'Date:    %cd%n%n' .
             \ '         %s'
-    let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash . "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
+    let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash .
+                \ "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
     if len(l:commit) > 12
         let l:commit += ['enddiff --git', '']
     endif
@@ -233,6 +237,53 @@ function! GIT_Toggle()
     else
         call GIT_TabPage()
     endif
+endfunction
+
+function! GIT_Menu()
+    let l:menu = [
+                \ '** Select option:',
+                \ '==================================================',
+                \ '    (a)dd all files   <git add .>',
+                \ '    (r)eset all files <git reset HEAD>',
+                \ '    (c)ommit          <git commit -m>',
+                \ '    (p)ush            <git push>',
+                \ '    (f)etch           <git fetch>',
+                \ '    (P)ull            <git pull>',
+                \ '!?:'
+                \ ]
+    echo join(l:menu, "\n")
+    let l:op = getchar()
+    let l:char = nr2char(l:op)
+    if l:op == "\<Esc>"
+        return
+    elseif l:char == 'a'
+        let l:msg = system('git add .')[:-2]
+    elseif l:char == 'r'
+        let l:msg = system('git reset HEAD')[:-2]
+    elseif l:char == 'c'
+        let l:str = input("Input a message(-m): ")
+        if l:str != ''
+            let l:msg = system("git commit -m '" . l:str . "'")[:-2]
+        else
+            echo ' Abort!'
+            return
+        endif
+    elseif l:char == 'p'
+        echo ' Waiting...'
+        let l:msg = system('git push')[:-2]
+    elseif l:char == 'f'
+        echo ' Waiting...'
+        let l:msg = system('git fetch')[:-2]
+    elseif l:char == 'P'
+        echo ' Waiting...'
+        let l:msg = system('git pull')[:-2]
+    else
+        return
+    endif
+    if l:msg !~ 'error:\|fatal:'
+        call GIT_Refresh()
+    endif
+    echo l:msg
 endfunction
 
 function! GIT_Refresh(...)

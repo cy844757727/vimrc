@@ -18,6 +18,7 @@ nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<Cr>
+nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
 nnoremap <buffer> ?     :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
@@ -52,7 +53,7 @@ function <SID>Reset_Revert_Commit(...)
     if l:hash != ''
         let l:op = a:0 > 0 ? ' reset --hard ' : ' revert '
         let l:msg = system('git' . l:op . l:hash)
-        if l:msg =~ '^error:\|^fatal:'
+        if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             call GIT_Refresh()
@@ -66,7 +67,7 @@ function <SID>CheckOutNewBranck()
         let l:name = input('Enter new branch name(start from ' . l:hash . '): ')
         if l:name != ''
             let l:msg = system('git checkout -b ' . l:name . ' ' . l:hash)
-            if l:msg =~ '^error:\|^fatal:'
+            if l:msg =~ 'error:\|fatal:'
                 echo l:msg
             else
                 call GIT_Refresh()
@@ -79,12 +80,13 @@ endfunction
 
 function <SID>HelpDoc()
     let l:help = [
-                \ '* Git log quick help *',
-                \ '=============================',
+                \ 'Git log quick help !?',
+                \ '==================================================',
                 \ '    <C-w>:   close tabpage',
                 \ '    <S-t>:   close tabpage',
                 \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
+                \ '    m:       git menu',
                 \ '    \rs:     reset commit (carefull)',
                 \ '    \rv:     revert commit',
                 \ '    \co:     checkout new branch',
