@@ -6,6 +6,7 @@ if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
+let b:curL = 1
 
 setlocal nonu
 setlocal statusline=\ \ 3-File\ status%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
@@ -27,9 +28,10 @@ nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
 nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
 nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 
-"augroup Git_status
-"	autocmd!
-"augroup END
+augroup Git_status
+	autocmd!
+	autocmd CursorMoved <buffer> call s:cursorJump()
+augroup END
 
 if exists('*<SID>FileDiff')
     finish
@@ -117,6 +119,20 @@ function <SID>Commit()
         else
             call GIT_Refresh()
         endif
+    endif
+endfunction
+
+function s:cursorJump()
+    if b:curL != line('.')
+        let l:end = line('$')
+        let l:op = b:curL - line('.') == 1 ? 'k' : 'j'
+        while line('.') != l:end && getline('.') !~ '^\s\+\S'
+            exec 'normal ' . l:op
+            if line('.') == 1
+                let l:op = 'j'
+            endif
+        endwhile
+        let b:curL = line('.')
     endif
 endfunction
 

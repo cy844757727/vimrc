@@ -36,6 +36,14 @@ endif
 
 function s:RefreshCommit()
     if line('.') != b:curL
+        let l:end = line('$')
+        let l:op = b:curL - line('.') == 1 ? 'k' : 'j'
+        while line('.') != l:end && getline('.') !~ '\d'
+            exec 'normal ' . l:op
+            if line('.') == 1
+                let l:op = 'j'
+            endif
+        endwhile
         let b:curL = line('.')
         let l:hash = matchstr(getline('.'), '\w\{7}')
         if l:hash != ''
