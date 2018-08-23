@@ -20,7 +20,15 @@ let s:breakPointFile = '.breakpoint'
 let s:sessionFile = '.session'
 let s:vimInfoFile = '.viminfo'
 
-"let s:projectType = {}
+if !exists('g:BMBPSign_ProjectType')
+    let g:BMBPSign_ProjectType = {
+                \ 'c':       '~/Documents/WorkSpace/',
+                \ 'cpp':     '~/Documents/WorkSpace/',
+                \ 'fpga':    '~/Documents/Altera/',
+                \ 'verilog': '~/Documents/Altera/',
+                \ 'altera':  '~/Documents/Altera/'
+                \ }
+endif
 let s:home = system('echo ~')[:-2]
 let s:projectFile = s:home . '/.vim/.projectitem'
 if filereadable(s:projectFile)
@@ -144,10 +152,8 @@ function BMBPSign_Project(...)
         if a:0 == 3
             let l:item .= a:3
         elseif a:0 == 2
-            if a:2 =~ 'fpag' || a:2 =~ 'verilog'
-                let l:item .= '~/Documents/Altera/' . a:1
-            elseif a:2 =~ 'c\|cpp'
-                let l:item .= '~/Documents/WorkSpace/' . a:1
+            if has_key(g:BMBPSign_ProjectType, a:2)
+                let l:item .= g:BMBPSign_ProjectType[a:2] . a:1
             else
                 let l:item .= '~/Documents/' . a:1
             endif
@@ -182,6 +188,7 @@ function BMBPSign_Project(...)
                 let l:sel = '0'
             endif
         endif
+        echo l:sel
         if l:sel =~ '^\d' && l:sel < len(s:projectItem)
             let l:dir = split(s:projectItem[l:sel])[-1]
             if l:dir =~ '^\~'
@@ -190,8 +197,12 @@ function BMBPSign_Project(...)
             exec 'cd ' . l:dir
             call s:LoadWorkSpace('')
             call insert(s:projectItem, remove(s:projectItem, l:sel))
-        elseif l:sel =~ '^\-\d' && strpart(l:sel, 1) < len(s:projectItem)
-            call remove(s:projectItem, strpart(l:sel, 1))
+        elseif l:sel =~ '^\-'
+            let l:num = filter(split(strpart(l:sel, 1)), "v:val < " . len(s:projectItem))
+            for l:i in l:num
+                let s:projectItem[l:i] = ''
+            endfor
+            call filter(s:projectItem, "v:val != ''")
         else
             return
         endif
