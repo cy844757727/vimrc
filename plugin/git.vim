@@ -246,6 +246,7 @@ function! GIT_Menu()
                 \ '    (a)dd all files   <git add .>',
                 \ '    (r)eset all files <git reset HEAD>',
                 \ '    (c)ommit          <git commit -m>',
+                \ '    a(m)end           <git commit --amend -m>',
                 \ '    (p)ush            <git push>',
                 \ '    (f)etch           <git fetch>',
                 \ '    (P)ull            <git pull>',
@@ -260,10 +261,11 @@ function! GIT_Menu()
         let l:msg = system('git add .')[:-2]
     elseif l:char == 'r'
         let l:msg = system('git reset HEAD')[:-2]
-    elseif l:char == 'c'
-        let l:str = input("Input a message(-m): ")
+    elseif l:char == 'c' || l:char == 'm'
+        let l:pre = l:char == 'c' ? '' : '--amend '
+        let l:str = input("Input a message(" . l:pre . "-m): ")
         if l:str != ''
-            let l:msg = system("git commit -m '" . l:str . "'")[:-2]
+            let l:msg = system("git commit " . l:pre . "-m '" . l:str . "'")[:-2]
         else
             echo ' Abort!'
             return

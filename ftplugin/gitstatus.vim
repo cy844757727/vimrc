@@ -20,6 +20,8 @@ nnoremap <buffer> <silent> r :call <SID>CancelStaged()<Cr>
 nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddFile()<Cr>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
+nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
+nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
@@ -108,17 +110,25 @@ function <SID>CheckOutFile()
     endif
 endfunction
 
-function <SID>Commit()
-    let l:m = input('Input message(git commit -m): ')
-    if l:m == ''
-        echo '   Abort!'
+function! <SID>DeleteItem(...)
+    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+    if len(l:str) == 0
+        return
+    elseif len(l:str) == 1
+        let l:msg = system('rm ' . l:str[0])
     else
-        let l:msg = system("git commit -m '" . l:m . "'")
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
+        let l:pre = a:0 > 0 ? '-f ' : ''
+        let l:linN = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
+        if l:linN != 0 && line('.') > l:linN
+            let l:msg = system('git rm ' . l:pre . '-- ' . l:str[-1])
         else
-            call GIT_Refresh()
+            let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:str[-1])
         endif
+    endif
+    if l:msg =~ 'error:\|fatal'
+        echo l:msg
+    else
+        call <SID>Refresh()
     endif
 endfunction
 
@@ -150,6 +160,8 @@ function <SID>HelpDoc()
                 \ '    R:       reset all file staging',
                 \ '    a:       add file (git add)',
                 \ '    A:       add all file',
+                \ '    \d:      delete file',
+                \ '    \D:      delete file (force)',
                 \ '    \co:     checkout file (git checkout)',
                 \ '    1234:    jump to 1234 wimdow'
                 \ ]
