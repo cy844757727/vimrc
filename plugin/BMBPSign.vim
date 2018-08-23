@@ -104,13 +104,14 @@ function s:SaveWorkSpace(pre)
     call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
     call system("sed -i \"s/^file __Tagbar__.*/close\\\\nif bufwinnr('NERD_tree') != -1\\\\n    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n    TagbarOpen\\\\nelse\\\\n    let g:tagbar_vertical=0\\\\n    let g:tagbar_left=1\\\\n    TagbarOpen\\\\n    let g:tagbar_vertical=19\\\\n    let g:tagbar_left=0\\\\nendif\\\\nexec bufwinnr('Tagbar') . 'wincmd w'/\" " . a:pre . s:sessionFile)
     let l:curDir = matchstr(getcwd(), '[^/]*$')
+    let l:item = printf('%-20s  Type: undef         Path: %s', l:curDir, getcwd())
     for l:i in range(len(s:projectItem))
-        if l:curDir == split(s:projectItem[l:i])[0]
-            call remove(s:projectItem, l:i)
+        if l:curDir == matchstr(split(s:projectItem[l:i])[-1], '[^/]*$')
+            let l:item = remove(s:projectItem, l:i)
             break
         endif
     endfor
-    call insert(s:projectItem, printf('%-20s  Type: undef         Path: %s', l:curDir, getcwd()))
+    call insert(s:projectItem, l:item)
     call writefile(s:projectItem, s:projectFile)
 endfunction
 
