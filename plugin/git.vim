@@ -268,14 +268,14 @@ function! GIT_Menu()
             echo ' Abort!'
             return
         endif
-    elseif l:char == 'p'
-        echo ' Waiting...'
+    elseif l:char ==# 'p'
+        echo ' Pushing...'
         let l:msg = system('git push')[:-2]
     elseif l:char == 'f'
-        echo ' Waiting...'
+        echo ' Fetching...'
         let l:msg = system('git fetch')[:-2]
-    elseif l:char == 'P'
-        echo ' Waiting...'
+    elseif l:char ==# 'P'
+        echo ' Pulling...'
         let l:msg = system('git pull')[:-2]
     else
         return

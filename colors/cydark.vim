@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " Basic highlight
-hi Normal           ctermfg=254  
+hi Normal           ctermfg=230  ctermbg=235  cterm=NONE
 hi Error            ctermfg=256  ctermbg=160  cterm=NONE
 hi ErrorMsg         ctermfg=256  ctermbg=160  cterm=NONE
 hi WarningMsg       ctermfg=13  ctermbg=220  cterm=NONE
@@ -38,8 +38,8 @@ hi PMenuSel         ctermfg=232  ctermbg=250  cterm=NONE
 hi PMenuSbar        ctermfg=NONE ctermbg=239  cterm=NONE
 hi PMenuThumb       ctermfg=NONE ctermbg=250  cterm=NONE
 
-hi Folded           ctermfg=222  ctermbg=NONE 
-hi FoldColumn       ctermfg=223  ctermbg=NONE 
+hi Folded           ctermfg=222  ctermbg=234
+hi FoldColumn       ctermfg=223  ctermbg=234
 
 " Language highlight
 hi PreProc          ctermfg=176  ctermbg=NONE cterm=NONE
