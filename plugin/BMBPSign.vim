@@ -188,7 +188,6 @@ function BMBPSign_Project(...)
                 let l:sel = '0'
             endif
         endif
-        echo l:sel
         if l:sel =~ '^\d' && l:sel < len(s:projectItem)
             let l:dir = split(s:projectItem[l:sel])[-1]
             if l:dir =~ '^\~'
