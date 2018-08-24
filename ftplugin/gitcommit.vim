@@ -8,8 +8,8 @@ let b:ale_enabled = 0
 setlocal nonu
 setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\ 
 setlocal foldmethod=marker
+setlocal foldmarker={[(<{,}>)]}
 setlocal foldtext=Git_MyCommitFoldInfo()
-setlocal fillchars=vert:│,fold:-
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<Cr>
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
@@ -35,14 +35,15 @@ endif
 function! Git_MyCommitFoldInfo()
     let l:i = v:foldstart + 2
     let l:str = getline(l:i)
-    while l:str !~ '^--- '
-        let l:i += 1
-        let l:str = getline(l:i)
-    endwhile
+    if l:str !~ '^--- '
+        let l:str = getline(l:i + 1)
+        let l:strN = getline(l:i + 2)
+    else
+        let l:strN = getline(l:i + 1)
+    endif
     let l:str = l:str == '--- /dev/null' ? 'New' : strpart(l:str, 6)
-    let l:str1 = getline(l:i + 1)
-    let l:str1 = l:str1 == '+++ /dev/null' ? 'Delete' : strpart(l:str1, 6)
-    let l:str .= l:str == l:str1 ? '    ' : '  ' . l:str1 . '    '
+    let l:strN = l:strN == '+++ /dev/null' ? 'Delete' : strpart(l:strN, 6)
+    let l:str .= l:str == l:strN ? '    ' : '  ' . l:strN . '    '
     let l:num = printf('%-5d', v:foldend - v:foldstart + 1)
     return '▶ Lines: ' . l:num . '  File: ' . l:str
 endfunction
@@ -66,7 +67,7 @@ function <SID>CheckOutFile()
             echo l:msg
         else
             wincmd w
-            silent edit!\)
+            silent edit!
             call setline(1, GIT_FormatStatus())
             wincmd W
         endif

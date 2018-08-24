@@ -195,7 +195,7 @@ function! GIT_FormatCommit(hash)
                 \ '%D%n%n' .
                 \ '         %s' .
                 \ "' " . a:hash .
-                \ "|sed '/^diff --\\w/s/$/ {{{1/'"
+                \ "|sed '/^diff --\\w/s/$/ {[(<{1/'"
                 \ )
 endfunction
 
