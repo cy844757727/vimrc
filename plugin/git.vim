@@ -16,11 +16,11 @@ command! -nargs=* -complete=customlist,GIT_Complete Gdifftool :!git difftool <ar
 command! -nargs=* -complete=custom,GIT_completeBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
 command! -nargs=* -complete=customlist,GIT_Complete Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
 command! -nargs=* -complete=custom,GIT_completeBranch Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
-command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut("<args>", 0)
-command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut("<args>", 1)
-command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut("<args>", 2)
-command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut("<args>", 3)
-command! -nargs=* -complete=custom,GIT_completeBranch Gmerge :echo system('git merge ' . "<args>")[:-2]
+command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 0)
+command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 1)
+command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 2)
+command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 3)
+command! -nargs=+ -complete=custom,GIT_completeBranch Gmerge :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 4)
 command! -nargs=* Gpush :call GIT_Push_Pull_Fetch("<args>", 0)
 command! -nargs=* Gpull :call GIT_Push_Pull_Fetch("<args>", 1)
 command! -nargs=* Gfetch :call GIT_Push_Pull_Fetch("<args>", 2)
@@ -102,10 +102,11 @@ function! GIT_Branch_Remote_Tag(arg, flag)
     echo l:msg
 endfunction
 
-function! GIT_Commit_Reset_Revert_CheckOut(arg, flag)
+function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
     let l:op = a:flag == 0 ? ' commit ' :
                 \ a:flag == 1 ? ' reset ' :
-                \ a:falg == 2 ? ' revert ' : ' checkout '
+                \ a:flag == 2 ? ' revert ' :
+                \ a:flag == 3 ? ' checkout ' : ' merge '
     let l:msg = system('git' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
@@ -262,12 +263,17 @@ function! GIT_Menu()
         let l:msg = system('git add .')[:-2]
     elseif l:char == 'r'
         let l:msg = system('git reset -q HEAD')[:-2]
-    elseif l:char == 'c' || l:char == 'm'
-        let l:pre = l:char == 'c' ? '' : '--amend '
-        let l:msg = input("Input a message(" . l:pre . "-m): ")
+    elseif l:char == 'c'
+        let l:msg = input('Input a message(-m): ')
         echo "\n"
         if l:msg != ''
-            let l:msg = system("git commit " . l:pre . "-m '" . l:msg . "'")[:-2]
+            let l:msg = system("git commit -m '" . l:msg . "'")[:-2]
+        endif
+    elseif l:char == 'm'
+        let l:msg = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
+        echo "\n"
+        if l:msg != ''
+            let l:msg = system("git commit --amend -m '" . l:msg . "'")
         endif
     elseif l:char ==# 'p'
         echo ' Pushing...'
