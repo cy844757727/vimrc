@@ -17,12 +17,12 @@ nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo getline('.')<Cr>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
 nnoremap <buffer> <silent> a :call <SID>AddRemote()<Cr>
-nnoremap <buffer> b :call <SID>NewBranch()<Cr>
-nnoremap <buffer> n :call <SID>NewBranch(1)<Cr>
+nnoremap <buffer> <silent> b :call <SID>NewBranch()<Cr>
+nnoremap <buffer> <silent> n :call <SID>NewBranch(1)<Cr>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
 nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
-nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
+nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
 nnoremap <buffer> <silent> 3 :3wincmd w<Cr>

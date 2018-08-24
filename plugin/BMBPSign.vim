@@ -133,10 +133,7 @@ function s:SelectProject(sel)
     if a:sel =~ '^\d'
         let l:sel == a:sel
     else
-        let l:option = "Select option:(eg: -1 - Delte item 1)\n" .
-                    \ "======================================" .
-                    \ "======================================" .
-                    \ "======================================\n"
+        let l:option = "Select option:(eg: -1 - Delte item 1)\n" . repeat('=', min([&columns - 10, 80])) . "\n"
         for l:i in range(len(s:projectItem))
             let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
             let l:item = printf(' %3d: %s', l:i, l:item)

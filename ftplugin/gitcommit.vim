@@ -8,17 +8,17 @@ let b:ale_enabled = 0
 setlocal nonu
 setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\ 
 setlocal foldmethod=marker
-setlocal foldmarker=diff\ --git\ a/,enddiff\ --git
 setlocal foldtext=Git_MyCommitFoldInfo()
+setlocal fillchars=vert:│,fold:-
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<Cr>
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
-nnoremap <buffer> d :call <SID>FileDiff()<Cr>
-nnoremap <buffer> \co :call <SID>CheckOutFile()<Cr>
+nnoremap <buffer> <silent> d :call <SID>FileDiff()<Cr>
+nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
 nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
-nnoremap <buffer> ? :call <SID>HelpDoc()<Cr>
+nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
 nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
@@ -66,7 +66,7 @@ function <SID>CheckOutFile()
             echo l:msg
         else
             wincmd w
-            silent edit!
+            silent edit!\)
             call setline(1, GIT_FormatStatus())
             wincmd W
         endif

@@ -71,7 +71,7 @@ function! GIT_Complete(L, C, P)
             return []
         endif
         let l:list = systemlist("man " . l:str .
-                    \ "|sed -n '7,30s/^ \\+" . l:str . " \\(\\w[-a-z]\\+\\).*\\[.*/\\1/p'|grep '^" . a:L . "'")
+                    \ "|sed -n '7,30s/^ \\+" . l:str . " \\(\\w[-a-z]\\+\\) [-<\\[].*/\\1/p'|grep '^" . a:L . "'")
     endif
     return l:list
 endfunction
@@ -181,23 +181,22 @@ function! GIT_FormatBranch()
         call map(l:stash, "'    ' . v:val")
         let l:stash = ['', 'Stash:', '' ] + l:stash
     endif
-    return l:local + l:remote + l:tag + l:stash
+    return l:local + l:remote + l:stash + l:tag
 endfunction
 
 function! GIT_FormatCommit(hash)
-	let l:format = 'commit %H ... %p%n' .
-            \ 'Author:  %an  <%ae>%n' .
-            \ 'Date:    %ad%n' .
-            \ 'Commit:  %cn  <%ce>%n' .
-            \ 'Date:    %cd%n' .
-            \ '%D%n%n' .
-            \ '         %s'
-    let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash .
-                \ "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")
-    if len(l:commit) > 12
-        let l:commit += ['enddiff --git', '']
-    endif
-    return l:commit
+    return systemlist(
+                \ "git show --pretty='" .
+                \ 'commit %H ... %p%n' .
+                \ 'Author:  %an  <%ae>%n' .
+                \ 'Date:    %ad%n' .
+                \ 'Commit:  %cn  <%ce>%n' .
+                \ 'Date:    %cd%n' .
+                \ '%D%n%n' .
+                \ '         %s' .
+                \ "' " . a:hash .
+                \ "|sed '/^diff --\\w/s/$/ {{{1/'"
+                \ )
 endfunction
 
 function! GIT_FormatStatus()
