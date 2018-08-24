@@ -124,7 +124,7 @@ function s:NewProject(name, type, path)
             call mkdir(l:path, 'p')
         endif
         exec 'cd ' . l:path
-        %bwipeout
+        silent %bwipeout
     endif
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
@@ -226,7 +226,7 @@ function BMBPSign_Project(...)
         endif
         call s:NewProject(a:1, a:2, l:path)
     elseif a:0 == 3
-        call s:NewProject(a:1, a:2, a:3)
+        call s:NewProject(a:1, a:2, a:3 =~ '^\~' ? s:home . strpart(a:3, 1) : a:3)
     endif
 endfunction
 
