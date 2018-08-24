@@ -20,16 +20,25 @@ let s:breakPointFile = '.breakpoint'
 let s:sessionFile = '.session'
 let s:vimInfoFile = '.viminfo'
 
+let s:home = system('echo ~')[:-2]
 if !exists('g:BMBPSign_ProjectType')
     let g:BMBPSign_ProjectType = {
-                \ 'c':       '~/Documents/WorkSpace/',
-                \ 'cpp':     '~/Documents/WorkSpace/',
-                \ 'fpga':    '~/Documents/Altera/',
-                \ 'verilog': '~/Documents/Altera/',
-                \ 'altera':  '~/Documents/Altera/'
+                \ 'c':       s:home . '/Documents/WorkSpace',
+                \ 'cpp':     s:home . '/Documents/WorkSpace',
+                \ 'fpga':    s:home . '/Documents/Altera',
+                \ 'verilog': s:home . '/Documents/Modelsim',
+                \ 'altera':  s:home . '/Documents/Altera',
+                \ 'xilinx':  s:home . '/Documents/Xilinx',
+                \ 'default': s:home . '/Documents'
                 \ }
+else
+    for l:item in items(g:BMBPSign_ProjectType)
+        if l:item[1] =~ '^~'
+            let g:BMBPSign_ProjectType[l:item[0]] = s:home . strpart(l:item[1], 1) 
+        endif
+    endfor
 endif
-let s:home = system('echo ~')[:-2]
+
 let s:projectFile = s:home . '/.vim/.projectitem'
 if filereadable(s:projectFile)
     let s:projectItem = readfile(s:projectFile)
@@ -95,30 +104,90 @@ function s:SaveSignFile(vec,signFile)
     redir END
 endfunction
 
-" 保存当前工作状态
-function s:SaveWorkSpace(pre)
-    call s:SaveSignFile(s:bookMarkVec,a:pre . s:bookMarkFile)
-    call s:SaveSignFile(s:breakPointVec,a:pre . s:breakPointFile)
-    exec 'mksession! ' . a:pre . s:sessionFile
-    exec 'wviminfo! ' . a:pre . s:vimInfoFile
-    call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
-    call system("sed -i \"s/^file __Tagbar__.*/close\\\\nif bufwinnr('NERD_tree') != -1\\\\n    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n    TagbarOpen\\\\nelse\\\\n    let g:tagbar_vertical=0\\\\n    let g:tagbar_left=1\\\\n    TagbarOpen\\\\n    let g:tagbar_vertical=19\\\\n    let g:tagbar_left=0\\\\nendif\\\\nexec bufwinnr('Tagbar') . 'wincmd w'/\" " . a:pre . s:sessionFile)
-    let l:curDir = matchstr(getcwd(), '[^/]*$')
-    let l:item = printf('%-20s  Type: undef         Path: %s', l:curDir, getcwd())
+function s:NewProject(name, type, path)
+    " path -> absolute path
+    let l:type = a:type == '.' ? 'undef' : a:type
+    let l:path = a:path == '.' ? getcwd() : a:path
     for l:i in range(len(s:projectItem))
-        if l:curDir == matchstr(split(s:projectItem[l:i])[-1], '[^/]*$')
+        if l:path == split(s:projectItem[l:i])[-1]
             let l:item = remove(s:projectItem, l:i)
             break
         endif
     endfor
+    if a:path == '.' || !exists('l:item')
+        let l:item = printf('%-20s  Type: %-12s  Path: %s', a:name, l:type, l:path)
+    endif
     call insert(s:projectItem, l:item)
     call writefile(s:projectItem, s:projectFile)
+    if l:path != getcwd()
+        if !isdirectory(l:path)
+            call mkdir(l:path, 'p')
+        endif
+        exec 'cd ' . l:path
+        %bwipeout
+    endif
+    echo substitute(l:item, ' ' . s:home, ' ~', '')
+endfunction
+
+function s:SelectProject(sel)
+    if a:sel =~ '^\d'
+        let l:sel == a:sel
+    else
+        let l:option = "Select option:(eg: -1 - Delte item 1)\n" .
+                    \ "======================================" .
+                    \ "======================================" .
+                    \ "======================================\n"
+        for l:i in range(len(s:projectItem))
+            let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
+            let l:item = printf(' %3d: %s', l:i, l:item)
+            let l:option .= l:item . "\n"
+        endfor
+        let l:sel = input(l:option . '!?:')
+        if l:sel == ''
+            let l:sel = '0'
+        endif
+    endif
+    if l:sel =~ '^\d' && l:sel < len(s:projectItem)
+        exec 'cd ' . split(s:projectItem[l:sel])[-1]
+        call s:LoadWorkSpace('')
+        call insert(s:projectItem, remove(s:projectItem, l:sel))
+    elseif l:sel =~ '^\-'
+        let l:num = filter(split(l:sel, '-\|\s\+'), 'v:val < ' . len(s:projectItem))
+        for l:i in l:num
+            let s:projectItem[l:i] = ''
+        endfor
+        call filter(s:projectItem, "v:val != ''")
+    else
+        return
+    endif
+    call writefile(s:projectItem, s:projectFile)
+endfunction
+
+" 保存当前工作状态
+function s:SaveWorkSpace(pre)
+"    call s:SaveSignFile(s:bookMarkVec,a:pre . s:bookMarkFile)
+"    call s:SaveSignFile(s:breakPointVec,a:pre . s:breakPointFile)
+    exec 'mksession! ' . a:pre . s:sessionFile
+    exec 'wviminfo! ' . a:pre . s:vimInfoFile
+    call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
+    call system("sed -i \"s/^file __Tagbar__.*/close\\\\nif bufwinnr('NERD_tree') != -1\\\\n    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n    TagbarOpen\\\\nelse\\\\n    let g:tagbar_vertical=0\\\\n    let g:tagbar_left=1\\\\n    TagbarOpen\\\\n    let g:tagbar_vertical=19\\\\n    let g:tagbar_left=0\\\\nendif\\\\nexec bufwinnr('Tagbar') . 'wincmd w'/\" " . a:pre . s:sessionFile)
+    let l:type = 'undef'
+    let l:path = getcwd()
+    let l:parent = substitute(l:path, '/\w*$', '', '')
+    for l:item in items(g:BMBPSign_ProjectType)
+        if l:item[1] == l:parent
+            let l:type = l:item[0]
+            break
+        endif
+    endfor
+    call s:NewProject(matchstr(l:path, '[^/]*$'), l:type, l:path)
 endfunction
 
 " 恢复工作空间
 function s:LoadWorkSpace(pre)
     call s:ClearSign('BMBPSignBookMarkDef')
     call s:ClearSign('BMBPSignBreakPointDef')
+    %bwipeout
     if filereadable(a:pre . s:bookMarkFile)
         let l:sign = split(system("sed -n 's/^book //p' " . a:pre . s:bookMarkFile), '[ :\n]\+')
         for l:i in range(0, len(l:sign)-1, 2)
@@ -148,65 +217,30 @@ endfunction
 " ==========================================================
 " ============== 全局量定义 ================================
 function BMBPSign_Project(...)
-    if a:0 > 1
-        let l:item = printf('%-20s  Type: %-12s  Path: ', a:1, a:2)
-        if a:0 == 3
-            let l:item .= a:3
-        elseif a:0 == 2
-            if has_key(g:BMBPSign_ProjectType, a:2)
-                let l:item .= g:BMBPSign_ProjectType[a:2] . a:1
-            else
-                let l:item .= '~/Documents/' . a:1
-            endif
+    if a:0 == 0
+        call s:SelectProject(-1)
+    elseif a:0 == 1
+        call s:SelectProject(a:1 == '.' ? 0 : a:1)
+    elseif a:0 == 2
+        if has_key(g:BMBPSign_ProjectType, a:2)
+            let l:path = g:BMBPSign_ProjectType[a:2] . '/' . a:1
         else
-            echo '** Too many args!!!'
-            return
+            let l:path = g:BMBPSign_ProjectType['default'] . '/' . a:1
         endif
-        let l:dir = split(l:item)[-1]
-        if l:dir =~ '^\~'
-            let l:dir = s:home . strpart(l:dir, 1)
-        endif
-        if !isdirectory(l:dir)
-            call mkdir(l:dir, 'p')
-        endif
-        exec 'cd ' . l:dir
-        %bwipeout
-        call insert(s:projectItem, l:item)
-        call writefile(s:projectItem, s:projectFile)
-    elseif !empty(s:projectItem)
-        if a:0 == 1
-            let l:sel == a:1
-        else
-            let l:option = "Select option:(eg: -1 - Delte item 1)\n" .
-                        \ "======================================" .
-                        \ "======================================" .
-                        \ "======================================\n"
-            for l:i in range(len(s:projectItem))
-                let l:option .= '  ' . l:i . ':  ' . s:projectItem[l:i] . "\n"
-            endfor
-            let l:sel = input(l:option . '!?: ')
-            if l:sel == ''
-                let l:sel = '0'
-            endif
-        endif
-        if l:sel =~ '^\d' && l:sel < len(s:projectItem)
-            let l:dir = split(s:projectItem[l:sel])[-1]
-            if l:dir =~ '^\~'
-                let l:dir = s:home . strpart(l:dir, 1)
-            endif
-            exec 'cd ' . l:dir
-            call s:LoadWorkSpace('')
-            call insert(s:projectItem, remove(s:projectItem, l:sel))
-        elseif l:sel =~ '^\-'
-            let l:num = filter(split(strpart(l:sel, 1)), "v:val < " . len(s:projectItem))
-            for l:i in l:num
-                let s:projectItem[l:i] = ''
-            endfor
-            call filter(s:projectItem, "v:val != ''")
-        else
-            return
-        endif
-        call writefile(s:projectItem, s:projectFile)
+        call s:NewProject(a:1, a:2, l:path)
+    elseif a:0 == 3
+        call s:NewProject(a:1, a:2, a:3)
+    endif
+endfunction
+
+function BMBPSign_CompleteProject(L, C, P)
+    let l:num = len(split(strpart(a:C, 0, a:P)))
+    if (a:L == '' && l:num == 1) || (a:L != '' && l:num == 2)
+        return join(range(len(s:projectItem)), "\n")
+    elseif (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
+        return join(keys(g:BMBPSign_ProjectType), "\n")
+    elseif (a:L == '' && l:num ==3) || (a:L != '' && l:num == 4)
+        return system("find ~/ -type d -regex '" . '[a-zA-Z0-9_/]*' . "'|sed 's/^\\/\\w\\+\\/\\w\\+/~/'")
     endif
 endfunction
 
@@ -319,5 +353,5 @@ command BMBPSignNextBookMark :call BMBPSign_Jump('next')
 command -nargs=? -complete=file SWorkSpace :call BMBPSign_SaveWorkSpace('<args>')
 command -nargs=? -complete=file CWorkSpace :call BMBPSign_ClearWorkSpace('<args>')
 command -nargs=? -complete=file LWorkSpace :call BMBPSign_LoadWorkSpace('<args>')
-command -nargs=* -complete=dir  Project :call BMBPSign_Project(<f-args>)
+command -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign_Project(<f-args>)
 
