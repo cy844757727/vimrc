@@ -189,7 +189,8 @@ function! GIT_FormatCommit(hash)
             \ 'Author:  %an  <%ae>%n' .
             \ 'Date:    %ad%n' .
             \ 'Commit:  %cn  <%ce>%n' .
-            \ 'Date:    %cd%n%n' .
+            \ 'Date:    %cd%n' .
+            \ '%D%n%n' .
             \ '         %s'
     let l:commit = systemlist("git show --pretty='" . l:format . "' " . a:hash .
                 \ "|sed '12,$s/^\\(diff --git .*\\)/enddiff --git\\n\\1/'")

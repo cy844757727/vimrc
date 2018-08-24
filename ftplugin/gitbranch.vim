@@ -9,7 +9,7 @@ let b:curL = 1
 setlocal nonu
 setlocal tabstop=1
 setlocal nowrap
-setlocal statusline=\ [4-Branch]\ \ %{split(system('git\ branch\|grep\ \\*'))[1]}%=\ \ \ \ \ %-5l\ %4P\ 
+setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
