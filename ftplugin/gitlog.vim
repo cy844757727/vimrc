@@ -9,7 +9,7 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
-setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
+setlocal statusline=\ [1-Log]\ \ %{GITLOG_DecorationInfo()}%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
@@ -53,6 +53,15 @@ function s:RefreshCommit()
             filetype detect
             wincmd W
         endif
+    endif
+endfunction
+
+function GITLOG_DecorationInfo()
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+    if l:hash != ''
+        return system('git log ' . l:hash . ' -1 --pretty=format:%D')
+    else
+        return ''
     endif
 endfunction
 
