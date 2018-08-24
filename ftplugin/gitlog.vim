@@ -9,7 +9,7 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
-setlocal statusline=\ \ 1-Log%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>

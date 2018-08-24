@@ -7,9 +7,10 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 let b:curL = 1
+let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal nonu
-setlocal statusline=\ \ 3-File\ status%=\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+setlocal statusline=\ [3-Status]\ \ %{b:currentDir}%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
 nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>

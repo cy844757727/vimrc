@@ -4,6 +4,7 @@
 "
 "
 command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
+command! Ginit :echo system('git init')[:-2]
 command! -nargs=* -complete=customlist,GIT_Complete Gadd :call GIT_Add_Rm_Mv("<args>", 0)
 command! -nargs=+ -complete=customlist,GIT_Complete Grm :call GIT_Add_Rm_Mv("<args>", 1)
 command! -nargs=+ -complete=customlist,GIT_Complete Gmv :call GIT_Add_Rm_Mv("<args>", 2)
@@ -15,11 +16,11 @@ command! -nargs=* -complete=customlist,GIT_Complete Gdifftool :!git difftool <ar
 command! -nargs=* -complete=custom,GIT_completeBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
 command! -nargs=* -complete=customlist,GIT_Complete Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
 command! -nargs=* -complete=custom,GIT_completeBranch Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
-command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut("<args>", 0)
-command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut("<args>", 1)
-command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut("<args>", 2)
-command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut("<args>", 3)
-command! -nargs=* -complete=custom,GIT_completeBranch Gmerge :echo system('git merge ' . "<args>")[:-2]
+command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 0)
+command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 1)
+command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 2)
+command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 3)
+command! -nargs=+ -complete=custom,GIT_completeBranch Gmerge :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 4)
 command! -nargs=* Gpush :call GIT_Push_Pull_Fetch("<args>", 0)
 command! -nargs=* Gpull :call GIT_Push_Pull_Fetch("<args>", 1)
 command! -nargs=* Gfetch :call GIT_Push_Pull_Fetch("<args>", 2)
@@ -93,7 +94,7 @@ function! GIT_Branch_Remote_Tag(arg, flag)
     let l:op = a:flag == 0 ? ' branch ' :
                 \ a:flag == 1 ? ' remote ' : ' tag '
     let l:msg = system('git' . l:op . a:arg)[:-2]
-    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_branch') != -1
+    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_branch') != -1
         4wincmd w
         silent edit!
         call setline(1, GIT_FormatBranch())
@@ -101,12 +102,13 @@ function! GIT_Branch_Remote_Tag(arg, flag)
     echo l:msg
 endfunction
 
-function! GIT_Commit_Reset_Revert_CheckOut(arg, flag)
+function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
     let l:op = a:flag == 0 ? ' commit ' :
                 \ a:flag == 1 ? ' reset ' :
-                \ a:falg == 2 ? ' revert ' : ' checkout '
+                \ a:flag == 2 ? ' revert ' :
+                \ a:flag == 3 ? ' checkout ' : ' merge '
     let l:msg = system('git' . l:op . a:arg)[:-2]
-    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_log') != -1
+    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
     endif
     echo l:msg
@@ -117,7 +119,7 @@ function! GIT_Push_Pull_Fetch(arg, flag)
                 \ a:flag == 1 ? ' pull ' : ' fetch '
     echo '    Waiting...'
     let l:msg = system('git' . l:op . a:arg)
-    if l:msg !~ '^error:\|^fatal:' && bufwinnr('.Git_log') != -1
+    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
     endif
     echo l:msg
@@ -243,8 +245,9 @@ function! GIT_Menu()
     let l:menu = [
                 \ '** Select option:',
                 \ '==================================================',
+                \ '    (i)nitialize      <git init>',
                 \ '    (a)dd all files   <git add .>',
-                \ '    (r)eset all files <git reset HEAD>',
+                \ '    (r)eset all files <git reset -q HEAD>',
                 \ '    (c)ommit          <git commit -m>',
                 \ '    a(m)end           <git commit --amend -m>',
                 \ '    (p)ush            <git push>',
@@ -253,22 +256,24 @@ function! GIT_Menu()
                 \ '!?:'
                 \ ]
     echo join(l:menu, "\n")
-    let l:op = getchar()
-    let l:char = nr2char(l:op)
-    if l:op == "\<Esc>"
-        return
+    let l:char = nr2char(getchar())
+    if l:char == 'i'
+        let l:msg = system('git init -q')
     elseif l:char == 'a'
         let l:msg = system('git add .')[:-2]
     elseif l:char == 'r'
-        let l:msg = system('git reset HEAD')[:-2]
-    elseif l:char == 'c' || l:char == 'm'
-        let l:pre = l:char == 'c' ? '' : '--amend '
-        let l:str = input("Input a message(" . l:pre . "-m): ")
-        if l:str != ''
-            let l:msg = system("git commit " . l:pre . "-m '" . l:str . "'")[:-2]
-        else
-            echo ' Abort!'
-            return
+        let l:msg = system('git reset -q HEAD')[:-2]
+    elseif l:char == 'c'
+        let l:msg = input('Input a message(-m): ')
+        echo "\n"
+        if l:msg != ''
+            let l:msg = system("git commit -m '" . l:msg . "'")[:-2]
+        endif
+    elseif l:char == 'm'
+        let l:msg = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
+        echo "\n"
+        if l:msg != ''
+            let l:msg = system("git commit --amend -m '" . l:msg . "'")
         endif
     elseif l:char ==# 'p'
         echo ' Pushing...'
@@ -280,12 +285,16 @@ function! GIT_Menu()
         echo ' Pulling...'
         let l:msg = system('git pull')[:-2]
     else
-        return
+        let l:msg = ''
     endif
     if l:msg !~ 'error:\|fatal:'
         call GIT_Refresh()
     endif
-    echo l:msg
+    if l:msg != ''
+        echo l:msg
+    else
+        redraw!
+    endif
 endfunction
 
 function! GIT_Refresh(...)
