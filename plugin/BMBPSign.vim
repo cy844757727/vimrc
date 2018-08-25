@@ -46,6 +46,24 @@ else
     let s:projectItem = []
 endif
 
+augroup BMBPSign
+    autocmd!
+    autocmd VimEnter * if empty(expand('%'))|call s:LoadWorkSpace('')|endif
+augroup END
+
+command BMBPSignToggleBookMark :call BMBPSign_Toggle('BMBPSignBookMarkDef')
+command BMBPSignToggleBreakPoint :call BMBPSign_ToggleBreakPoint()
+command BMBPSignClearBookMark :call BMBPSign_Clear('BMBPSignBookMarkDef')
+command BMBPSignClearBreakPoint :call BMBPSign_Clear('BMBPSignBreakPointDef')
+command BMBPSignPreviousBookMark :call BMBPSign_Jump('previous')
+command BMBPSignNextBookMark :call BMBPSign_Jump('next')
+
+command -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign_SaveWorkSpace('<args>')
+command -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign_ClearWorkSpace('<args>')
+command -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign_LoadWorkSpace('<args>')
+command -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign_Project(<f-args>)
+" ==========================================================
+" ==========================================================
 " 在指定文件对应行切换断点/书签
 function s:ToggleSign(file,line,name)
     let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
@@ -167,7 +185,21 @@ function s:SaveWorkSpace(pre)
     exec 'mksession! ' . a:pre . s:sessionFile
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
     call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
-    call system("sed -i \"s/^file __Tagbar__.*/close\\\\nif bufwinnr('NERD_tree') != -1\\\\n    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n    TagbarOpen\\\\nelse\\\\n    let g:tagbar_vertical=0\\\\n    let g:tagbar_left=1\\\\n    TagbarOpen\\\\n    let g:tagbar_vertical=19\\\\n    let g:tagbar_left=0\\\\nendif\\\\nexec bufwinnr('Tagbar') . 'wincmd w'/\" " . a:pre . s:sessionFile)
+    call system("sed -i \"s/^file __Tagbar__.*/" .
+                \ "close\\\\n" .
+                \ "if bufwinnr('NERD_tree') != -1\\\\n" .
+                \ "    exec bufwinnr('NERD_tree') . 'wincmd w'\\\\n" .
+                \ "    TagbarOpen\\\\n" .
+                \ "else\\\\n" .
+                \ "    let g:tagbar_vertical=0\\\\n" .
+                \ "    let g:tagbar_left=1\\\\n" .
+                \ "    TagbarOpen\\\\n" .
+                \ "    let g:tagbar_vertical=19\\\\n" .
+                \ "    let g:tagbar_left=0\\\\n" .
+                \ "endif\\\\n" .
+                \ "exec bufwinnr('Tagbar') . 'wincmd w'/\" " .
+                \ a:pre . s:sessionFile
+                \ )
     let l:type = 'undef'
     let l:path = getcwd()
     let l:parent = substitute(l:path, '/\w*$', '', '')
@@ -184,7 +216,7 @@ endfunction
 function s:LoadWorkSpace(pre)
     call s:ClearSign('BMBPSignBookMarkDef')
     call s:ClearSign('BMBPSignBreakPointDef')
-    %bwipeout
+    silent %bwipeout
     if filereadable(a:pre . s:bookMarkFile)
         let l:sign = split(system("sed -n 's/^book //p' " . a:pre . s:bookMarkFile), '[ :\n]\+')
         for l:i in range(0, len(l:sign)-1, 2)
@@ -239,6 +271,10 @@ function BMBPSign_CompleteProject(L, C, P)
     elseif (a:L == '' && l:num ==3) || (a:L != '' && l:num == 4)
         return system("find ~/ -type d -regex '" . '[a-zA-Z0-9_/]*' . "'|sed 's/^\\/\\w\\+\\/\\w\\+/~/'")
     endif
+endfunction
+
+function BMBPSign_CompleteWorkFile(L, C, P)
+    return system('ls -1 *.session|sed s/.session$//')
 endfunction
 
 " 切换标记
@@ -333,22 +369,4 @@ function BMBPSign_ClearWorkSpace(pre)
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
 endfunction
-" ==========================================================
-" ==========================================================
-augroup BMBPSign
-    autocmd!
-    autocmd VimEnter * if empty(expand('%'))|call s:LoadWorkSpace('')|endif
-augroup END
-
-command BMBPSignToggleBookMark :call BMBPSign_Toggle('BMBPSignBookMarkDef')
-command BMBPSignToggleBreakPoint :call BMBPSign_ToggleBreakPoint()
-command BMBPSignClearBookMark :call BMBPSign_Clear('BMBPSignBookMarkDef')
-command BMBPSignClearBreakPoint :call BMBPSign_Clear('BMBPSignBreakPointDef')
-command BMBPSignPreviousBookMark :call BMBPSign_Jump('previous')
-command BMBPSignNextBookMark :call BMBPSign_Jump('next')
-
-command -nargs=? -complete=file SWorkSpace :call BMBPSign_SaveWorkSpace('<args>')
-command -nargs=? -complete=file CWorkSpace :call BMBPSign_ClearWorkSpace('<args>')
-command -nargs=? -complete=file LWorkSpace :call BMBPSign_LoadWorkSpace('<args>')
-command -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign_Project(<f-args>)
 
