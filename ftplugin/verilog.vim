@@ -11,7 +11,7 @@ command! -buffer TBench :call HDLVTestBench()
 command! -buffer IInstance :call HDLVInsertInstance()
 command! -buffer AFInclude :call HDLVAllFileInclude()
 
-if exists(*s:ModuleName')
+if exists('*s:ModuleName')
     finish
 endif
 
