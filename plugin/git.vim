@@ -215,29 +215,31 @@ function! GIT_FormatStatus()
 endfunction
 
 function! GIT_TabPage()
-    if !bufexists('.Git_log')
         let l:col = float2nr(0.4 * &columns)
         let l:lin = float2nr(0.4 * &lines)
         silent tabnew .Git_commit
         exec 'silent ' . l:col . 'vnew .Git_status'
         call setline(1, GIT_FormatStatus())
+        call search('^\(\s\+\)\zs\S')
         exec 'silent belowright ' . l:lin . 'new .Git_branch'
         call setline(1, GIT_FormatBranch())
+        call search('^\([ *]\+\)\zs\w')
         1wincmd w
         silent new .Git_log
         exec '2resize ' . l:lin
         call setline(1, GIT_FormatLog())
-    else
-        call win_gotoid(win_findbuf(bufnr('.Git_status'))[0])
-        call GIT_Refresh(1)
-    endif
 endfunction
 
 function! GIT_Toggle()
-    if bufwinnr('.Git_log') != -1
-        call GIT_CloseTab()
+    if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
+        tabclose
     else
-        call GIT_TabPage()
+        let l:winId = win_findbuf(bufnr('.Git_log'))
+        if !empty(l:winId)
+            call win_gotoid(l:winId[0])
+        else
+            call GIT_TabPage()
+        endif
     endif
 endfunction
 
@@ -300,7 +302,6 @@ endfunction
 function! GIT_Refresh(...)
     if bufwinnr('.Git_log') != -1
         let l:winnr = winnr()
-        let l:pos = getpos('.')
     	if a:0 > 0
         	let l:col = float2nr(0.4 * &columns)
         	let l:lin = float2nr(0.4 * &lines)
@@ -309,20 +310,25 @@ function! GIT_Refresh(...)
         	exec '4resize ' . l:lin
         endif
         4wincmd w
+        let l:pos = getpos('.')
         silent edit!
         call setline(1, GIT_FormatBranch())
+        call setpos('.', l:pos)
         wincmd W
+        let l:pos = getpos('.')
         silent edit!
         call setline(1, GIT_FormatStatus())
+        call setpos('.', l:pos)
         1wincmd w
+        let l:pos = getpos('.')
         silent edit!
         call setline(1, GIT_FormatLog())
-        exec l:winnr . 'wincmd w'
         call setpos('.', l:pos)
+        exec l:winnr . 'wincmd w'
     endif
 endfunction
 
-function! GIT_CloseTab()
+function! GIT_ClearTab()
     if bufexists('.Git_commit')
         bw! .Git_commit
     endif

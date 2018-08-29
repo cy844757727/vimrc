@@ -1,5 +1,4 @@
 "
-"
 if exists("b:did_ftplugin")
     finish
 endif
@@ -7,12 +6,11 @@ let b:did_ftplugin = 1
 let b:curL = 1
 
 setlocal nonu
-setlocal tabstop=1
 setlocal nowrap
+setlocal tabstop=1
 setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
-nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
+nnoremap <buffer> <C-w> :tabclose<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo getline('.')<Cr>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>

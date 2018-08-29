@@ -1,6 +1,4 @@
 "
-"
-"
 if exists("b:did_ftplugin")
     finish
 endif
@@ -11,8 +9,7 @@ setlocal nonu
 setlocal nowrap
 setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <C-w> :call GIT_CloseTab()<Cr>
-nnoremap <buffer> <S-t> :call GIT_CloseTab()<Cr>
+nnoremap <buffer> <C-w> :tabclose<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
@@ -28,6 +25,7 @@ nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
 augroup Git_log
 	autocmd!
 	autocmd CursorMoved <buffer> call s:RefreshCommit()
+    autocmd BufLeave <buffer> let b:curL = -1
 augroup END
 
 if exists('*<SID>Reset_Revert_Commit')
@@ -50,7 +48,8 @@ function s:RefreshCommit()
             wincmd w
             silent edit!
             call setline(1, GIT_FormatCommit(l:hash))
-            filetype detect
+            set filetype=gitcommit
+            normal zj
             wincmd W
         endif
     endif
