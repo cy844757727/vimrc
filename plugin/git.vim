@@ -29,11 +29,17 @@ command! GClose :call GIT_CloseTab()
 
 augroup Git_manager
 	autocmd!
-	autocmd BufRead,BufNewFile .Git_log    set filetype=gitlog|set buftype=nofile
-	autocmd BufRead,BufNewFile .Git_commit set filetype=gitcommit|set buftype=nofile
-	autocmd BufRead,BufNewFile .Git_status set filetype=gitstatus|set buftype=nofile
-	autocmd BufRead,BufNewFile .Git_branch set filetype=gitbranch|set buftype=nofile
+	autocmd BufWinEnter .Git_log    set filetype=gitlog|set nobuflisted
+	autocmd BufWinEnter .Git_commit set filetype=gitcommit|set nobuflisted
+	autocmd BufWinEnter .Git_status set filetype=gitstatus|set nobuflisted
+	autocmd BufWinEnter .Git_branch set filetype=gitbranch|set nobuflisted
 augroup END
+
+" windows ID
+let s:idLog = -1
+let s:idCommit = -1
+let s:idStatus = -1
+let s:idBranch = -1
 
 " For merge complete
 function! GIT_completeBranch(L, C, P)
@@ -105,7 +111,7 @@ function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
     let l:op = a:flag == 0 ? ' commit ' :
                 \ a:flag == 1 ? ' reset ' :
                 \ a:flag == 2 ? ' revert ' :
-                \ a:flag == 3 ? ' checkout ' : ' merge '
+                \ a:flag == 3 ? ' checkout ' : ' merge --squash '
     let l:msg = system('git' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
@@ -135,7 +141,7 @@ function! GIT_Diff(...)
 endfunction
 
 function! GIT_FormatLog()
-    let l:log = systemlist("git log --oneline --graph --pretty=format:\"^%h^👦%an^📆%ar^💬%s\"")
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:\"^%h^👦%an^📆%ar^💬%d%s\"")
     let l:lenGraph = 0
     let l:lenAuthor = 0
     let l:lenTime = 0
@@ -217,15 +223,19 @@ function! GIT_TabPage()
         let l:col = float2nr(0.4 * &columns)
         let l:lin = float2nr(0.4 * &lines)
         silent tabnew .Git_commit
-        exec 'silent ' . l:col . 'vnew .Git_status'
+        let s:idCommit = win_getid()
+        exec 'silent belowright ' . l:col . 'vnew .Git_status'
+        let s:idStatus = win_getid()
         call setline(1, GIT_FormatStatus())
         call search('^\(\s\+\)\zs\S')
         exec 'silent belowright ' . l:lin . 'new .Git_branch'
+        let s:idBranch = win_getid()
         call setline(1, GIT_FormatBranch())
         call search('^\([ *]\+\)\zs\w')
         1wincmd w
-        silent new .Git_log
+        silent aboveleft new .Git_log
         exec '2resize ' . l:lin
+        let s:idLog = win_getid()
         call setline(1, GIT_FormatLog())
 endfunction
 
@@ -237,9 +247,10 @@ function! GIT_Toggle()
             tabprevious
         endif
     else
-        let l:winId = win_findbuf(bufnr('.Git_log'))
-        if !empty(l:winId)
-            call win_gotoid(l:winId[0])
+        let l:list = win_id2tabwin(s:idLog)
+        if l:list != [0, 0]
+            exec l:list[0] . 'tabnext'
+            call GIT_Refresh()
         else
             call GIT_TabPage()
         endif

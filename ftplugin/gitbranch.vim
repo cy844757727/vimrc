@@ -6,10 +6,11 @@ if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
-let b:curL = 1
+let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
+setlocal buftype=nofile
 setlocal tabstop=1
 setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\ 
 
@@ -152,10 +153,8 @@ function <SID>HelpDoc()
     let l:help = [
                 \ 'Git branch quick help !?',
                 \ '==================================================',
-                \ '    <C-w>:   close tabpage',
-                \ '    <S-t>:   close tabpage',
-                \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
+                \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
                 \ '    c:       checkout branch',
                 \ '    a:       add remote branch',

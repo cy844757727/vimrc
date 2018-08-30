@@ -10,6 +10,7 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
+setlocal buftype=nofile
 setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
@@ -51,6 +52,7 @@ function s:RefreshCommit()
             silent edit!
             call setline(1, GIT_FormatCommit(l:hash))
             set filetype=gitcommit
+            set nobuflisted
             normal zj
             wincmd W
         endif
@@ -91,10 +93,8 @@ function <SID>HelpDoc()
     let l:help = [
                 \ 'Git log quick help !?',
                 \ '==================================================',
-                \ '    <C-w>:   close tabpage',
-                \ '    <S-t>:   close tabpage',
-                \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
+                \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
                 \ '    \rs:     reset commit (carefull)',
                 \ '    \rv:     revert commit',
