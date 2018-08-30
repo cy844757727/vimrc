@@ -8,6 +8,7 @@ endif
 let b:did_ftplugin = 1
 let b:curL = -1
 
+
 setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
