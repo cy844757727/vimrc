@@ -141,7 +141,7 @@ function! GIT_Diff(...)
 endfunction
 
 function! GIT_FormatLog()
-    let l:log = systemlist("git log --oneline --graph --pretty=format:\"^%h^👦%an^📆%ar^💬%d%s\"")
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:\"^%h^👦%an^📆%ar^%d💬%s\"")
     let l:lenGraph = 0
     let l:lenAuthor = 0
     let l:lenTime = 0
