@@ -8,6 +8,7 @@ endif
 let b:did_ftplugin = 1
 let b:curL = -1
 
+
 setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
@@ -15,6 +16,7 @@ setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\
 
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
+nnoremap <buffer> <silent> t :call <SID>TagCommit()<Cr>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<Cr>
@@ -24,6 +26,7 @@ nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
 nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
 nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
+
 
 augroup Git_log
 	autocmd!
@@ -55,6 +58,23 @@ function s:RefreshCommit()
             set nobuflisted
             normal zj
             wincmd W
+        endif
+    endif
+endfunction
+
+function <SID>TagCommit()
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+    if l:hash != ''
+        let l:tag = input('Input a tag: ')
+        if l:tag != ''
+            let l:note = input('Enter a note: ')
+            let l:flag = l:note == '' ? l:tag : '-a ' . l:tag . ' -m '  . l:note
+            let l:msg = system('git tag ' . l:flag . ' ' . l:hash)
+        endif
+        if l:msg =~ 'error:\|fatal:'
+            echo l:msg
+        else
+            call GIT_Refresh()
         endif
     endif
 endfunction
@@ -96,6 +116,7 @@ function <SID>HelpDoc()
                 \ '    <space>: echo',
                 \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
+                \ '    t:       tag commit',
                 \ '    \rs:     reset commit (carefull)',
                 \ '    \rv:     revert commit',
                 \ '    \co:     checkout new branch',
