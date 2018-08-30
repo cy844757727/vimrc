@@ -1,8 +1,7 @@
-"
-"
-"
-"
-"
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Name: git plugin : tabpage manager
+" Author: CY <844757727@qq.com>
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
 command! Ginit :echo system('git init')[:-2]
 command! -nargs=* -complete=customlist,GIT_Complete Gadd :call GIT_Add_Rm_Mv("<args>", 0)

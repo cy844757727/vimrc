@@ -1,4 +1,7 @@
-"
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Name: git plugin : tabpage manager(commit)
+" Author: CY <844757727@qq.com>
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 if exists("b:did_ftplugin")
     finish
 endif
@@ -12,7 +15,6 @@ setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<Cr>
-nnoremap <buffer> <C-w> :tabclose<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>

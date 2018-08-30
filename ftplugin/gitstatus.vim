@@ -1,4 +1,7 @@
-"
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Name: git plugin : tabpage manager(status)
+" Author: CY <844757727@qq.com>
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 if exists("b:did_ftplugin")
     finish
 endif
@@ -9,7 +12,6 @@ let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 setlocal nonu
 setlocal statusline=\ [3-Status]\ \ %{b:currentDir}%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <C-w> :tabclose<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo getline('.')<Cr>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<Cr>

@@ -1,4 +1,7 @@
-"
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Name: git plugin : tabpage manager(log)
+" Author: CY <844757727@qq.com>
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 if exists("b:did_ftplugin")
     finish
 endif
@@ -9,7 +12,6 @@ setlocal nonu
 setlocal nowrap
 setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <C-w> :tabclose<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
