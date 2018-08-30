@@ -231,7 +231,11 @@ endfunction
 
 function! GIT_Toggle()
     if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
+        let l:nr = tabpagenr()
         tabclose
+        if l:nr == tabpagenr()
+            tabprevious
+        endif
     else
         let l:winId = win_findbuf(bufnr('.Git_log'))
         if !empty(l:winId)
