@@ -173,18 +173,18 @@ function! GIT_FormatBranch()
     let l:tag = systemlist('git tag')
     let l:stash = systemlist('git stash list')
     call map(l:local, "'    ' . v:val")
-    let l:local = ['Local:', ''] + l:local
+    let l:local = ['Local:', ''] + l:local + ['']
     if !empty(l:remote)
         call map(l:remote, "'    ' . v:val")
-        let l:remote = ['', 'Remote:', ''] + l:remote
+        let l:remote = ['Remote:', ''] + l:remote + ['']
     endif
     if !empty(l:tag)
         call map(l:tag, "'    ' . v:val")
-        let l:tag = ['', 'Tag:', ''] + l:tag
+        let l:tag = ['Tag:', ''] + l:tag + ['']
     endif
     if !empty(l:stash)
         call map(l:stash, "'    ' . v:val")
-        let l:stash = ['', 'Stash:', '' ] + l:stash
+        let l:stash = ['Stash:', '' ] + l:stash + ['']
     endif
     return l:local + l:remote + l:stash + l:tag
 endfunction
@@ -259,7 +259,7 @@ endfunction
 
 function! GIT_Menu()
     let l:menu = [
-                \ '** Select option:',
+                \ '** Git Menu:',
                 \ '==================================================',
                 \ '    (i)nitialize      <git init>',
                 \ '    (a)dd all files   <git add .>',
@@ -269,6 +269,7 @@ function! GIT_Menu()
                 \ '    (p)ush            <git push>',
                 \ '    (f)etch           <git fetch>',
                 \ '    (P)ull            <git pull>',
+                \ '    (o)ther operation',
                 \ '!?:'
                 \ ]
     echo join(l:menu, "\n")
@@ -300,6 +301,9 @@ function! GIT_Menu()
     elseif l:char ==# 'P'
         echo ' Pulling...'
         let l:msg = system('git pull')[:-2]
+    elseif l:char == 'o'
+        redraw!
+        let l:msg = GIT_SubMenu()
     else
         let l:msg = ''
     endif
@@ -311,6 +315,42 @@ function! GIT_Menu()
     else
         redraw!
     endif
+endfunction
+
+function! GIT_SubMenu()
+    let l:subMenu = [
+                \ '** Git subMenu:',
+                \ '==================================================',
+                \ '    (a)dd remote           <git remote add>',
+                \ '    (t)ag                  <git tag>',
+                \ '    (c)heckout new branch  <git checkout -q -b>',
+                \ '!?:'
+                \ ]
+    echo join(l:subMenu, "\n")
+    let l:char = nr2char(getchar())
+    if l:char == 'a'
+        let l:name = input('Enter a name(Default origin)： ', 'origin')
+        let l:addr = input('Enter remote URL: ')
+        if l:addr != ''
+            let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
+        endif
+    elseif l:char == 't'
+        let l:tag = input('Input a tag: ')
+        let l:note = input('Input a note: ')
+        if l:tag != ''
+            let l:flag = l:note == '' ? l:tag : '-a ' . l:tag . ' -m ' . l:note
+            let l:msg = system('git tag ' . l:flag)
+        endif
+    elseif l:char == 'c'
+        let l:name = input('Enter a new branch name: ')
+        if l:name != ''
+            call system('git stash')
+            let l:msg = system('git checkout -q -b ' . l:name)
+        endif
+    else
+        return ''
+    endif
+    return l:msg
 endfunction
 
 function! GIT_Refresh(...)

@@ -16,10 +16,8 @@ setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\
 
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <space> :echo getline('.')<Cr>
+nnoremap <buffer> <silent> a :call <SID>ApplyStash()<Cr>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
-nnoremap <buffer> <silent> a :call <SID>AddRemote()<Cr>
-nnoremap <buffer> <silent> b :call <SID>NewBranch()<Cr>
-nnoremap <buffer> <silent> n :call <SID>NewBranch(1)<Cr>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
 nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
@@ -49,6 +47,30 @@ function <SID>Refresh(arg)
     endif
 endfunction
 
+function <SID>RefreshStatus()
+    wincmd W
+    let l:pos = getpos('.')
+    silent edit!
+    call setline(1, GIT_FormatStatus())
+    call setpos('.', l:pos)
+    wincmd w
+endfunction
+
+function <SID>ApplyStash()
+    let l:curL = line('.')
+    let l:linT = search('^Tag:', 'n')
+    let l:linS = search('^Stash:', 'n')
+    let l:str = matchstr(getline('.'), '^\(\s\+\)\zs\S.*$')
+    if l:linS != 0 && l:curL > l:linS && (l:linT == 0 || l:curL < l:linT) && l:str != ''
+        let l:msg = system('git stash apply ' . split(l:str, ':')[0])
+        if l:msg =~ 'error:\|fatal:'
+            echo l:msg
+        else
+            call <SID>RefreshStatus()
+        endif
+    endif
+endfunction
+        
 function <SID>CheckOutBranch()
     let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:lin = search('^[^Ll]\w\+:', 'n')
@@ -70,67 +92,32 @@ function <SID>CheckOutBranch()
     endif
 endfunction
 
-function <SID>AddRemote()
-	let l:name = input('Enter a name(Default origin)： ', 'origin')
-	let l:addr = input('Enter remote URL: ')
-	if empty(l:addr)
-		echo "    Abort!"
-    else
-        let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            call <SID>Refresh(0)
-        endif
-    endif
-endfunction
-
-function <SID>NewBranch(...)
-    let l:name = input('Enter new branch name: ')
-    if l:name == ''
-        echo '    Abort!'
-        return
-    endif
-    if a:0 > 0
-        call system('git stash')
-        let l:msg = system('git checkout -b ' . l:name)
-    else
-        let l:msg = system('git branch ' . l:name)
-    endif
-    if l:msg =~ 'error:\|fatal:'
-        echo "\n" . l:msg
-    else
-        call <SID>Refresh(a:0 > 0 ? 1 : 0 )
-    endif
-endfunction
-
 function <SID>DeleteItem(...)
-    let l:msg = 'none'
     let l:curL = line('.')
     let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+    let l:linT = search('^Tag:', 'n')
+    let l:linS = search('^Stash:', 'n')
+    let l:linR = search('^Remote:', 'n')
     if len(l:str) == 0
         return
-    elseif len(l:str) == 1
+    elseif l:linT != 0 && l:curL > l:linT
         let l:msg = system('git tag -d ' . l:str[0])
+        let l:rA = 1
+    elseif l:linS != 0 && l:curL > l:linS
+        let l:msg = system('git stash drop ' . strpart(l:str[0], 0, len(l:str[0])-1))
+    elseif l:linR != 0 && l:curL > l:linR
+        let l:msg = system('git remote remove ' . l:str[0])
+    elseif l:str[0] != '*'
+        let l:flag = a:0 == 0 ? '-d ' : '-D '
+        let l:msg = system('git branch ' . l:flag . l:str[0])
+        let l:rA = 1
     else
-        let l:linS = search('^Stash:', 'n')
-        let l:linR = search('^Remote:', 'n')
-        if l:linS != 0 && l:curL > l:linS
-            let l:msg = system('git stash drop ' . strpart(l:str[0], 0, len(l:str[0])-1))
-        elseif l:linR != 0 && l:curL > l:linR
-            let l:msg = system('git remote remove ' . l:str[0])
-        elseif l:str[0] != '*'
-            if a:0 == 0
-                let l:msg = system('git branch -d ' . l:str[0])
-            else
-                let l:msg = system('git branch -D ' . l:str[0]) 
-            endif
-        endif
+        let l:msg = 'none'
     endif
     if l:msg =~ 'error:\|fatal:'
         echo l:msg
     elseif l:msg != 'none'
-        call <SID>Refresh(0)
+        call <SID>Refresh(exists('l:rA'))
     endif
 endfunction
 
@@ -156,10 +143,8 @@ function <SID>HelpDoc()
                 \ '    <space>: echo',
                 \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
+                \ '    a:       apply stash',
                 \ '    c:       checkout branch',
-                \ '    a:       add remote branch',
-                \ '    b:       new branch',
-                \ '    n:       new branch & checkout branch',
                 \ '    \d:      delete current item',
                 \ '    1234:    jump to 1234 wimdow'
                 \ ]
