@@ -10,6 +10,7 @@ let b:curL = 1
 let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal nonu
+setlocal buftype=nofile
 setlocal statusline=\ [3-Status]\ \ %{b:currentDir}%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
@@ -149,10 +150,8 @@ function <SID>HelpDoc()
     let l:help = [
                 \ 'Git Status quick help !?',
                 \ '==================================================',
-                \ '    <C-w>:   close tabpage',
-                \ '    <S-t>:   close tabpage',
-                \ '    <f5>:    refresh tabpage',
                 \ '    <space>: echo',
+                \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
                 \ '    d:       diff file (difftool: vimdiff)',
                 \ '    r:       reset file staging (git reset)',

@@ -9,6 +9,7 @@ let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
 setlocal nonu
+setlocal buftype=nofile
 setlocal foldmethod=marker
 setlocal foldmarker={[(<{,}>)]}
 setlocal foldtext=Git_MyCommitFoldInfo()
@@ -79,9 +80,7 @@ function <SID>HelpDoc()
     let l:help = [
                 \ 'Git commit quick help !?',
                 \ '==================================================',
-                \ '    <spcae>: code fold | unfold',
-                \ '    <C-w>:   close tabpage',
-                \ '    <S-t>:   close tabpage',
+                \ '    <spcae>: code fold | unfold (za)',
                 \ '    <f5>:    refresh tabpage',
                 \ '    m:       git menu',
                 \ '    d:       diff file',
