@@ -354,23 +354,31 @@ function! StrSubstitute(str)
     endif
 endfunction
 
+let g:DoubleClick_500MSTimer = 0
 " 文件保存及后期处理: F3
 function! SaveSpecifiedFile(file)
-    if filereadable(a:file)
+    if g:DoubleClick_500MSTimer == 1
+        wall
+        echo 'Save all'
+    elseif filereadable(a:file)
+        let g:DoubleClick_500MSTimer = 1
+        let l:id = timer_start(500, 'TimerHandle500MS')
         write
-        return
-    endif
-    if empty(a:file)
+    elseif empty(a:file)
         exec 'file ' . input('Set file name')
         filetype detect
+        write
+        if &filetype == 'verilog'
+            AFInclude
+        endif
+        call UpdateNERTreeView()
     endif
-    write
-    if &filetype == 'verilog'
-        AFInclude
-    endif
-    call UpdateNERTreeView()
 endfunction
 
+function! TimerHandle500MS(id)
+    let g:DoubleClick_500MSTimer = !g:DoubleClick_500MSTimer
+    call timer_stop(a:id)
+endfunction
 " 切换16进制显示: \h
 function! HEXCovent()
     if empty(matchstr(getline(1), '^00000000: \S'))
