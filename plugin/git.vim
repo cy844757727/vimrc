@@ -111,7 +111,7 @@ function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
     let l:op = a:flag == 0 ? ' commit ' :
                 \ a:flag == 1 ? ' reset ' :
                 \ a:flag == 2 ? ' revert ' :
-                \ a:flag == 3 ? ' checkout ' : ' merge --squash '
+                \ a:flag == 3 ? ' checkout ' : ' merge '
     let l:msg = system('git' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
