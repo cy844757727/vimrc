@@ -35,7 +35,7 @@ augroup Git_manager
 	autocmd BufWinEnter .Git_branch set filetype=gitbranch|set nobuflisted
 augroup END
 
-" windows ID
+" windows  ID
 let s:idLog = -1
 let s:idCommit = -1
 let s:idStatus = -1
