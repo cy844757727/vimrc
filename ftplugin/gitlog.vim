@@ -70,11 +70,11 @@ function <SID>TagCommit()
             let l:note = input('Enter a note: ')
             let l:tag = l:note == '' ? l:tag : ' -a ' . l:tag . " -m '"  . l:note . "'"
             let l:msg = system('git tag' . l:tag . ' ' . l:hash)
-        endif
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            call GIT_Refresh()
+            if l:msg =~ 'error:\|fatal:'
+                echo l:msg
+            else
+                call GIT_Refresh()
+            endif
         endif
     endif
 endfunction

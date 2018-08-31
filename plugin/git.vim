@@ -173,7 +173,7 @@ function! GIT_FormatBranch()
     let l:tag = systemlist('git tag')
     let l:stash = systemlist('git stash list')
     call map(l:local, "'    ' . v:val")
-    let l:local = ['Local:', ''] + l:local + ['']
+    let l:local = ['Local:', ''] + l:local
     if !empty(l:remote)
         call map(l:remote, "'    ' . v:val")
         let l:remote = ['', 'Remote:', ''] + l:remote
@@ -252,7 +252,7 @@ function! GIT_Toggle()
             exec l:list[0] . 'tabnext'
             call GIT_Refresh()
         " apply to load session file
-        elseif s:idLog == -1 && bufexists('.Git_log')
+        elseif s:idLog == -1 && win_findbuf(bufnr('Git_log')) != []
             call win_gotoid(win_findbuf(bufnr('Git_log'))[0])
             let s:idLog = win_getid()
             call GIT_Refresh()
