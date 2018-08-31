@@ -176,15 +176,15 @@ function! GIT_FormatBranch()
     let l:local = ['Local:', ''] + l:local + ['']
     if !empty(l:remote)
         call map(l:remote, "'    ' . v:val")
-        let l:remote = ['Remote:', ''] + l:remote + ['']
+        let l:remote = ['', 'Remote:', ''] + l:remote
     endif
     if !empty(l:tag)
         call map(l:tag, "'    ' . v:val")
-        let l:tag = ['Tag:', ''] + l:tag + ['']
+        let l:tag = ['', 'Tag:', ''] + l:tag
     endif
     if !empty(l:stash)
         call map(l:stash, "'    ' . v:val")
-        let l:stash = ['Stash:', '' ] + l:stash + ['']
+        let l:stash = ['', 'Stash:', '' ] + l:stash
     endif
     return l:local + l:remote + l:stash + l:tag
 endfunction
@@ -251,9 +251,43 @@ function! GIT_Toggle()
         if l:list != [0, 0]
             exec l:list[0] . 'tabnext'
             call GIT_Refresh()
+        " apply to load session file
+        elseif s:idLog == -1 && bufexists('.Git_log')
+            call win_gotoid(win_findbuf(bufnr('Git_log'))[0])
+            let s:idLog = win_getid()
+            call GIT_Refresh()
         else
             call GIT_TabPage()
         endif
+    endif
+endfunction
+
+function! GIT_Refresh(...)
+    if bufwinnr('.Git_log') != -1
+        let l:winnr = winnr()
+    	if a:0 > 0
+        	let l:col = float2nr(0.4 * &columns)
+        	let l:lin = float2nr(0.4 * &lines)
+        	exec '2resize ' . l:lin
+        	exec 'vert 3resize ' . l:col
+        	exec '4resize ' . l:lin
+        endif
+        4wincmd w
+        let l:pos = getpos('.')
+        silent edit!
+        call setline(1, GIT_FormatBranch())
+        call setpos('.', l:pos)
+        wincmd W
+        let l:pos = getpos('.')
+        silent edit!
+        call setline(1, GIT_FormatStatus())
+        call setpos('.', l:pos)
+        1wincmd w
+        let l:pos = getpos('.')
+        silent edit!
+        call setline(1, GIT_FormatLog())
+        call setpos('.', l:pos)
+        exec l:winnr . 'wincmd w'
     endif
 endfunction
 
@@ -338,8 +372,8 @@ function! GIT_SubMenu()
         let l:tag = input('Input a tag: ')
         let l:note = input('Input a note: ')
         if l:tag != ''
-            let l:flag = l:note == '' ? l:tag : '-a ' . l:tag . ' -m ' . l:note
-            let l:msg = system('git tag ' . l:flag)
+            let l:tag = l:note == '' ? l:tag : '-a ' . l:tag . " -m '" . l:note . "'"
+            let l:msg = system('git tag ' . l:tag)
         endif
     elseif l:char == 'c'
         let l:name = input('Enter a new branch name: ')
@@ -348,38 +382,9 @@ function! GIT_SubMenu()
             let l:msg = system('git checkout -q -b ' . l:name)
         endif
     else
-        return ''
+        let l:msg = ''
     endif
     return l:msg
-endfunction
-
-function! GIT_Refresh(...)
-    if bufwinnr('.Git_log') != -1
-        let l:winnr = winnr()
-    	if a:0 > 0
-        	let l:col = float2nr(0.4 * &columns)
-        	let l:lin = float2nr(0.4 * &lines)
-        	exec '2resize ' . l:lin
-        	exec 'vert 3resize ' . l:col
-        	exec '4resize ' . l:lin
-        endif
-        4wincmd w
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, GIT_FormatBranch())
-        call setpos('.', l:pos)
-        wincmd W
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, GIT_FormatStatus())
-        call setpos('.', l:pos)
-        1wincmd w
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, GIT_FormatLog())
-        call setpos('.', l:pos)
-        exec l:winnr . 'wincmd w'
-    endif
 endfunction
 
 function! GIT_ClearTab()

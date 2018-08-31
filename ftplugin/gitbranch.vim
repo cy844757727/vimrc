@@ -132,9 +132,18 @@ function s:cursorJump()
             endif
         endwhile
         let b:curL = line('.')
+        let l:lin = search('^Tag:', 'n')
+        if l:lin != 0 && b:curL > l:lin
+            let l:msg = systemlist('git show ' . getline('.') . "|sed '/^diff --\\w/s/$/ {[(<{1/'")
+            2wincmd w
+            silent edit!
+            call setline(1, l:msg)
+            set filetype=gitcommit
+            set nobuflisted
+            4wincmd w
+        endif
     endif
 endfunction
-
 
 function <SID>HelpDoc()
     let l:help = [
