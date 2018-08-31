@@ -119,6 +119,8 @@ map  \c <Esc>:call CutMouseBehavior()<CR>
 " 保存快捷键
 map  <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
 map! <f3> <Esc><f3>
+map  <silent> <f4> :call WinResize()<Cr>
+map! <f4> <Esc><f4>
 " 窗口切换
 map  <f7> <Esc>:call GIT_Toggle()<CR>
 map  <f8> <Esc>:call ToggleTagbar()<CR>
@@ -389,6 +391,34 @@ function! HEXCovent()
         ALEEnable
     endif
 endfunction
+
+let g:MaxmizeWindow = []
+function! WinResize()
+    let l:winId = win_getid()
+    if g:MaxmizeWindow == []
+        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
+        let l:col = float2nr(0.8 * &columns)
+        let l:lin = float2nr(0.8 * &lines)
+        exec 'resize ' . l:lin
+        exec 'vert resize' . l:col
+    elseif g:MaxmizeWindow[2] == l:winId
+        exec 'resize ' . g:MaxmizeWindow[0]
+        exec 'vert resize ' . g:MaxmizeWindow[1]
+        let g:MaxmizeWindow = []
+    else
+        if win_gotoid(g:MaxmizeWindow[2]) == 1
+            exec 'resize ' . g:MaxmizeWindow[0]
+            exec 'vert resize ' . g:MaxmizeWindow[1]
+            call win_gotoid(l:winId)
+        endif
+        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
+        let l:col = float2nr(0.8 * &columns)
+        let l:lin = float2nr(0.8 * &lines)
+        exec 'resize' . l:lin
+        exec 'vert resize' . l:col
+    endif
+endfunction
+
 " ############### 窗口相关 ######################################
 "  切换NERDTree窗口: F9
 function! ToggleNERDTree()
