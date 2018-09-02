@@ -77,15 +77,13 @@ function <SID>CheckOutFile()
 endfunction
 
 function <SID>HelpDoc()
-    let l:help = [
-                \ 'Git commit quick help !?',
-                \ '==================================================',
-                \ '    <spcae>: code fold | unfold (za)',
-                \ '    <f5>:    refresh tabpage',
-                \ '    m:       git menu',
-                \ '    d:       diff file',
-                \ '    \co:     checkout file',
-                \ '    1234:    jump to 1234 wimdow'
-                \ ]
-    echo join(l:help, "\n")
+    echo
+                \ "Git commit quick help !?\n" .
+                \ "==================================================\n" .
+                \ "    <spcae>: code fold | unfold (za)\n" .
+                \ "    <f5>:    refresh tabpage\n" .
+                \ "    m:       git menu\n" .
+                \ "    d:       diff file\n" .
+                \ "    \\co:     checkout file\n" .
+                \ "    1234:    jump to 1234 wimdo"
 endfunction

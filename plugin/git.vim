@@ -12,14 +12,14 @@ command! -nargs=* -complete=customlist,GIT_Complete Glog :echo system("git log -
 command! -nargs=* Greflog :echo system('git reflog ' . "<args>")[:-2]
 command! -nargs=* -complete=customlist,GIT_Complete Gmergetool :!git mergetool <args>
 command! -nargs=* -complete=customlist,GIT_Complete Gdifftool :!git difftool <args>
-command! -nargs=* -complete=custom,GIT_completeBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
+command! -nargs=* -complete=custom,GIT_CompleteBranch Gbranch :call GIT_Branch_Remote_Tag("<args>", 0)
 command! -nargs=* -complete=customlist,GIT_Complete Gremote :call GIT_Branch_Remote_Tag("<args>", 1)
-command! -nargs=* -complete=custom,GIT_completeBranch Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
+command! -nargs=* -complete=custom,GIT_CompleteBranch Gtag :call GIT_Branch_Remote_Tag("<args>", 2)
 command! -nargs=+ -complete=customlist,GIT_Complete Gcommit :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 0)
 command! -nargs=+ -complete=customlist,GIT_Complete Greset :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 1)
 command! -nargs=+ Grevert :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 2)
 command! -nargs=+ -complete=customlist,GIT_Complete Gcheckout :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 3)
-command! -nargs=+ -complete=custom,GIT_completeBranch Gmerge :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 4)
+command! -nargs=+ -complete=custom,GIT_CompleteBranch Gmerge :call GIT_Commit_Reset_Revert_CheckOut_Merge("<args>", 4)
 command! -nargs=* Gpush :call GIT_Push_Pull_Fetch("<args>", 0)
 command! -nargs=* Gpull :call GIT_Push_Pull_Fetch("<args>", 1)
 command! -nargs=* Gfetch :call GIT_Push_Pull_Fetch("<args>", 2)
@@ -42,7 +42,7 @@ let s:idStatus = -1
 let s:idBranch = -1
 
 " For merge complete
-function! GIT_completeBranch(L, C, P)
+function! GIT_CompleteBranch(L, C, P)
     if a:L =~ '^-'
         return system("git help merge|sed -n 's/ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'")
     else
@@ -82,11 +82,11 @@ function! GIT_Complete(L, C, P)
 endfunction
 
 function! GIT_Add_Rm_Mv(arg, flag)
-    let l:op = a:flag == 0 ? ' add ' :
-                \ a:flag == 1 ? ' rm ' : ' mv '
+    let l:op = a:flag == 0 ? 'add ' :
+                \ a:flag == 1 ? 'rm ' : 'mv '
     let l:arg = a:arg == '' ? '.' :
                 \ a:arg == '%' ? expand('%') : a:arg
-    let l:msg = system('git' . l:op . l:arg)[:-2]
+    let l:msg = system('git ' . l:op . l:arg)[:-2]
     if l:msg =~ '^error:\|^fatal:' && bufwinnr('.Git_status') != -1
         3wincmd w
         silent edit!
@@ -96,9 +96,9 @@ function! GIT_Add_Rm_Mv(arg, flag)
 endfunction
 
 function! GIT_Branch_Remote_Tag(arg, flag)
-    let l:op = a:flag == 0 ? ' branch ' :
-                \ a:flag == 1 ? ' remote ' : ' tag '
-    let l:msg = system('git' . l:op . a:arg)[:-2]
+    let l:op = a:flag == 0 ? 'branch ' :
+                \ a:flag == 1 ? 'remote ' : 'tag '
+    let l:msg = system('git ' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_branch') != -1
         4wincmd w
         silent edit!
@@ -108,11 +108,11 @@ function! GIT_Branch_Remote_Tag(arg, flag)
 endfunction
 
 function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
-    let l:op = a:flag == 0 ? ' commit ' :
-                \ a:flag == 1 ? ' reset ' :
-                \ a:flag == 2 ? ' revert ' :
-                \ a:flag == 3 ? ' checkout ' : ' merge '
-    let l:msg = system('git' . l:op . a:arg)[:-2]
+    let l:op = a:flag == 0 ? 'commit ' :
+                \ a:flag == 1 ? 'reset ' :
+                \ a:flag == 2 ? 'revert ' :
+                \ a:flag == 3 ? 'checkout ' : 'merge '
+    let l:msg = system('git ' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
     endif
@@ -120,10 +120,10 @@ function! GIT_Commit_Reset_Revert_CheckOut_Merge(arg, flag)
 endfunction
 
 function! GIT_Push_Pull_Fetch(arg, flag)
-    let l:op = a:flag == 0 ? ' push ' :
-                \ a:flag == 1 ? ' pull ' : ' fetch '
+    let l:op = a:flag == 0 ? 'push ' :
+                \ a:flag == 1 ? 'pull ' : 'fetch '
     echo '    Waiting...'
-    let l:msg = system('git' . l:op . a:arg)
+    let l:msg = system('git ' . l:op . a:arg)[:-2]
     if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
         call GIT_Refresh()
     endif
@@ -147,22 +147,20 @@ function! GIT_FormatLog()
     let l:lenTime = 0
     for l:str in l:log
         let l:list = split(l:str, '\^')
-        if len(l:list) == 1
-            continue
+        if len(l:list) > 1
+            let l:lenGraph = max([strwidth(l:list[0]), l:lenGraph])
+            let l:lenAuthor = max([strwidth(l:list[2]), l:lenAuthor])
+            let l:lenTime = max([strwidth(l:list[3]), l:lenTime])
         endif
-        let l:lenGraph = max([strwidth(l:list[0]), l:lenGraph])
-        let l:lenAuthor = max([strwidth(l:list[2]), l:lenAuthor])
-        let l:lenTime = max([strwidth(l:list[3]), l:lenTime])
     endfor
     for l:i in range(len(l:log))
         let l:list = split(l:log[l:i], '\^')
-        if len(l:list) == 1
-            continue
+        if len(l:list) > 1
+            let l:list[0] .= repeat(' ', l:lenGraph - strwidth(l:list[0]))
+            let l:list[2] .= repeat(' ', l:lenAuthor - strwidth(l:list[2]))
+            let l:list[3] .= repeat(' ', l:lenTime - strwidth(l:list[3]))
+            let l:log[l:i] = join(l:list, ' ')
         endif
-        let l:list[0] .= repeat(' ', l:lenGraph - strwidth(l:list[0]))
-        let l:list[2] .= repeat(' ', l:lenAuthor - strwidth(l:list[2]))
-        let l:list[3] .= repeat(' ', l:lenTime - strwidth(l:list[3]))
-        let l:log[l:i] = join(l:list, ' ')
     endfor
     return l:log
 endfunction
@@ -292,21 +290,20 @@ function! GIT_Refresh(...)
 endfunction
 
 function! GIT_Menu()
-    let l:menu = [
-                \ '** Git Menu:',
-                \ '==================================================',
-                \ '    (i)nitialize      <git init>',
-                \ '    (a)dd all files   <git add .>',
-                \ '    (r)eset all files <git reset -q HEAD>',
-                \ '    (c)ommit          <git commit -m>',
-                \ '    a(m)end           <git commit --amend -m>',
-                \ '    (p)ush            <git push>',
-                \ '    (f)etch           <git fetch>',
-                \ '    (P)ull            <git pull>',
-                \ '    (o)ther operation',
-                \ '!?:'
-                \ ]
-    echo join(l:menu, "\n")
+    echo 
+                \ "** Git Menu:\n" .
+                \ "==================================================\n" .
+                \ "    (i)nitialize      <git init>\n" .
+                \ "    (a)dd all files   <git add .>\n" .
+                \ "    (r)eset all files <git reset -q HEAD>\n" .
+                \ "    (c)ommit          <git commit -m>\n" .
+                \ "    a(m)end           <git commit --amend -m>\n" .
+                \ "    (p)ush            <git push>\n" .
+                \ "    (f)etch           <git fetch>\n" .
+                \ "    (P)ull            <git pull>\n" .
+                \ "    (o)ther operation\n" .
+                \ "!?:"
+    let l:msg = ''
     let l:char = nr2char(getchar())
     if l:char == 'i'
         let l:msg = system('git init -q')
@@ -315,15 +312,13 @@ function! GIT_Menu()
     elseif l:char == 'r'
         let l:msg = system('git reset -q HEAD')[:-2]
     elseif l:char == 'c'
-        let l:msg = input('Input a message(-m): ')
-        echo "\n"
-        if l:msg != ''
+        let l:str = input('Input a message(-m): ')
+        if l:str != ''
             let l:msg = system("git commit -m '" . l:msg . "'")[:-2]
         endif
     elseif l:char == 'm'
-        let l:msg = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
-        echo "\n"
-        if l:msg != ''
+        let l:str = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
+        if l:str != ''
             let l:msg = system("git commit --amend -m '" . l:msg . "'")
         endif
     elseif l:char ==# 'p'
@@ -338,40 +333,40 @@ function! GIT_Menu()
     elseif l:char == 'o'
         redraw!
         let l:msg = GIT_SubMenu()
-    else
-        let l:msg = ''
     endif
     if l:msg !~ 'error:\|fatal:'
         call GIT_Refresh()
     endif
-    if l:msg != ''
-        echo l:msg
-    else
-        redraw!
-    endif
+    redraw!
+    echo l:msg
 endfunction
 
 function! GIT_SubMenu()
-    let l:subMenu = [
-                \ '** Git subMenu:',
-                \ '==================================================',
-                \ '    (a)dd remote           <git remote add>',
-                \ '    (t)ag                  <git tag>',
-                \ '    (c)heckout new branch  <git checkout -q -b>',
-                \ '!?:'
-                \ ]
-    echo join(l:subMenu, "\n")
+    echo
+                \ "** Git subMenu:\n" .
+                \ "==================================================\n" .
+                \ "    (a)dd remote           <git remote add>\n" .
+                \ "    (t)ag                  <git tag>\n" .
+                \ "    (c)heckout new branch  <git checkout -q -b>\n" .
+                \ "!?:"
+    let l:msg = ''
     let l:char = nr2char(getchar())
     if l:char == 'a'
-        let l:name = input('Enter a name(Default origin)： ', 'origin')
-        let l:addr = input('Enter remote URL: ')
-        if l:addr != ''
+        redraw!
+        echo "** Add remote repository (Use own option, remain URL empty)\n" .
+                    \ '============================================================'
+        let l:name = input('Name (Default origin)： ', 'origin')
+        if l:name != ''
+            let l:addr = input('URL: ')
             let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
         endif
     elseif l:char == 't'
-        let l:tag = input('Input a tag: ')
-        let l:note = input('Input a note: ')
+        redraw!
+        echo "** Atach a tag (Use own option, remain Note empty)\n" .
+                    \ '======================================================='
+        let l:tag = input('Tag: ')
         if l:tag != ''
+            let l:note = input('Note: ')
             let l:tag = l:note == '' ? l:tag : '-a ' . l:tag . " -m '" . l:note . "'"
             let l:msg = system('git tag ' . l:tag)
         endif
@@ -381,8 +376,6 @@ function! GIT_SubMenu()
             call system('git stash')
             let l:msg = system('git checkout -q -b ' . l:name)
         endif
-    else
-        let l:msg = ''
     endif
     return l:msg
 endfunction

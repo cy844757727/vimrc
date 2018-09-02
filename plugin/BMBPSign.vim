@@ -147,41 +147,79 @@ function s:NewProject(name, type, path)
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
-function s:SelectProject(sel)
-    if a:sel =~ '^\d'
-        let l:sel == a:sel
-    else
-        let l:option = "Select option:(eg: -1 - Delte item 1)\n" . repeat('=', min([&columns - 10, 80])) . "\n"
-        for l:i in range(len(s:projectItem))
-            let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
-            let l:item = printf(' %3d: %s', l:i, l:item)
-            let l:option .= l:item . "\n"
-        endfor
-        let l:sel = input(l:option . '!?:')
-        if l:sel == ''
-            let l:sel = '0'
-        endif
-    endif
-    if l:sel =~ '^\d' && l:sel < len(s:projectItem)
-        exec 'cd ' . split(s:projectItem[l:sel])[-1]
-        call s:LoadWorkSpace('')
-        call insert(s:projectItem, remove(s:projectItem, l:sel))
-    elseif l:sel =~ '^\-'
-        let l:num = filter(split(l:sel, '-\|\s\+'), 'v:val < ' . len(s:projectItem))
-        for l:i in l:num
-            let s:projectItem[l:i] = ''
-        endfor
-        call filter(s:projectItem, "v:val != ''")
-    else
-        return
-    endif
+function s:SwitchProjection(sel)
+    exec 'cd ' . split(s:projectItem[a:sel])[-1]
+    call s:LoadWorkSpace('')
+    call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
+    echo substitute(s:projectItem[0], ' ' . s:home, ' ~', '')
+endfunction
+
+function s:DisplayProjectSeletion(tip)
+    let l:selection = "** Project option (pwd: " .
+                \ substitute(getcwd(), s:home, '~', '') .
+                \ "   s: select   -/d: delete    q: quit    +/a/n: new    0-9: item)\n" .
+                \ "   [!?: selection mode,  Del: deletion mode,  New: new project]\n" .
+                \ repeat('=', min([&columns - 10, 80])) . "\n"
+    for l:i in range(len(s:projectItem))
+        let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
+        let l:item = printf(' %3d: %s', l:i, l:item)
+        let l:selection .= l:item . "\n"
+    endfor
+    return l:selection . a:tip
+endfunction
+
+function s:ProjectSelection()
+    let l:flag = 's'
+    let l:tip = '!?:'
+    while 1
+        echo s:DisplayProjectSeletion(l:tip)
+        let l:char = nr2char(getchar())
+        redraw!
+        if l:char == 's'
+            let l:tip = '!?:'
+            let l:flag = 's'
+        elseif l:char =~ '\s' && s:projectItem != []
+            call s:SwitchProjection(0)
+            break
+        elseif l:char =~ '\d' && l:char < len(s:projectItem)
+            if l:flag == 's'
+                call s:SwitchProjection(l:char)
+                break
+            elseif l:flag == 'd'
+                call remove(s:projectItem, l:char)
+                call writefile(s:projectItem, s:projectFile)
+            endif
+        elseif l:char =~ '[-d]'
+            let l:flag = 'd'
+            let l:tip = 'Del:'
+        elseif l:char =~ '[+an]'
+            let l:arg = split(input('New: '))
+            redraw!
+            if len(l:arg) == 3
+                call s:NewProject(l:arg[0], l:arg[1], l:arg[2] =~ '^\~' ? s:home . strpart(l:arg[2], 1) : l:arg[2])
+            elseif len(l:arg) == 2
+                if has_key(g:BMBPSign_ProjectType, l:arg[1])
+                    let l:path = g:BMBPSign_ProjectType[l:arg[1]] . '/' . l:arg[0]
+                else
+                    let l:path = g:BMBPSign_ProjectType['default'] . '/' . l:arg[0]
+                endif
+                call s:NewProject(l:arg[0], l:arg[1], l:path)
+            else
+                let l:tip = 'Wrong argument, Reselect:'
+                continue
+            endif
+            break
+        elseif l:char == 'q'
+            return
+        else
+            let l:tip = 'Unvalid(' . l:char . '), Reselect:'
+        endif
+    endwhile
 endfunction
 
 " 保存当前工作状态
 function s:SaveWorkSpace(pre)
-"    call s:SaveSignFile(s:bookMarkVec,a:pre . s:bookMarkFile)
-"    call s:SaveSignFile(s:breakPointVec,a:pre . s:breakPointFile)
     exec 'mksession! ' . a:pre . s:sessionFile
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
     call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
@@ -247,9 +285,9 @@ endfunction
 " ============== 全局量定义 ================================
 function BMBPSign_Project(...)
     if a:0 == 0
-        call s:SelectProject(-1)
+        call s:ProjectSelection()
     elseif a:0 == 1
-        call s:SelectProject(a:1 == '.' ? 0 : a:1)
+        call s:SwitchProjection(a:1)
     elseif a:0 == 2
         if has_key(g:BMBPSign_ProjectType, a:2)
             let l:path = g:BMBPSign_ProjectType[a:2] . '/' . a:1

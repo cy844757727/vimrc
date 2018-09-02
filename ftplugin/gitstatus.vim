@@ -39,11 +39,19 @@ if exists('*<SID>FileDiff')
     finish
 endif
 
-function <SID>Refresh()
+function s:Refresh()
     let l:pos = getpos('.')
     silent edit!
     call setline(1, GIT_FormatStatus())
     call setpos('.', l:pos)
+endfunction
+
+function s:MsgHandle(msg)
+    if a:msg =~ 'error:\|fatal'
+        echo a:msg
+    elseif a:msg != 'none'
+        call s:Refresh()
+    endif
 endfunction
 
 function <SID>FileDiff()
@@ -69,11 +77,7 @@ function <SID>CancelStaged(...)
             let l:msg = system("git reset HEAD -- " . l:str[1])
         endif
     endif
-    if l:msg =~ 'error:\|fatal'
-        echo l:msg
-    elseif l:msg != 'none'
-        call <SID>Refresh()
-    endif
+    call s:MsgHandle(l:msg)
 endfunction
 
 function <SID>AddFile(...)
@@ -91,22 +95,14 @@ function <SID>AddFile(...)
             endif
         endif
     endif
-    if l:msg =~ 'error:\|fatal'
-        echo l:msg
-    elseif l:msg != 'none'
-        call <SID>Refresh()
-    endif
+    call s:MsgHandle(l:msg)
 endfunction
 
 function <SID>CheckOutFile()
     let l:str = split(getline('.'))
     if len(l:str) == 2
         let l:msg = system('git checkout HEAD -- ' . l:str[1])
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            call <SID>Refresh()
-        endif
+        call s:MsgHandle(l:msg)
     endif
 endfunction
 
@@ -125,11 +121,7 @@ function! <SID>DeleteItem(...)
             let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:str[-1])
         endif
     endif
-    if l:msg =~ 'error:\|fatal'
-        echo l:msg
-    else
-        call <SID>Refresh()
-    endif
+    call s:MsgHandle(l:msg)
 endfunction
 
 function s:cursorJump()
@@ -147,21 +139,19 @@ function s:cursorJump()
 endfunction
 
 function <SID>HelpDoc()
-    let l:help = [
-                \ 'Git Status quick help !?',
-                \ '==================================================',
-                \ '    <space>: echo',
-                \ '    <f5>:    refresh tabpage',
-                \ '    m:       git menu',
-                \ '    d:       diff file (difftool: vimdiff)',
-                \ '    r:       reset file staging (git reset)',
-                \ '    R:       reset all file staging',
-                \ '    a:       add file (git add)',
-                \ '    A:       add all file',
-                \ '    \d:      delete file',
-                \ '    \D:      delete file (force)',
-                \ '    \co:     checkout file (git checkout)',
-                \ '    1234:    jump to 1234 wimdow'
-                \ ]
-    echo join(l:help, "\n")
+    echo
+                \ "Git Status quick help !?\n" .
+                \ "==================================================\n" .
+                \ "    <space>: echo\n" .
+                \ "    <f5>:    refresh tabpage\n" .
+                \ "    m:       git menu\n" .
+                \ "    d:       diff file (difftool: vimdiff)\n" .
+                \ "    r:       reset file staging (git reset)\n" .
+                \ "    R:       reset all file staging\n" .
+                \ "    a:       add file (git add)\n" .
+                \ "    A:       add all file\n" .
+                \ "    \\d:      delete file\n" .
+                \ "    \\D:      delete file (force)\n" .
+                \ "    \\co:     checkout file (git checkout)\n" .
+                \ "    1234:    jump to 1234 window"
 endfunction

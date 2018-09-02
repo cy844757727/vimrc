@@ -36,7 +36,7 @@ if exists('*<SID>CheckOutBranch')
     finish
 endif
 
-function <SID>Refresh(arg)
+function s:Refresh(arg)
     if a:arg == 0
         let l:pos = getpos('.')
         silent edit!
@@ -47,7 +47,7 @@ function <SID>Refresh(arg)
     endif
 endfunction
 
-function <SID>RefreshStatus()
+function s:RefreshStatus()
     wincmd W
     let l:pos = getpos('.')
     silent edit!
@@ -66,7 +66,7 @@ function <SID>ApplyStash()
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
-            call <SID>RefreshStatus()
+            call s:RefreshStatus()
         endif
     endif
 endfunction
@@ -87,7 +87,7 @@ function <SID>CheckOutBranch()
                     break
                 endif
             endfor
-            call <SID>Refresh(1)
+            call s:Refresh(1)
         endif
     endif
 endfunction
@@ -117,7 +117,7 @@ function <SID>DeleteItem(...)
     if l:msg =~ 'error:\|fatal:'
         echo l:msg
     elseif l:msg != 'none'
-        call <SID>Refresh(exists('l:rA'))
+        call s:Refresh(exists('l:rA'))
     endif
 endfunction
 
@@ -146,17 +146,15 @@ function s:cursorJump()
 endfunction
 
 function <SID>HelpDoc()
-    let l:help = [
-                \ 'Git branch quick help !?',
-                \ '==================================================',
-                \ '    <space>: echo',
-                \ '    <f5>:    refresh tabpage',
-                \ '    m:       git menu',
-                \ '    a:       apply stash',
-                \ '    c:       checkout branch',
-                \ '    \d:      delete current item',
-                \ '    1234:    jump to 1234 wimdow'
-                \ ]
-    echo join(l:help, "\n")
+    echo
+                \ "Git branch quick help !?\n" .
+                \ "==================================================\n" .
+                \ "    <space>: echo\n" .
+                \ "    <f5>:    refresh tabpage\n" .
+                \ "    m:       git menu\n" .
+                \ "    a:       apply stash\n" .
+                \ "    c:       checkout branch\n" .
+                \ "    \\d:      delete current item\n" .
+                \ "    1234:    jump to 1234 window"
 endfunction
 

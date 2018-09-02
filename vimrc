@@ -253,6 +253,8 @@ function! CompileRun()
             let l:cmd = 'vlib work && vmap work work && ' . l:cmd
         endif
         exec 'AsyncRun ' . l:cmd
+    else
+        return
     endif
     copen 10
 endfunction
@@ -395,12 +397,12 @@ endfunction
 let g:MaxmizeWindow = []
 function! WinResize()
     let l:winId = win_getid()
+    let l:height = winheight(0)
+    let l:width = winwidth(0)
     if g:MaxmizeWindow == []
-        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
-        let l:col = float2nr(0.8 * &columns)
-        let l:lin = float2nr(0.8 * &lines)
-        exec 'resize ' . l:lin
-        exec 'vert resize' . l:col
+        let g:MaxmizeWindow = [l:height, l:width, l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), l:height])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), l:width])
     elseif g:MaxmizeWindow[2] == l:winId
         exec 'resize ' . g:MaxmizeWindow[0]
         exec 'vert resize ' . g:MaxmizeWindow[1]
@@ -411,11 +413,9 @@ function! WinResize()
             exec 'vert resize ' . g:MaxmizeWindow[1]
             call win_gotoid(l:winId)
         endif
-        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
-        let l:col = float2nr(0.8 * &columns)
-        let l:lin = float2nr(0.8 * &lines)
-        exec 'resize' . l:lin
-        exec 'vert resize' . l:col
+        let g:MaxmizeWindow = [l:height, l:width, l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), l:height])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), l:width])
     endif
 endfunction
 

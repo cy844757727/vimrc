@@ -8,7 +8,6 @@ endif
 let b:did_ftplugin = 1
 let b:curL = -1
 
-
 setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
@@ -26,7 +25,6 @@ nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
 nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
 nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
-
 
 augroup Git_log
 	autocmd!
@@ -62,19 +60,23 @@ function s:RefreshCommit()
     endif
 endfunction
 
+function s:MsgHandle(msg)
+    if a:msg =~ 'error:\|fatal:'
+        echo a:msg
+    else
+        call GIT_Refresh()
+    endif
+endfunction
+
 function <SID>TagCommit()
     let l:hash = matchstr(getline('.'), '\w\{7}')
     if l:hash != ''
         let l:tag = input('Input a tag: ')
         if l:tag != ''
             let l:note = input('Enter a note: ')
-            let l:tag = l:note == '' ? l:tag : ' -a ' . l:tag . " -m '"  . l:note . "'"
-            let l:msg = system('git tag' . l:tag . ' ' . l:hash)
-            if l:msg =~ 'error:\|fatal:'
-                echo l:msg
-            else
-                call GIT_Refresh()
-            endif
+            let l:tag = l:note == '' ? l:tag . ' ' : '-a ' . l:tag . " -m '"  . l:note . "' "
+            let l:msg = system('git tag ' . l:tag . l:hash)
+            call s:MsgHandle(l:msg)
         endif
     endif
 endfunction
@@ -82,13 +84,18 @@ endfunction
 function <SID>Reset_Revert_Commit(...)
     let l:hash = matchstr(getline('.'), '\w\{7}')
     if l:hash != ''
-        let l:op = a:0 > 0 ? ' reset --hard ' : ' revert '
-        let l:msg = system('git' . l:op . l:hash)
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
+        if a:0 > 0
+            if input('Are you sure to reset commit which will cover workspace yes/no(no): ') != 'yes'
+                let l:op = 'reset --hard '
+            else
+                echo ' Canceled...'
+                return
+            endif
         else
-            call GIT_Refresh()
+            let l:op = 'revert '
         endif
+        let l:msg = system('git ' . l:op . l:hash)
+        call s:MsgHandle(l:msg)
     endif
 endfunction
 
@@ -98,11 +105,7 @@ function <SID>CheckOutNewBranck()
         let l:name = input('Enter new branch name(start from ' . l:hash . '): ')
         if l:name != ''
             let l:msg = system('git checkout -b ' . l:name . ' ' . l:hash)
-            if l:msg =~ 'error:\|fatal:'
-                echo l:msg
-            else
-                call GIT_Refresh()
-            endif
+            call s:MsgHandle(l:msg)
         else
             echo '    Abort'
         endif
@@ -110,18 +113,16 @@ function <SID>CheckOutNewBranck()
 endfunction
 
 function <SID>HelpDoc()
-    let l:help = [
-                \ 'Git log quick help !?',
-                \ '==================================================',
-                \ '    <space>: echo',
-                \ '    <f5>:    refresh tabpage',
-                \ '    m:       git menu',
-                \ '    t:       tag commit',
-                \ '    \rs:     reset commit (carefull)',
-                \ '    \rv:     revert commit',
-                \ '    \co:     checkout new branch',
-                \ '    1234:    jump to 1234 wimdow'
-                \ ]
-    echo join(l:help, "\n")
+    echo
+                \ "Git log quick help !?\n" .
+                \ "==================================================\n" .
+                \ "    <space>: echo\n" .
+                \ "    <f5>:    refresh tabpage\n" .
+                \ "    m:       git menu\n" .
+                \ "    t:       tag commit\n" .
+                \ "    \\rs:     reset commit (carefull)\n" .
+                \ "    \\rv:     revert commit\n" .
+                \ "    \\co:     checkout new branch\n" .
+                \ "    1234:    jump to 1234 wimdo"
 endfunction
 
