@@ -155,3 +155,4 @@ function <SID>HelpDoc()
                 \ "    \\co:     checkout file (git checkout)\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
+

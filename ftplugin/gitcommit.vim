@@ -87,3 +87,4 @@ function <SID>HelpDoc()
                 \ "    \\co:     checkout file\n" .
                 \ "    1234:    jump to 1234 wimdo"
 endfunction
+
