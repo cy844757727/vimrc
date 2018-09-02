@@ -20,7 +20,7 @@ nnoremap <buffer> <silent> a :call <SID>ApplyStash()<Cr>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
-nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
+nnoremap <buffer> <silent> m :call GIT_MainMenu()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>

@@ -19,7 +19,7 @@ nnoremap <buffer> <silent> <Space> :silent! normal za<Cr>
 nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<Cr>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
-nnoremap <buffer> <silent> m :call GIT_Menu()<Cr>
+nnoremap <buffer> <silent> m :call GIT_MainMenu()<Cr>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
 nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
 nnoremap <buffer> <silent> 2 :2wincmd w<Cr>

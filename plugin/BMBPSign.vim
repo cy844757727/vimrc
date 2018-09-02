@@ -147,7 +147,7 @@ function s:NewProject(name, type, path)
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
-function s:SwitchProjection(sel)
+function s:SwitchProject(sel)
     exec 'cd ' . split(s:projectItem[a:sel])[-1]
     call s:LoadWorkSpace('')
     call insert(s:projectItem, remove(s:projectItem, a:sel))
@@ -158,8 +158,8 @@ endfunction
 function s:DisplayProjectSeletion(tip)
     let l:selection = "** Project option (pwd: " .
                 \ substitute(getcwd(), s:home, '~', '') .
-                \ "   s: select   -/d: delete    q: quit    +/a/n: new    0-9: item)\n" .
-                \ "   [!?: selection mode,  Del: deletion mode,  New: new project]\n" .
+                \ "   s: select  -/d: delete  m: modify  q: quit  +/a/n: new  0-9: item)\n" .
+                \ "   [!?: selection mode,  Del: deletion mode,  Mod: modification mode,  New: new project]\n" .
                 \ repeat('=', min([&columns - 10, 80])) . "\n"
     for l:i in range(len(s:projectItem))
         let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
@@ -174,27 +174,41 @@ function s:ProjectSelection()
     let l:tip = '!?:'
     while 1
         echo s:DisplayProjectSeletion(l:tip)
-        let l:char = nr2char(getchar())
+        let l:code = getchar()
+        let l:char = nr2char(l:code)
         redraw!
         if l:char == 's'
             let l:tip = '!?:'
             let l:flag = 's'
-        elseif l:char =~ '\s' && s:projectItem != []
-            call s:SwitchProjection(0)
-            break
-        elseif l:char =~ '\d' && l:char < len(s:projectItem)
+        elseif l:char =~ '[-d]'
+            let l:flag = 'd'
+            let l:tip = 'Del:'
+        elseif l:char == 'm'
+            let l:flag = 'm'
+            let l:tip = 'Mod:'
+        elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
             if l:flag == 's'
-                call s:SwitchProjection(l:char)
+                call s:SwitchProject(l:char)
                 break
             elseif l:flag == 'd'
                 call remove(s:projectItem, l:char)
                 call writefile(s:projectItem, s:projectFile)
+            elseif l:flag == 'm'
+                redraw!
+                let l:list = split(s:projectItem[l:char])
+                let l:arg = split(input("templete: <name> <type>\nMod: ", l:list[0] . ' ' . l:list[2]))
+                if len(l:arg) == 2
+                    let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
+                                \ l:arg[0], l:arg[1], l:list[-1])
+                    call writefile(s:projectItem, s:projectFile)
+                    let l:tip = '!?:'
+                else
+                    let l:tip = 'Wrong Argument, Reselect. !?:'
+                endif
+                let l:flag = 's'
             endif
-        elseif l:char =~ '[-d]'
-            let l:flag = 'd'
-            let l:tip = 'Del:'
         elseif l:char =~ '[+an]'
-            let l:arg = split(input('New: '))
+            let l:arg = split(input("templete: <name>  <type>  [path]\nNew: "))
             redraw!
             if len(l:arg) == 3
                 call s:NewProject(l:arg[0], l:arg[1], l:arg[2] =~ '^\~' ? s:home . strpart(l:arg[2], 1) : l:arg[2])
@@ -206,14 +220,14 @@ function s:ProjectSelection()
                 endif
                 call s:NewProject(l:arg[0], l:arg[1], l:path)
             else
-                let l:tip = 'Wrong argument, Reselect:'
+                let l:tip = 'Wrong Argument, Reselect. !?:'
                 continue
             endif
             break
         elseif l:char == 'q'
             return
         else
-            let l:tip = 'Unvalid(' . l:char . '), Reselect:'
+            let l:tip = 'Unvalid(' . l:char . '), Reselect. !?:'
         endif
     endwhile
 endfunction
@@ -287,7 +301,7 @@ function BMBPSign_Project(...)
     if a:0 == 0
         call s:ProjectSelection()
     elseif a:0 == 1
-        call s:SwitchProjection(a:1)
+        call s:SwitchProject(a:1)
     elseif a:0 == 2
         if has_key(g:BMBPSign_ProjectType, a:2)
             let l:path = g:BMBPSign_ProjectType[a:2] . '/' . a:1

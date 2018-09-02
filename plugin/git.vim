@@ -2,6 +2,11 @@
 " Name: git plugin : tabpage manager
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
+if exists('loaded_GIT_Manager')
+  finish
+endif
+let loaded_GIT_Manager = 1
+
 command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
 command! Ginit :echo system('git init')[:-2]
 command! -nargs=* -complete=customlist,GIT_Complete Gadd :call GIT_Add_Rm_Mv("<args>", 0)
@@ -289,7 +294,7 @@ function! GIT_Refresh(...)
     endif
 endfunction
 
-function! GIT_Menu()
+function! GIT_MainMenu()
     echo 
                 \ "** Git Menu:\n" .
                 \ "==================================================\n" .
@@ -301,10 +306,12 @@ function! GIT_Menu()
                 \ "    (p)ush            <git push>\n" .
                 \ "    (f)etch           <git fetch>\n" .
                 \ "    (P)ull            <git pull>\n" .
+                \ "    (t)ool operation\n" .
                 \ "    (o)ther operation\n" .
                 \ "!?:"
     let l:msg = ''
     let l:char = nr2char(getchar())
+    redraw!
     if l:char == 'i'
         let l:msg = system('git init -q')
     elseif l:char == 'a'
@@ -330,9 +337,10 @@ function! GIT_Menu()
     elseif l:char ==# 'P'
         echo ' Pulling...'
         let l:msg = system('git pull')[:-2]
+    elseif l:char == 't'
+        let l:msg = s:ToolMenu()
     elseif l:char == 'o'
-        redraw!
-        let l:msg = GIT_SubMenu()
+        let l:msg = s:SubMenu()
     endif
     if l:msg !~ 'error:\|fatal:'
         call GIT_Refresh()
@@ -341,18 +349,36 @@ function! GIT_Menu()
     echo l:msg
 endfunction
 
-function! GIT_SubMenu()
+function! s:ToolMenu()
+    echo 
+                \ "** Git tool menue\n" .
+                \ "=================================================\n" .
+                \ "    (d)iff tool           <git difftool>\n" .
+                \ "    (m)erge tool          <git mergetool>\n" .
+                \ "!?:"
+    let l:msg = ''
+    let l:char = nr2char(getchar())
+    if l:char == 'd'
+        let l:msg = system('git difftool')
+    elseif l:char == 'm'
+        let l:msg = system('git mergetool')
+    endif
+    return l:msg
+endfunction
+
+function! s:SubMenu()
     echo
                 \ "** Git subMenu:\n" .
                 \ "==================================================\n" .
                 \ "    (a)dd remote           <git remote add>\n" .
-                \ "    (t)ag                  <git tag>\n" .
+                \ "    (t)ag HEAD             <git tag>\n" .
                 \ "    (c)heckout new branch  <git checkout -q -b>\n" .
+                \ "    (m)erge branch         <git merge>\n" .
                 \ "!?:"
     let l:msg = ''
     let l:char = nr2char(getchar())
+    redraw!
     if l:char == 'a'
-        redraw!
         echo "** Add remote repository (Use own option, remain URL empty)\n" .
                     \ '============================================================'
         let l:name = input('Name (Default origin)： ', 'origin')
@@ -361,8 +387,7 @@ function! GIT_SubMenu()
             let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
         endif
     elseif l:char == 't'
-        redraw!
-        echo "** Atach a tag (Use own option, remain Note empty)\n" .
+        echo "** Attach a tag (Use own option, remain Note empty)\n" .
                     \ '======================================================='
         let l:tag = input('Tag: ')
         if l:tag != ''
@@ -371,10 +396,19 @@ function! GIT_SubMenu()
             let l:msg = system('git tag ' . l:tag)
         endif
     elseif l:char == 'c'
-        let l:name = input('Enter a new branch name: ')
+        echo "** Create and switch a new branch\n" .
+                    \ '======================================'
+        let l:name = input('Branch: ')
         if l:name != ''
             call system('git stash')
             let l:msg = system('git checkout -q -b ' . l:name)
+        endif
+    elseif l:char == 'm'
+        echo "** merge ithe specified branch to current\n" . 
+                    \ '==================================='
+        let l:branch = input('Branch: ', '', 'custom,GIT_CompleteBranch')
+        if l:branch != ''
+            let l:msg = system('git merge ' . l:branch)
         endif
     endif
     return l:msg
