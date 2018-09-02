@@ -46,10 +46,10 @@ else
     let s:projectItem = []
 endif
 
-augroup BMBPSign
-    autocmd!
-    autocmd VimEnter * if empty(expand('%'))|call s:LoadWorkSpace('')|endif
-augroup END
+"augroup BMBPSign
+"    autocmd!
+"    autocmd VimEnter * if empty(expand('%'))|call s:LoadWorkSpace('')|endif
+"augroup END
 
 command BMBPSignToggleBookMark :call BMBPSign_Toggle('BMBPSignBookMarkDef')
 command BMBPSignToggleBreakPoint :call BMBPSign_ToggleBreakPoint()

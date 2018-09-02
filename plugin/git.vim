@@ -314,12 +314,12 @@ function! GIT_Menu()
     elseif l:char == 'c'
         let l:str = input('Input a message(-m): ')
         if l:str != ''
-            let l:msg = system("git commit -m '" . l:msg . "'")[:-2]
+            let l:msg = system("git commit -m '" . l:str . "'")[:-2]
         endif
     elseif l:char == 'm'
         let l:str = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
         if l:str != ''
-            let l:msg = system("git commit --amend -m '" . l:msg . "'")
+            let l:msg = system("git commit --amend -m '" . l:str . "'")
         endif
     elseif l:char ==# 'p'
         echo ' Pushing...'
