@@ -155,14 +155,17 @@ function s:SwitchProject(sel)
     echo substitute(s:projectItem[0], ' ' . s:home, ' ~', '')
 endfunction
 
-function s:DisplayProjectSeletion(tip)
+function s:DisplayProjectSeletion(start, tip)
+    let l:page = a:start / 10 + 1
     let l:selection = "** Project option (pwd: " .
-                \ substitute(getcwd(), s:home, '~', '') .
-                \ "   s: select  -/d: delete  m: modify  q: quit  +/a/n: new  0-9: item)\n" .
-                \ "   [!?: selection mode,  Del: deletion mode,  Mod: modification mode,  New: new project]\n" .
+                \ substitute(getcwd(), s:home, '~', '') . '   num: ' . len(s:projectItem) .
+                \ "   page: " . l:page . ")\n" .
+                \ "   s:select  -/d:delete  m:modify  p:pageDown  P:pageUp  q:quit  +/a/n:new  0-9:item\n" .
+                \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode,  New:new project\n" .
                 \ repeat('=', min([&columns - 10, 80])) . "\n"
-    for l:i in range(len(s:projectItem))
-        let l:item = substitute(s:projectItem[l:i], ' ' . s:home, ' ~', '',)
+    let l:copy = s:projectItem[a:start:a:start+9]
+    for l:i in range(len(l:copy))
+        let l:item = substitute(l:copy[l:i], ' ' . s:home, ' ~', '',)
         let l:item = printf(' %3d: %s', l:i, l:item)
         let l:selection .= l:item . "\n"
     endfor
@@ -172,12 +175,18 @@ endfunction
 function s:ProjectSelection()
     let l:flag = 's'
     let l:tip = '!?:'
+    let l:start = range(0, len(s:projectItem) - 1, 10)
     while 1
-        echo s:DisplayProjectSeletion(l:tip)
+        echo s:DisplayProjectSeletion(l:start[0], l:tip)
         let l:code = getchar()
         let l:char = nr2char(l:code)
         redraw!
-        if l:char == 's'
+        if l:char ==# 'p'
+            call add(l:start, l:start[0])
+            call remove(l:start, 0)
+        elseif l:char ==# 'P'
+            call insert(l:start, remove(l:start, -1))
+        elseif l:char == 's'
             let l:tip = '!?:'
             let l:flag = 's'
         elseif l:char =~ '[-d]'

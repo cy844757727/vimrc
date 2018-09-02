@@ -351,7 +351,7 @@ endfunction
 
 function! s:ToolMenu()
     echo 
-                \ "** Git tool menue\n" .
+                \ "** Git tool menu\n" .
                 \ "=================================================\n" .
                 \ "    (d)iff tool           <git difftool>\n" .
                 \ "    (m)erge tool          <git mergetool>\n" .
@@ -404,7 +404,7 @@ function! s:SubMenu()
             let l:msg = system('git checkout -q -b ' . l:name)
         endif
     elseif l:char == 'm'
-        echo "** merge ithe specified branch to current\n" . 
+        echo "** merge ithe specified branch to current\n" .
                     \ '==================================='
         let l:branch = input('Branch: ', '', 'custom,GIT_CompleteBranch')
         if l:branch != ''
