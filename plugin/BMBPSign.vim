@@ -66,24 +66,21 @@ command -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSi
 " ==========================================================
 " 在指定文件对应行切换断点/书签
 function s:ToggleSign(file,line,name)
-    let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
-    let l:signFile = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile
-    " 获取所有sign
+    let [l:vec, l:signFile] = a:name == 'BMBPSignBookMarkDef' ?
+                \ [s:bookMarkVec, s:bookMarkFile] :
+                \ [s:breakPointVec, s:breakPointFile]
     redir @z
     silent sign place
     redir END
     let l:match = matchlist(@z, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . a:name)
     if empty(l:match)
         let s:newSignId += 1
-        " 判断ID是否唯一
         while !empty(matchlist(@z, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
             let s:newSignId += 1
         endwhile
-        " 设置标记
         exec 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . a:name . ' file=' . a:file
         call add(l:vec, {'id': s:newSignId, 'file': a:file})
     else
-        " 撤销标记
         exec 'sign unplace ' . l:match[1] . ' file=' . a:file
         call filter(l:vec, 'v:val.id != ' . l:match[1])
     endif
@@ -92,25 +89,24 @@ endfunction
 
 " 撤销所有断点/书签
 function s:ClearSign(name)
-    let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
+    let [l:vec, l:signFile] = a:name == 'BMBPSignBookMarkDef' ?
+                \ [s:bookMarkVec, s:bookMarkFile] :
+                \ [s:breakPointVec, s:breakPointFile]
     for l:mark in l:vec
         exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
     endfor
-    " 清空断点/书签
     if !empty(l:vec)
         unlet l:vec[:]
     endif
-    call delete(a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile)
+    call delete(l:signFile)
 endfunction
 
 function s:JumpSign(action)
     if !empty(s:bookMarkVec)
         if a:action == 'next'
-            call add(s:bookMarkVec, s:bookMarkVec[0])
-            call remove(s:bookMarkVec, 0)
+            call add(s:bookMarkVec, remove(s:bookMarkVec, 0))
         else
-            call insert(s:bookMarkVec, s:bookMarkVec[-1])
-            call remove(s:bookMarkVec, -1)
+            call insert(s:bookMarkVec, remove(s:bookMarkVec, -1))
         endif
         try
             exec 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
@@ -179,11 +175,11 @@ endfunction
 function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
     let l:selection = "** Project option (pwd: " .
-                \ substitute(getcwd(), s:home, '~', '') . '   num: ' . len(s:projectItem) .
-                \ "   page: " . l:page . ")\n" .
-                \ "   s:select  -/d:delete  m:modify  p:pageDown  P:pageUp  q:quit  +/a/n:new  0-9:item\n" .
-                \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode,  New:new project\n" .
-                \ repeat('=', min([&columns - 10, 80])) . "\n"
+                \ substitute(getcwd(), s:home, '~', '') . '     num: ' . len(s:projectItem) .
+                \ "     page: " . l:page . ")\n" .
+                \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  Q:vimleave  a/n:new  0-9:item\n" .
+                \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode\n" .
+                \ repeat('=', min([&columns - 10, 90])) . "\n"
     let l:copy = s:projectItem[a:start:a:start+9]
     for l:i in range(len(l:copy))
         let l:item = substitute(l:copy[l:i], ' ' . s:home, ' ~', '',)
@@ -194,60 +190,61 @@ function s:ProjectUI(start, tip)
 endfunction
 
 function s:ProjectMenu()
-    let l:flag = 's'
-    let l:tip = '!?:'
+    let [l:tip, l:mode] = ['!?:', 's']
     let l:start = range(0, len(s:projectItem) - 1, 10)
     while 1
         echo s:ProjectUI(l:start[0], l:tip)
         let l:char = nr2char(getchar())
         redraw!
-        if l:char ==# 'p'
-            call add(l:start, l:start[0])
-            call remove(l:start, 0)
-        elseif l:char ==# 'P'
+        if l:char ==# 'p' && l:start != []
+            call add(l:start, remove(l:start, 0))
+        elseif l:char ==# 'P' && l:start != []
             call insert(l:start, remove(l:start, -1))
         elseif l:char == 's'
-            let l:tip = '!?:'
-            let l:flag = 's'
-        elseif l:char =~ '[-d]'
-            let l:flag = 'd'
-            let l:tip = 'Del:'
+            let [l:tip, l:mode] = ['!?:', 's']
+        elseif l:char =~ 'd'
+            let [l:tip, l:mode] = ['Del:', 'd']
         elseif l:char == 'm'
-            let l:flag = 'm'
-            let l:tip = 'Mod:'
-        elseif l:char == 'q'
+            let [l:tip, l:mode] = ['Mod:', 'm']
+        elseif l:char ==# 'q' || l:char == "\<Esc>"
             return
+        elseif l:char ==# 'Q'
+            qall
+        elseif l:char == "\<cr>"
+            let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
-            if l:flag == 's'
+            if l:mode == 's'
                 call s:SwitchProject(l:char)
                 break
-            elseif l:flag == 'd'
+            elseif l:mode == 'd'
                 call remove(s:projectItem, l:char)
                 call writefile(s:projectItem, s:projectFile)
-            elseif l:flag == 'm'
-                let l:list = split(s:projectItem[l:char])
-                let l:argv = split(input("templete: <name> <type>\nMod: ", l:list[0] . ' ' . l:list[2]))
+            elseif l:mode == 'm'
+                let l:path = split(s:projectItem[l:char])[-1]
+                echo s:ProjectUI(l:start[0], '-Modelify item ' . l:char . ' ▼ ')
+                let l:argv = split(input("<name> <type>: "))
                 redraw!
                 if len(l:argv) == 2
                     let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
-                                \ l:argv[0], l:argv[1], l:list[-1])
+                                \ l:argv[0], l:argv[1], l:path)
                     call writefile(s:projectItem, s:projectFile)
                 else
                     let l:tip = 'Wrong Argument, Reselect. Mod:'
                 endif
             endif
-        elseif l:char =~ '[+an]'
-            let l:argv = split(input("templete: <name>  <type>  [path]\nNew: "))
+        elseif l:char =~ '[an]'
+            echo s:ProjectUI(l:start[0], '+New Project ▼ ')
+            let l:argv = split(input("<name> <type> [path]: ", '', 'file'))
             let l:argc = len(l:argv)
             redraw!
             if l:argc == 2 || l:argc == 3
                 call s:ProjectManager(l:argc, l:argv)
                 break
             else
-                let l:tip = 'Wrong Argument, Reselect. !?:'
+                let l:tip = 'Wrong Argument, Reselect. ' . matchstr(l:tip, '\S*$')
             endif
         else
-            let l:tip = 'Unvalid(' . l:char . '), Reselect. !?:'
+            let l:tip = 'Invalid(' . l:char . '), Reselect. ' . matchstr(l:tip, '\S*$')
         endif
     endwhile
 endfunction
@@ -291,8 +288,7 @@ function s:SaveWorkSpace(pre)
                 \ "exec bufwinnr('Tagbar') . 'wincmd w'/\" " .
                 \ a:pre . s:sessionFile
                 \ )
-    let l:type = 'undef'
-    let l:path = getcwd()
+    let [l:type, l:path] = ['undef', getcwd()]
     let l:parent = substitute(l:path, '/\w*$', '', '')
     for l:item in items(g:BMBPSign_ProjectType)
         if l:item[1] == l:parent
