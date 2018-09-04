@@ -51,7 +51,7 @@ endif
 "    autocmd VimEnter * if empty(expand('%'))|call s:LoadWorkSpace('')|endif
 "augroup END
 
-command BMBPSignToggleBookMark :call BMBPSign_Toggle('BMBPSignBookMarkDef')
+command BMBPSignToggleBookMark :call BMBPSign_ToggleBookMark()
 command BMBPSignToggleBreakPoint :call BMBPSign_ToggleBreakPoint()
 command BMBPSignClearBookMark :call BMBPSign_Clear('BMBPSignBookMarkDef')
 command BMBPSignClearBreakPoint :call BMBPSign_Clear('BMBPSignBreakPointDef')
@@ -67,6 +67,7 @@ command -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSi
 " 在指定文件对应行切换断点/书签
 function s:ToggleSign(file,line,name)
     let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
+    let l:signFile = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile
     " 获取所有sign
     redir @z
     silent sign place
@@ -86,6 +87,7 @@ function s:ToggleSign(file,line,name)
         exec 'sign unplace ' . l:match[1] . ' file=' . a:file
         call filter(l:vec, 'v:val.id != ' . l:match[1])
     endif
+    call s:SaveSignFile(l:vec, l:signFile)
 endfunction
 
 " 撤销所有断点/书签
@@ -98,28 +100,47 @@ function s:ClearSign(name)
     if !empty(l:vec)
         unlet l:vec[:]
     endif
+    call delete(a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile)
+endfunction
+
+function s:JumpSign(action)
+    if !empty(s:bookMarkVec)
+        if a:action == 'next'
+            call add(s:bookMarkVec, s:bookMarkVec[0])
+            call remove(s:bookMarkVec, 0)
+        else
+            call insert(s:bookMarkVec, s:bookMarkVec[-1])
+            call remove(s:bookMarkVec, -1)
+        endif
+        try
+            exec 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
+        catch
+            call remove(s:bookMarkVec, -1)
+            call s:JumpSign(a:action)
+        endtry
+    endif
 endfunction
 
 " 保存断点/书签到指定文件
 function s:SaveSignFile(vec,signFile)
     if empty(a:vec)
         call delete(a:signFile)
-        return
+    else
+        let l:prefix = matchstr(a:signFile, '\..*$') == s:bookMarkFile ? 'book' : 'break'
+        redir @z
+        silent sign place
+        redir END
+        exec "redir! > " . a:signFile
+        exec "redir >> " . a:signFile
+        for l:mark in a:vec
+            let l:line = matchlist(@z, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
+            if empty(l:line)
+                continue
+            endif
+            silent echo l:prefix l:mark.file ':' l:line[1] 
+        endfor
+        redir END
     endif
-    let l:prefix = matchstr(a:signFile, '\..*$') == s:bookMarkFile ? 'book' : 'break'
-    redir @z
-    silent sign place
-    redir END
-    exec "redir! > " . a:signFile
-    exec "redir >> " . a:signFile
-    for l:mark in a:vec
-        let l:line = matchlist(@z, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
-        if empty(l:line)
-            continue
-        endif
-        silent echo l:prefix l:mark.file ':' l:line[1] 
-    endfor
-    redir END
 endfunction
 
 function s:NewProject(name, type, path)
@@ -155,7 +176,7 @@ function s:SwitchProject(sel)
     echo substitute(s:projectItem[0], ' ' . s:home, ' ~', '')
 endfunction
 
-function s:DisplayProjectSeletion(start, tip)
+function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
     let l:selection = "** Project option (pwd: " .
                 \ substitute(getcwd(), s:home, '~', '') . '   num: ' . len(s:projectItem) .
@@ -172,14 +193,13 @@ function s:DisplayProjectSeletion(start, tip)
     return l:selection . a:tip
 endfunction
 
-function s:ProjectSelection()
+function s:ProjectMenu()
     let l:flag = 's'
     let l:tip = '!?:'
     let l:start = range(0, len(s:projectItem) - 1, 10)
     while 1
-        echo s:DisplayProjectSeletion(l:start[0], l:tip)
-        let l:code = getchar()
-        let l:char = nr2char(l:code)
+        echo s:ProjectUI(l:start[0], l:tip)
+        let l:char = nr2char(getchar())
         redraw!
         if l:char ==# 'p'
             call add(l:start, l:start[0])
@@ -195,6 +215,8 @@ function s:ProjectSelection()
         elseif l:char == 'm'
             let l:flag = 'm'
             let l:tip = 'Mod:'
+        elseif l:char == 'q'
+            return
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
             if l:flag == 's'
                 call s:SwitchProject(l:char)
@@ -203,46 +225,54 @@ function s:ProjectSelection()
                 call remove(s:projectItem, l:char)
                 call writefile(s:projectItem, s:projectFile)
             elseif l:flag == 'm'
-                redraw!
                 let l:list = split(s:projectItem[l:char])
-                let l:arg = split(input("templete: <name> <type>\nMod: ", l:list[0] . ' ' . l:list[2]))
-                if len(l:arg) == 2
+                let l:argv = split(input("templete: <name> <type>\nMod: ", l:list[0] . ' ' . l:list[2]))
+                redraw!
+                if len(l:argv) == 2
                     let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
-                                \ l:arg[0], l:arg[1], l:list[-1])
+                                \ l:argv[0], l:argv[1], l:list[-1])
                     call writefile(s:projectItem, s:projectFile)
-                    let l:tip = '!?:'
                 else
-                    let l:tip = 'Wrong Argument, Reselect. !?:'
+                    let l:tip = 'Wrong Argument, Reselect. Mod:'
                 endif
-                let l:flag = 's'
             endif
         elseif l:char =~ '[+an]'
-            let l:arg = split(input("templete: <name>  <type>  [path]\nNew: "))
+            let l:argv = split(input("templete: <name>  <type>  [path]\nNew: "))
+            let l:argc = len(l:argv)
             redraw!
-            if len(l:arg) == 3
-                call s:NewProject(l:arg[0], l:arg[1], l:arg[2] =~ '^\~' ? s:home . strpart(l:arg[2], 1) : l:arg[2])
-            elseif len(l:arg) == 2
-                if has_key(g:BMBPSign_ProjectType, l:arg[1])
-                    let l:path = g:BMBPSign_ProjectType[l:arg[1]] . '/' . l:arg[0]
-                else
-                    let l:path = g:BMBPSign_ProjectType['default'] . '/' . l:arg[0]
-                endif
-                call s:NewProject(l:arg[0], l:arg[1], l:path)
+            if l:argc == 2 || l:argc == 3
+                call s:ProjectManager(l:argc, l:argv)
+                break
             else
                 let l:tip = 'Wrong Argument, Reselect. !?:'
-                continue
             endif
-            break
-        elseif l:char == 'q'
-            return
         else
             let l:tip = 'Unvalid(' . l:char . '), Reselect. !?:'
         endif
     endwhile
 endfunction
 
+function s:ProjectManager(argc, argv)
+    if a:argc == 0
+        call s:ProjectMenu()
+    elseif a:argc == 1
+        call s:SwitchProject(a:argv[0])
+    elseif a:argc == 2
+        if has_key(g:BMBPSign_ProjectType, a:argv[1])
+            let l:path = g:BMBPSign_ProjectType[a:argv[1]] . '/' . a:argv[0]
+        else
+            let l:path = g:BMBPSign_ProjectType['default'] . '/' . a:argv[0]
+        endif
+        call s:NewProject(a:argv[0], a:argv[1], l:path)
+    elseif a:argc == 3
+        call s:NewProject(a:argv[0], a:argv[1], a:argv[2] =~ '^\~' ? s:home . strpart(a:argv[2], 1) : a:argv[2])
+    endif
+endfunction
+
 " 保存当前工作状态
 function s:SaveWorkSpace(pre)
+    call s:SaveSignFile(s:bookMarkVec, a:pre . s:bookMarkFile)
+    call s:SaveSignFile(s:breakPointVec, a:pre . s:breakPointFile)
     exec 'mksession! ' . a:pre . s:sessionFile
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
     call system("sed -i 's/^file NERD_tree.*/close|NERDTree/' " . a:pre . s:sessionFile)
@@ -307,20 +337,7 @@ endfunction
 " ==========================================================
 " ============== 全局量定义 ================================
 function BMBPSign_Project(...)
-    if a:0 == 0
-        call s:ProjectSelection()
-    elseif a:0 == 1
-        call s:SwitchProject(a:1)
-    elseif a:0 == 2
-        if has_key(g:BMBPSign_ProjectType, a:2)
-            let l:path = g:BMBPSign_ProjectType[a:2] . '/' . a:1
-        else
-            let l:path = g:BMBPSign_ProjectType['default'] . '/' . a:1
-        endif
-        call s:NewProject(a:1, a:2, l:path)
-    elseif a:0 == 3
-        call s:NewProject(a:1, a:2, a:3 =~ '^\~' ? s:home . strpart(a:3, 1) : a:3)
-    endif
+    call s:ProjectManager(a:0, a:000)
 endfunction
 
 function BMBPSign_CompleteProject(L, C, P)
@@ -339,7 +356,7 @@ function BMBPSign_CompleteWorkFile(L, C, P)
 endfunction
 
 " 切换标记
-function BMBPSign_Toggle(name)
+function BMBPSign_ToggleBookMark()
     if expand('%') == ''
         echo 'Invalid file name!'
         return
@@ -347,30 +364,12 @@ function BMBPSign_Toggle(name)
     if &filetype == 'tagbar' || &filetype == 'nerdtree' || &filetype == 'qf'
         return
     endif
-    call s:ToggleSign(expand('%'), line('.'), a:name)
-    let l:vec = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkVec : s:breakPointVec
-    let l:signFile = a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile
-    call s:SaveSignFile(l:vec, l:signFile)
+    call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBookMarkDef')
 endfunction
 
 " 书签跳转
 function BMBPSign_Jump(action)
-    if empty(s:bookMarkVec)
-        return
-    endif
-    if a:action == 'next'
-        call add(s:bookMarkVec, s:bookMarkVec[0])
-        call remove(s:bookMarkVec, 0)
-    else
-        call insert(s:bookMarkVec, s:bookMarkVec[-1])
-        call remove(s:bookMarkVec, -1)
-    endif
-    try
-        exec 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
-    catch
-        call remove(s:bookMarkVec, -1)
-        call BMBPSign_Jump(a:action)
-    endtry
+    call s:JumpSign(a:action)
 endfunction
 
 " 撤销所有标记
@@ -385,7 +384,6 @@ function BMBPSign_Clear(name)
         endif
         call cursor(l:pos, 1)
     endif
-    call delete(a:name == 'BMBPSignBookMarkDef' ? s:bookMarkFile : s:breakPointFile)
 endfunction
 
 " 插入断点
@@ -400,7 +398,7 @@ function BMBPSign_ToggleBreakPoint()
         else
             normal dd
         endif
-        call BMBPSign_Toggle('BMBPSignBreakPointDef')
+        call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     elseif &filetype == 'sh'
         if match(getline('.'),'set [-+]x') == -1
             if len(s:breakPointVec)%2 == 0
@@ -411,9 +409,9 @@ function BMBPSign_ToggleBreakPoint()
         else
             normal dd
         endif
-        call BMBPSign_Toggle('BMBPSignBreakPointDef')
+        call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     elseif &filetype == 'c' || &filetype == 'cpp'
-        call BMBPSign_Toggle('BMBPSignBreakPointDef')
+        call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     endif
 endfunction
 
@@ -429,5 +427,7 @@ function BMBPSign_ClearWorkSpace(pre)
     let l:pre= matchstr(a:pre, '^[^.]*')
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
+    call delete(l:pre . s:bookMarkFile)
+    call delete(l:pre . s:breakPointFile)
 endfunction
 
