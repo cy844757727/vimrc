@@ -233,6 +233,21 @@ let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 "================================
+" BMBPSign configure =================
+let g:BMBPSign_SpecialBuf = {
+            \ 'NERD_tree': 'call ToggleNERDTree()',
+            \ '__Tagbar': 'call ToggleTagbar()|wincmd W'
+            \ }
+
+let g:BMBPSign_ProjectType = {
+                \ 'c':       '~/Documents/WorkSpace',
+                \ 'cpp':     '~/Documents/WorkSpace',
+                \ 'fpga':    '~/Documents/Altera',
+                \ 'verilog': '~/Documents/Modelsim',
+                \ 'altera':  '~/Documents/Altera',
+                \ 'xilinx':  '~/Documents/Xilinx',
+                \ 'default': '~/Documents'
+                \ }
 
 "################### 自定义函数 #############################
 "	编译运行: F5
