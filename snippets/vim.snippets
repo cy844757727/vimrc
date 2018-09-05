@@ -36,3 +36,9 @@ snippet bufdid
 	endif
 	let b:did_ftplugin = 1
 	
+snippet loaded
+	if exists("loaded_`expand('%:h')`")
+		finish
+	endif
+	let loaded_`expand('%:h')`= 1
+	
