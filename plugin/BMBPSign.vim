@@ -170,7 +170,7 @@ endfunction
 
 function s:ProjectMenu()
     let [l:tip, l:mode] = ['!?:', 's']
-    let l:start = range(0, len(s:projectItem) - 1, 10)
+    let l:start = empty(s:projectItem) ? [0] : range(0, len(s:projectItem) - 1, 10)
     while 1
         echo s:ProjectUI(l:start[0], l:tip)
         let l:char = nr2char(getchar())
