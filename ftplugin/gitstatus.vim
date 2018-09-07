@@ -67,8 +67,8 @@ function <SID>EditFile()
     let l:winId = win_findbuf(bufnr(l:file))
     if l:winId != []
         call win_gotoid(l:winId[0])
-    else
-        exec '-tabnew ' . l:file
+    elseif filereadable(l:file)
+        exec '-tabedit ' . l:file
     endif
 endfunction
 

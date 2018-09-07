@@ -56,6 +56,6 @@ hi Character        ctermfg=215  ctermbg=NONE cterm=NONE
 hi Operator         ctermfg=230  ctermbg=NONE cterm=NONE
 
 " ale.vim
-hi ALEErrorSign     ctermbg=238  ctermfg=9
-hi ALEWarningSign   ctermbg=238  ctermfg=220
+hi ALEErrorSign     ctermfg=9
+hi ALEWarningSign   ctermfg=220
 

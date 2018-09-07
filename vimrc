@@ -244,26 +244,21 @@ let g:BMBPSign_ProjectType = {
 "################### 自定义函数 #############################
 "	编译运行: F5
 function! CompileRun()
+    wall
     if &filetype == 'nerdtree'
         silent call nerdtree#ui_glue#invokeKeyMap('R')
         echo 'Refresh Done!'
-        return
-    endif
-    wall
-    if filereadable('makefile') || filereadable('Makefile')
+    elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
-    elseif &filetype == 'c' || &filetype == 'cpp'
+    elseif &filetype =~ '^c\|cpp$'
         AsyncRun g++ -Wall -O0 -g3 % -o binFile
     elseif &filetype == 'verilog'
-        let l:cmd = 'vlog -work work %'
-        if !isdirectory('work')
-            let l:cmd = 'vlib work && vmap work work && ' . l:cmd
+        if isdirectory('work')
+            exec 'AsyncRun vlog -work work %'
+        else
+            exec 'AsyncRun vlib work && vmap work work && vlog -work work %'
         endif
-        exec 'AsyncRun ' . l:cmd
-    else
-        return
     endif
-    copen 10
 endfunction
 
 "	转换鼠标范围（a，v）: \c
@@ -288,7 +283,7 @@ endfunction
 
 "	指定范围代码格式化: :CFormat
 function! CodeFormat()
-    if &filetype == 'c' || &filetype == 'cpp'
+    if &filetype =~ '^c\|cpp$'
         silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&:!?^][-+=/><|&:]\?=\?\)\s*/\1 \2 /ge
         silent! s/\s*\(++\|--\|::\)\s*/\1/ge
         silent! s/\s*\(<\)\s*\(.\+\w\+\)\s*\(>\)\s*/ \1\2\3 /ge
@@ -314,7 +309,7 @@ function! CodeFormat()
         silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
         silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
         normal ==
-    elseif &filetype == 'verilog' || &filetype == 'systemverilog'
+    elseif &filetype =~ '^verilog\|systemverilog$'
         silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge
         silent! s/\((\)\s*\|\s*\()\)/\1\2/ge
         silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
@@ -325,21 +320,19 @@ endfunction
 
 "   切换注释状态: \q
 function! ReverseComment()
-    if &filetype == 'c' || &filetype == 'cpp' || &filetype == 'verilog' || &filetype == 'systemverilog'
+    if &filetype =~ '^c\|cpp\|verilog\|systemverilog$'
         let l:char='//'
     elseif &filetype == 'matlab'
         let l:char='%'
-    elseif &filetype == 'sh' || &filetype == 'make' || &filetype == 'python'
+    elseif &filetype =~ '^sh\|make\|python$'
         let l:char='#'
     elseif &filetype == 'vim'
         let l:char="\""
     else
-        let l:char=''
+        return
     endif
-    if !empty(l:char)
-        exec 's+^+' . l:char . '+e'
-        exec 's+^' . l:char . l:char . '++e'
-    endif
+    exec 's+^+' . l:char . '+e'
+    exec 's+^' . l:char . l:char . '++e'
 endfunction
 
 "  刷新目录树
@@ -365,8 +358,8 @@ function! StrSubstitute(str)
     endif
 endfunction
 
-let g:DoubleClick_500MSTimer = 0
 " 文件保存及后期处理: F3
+let g:DoubleClick_500MSTimer = 0
 function! SaveSpecifiedFile(file)
     if g:DoubleClick_500MSTimer == 1
         wall
@@ -379,28 +372,28 @@ function! SaveSpecifiedFile(file)
         exec 'file ' . input('Set file name')
         filetype detect
         write
-        if &filetype == 'verilog'
-            AFInclude
-        endif
         call UpdateNERTreeView()
+    else
+        write
     endif
 endfunction
 
 function! TimerHandle500MS(id)
-    let g:DoubleClick_500MSTimer = !g:DoubleClick_500MSTimer
-    call timer_stop(a:id)
+    let g:DoubleClick_500MSTimer = 0
 endfunction
+
 " 切换16进制显示: \h
 function! HEXCovent()
     if empty(matchstr(getline(1), '^00000000: \S'))
         :%!xxd
-        ALEDisable
+        let b:ale_enabled = 0
     else
         :%!xxd -r
-        ALEEnable
+        let b:ale_enabled = 1
     endif
 endfunction
 
+" 最大化窗口/恢复：f4
 let g:MaxmizeWindow = []
 function! WinResize()
     let l:winId = win_getid()

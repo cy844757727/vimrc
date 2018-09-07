@@ -9,130 +9,147 @@ let b:did_ftplugin = 1
 
 command! -buffer TBench :call HDLVTestBench()
 command! -buffer IInstance :call HDLVInsertInstance()
-command! -buffer AFInclude :call HDLVAllFileInclude()
+
+augroup HDL_Verilog
+"    autocmd!
+    autocmd BufWritePost <buffer> call HDLVAllFileInclude()
+augroup END
 
 if exists('*s:ModuleName')
     finish
 endif
 
 function s:ModuleName(file)
-    let l:name=system("sed -n 's/\\s*module\\s*\\(\\w\\+\\).*/\\1/p' " . a:file)
-    let l:name=substitute(l:name, '\n', '', '')
-    return l:name
+    return system("sed -n 's/\\s*module\\s*\\(\\w\\+\\).*/\\1/p' " . a:file)[:-2]
 endfunction
 
 function s:ModulePorts(file)
     let l:ports=system("grep '^\\(\\s\\{,4\\}\\|\\t\\)\\(input\\|output\\|inout\\) ' " . a:file )
-    let l:ports=substitute(l:ports,'input \|output \|inout \|w\(ire\|and\|or\) \|reg \|signed \|tri\(0\|1\|reg\|and\|or\)\? \|supply\(0\|1\) \|\s*=\s*[^,;]*\|\[.\{-}\]\|//.\{-}\n\|\n\|\s*\|','','g')
-    let l:ports=substitute(l:ports,';',',','g')
-    let l:ports=substitute(l:ports,',$','','')
-    let l:ports=substitute(l:ports,'\(\w\+\)','\n\t\t.\1(\1)','g')
+    let l:ports=split(substitute(l:ports,'\s*//.\{-}\n*\|\n\|\[[0-9:]*\]\s*','','g'), '\s*[,;]\s*')
+    for l:i in range(len(l:ports) - 1)
+        let l:p = matchstr(l:ports[l:i], '\w*$')
+        let l:ports[l:i] = repeat(' ', 8) . '.' . l:p . '(' . l:p . '),'
+    endfor
+    let l:p = matchstr(l:ports[-1], '\w*$')
+    let l:ports[-1] = repeat(' ', 8) . '.' . l:p . '(' . l:p . ')'
     return l:ports
 endfunction
 
 function s:InstanceTemplate(file)
     let l:name=s:ModuleName(a:file)
     let l:ports=s:ModulePorts(a:file)
-    return "\n\t" . l:name . " Inst0 (" . l:ports . "\n\t);\n\t"
+    return ['    ' . l:name . ' Inst0 ('] + l:ports + ['    );']
 endfunction
 
 function s:InstVarDef(file)
-    let l:varDefIn=system("grep '^\\(\\s\\{,4\\}\\|\\t\\)input ' " . a:file)
-    let l:varDefOut=system("grep '^\\(\\s\\{,4\\}\\|\\t\\)output ' " .  a:file)
-    let l:varDefInOut=system("grep '^\\(\\s\\{,4\\}\\|\\t\\)inout ' " .  a:file)
-    let l:varDefIn=substitute(l:varDefIn,'w\(ire\|and\|or\) \|tri\(0\|1\|reg\|and\|or\)\? \|supply\(0\|1\) \|signed ','','g')
-    let l:varDefOut=substitute(l:varDefOut,'reg \|signed \|\s*=\s*[^,;]*','','g')
-    let l:varDefInOut=substitute(l:varDefInOut,'w\(ire\|and\|or\) \|tri\(0\|1\|reg\|and\|or\)\? \|supply\(0\|1\) \|signed ',' ','g')
-    let l:varDefIn=substitute(l:varDefIn,'input ','reg ','g')
-    let l:varDefOut=substitute(l:varDefOut,'output ','wire ','g')
-    let l:varDefInOut=substitute(l:varDefInOut,'inout ','wire ','g')
-    let l:varDefIn=substitute(l:varDefIn,'[,;]\?\s*//.\{-}\n\|[,;]\?\n',';\n','g')
-    let l:varDefOut=substitute(l:varDefOut,'[,;]\?\s*//.\{-}\n\|[,;]\?\n',';\n','g')
-    let l:varDefInOut=substitute(l:varDefInOut,'[,;]\?\s*//.\{-}\n\|[,;]\?\n',';\n','g')
-    let l:varDefIn=substitute(l:varDefIn,'\([,;]\)',' = 0\1','g')
-    return "\n" . l:varDefIn . "\t\n" . l:varDefOut . "\t\n" . l:varDefInOut
+    let l:varDefIn=systemlist("grep '^\\(\\s\\{,4\\}\\|\\t\\)input ' " . a:file)
+    let l:varDefOut=systemlist("grep '^\\(\\s\\{,4\\}\\|\\t\\)output ' " .  a:file)
+    let l:varDefInOut=systemlist("grep '^\\(\\s\\{,4\\}\\|\\t\\)inout ' " .  a:file)
+    for l:i in range(len(l:varDefIn))
+        let l:varDefIn[l:i] = substitute(l:varDefIn[l:i], '^.\{-}\ze\(\s\[\|\s\w\+\[\|\s\w\+\s*[,;]\)\|\s*//.*', '', 'g')
+        let l:varDefIn[l:i] = '    reg' . substitute(l:varDefIn[l:i], '[,;]\?$', ';', '')
+    endfor
+    for l:i in range(len(l:varDefOut))
+        let l:varDefOut[l:i] = substitute(l:varDefOut[l:i], '^.\{-}\ze\(\s\[\|\s\w\+\[\|\s\w\+\s*[,;]\)\|\s*//.*', '', 'g')
+        let l:varDefOut[l:i] = '    wire' . substitute(l:varDefOut[l:i], '[,;]\?$', ';', '')
+    endfor
+    for l:i in range(len(l:varDefInOut))
+        let l:varDefInOut[l:i] = substitute(l:varDefInOut[l:i], '^.\{-}\ze\(\s\[\|\s\w\+\[\|\s\w\+\s*[,;]\)\|\s*//.*', '', 'g')
+        let l:varDefInOut[l:i] = '    wire' . substitute(l:varDefInOut[l:i], '[,;]\?$', ';', '')
+    endfor
+    return l:varDefIn + [''] + l:varDefOut + [''] + l:varDefInOut
 endfunction
 
 function s:TestBenchGenerate(file)
     let l:name=s:ModuleName(a:file)
     let l:IODef=s:InstVarDef(a:file)
     let l:inst=s:InstanceTemplate(a:file)
-    let @z="`timescale 1ns/100ps\n\nmodule tb_" . l:name . ";"
-    let @Z="\n\t// User variable definition\n\t"
-    let @Z="\n\t// Instance variable definition" . l:IODef . "\t\n\t// Module instance" . l:inst
-    let @Z="\n\t// Clock signal\n\talways #5 clk = ~clk;\n\t"
-    let @Z="\n\t// Initialization\n\tinitial begin\n\t\t#10 rst_ <= 0;\n\t\t#10 rst_ <= 1;\n\t\t\n\t\t\n\t\t#10000 $stop;\n\tend\n\t"
-    let @Z="\nendmodule\n\n"
+    let l:templete = [
+                \ '`timescale 1ns/100ps',
+                \ '',
+                \ 'module tb_' . l:name . ';',
+                \ '    // Usr variable definition',
+                \ '',
+                \ '    // Instance variable definition'] +
+                \ l:IODef +
+                \ ['',
+                \ '    // Module instance'] +
+                \ l:inst +
+                \ ['',
+                \ '    // Clock signal',
+                \ '    always #5 clk = ~clk;',
+                \ '',
+                \ '    // Initialization',
+                \ '    initial begin',
+                \ '        clk = 0;',
+                \ '        rst_ = 1;',
+                \ '        #10 rst_ = 0;',
+                \ '        #10 rst_ = 1;',
+                \ '        ',
+                \ '        ',
+                \ '        #10000 $stop;',
+                \ '    end',
+                \ '',
+                \ 'endmodule',
+                \ ''
+                \]
     exec "edit " . expand('%:h') . "/tb_" . l:name . ".v"
-    normal "zpggdd
-    %retab!
+    call setline(1, l:templete)
 endfunction
 
 function s:TestBenchRefresh(file)
-    let l:name=s:ModuleName(a:file)
-    let l:end=search('// Module instance')
-    let l:start=search('// Instance variable definition')
-    let l:linCnt=l:end-l:start-1
-    if l:linCnt > 0
-        let @z=s:InstVarDef(a:file) . "\n"
-        exec "normal " . "j" . l:linCnt . "ddk$\"zp"
+    let l:end=search('// Module instance', 'n') - 1
+    let l:start=search('// Instance variable definition', 'n') + 1
+    if l:end > l:start
+        exec l:start . ',' . l:end . 'd'
+        let l:var=s:InstVarDef(a:file)
+        call append(l:start - 1, l:var + [''])
     endif
-    let l:name=match(expand('%:t'), '^tb_\(\w\+\)')
-    let l:start=search('^\s*' . l:name[1])
-    let l:start=search('[^#](')
-    let l:end=search(');')
-    let l:linCnt=l:end-l:start-1
-    if l:linCnt > 0
-        let @z=s:ModulePorts(a:file)
-        exec "normal " . l:start . "ggj" . l:linCnt . "ddk$\"zp"
+    let l:start=search('// Module instance', 'n') + 1
+    let l:end=search('// Clock signal', 'n') - 1
+    if l:end > l:start
+        exec l:start . ',' . l:end . 'd'
+        let l:inst=s:InstanceTemplate(a:file)
+        call append(l:start - 1, l:inst + [''])
     endif
-    %retab!
     write
 endfunction
 " ==========================================================
 " ==========================================================
 function HDLVTestBench()
-    if &filetype != 'verilog'
-        return
-    endif
     write
     let l:file=expand('%:p')
     let l:name=s:ModuleName(l:file)
-    if match(l:name, "^tb_") == -1
+    if l:name !~ '^tb_'
         let l:tbFile=expand('%:h') . "/tb_" . l:name . ".v"
-        if empty(findfile(l:tbFile,".;"))
-            call s:TestBenchGenerate(l:file)
-            call search('^\s*initial begin')
-        else
+        if filereadable(l:tbFile)
             exec "0vsplit +1 " . l:tbFile 
             call s:TestBenchRefresh(l:file)
             quit
+        else
+            call s:TestBenchGenerate(l:file)
+            call search('^\s*initial begin')
         endif
     else
-        let l:name=matchlist(l:name,'^tb_\(\w\+\)')
-        let l:file=l:name[1] . '.v'
-        let l:file=expand('%:h') . '/' . l:file
+        let l:name=matchstr(l:name,'^\(tb_\)\zs\w\+')
+        let l:file=expand('%:h') . '/' . l:name . '.v'
 "        let l:file=system("find . -maxdepth 2 -name '" . l:file . "'")
         call s:TestBenchRefresh(l:file)
     endif
 endfunction
 
 function HDLVInsertInstance()
-    if &filetype != 'verilog'
-        return
-    endif
-    normal wbve"zy
+    let l:word = matchstr(getline('.'), '\w\+$')
 "    let l:file=system("find . -maxdepth 2 -name '*.v'|xargs -I{} grep -il '^\\s*module\\s\\+" . @z . "' {}")
-    let l:file=system("find . -maxdepth 2 -iname '" . @z . "*.v'|sed -n '1p'")
+    let l:file=system("find . -maxdepth 2 -iname '" . l:word . "*.v'|sed -n '1p'")
     if !empty(l:file)
-        let @z=s:InstanceTemplate(l:file)
-        normal ddk$"zp
+        let l:inst=s:InstanceTemplate(l:file)
+        normal dd
+        call append(line('.') - 1, l:inst + [''])
         call search(');')
-        normal j==
     else
         exec "echo ' Non-existent!!!'" 
     endif
-    %retab!
 endfunction
 
 function HDLVAllFileInclude()
