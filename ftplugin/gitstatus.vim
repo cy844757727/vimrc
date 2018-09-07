@@ -13,22 +13,23 @@ setlocal nonu
 setlocal buftype=nofile
 setlocal statusline=\ [3-Status]\ \ %{b:currentDir}%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
-nnoremap <buffer> <space> :echo getline('.')<Cr>
-nnoremap <buffer> <silent> d :call <SID>FileDiff()<Cr>
-nnoremap <buffer> <silent> r :call <SID>CancelStaged()<Cr>
-nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<Cr>
-nnoremap <buffer> <silent> a :call <SID>AddFile()<Cr>
-nnoremap <buffer> <silent> A :call <SID>AddFile(1)<Cr>
-nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
-nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
-nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<Cr>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<Cr>
-nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
-nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
-nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
-nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
-nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
+nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
+nnoremap <buffer> <space> :echo getline('.')<CR>
+nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> r :call <SID>CancelStaged()<CR>
+nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<CR>
+nnoremap <buffer> <silent> a :call <SID>AddFile()<CR>
+nnoremap <buffer> <silent> A :call <SID>AddFile(1)<CR>
+nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
+nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
+nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
+nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
+nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1 :1wincmd w<CR>
+nnoremap <buffer> <silent> 2 :2wincmd w<CR>
+nnoremap <buffer> <silent> 3 :3wincmd w<CR>
+nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
 augroup Git_status
 	autocmd!
@@ -54,14 +55,31 @@ function s:MsgHandle(msg)
     endif
 endfunction
 
+function <SID>EditFile()
+    let l:file = split(matchstr(getline('.'), '^ \+.*$'))
+    if len(l:file) == 1
+        let l:file = l:file[0]
+    elseif len(l:file) == 2
+        let l:file = l:file[1]
+    else
+        return
+    endif
+    let l:winId = win_findbuf(bufnr(l:file))
+    if l:winId != []
+        call win_gotoid(l:winId[0])
+    else
+        exec '-tabnew ' . l:file
+    endif
+endfunction
+
 function <SID>FileDiff()
-    let l:str = split(getline('.'))
-    if len(l:str) == 2
-        let [l:sign, l:file] = split(system("git status -s -- " . l:str[1]))
+    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
+    if len(l:file) == 2
+        let l:sign = split(system("git status -s -- " . l:file[1]))[0]
         if l:sign =~ 'M' "&& l:sign !～ 'A'
             let l:lin = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
             let l:flag = (l:lin == 0) || (line('.') < l:lin) ? ' -y --cached ' : ' -y '
-            exec '!git difftool' . l:flag . l:file
+            exec '!git difftool' . l:flag . l:file[1]
         endif
     endif
 endfunction
@@ -71,10 +89,10 @@ function <SID>CancelStaged(...)
     if a:0 > 0
         let l:msg = system('git reset HEAD')
     else
-        let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
+        let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
         let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-        if len(l:str) == 2 && (l:lin == 0 || line('.') < l:lin)
-            let l:msg = system("git reset HEAD -- " . l:str[1])
+        if len(l:file) == 2 && (l:lin == 0 || line('.') < l:lin)
+            let l:msg = system("git reset HEAD -- " . l:file[1])
         endif
     endif
     call s:MsgHandle(l:msg)
@@ -85,13 +103,13 @@ function <SID>AddFile(...)
     if a:0 > 0
         let l:msg = system('git add .')
     else
-    	let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
-    	if len(l:str) == 1
-            let l:msg = system('git add -- ' . l:str[0])
-        elseif len(l:str) == 2
+    	let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
+    	if len(l:file) == 1
+            let l:msg = system('git add -- ' . l:file[0])
+        elseif len(l:file) == 2
             let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
             if l:lin != 0 && line('.') > l:lin
-                let l:msg = system('git add -- ' . l:str[1])
+                let l:msg = system('git add -- ' . l:file[1])
             endif
         endif
     endif
@@ -99,26 +117,25 @@ function <SID>AddFile(...)
 endfunction
 
 function <SID>CheckOutFile()
-    let l:str = split(getline('.'))
-    if len(l:str) == 2
-        let l:msg = system('git checkout HEAD -- ' . l:str[1])
+    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
+    if len(l:file) == 2
+        let l:msg = system('git checkout HEAD -- ' . l:file[1])
         call s:MsgHandle(l:msg)
     endif
 endfunction
 
 function! <SID>DeleteItem(...)
-    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
-    if len(l:str) == 0
-        return
-    elseif len(l:str) == 1
-        let l:msg = system('rm ' . l:str[0])
+    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
+    let l:msg = 'none'
+    if len(l:file) == 1
+        let l:msg = system('rm ' . l:file[0])
     else
         let l:pre = a:0 > 0 ? '-f ' : ''
         let l:linN = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
         if l:linN != 0 && line('.') > l:linN
-            let l:msg = system('git rm ' . l:pre . '-- ' . l:str[-1])
+            let l:msg = system('git rm ' . l:pre . '-- ' . l:file[-1])
         else
-            let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:str[-1])
+            let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:file[-1])
         endif
     endif
     call s:MsgHandle(l:msg)
@@ -150,6 +167,7 @@ function <SID>HelpDoc()
                 \ "    R:       reset all file staging\n" .
                 \ "    a:       add file (git add)\n" .
                 \ "    A:       add all file\n" .
+                \ "    e:       edit file (new tabpage)\n" .
                 \ "    \\d:      delete file\n" .
                 \ "    \\D:      delete file (force)\n" .
                 \ "    \\co:     checkout file (git checkout)\n" .

@@ -8,7 +8,8 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " Basic highlight
-hi Normal           ctermfg=230  ctermbg=235  cterm=NONE
+hi Normal           ctermfg=230  
+" ctermbg=235  cterm=NONE
 hi Error            ctermfg=256  ctermbg=160  cterm=NONE
 hi ErrorMsg         ctermfg=256  ctermbg=160  cterm=NONE
 hi WarningMsg       ctermfg=13  ctermbg=220  cterm=NONE
@@ -19,12 +20,12 @@ hi TabLine          ctermfg=232  ctermbg=247  cterm=NONE
 hi TabLinesel       ctermfg=232  ctermbg=253  cterm=Bold
 hi TabLineFill      ctermfg=NONE ctermbg=NONE cterm=NONE
 
-hi SignColumn       ctermbg=238
+hi SignColumn       ctermbg=234
 hi Visual           ctermfg=232  ctermbg=253  cterm=NONE
 hi VertSplit        ctermfg=253  ctermbg=253  cterm=NONE
 hi LineNr           ctermfg=242  ctermbg=NONE cterm=NONE
-hi CursorLine       ctermfg=NONE ctermbg=236  cterm=NONE
-hi CursorLineNr     ctermfg=242  ctermbg=236 cterm=NONE
+hi CursorLine       ctermfg=NONE ctermbg=235  cterm=NONE
+hi CursorLineNr     ctermfg=242  ctermbg=235 cterm=NONE
 hi StatusLine       ctermfg=16  ctermbg=253  cterm=bold
 hi StatusLineNC     ctermfg=16  ctermbg=252  cterm=NONE
 
