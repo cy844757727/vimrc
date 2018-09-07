@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " Basic highlight
-hi Normal           ctermfg=230  
+hi Normal           ctermfg=230
 " ctermbg=235  cterm=NONE
 hi Error            ctermfg=256  ctermbg=160  cterm=NONE
 hi ErrorMsg         ctermfg=256  ctermbg=160  cterm=NONE

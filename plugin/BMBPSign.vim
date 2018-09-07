@@ -29,12 +29,6 @@ endif
 
 if !exists('g:BMBPSign_ProjectType')
     let g:BMBPSign_ProjectType = {
-                \ 'c':       s:home . '/Documents/WorkSpace',
-                \ 'cpp':     s:home . '/Documents/WorkSpace',
-                \ 'fpga':    s:home . '/Documents/Altera',
-                \ 'verilog': s:home . '/Documents/Modelsim',
-                \ 'altera':  s:home . '/Documents/Altera',
-                \ 'xilinx':  s:home . '/Documents/Xilinx',
                 \ 'default': s:home . '/Documents'
                 \ }
 else

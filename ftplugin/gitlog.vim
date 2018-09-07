@@ -13,18 +13,18 @@ setlocal nowrap
 setlocal buftype=nofile
 setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
-nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<Cr>
-nnoremap <buffer> <silent> t :call <SID>TagCommit()<Cr>
-nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<Cr>
-nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<Cr>
-nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<Cr>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<Cr>
-nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
-nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
-nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
-nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
-nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
+nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
+nnoremap <buffer> <space> :echo matchstr(getline('.'), '💬.*$')<CR>
+nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
+nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
+nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
+nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
+nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1 :1wincmd w<CR>
+nnoremap <buffer> <silent> 2 :2wincmd w<CR>
+nnoremap <buffer> <silent> 3 :3wincmd w<CR>
+nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
 augroup Git_log
 	autocmd!

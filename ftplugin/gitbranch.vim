@@ -14,18 +14,18 @@ setlocal buftype=nofile
 setlocal tabstop=1
 setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<Cr>
-nnoremap <buffer> <space> :echo getline('.')<Cr>
-nnoremap <buffer> <silent> a :call <SID>ApplyStash()<Cr>
-nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<Cr>
-nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<Cr>
-nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<Cr>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<Cr>
-nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<Cr>
-nnoremap <buffer> <silent> 1 :1wincmd w<Cr>
-nnoremap <buffer> <silent> 2 :2wincmd w<Cr>
-nnoremap <buffer> <silent> 3 :3wincmd w<Cr>
-nnoremap <buffer> <silent> 4 :4wincmd w<Cr>
+nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
+nnoremap <buffer> <space> :echo getline('.')<CR>
+nnoremap <buffer> <silent> a :call <SID>ApplyStash()<CR>
+nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<CR>
+nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
+nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
+nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1 :1wincmd w<CR>
+nnoremap <buffer> <silent> 2 :2wincmd w<CR>
+nnoremap <buffer> <silent> 3 :3wincmd w<CR>
+nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
 augroup Git_branch
 	autocmd!

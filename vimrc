@@ -69,9 +69,8 @@ augroup END
 command! -range=% CFormat :<line1>,<line2>call CodeFormat()
 command! -range RComment :<line1>,<line2>call ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* "删除多余空行，多个空行转一个 && 尾部空白字符
-command! Qs call BMBPSign_SaveWorkSpace('') | wall | qall
+command! Qs call BMBPSign_SaveWorkSpace('') | wqall
 command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
-command! -nargs=+ -complete=file XdgOpen :call job_start("xdg-open <args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 
 command! -nargs=* Amake :AsyncRun make
 command! Actags :call job_start('ctags -R -f .tags', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
@@ -112,6 +111,9 @@ map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
 "map! <C-o> <Esc>:AsyncRun xdg-open %<CR> "用默认应用打开当前文件
 "map  <C-o> <Esc>:AsyncRun xdg-open %<CR>
+nmap \od :Async xdg-open .<CR>
+nmap \of :Async xdg-open %<CR>
+nmap \rf :exec "Async xdg-open " . expand('%:h')<CR>
 nmap \h :call HEXCovent()<CR>
 nmap <silent> \q :call ReverseComment()<CR>
 vmap <silent> \q :call ReverseComment()<CR>
@@ -161,12 +163,6 @@ let g:NERDTreeMouseMode=2
 
 " Add "call NERDTreeAddKey_Menu_Def()" to ~/.vim/plugin/NERD_tree
 function! NERDTreeAddKey_Menu_Def()
-    call NERDTreeAddKeyMap({
-                \ 'key': 'eo',
-                \ 'callback': 'OpenByDefault',
-                \ 'quickhelpText': 'Open by external application',
-                \ 'scope': 'Node'})
-
     call NERDTreeAddMenuItem({
                 \ 'text': 'Switch file (x) permission',
                 \ 'shortcut': 'x',
@@ -177,10 +173,6 @@ function! NERDTreeAddKey_Menu_Def()
                 \ 'callback': 'DebugFile',
                 \ 'quickhelpText': 'Debug file by gdb tool',
                 \ 'scope': 'Node'})
-endfunction
-
-function! OpenByDefault(node)
-    call job_start('xdg-open ' . a:node.path.str(), {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 endfunction
 
 function! SwitchXPermission()
@@ -412,12 +404,10 @@ endfunction
 let g:MaxmizeWindow = []
 function! WinResize()
     let l:winId = win_getid()
-    let l:height = winheight(0)
-    let l:width = winwidth(0)
     if g:MaxmizeWindow == []
-        let g:MaxmizeWindow = [l:height, l:width, l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), l:height])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), l:width])
+        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), g:MaxmizeWindow[0]])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MaxmizeWindow[1]])
     elseif g:MaxmizeWindow[2] == l:winId
         exec 'resize ' . g:MaxmizeWindow[0]
         exec 'vert resize ' . g:MaxmizeWindow[1]
@@ -428,9 +418,9 @@ function! WinResize()
             exec 'vert resize ' . g:MaxmizeWindow[1]
             call win_gotoid(l:winId)
         endif
-        let g:MaxmizeWindow = [l:height, l:width, l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), l:height])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), l:width])
+        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), g:MaxmizeWindow[0]])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MaxmizeWindow[1]])
     endif
 endfunction
 

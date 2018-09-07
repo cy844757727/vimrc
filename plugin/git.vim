@@ -341,6 +341,8 @@ function! GIT_MainMenu()
         let l:msg = s:ToolMenu()
     elseif l:char == 'o'
         let l:msg = s:SubMenu()
+    else
+        return
     endif
     if l:msg !~ 'error:\|fatal:'
         call GIT_Refresh()
@@ -359,9 +361,9 @@ function! s:ToolMenu()
     let l:msg = ''
     let l:char = nr2char(getchar())
     if l:char == 'd'
-        let l:msg = system('git difftool')
+        :!git difftool -y
     elseif l:char == 'm'
-        let l:msg = system('git mergetool')
+        :!git mergetool -y
     endif
     return l:msg
 endfunction
