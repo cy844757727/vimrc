@@ -13,7 +13,6 @@ setlocal nowrap
 setlocal buftype=nofile
 setlocal statusline=\ [1-Log]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
 nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
@@ -35,6 +34,7 @@ if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
 
+                \ 'text': 'Switch file (x) permission',
 function s:RefreshCommit()
     if line('.') != b:curL
         let l:end = line('$')
@@ -115,7 +115,6 @@ function <SID>HelpDoc()
     echo
                 \ "Git log quick help !?\n" .
                 \ "==================================================\n" .
-                \ "    <f5>:    refresh tabpage\n" .
                 \ "    m:       git menu\n" .
                 \ "    t:       tag commit\n" .
                 \ "    \\rs:     reset commit (carefull)\n" .

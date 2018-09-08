@@ -13,7 +13,6 @@ setlocal nonu
 setlocal buftype=nofile
 setlocal statusline=\ [3-Status]\ \ %{b:currentDir}%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> r :call <SID>CancelStaged()<CR>
@@ -160,7 +159,6 @@ function <SID>HelpDoc()
                 \ "Git Status quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
-                \ "    <f5>:    refresh tabpage\n" .
                 \ "    m:       git menu\n" .
                 \ "    d:       diff file (difftool: vimdiff)\n" .
                 \ "    r:       reset file staging (git reset)\n" .

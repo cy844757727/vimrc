@@ -166,13 +166,15 @@ function! NERDTreeAddKey_Menu_Def()
     call NERDTreeAddMenuItem({
                 \ 'text': 'Switch file (x) permission',
                 \ 'shortcut': 'x',
-                \ 'callback': 'SwitchXPermission'})
+                \ 'callback': 'SwitchXPermission'
+                \ })
 
     call NERDTreeAddKeyMap({
                 \ 'key': 'dbg',
                 \ 'callback': 'DebugFile',
                 \ 'quickhelpText': 'Debug file by gdb tool',
-                \ 'scope': 'Node'})
+                \ 'scope': 'Node'
+                \ })
 endfunction
 
 function! SwitchXPermission()
@@ -248,6 +250,8 @@ function! CompileRun()
     if &filetype == 'nerdtree'
         silent call nerdtree#ui_glue#invokeKeyMap('R')
         echo 'Refresh Done!'
+    elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
+        silent call GIT_Refresh()
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
     elseif &filetype =~ '^c\|cpp$'

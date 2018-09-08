@@ -14,7 +14,6 @@ setlocal buftype=nofile
 setlocal tabstop=1
 setlocal statusline=\ [4-Branch]%=\ \ \ \ \ %-5l\ %4P\ 
 
-nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> a :call <SID>ApplyStash()<CR>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<CR>
@@ -150,7 +149,6 @@ function <SID>HelpDoc()
                 \ "Git branch quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
-                \ "    <f5>:    refresh tabpage\n" .
                 \ "    m:       git menu\n" .
                 \ "    a:       apply stash\n" .
                 \ "    c:       checkout branch\n" .

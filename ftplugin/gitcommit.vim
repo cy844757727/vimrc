@@ -16,7 +16,6 @@ setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\ 
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
-nnoremap <buffer> <f5>  :call GIT_Refresh()<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
@@ -66,6 +65,7 @@ function <SID>CheckOutFile()
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
         if l:msg =~ 'error:\|fatal:'
+                \ 'text': 'Switch file (x) permission',
             echo l:msg
         else
             wincmd w
@@ -81,7 +81,6 @@ function <SID>HelpDoc()
                 \ "Git commit quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    <spcae>: code fold | unfold (za)\n" .
-                \ "    <f5>:    refresh tabpage\n" .
                 \ "    m:       git menu\n" .
                 \ "    d:       diff file\n" .
                 \ "    \\co:     checkout file\n" .

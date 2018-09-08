@@ -1,14 +1,7 @@
 misc/
+.*
 *.viminfo
 *.session
 *.breakpoint
 *.bookmark
-.Git_log
-.Git_commit
-.Git_status
-.Git_branch
-.projectitem
-
-#ftplugin/cpp.vim
-#ftplugin/dbg.vim
 
