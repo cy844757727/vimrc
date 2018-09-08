@@ -34,7 +34,6 @@ if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
 
-                \ 'text': 'Switch file (x) permission',
 function s:RefreshCommit()
     if line('.') != b:curL
         let l:end = line('$')
@@ -117,9 +116,9 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    m:       git menu\n" .
                 \ "    t:       tag commit\n" .
-                \ "    \\rs:     reset commit (carefull)\n" .
-                \ "    \\rv:     revert commit\n" .
-                \ "    \\co:     checkout new branch\n" .
-                \ "    1234:    jump to 1234 wimdo"
+                \ "    \\rs:    reset commit (carefull)\n" .
+                \ "    \\rv:    revert commit\n" .
+                \ "    \\co:    checkout new branch\n" .
+                \ "    1234:    jump to 1234 wimdow"
 endfunction
 

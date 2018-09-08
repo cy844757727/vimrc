@@ -28,9 +28,7 @@ if !exists('g:BMBPSign_WinSpecial')
 endif
 
 if !exists('g:BMBPSign_ProjectType')
-    let g:BMBPSign_ProjectType = {
-                \ 'default': s:home . '/Documents'
-                \ }
+    let g:BMBPSign_ProjectType = {'default': s:home . '/Documents'}
 else
     call map(g:BMBPSign_ProjectType, "v:val =~ '^\\~' ? s:home . strpart(v:val, 1) : v:val")
 endif
@@ -194,9 +192,9 @@ function s:ProjectMenu()
                 call writefile(s:projectItem, s:projectFile)
             elseif l:mode == 'm'
                 let l:path = split(s:projectItem[l:char])[-1]
-                echo s:ProjectUI(l:start[0], '-Modelify item ' . l:char . ' ▼ ')
-                let l:argv = split(input("<name> <type>: "))
-                redraw!
+                echo s:ProjectUI(l:start[0], '▼ Modelify item ' . l:char)
+                let l:argv = split(input("<name > <type>: "))
+                redraw!                         
                 if len(l:argv) == 2
                     let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
                                 \ l:argv[0], l:argv[1], l:path)
@@ -206,7 +204,7 @@ function s:ProjectMenu()
                 endif
             endif
         elseif l:char =~ '[an]'
-            echo s:ProjectUI(l:start[0], '+New Project ▼ ')
+            echo s:ProjectUI(l:start[0], '▼ New Project')
             let l:argv = split(input("<name> <type> [path]: ", '', 'file'))
             let l:argc = len(l:argv)
             redraw!

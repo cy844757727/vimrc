@@ -39,14 +39,16 @@ set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
 set completeopt=menu,menuone,noinsert,preview,noselect
-set errorformat=%f:%l:%c:\ %m,  "gcc/g++
-set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m, "verilog
-set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m, "verilog
-set errorformat+=**\ Error:\ (suppressible):\ %f(%l.%c):\ %m, "verilog
-set errorformat+=**\ Error:\ %f(%l):\ %m,
-set errorformat+=**\ Error:\ %f(%l.%c):\ %m,
-set errorformat+=**\ at\ %f(%l):\ %m, "verilog
-set errorformat+=**\ at\ %f(%l.%c):\ %m "verilog
+" gcc/g++
+set errorformat=%f:%l:%c:\ %m
+" verilog
+set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m
+set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m
+set errorformat+=**\ Error:\ (suppressible):\ %f(%l.%c):\ %m
+set errorformat+=**\ Error:\ %f(%l):\ %m
+set errorformat+=**\ Error:\ %f(%l.%c):\ %m
+set errorformat+=**\ at\ %f(%l):\ %m
+set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldmethod=syntax "折叠方式（依据语法）
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
@@ -54,8 +56,11 @@ colorscheme cydark    "配色方案
 set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8         "显示用的编码
-set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1 "检测编码集
-set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=%{ALEGetStatusLine()}\ \ \ \ \ %{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ │\ %{&ff}\ │\ %Y\ \ \ \ \ %-10.(%l:%c%V%)\ %4P\ 
+set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
+set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=
+set statusline+=%{ALEGetStatusLine()}%5(\ %)
+set statusline+=%{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ │\ %{&ff}\ │\ %Y%5(\ %)
+set statusline+=%-10.(%l:%c%V%)\ %4P%(\ %)
 
 "自定义命令/自动命令=====================
 augroup UsrDefCmd
@@ -68,7 +73,7 @@ augroup END
 
 command! -range=% CFormat :<line1>,<line2>call CodeFormat()
 command! -range RComment :<line1>,<line2>call ReverseComment()
-command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* "删除多余空行，多个空行转一个 && 尾部空白字符
+command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* 
 command! Qs call BMBPSign_SaveWorkSpace('') | wqall
 command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 
@@ -88,11 +93,20 @@ inoremap } <c-r>=ClosePair('}')<CR>
 inoremap " ""<Esc>i
 " 更改PWD到当前文件所在目录
 nmap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
+nmap \od :Async xdg-open .<CR>
+nmap \of :Async xdg-open %<CR>
+nmap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
+vmap \cf :call CodeFormat()<CR>
+nmap \h  :call HEXCovent()<CR>
+nmap <silent> \q :call ReverseComment()<CR>
+vmap <silent> \q :call ReverseComment()<CR>
 
-vmap <C-f> yk:exec "/" . getreg("0")<CR><BS>n
+" 查找
+vmap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
 nmap <C-f> wbve<C-f>
 imap <C-f> <Esc>lwbve<C-f>
-vmap <C-h> y:call StrSubstitute(getreg("0"))<CR>
+" 查找并替换
+vmap <C-h> y:call StrSubstitute(getreg('0'))<CR>
 nmap <C-h> wbve<C-h>
 imap <C-h> <Esc>lwbve<C-h>
 
@@ -109,15 +123,6 @@ map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
-"map! <C-o> <Esc>:AsyncRun xdg-open %<CR> "用默认应用打开当前文件
-"map  <C-o> <Esc>:AsyncRun xdg-open %<CR>
-nmap \od :Async xdg-open .<CR>
-nmap \of :Async xdg-open %<CR>
-nmap \rf :exec "Async xdg-open " . expand('%:h')<CR>
-nmap \h :call HEXCovent()<CR>
-nmap <silent> \q :call ReverseComment()<CR>
-vmap <silent> \q :call ReverseComment()<CR>
-map  \c <Esc>:call CutMouseBehavior()<CR>
 " 保存快捷键
 map  <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
 map! <f3> <Esc><f3>
@@ -135,7 +140,7 @@ map! <f10> <ESC><f10>
 " 编译执行
 map  <silent> <f5> <Esc>:call CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
-" 断点插入 BMBPSign.vim
+" 断点 BMBPSign.vim
 map  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
 map  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
 map! <silent> <f6> <Esc><f6>
@@ -356,9 +361,7 @@ function! StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
     if l:subs != ''
         exec '%s/' . a:str . '/' . l:subs . '/Ig'
-        call cursor(l:pos[1], l:pos[2])
-    else
-        echo 'Do Nothing!'
+        call setpos(l:pos)
     endif
 endfunction
 
