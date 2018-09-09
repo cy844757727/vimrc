@@ -116,9 +116,9 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    m:       git menu\n" .
                 \ "    t:       tag commit\n" .
-                \ "    \\rs:    reset commit (carefull)\n" .
-                \ "    \\rv:    revert commit\n" .
-                \ "    \\co:    checkout new branch\n" .
+                \ "    \\rs:     reset commit (carefull)\n" .
+                \ "    \\rv:     revert commit\n" .
+                \ "    \\co:     checkout new branch\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 

@@ -20,6 +20,8 @@ let s:action = 0
 let s:taskType = ''
 let s:jobBusy = 0
 
+command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+
 function s:StartTask(cmd, type)
     if s:jobBusy == 1
         return

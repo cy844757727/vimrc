@@ -83,7 +83,7 @@ function <SID>HelpDoc()
                 \ "    <spcae>: code fold | unfold (za)\n" .
                 \ "    m:       git menu\n" .
                 \ "    d:       diff file\n" .
-                \ "    \\co:    checkout file\n" .
+                \ "    \\co:     checkout file\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 

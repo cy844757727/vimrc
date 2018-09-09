@@ -1,5 +1,5 @@
 "====================================================
-if exists("b:did_ftplugin")
+if exists("b:did_ftplugin") || empty(system("grep '" . getcwd() . "' ~/.vim/.projectitem"))
     finish
 endif
 let b:did_ftplugin = 1
@@ -8,7 +8,7 @@ setlocal cindent
 
 augroup c_cpp_project
     autocmd!
-    autocmd BufWritePost *.c,*.cpp call s:DependencyFile(expand('%'))
+    autocmd BufWritePost <buffer> call s:DependencyFile(expand('%'))
 augroup END
 
 command! -buffer -nargs=? RMakefile :call s:RefreshAll('<args>')
@@ -64,10 +64,10 @@ let s:makeFile = [
             \ ]
 
 function s:GenerateMakeFile()
-    if getcwd() =~ '^/[^/]\+/[^/]\+$'
-        return
+    " 排除主目录
+    if getcwd() != system('echo ~')[:-2]
+        call writefile(s:makeFile, 'Makefile')
     endif
-    call writefile(s:makeFile, 'Makefile')
 endfunction
 
 function s:DependencyFile(file)

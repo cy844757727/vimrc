@@ -314,7 +314,7 @@ endfunction
 function BMBPSign_ToggleBookMark()
     if expand('%') == ''
         echo 'Invalid file name!'
-    elseif &filetype != 'tagbar' && &filetype != 'nerdtree' && &filetype != 'qf'
+    elseif &filetype !~ '^tagbar\|nerdtree\|qf$'
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBookMarkDef')
     endif
 endfunction
@@ -360,7 +360,7 @@ function BMBPSign_ToggleBreakPoint()
             normal dd
         endif
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
-    elseif &filetype == 'c' || &filetype == 'cpp'
+    elseif &filetype =~ '^c\|cpp$'
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     endif
 endfunction

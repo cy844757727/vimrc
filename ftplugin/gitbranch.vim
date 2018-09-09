@@ -152,7 +152,8 @@ function <SID>HelpDoc()
                 \ "    m:       git menu\n" .
                 \ "    a:       apply stash\n" .
                 \ "    c:       checkout branch\n" .
-                \ "    \\d:     delete current item\n" .
+                \ "    \\d:      delete current item\n" .
+                \ "    \\D:      delete (force)\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

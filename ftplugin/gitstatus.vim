@@ -166,9 +166,9 @@ function <SID>HelpDoc()
                 \ "    a:       add file (git add)\n" .
                 \ "    A:       add all file\n" .
                 \ "    e:       edit file (new tabpage)\n" .
-                \ "    \\d:     delete file\n" .
-                \ "    \\D:     delete file (force)\n" .
-                \ "    \\co:    checkout file (git checkout)\n" .
+                \ "    \\d:      delete file\n" .
+                \ "    \\D:      delete file (force)\n" .
+                \ "    \\co:     checkout file (git checkout)\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

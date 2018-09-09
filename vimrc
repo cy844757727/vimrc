@@ -52,10 +52,10 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldmethod=syntax "折叠方式（依据语法）
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
-colorscheme cydark    "配色方案
+colorscheme cydark
 set helplang=cn
 set langmenu=zh_CN.UTF-8
-set enc=utf-8         "显示用的编码
+set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=
 set statusline+=%{ALEGetStatusLine()}%5(\ %)
@@ -75,11 +75,10 @@ command! -range=% CFormat :<line1>,<line2>call CodeFormat()
 command! -range RComment :<line1>,<line2>call ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* 
 command! Qs call BMBPSign_SaveWorkSpace('') | wqall
-command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 
 command! -nargs=* Amake :AsyncRun make
-command! Actags :call job_start('ctags -R -f .tags', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
-command! Avdel :call job_start('vdel -lib work -all', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+command! Actags :Async ctags -R -f .tags
+command! Avdel :Async vdel -lib work -all
 
 "快捷键映射=====================
 " 括号引号自动补全

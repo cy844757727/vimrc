@@ -45,6 +45,7 @@ let s:idLog = -1
 let s:idCommit = -1
 let s:idStatus = -1
 let s:idBranch = -1
+"let g:GIT_CurrentBranch = ''
 
 " For merge complete
 function! GIT_CompleteBranch(L, C, P)
@@ -240,6 +241,7 @@ function! GIT_TabPage()
         exec '2resize ' . l:lin
         let s:idLog = win_getid()
         call setline(1, GIT_FormatLog())
+"        let g:GIT_CurrentBranch = split(system("git branch|grep '*'"))[1]
 endfunction
 
 function! GIT_Toggle()
@@ -291,6 +293,7 @@ function! GIT_Refresh(...)
         call setline(1, GIT_FormatLog())
         call setpos('.', l:pos)
         exec l:winnr . 'wincmd w'
+"        let g:GIT_CurrentBranch = split(system("git branch|grep '*'"))[1]
     endif
 endfunction
 
@@ -407,7 +410,7 @@ function! s:SubMenu()
         endif
     elseif l:char == 'm'
         echo "** merge ithe specified branch to current\n" .
-                    \ '==================================='
+                    \ '============================================'
         let l:branch = input('Branch: ', '', 'custom,GIT_CompleteBranch')
         if l:branch != ''
             let l:msg = system('git merge ' . l:branch)
