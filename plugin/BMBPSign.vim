@@ -184,7 +184,7 @@ function s:ProjectMenu()
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
-            if l:mode == 's'
+            if l:mode == 's' && getcwd() != split(s:projectItem[l:start[0] + l:char])[-1]
                 call s:SwitchProject(l:char)
                 break
             elseif l:mode == 'd'
@@ -192,7 +192,7 @@ function s:ProjectMenu()
                 call writefile(s:projectItem, s:projectFile)
             elseif l:mode == 'm'
                 let l:path = split(s:projectItem[l:char])[-1]
-                echo s:ProjectUI(l:start[0], '▼ Modelify item ' . l:char)
+                echo s:ProjectUI(l:start[0], '▼ Modelify item ' . str2nr(l:char))
                 let l:argv = split(input("<name > <type>: "))
                 redraw!                         
                 if len(l:argv) == 2
