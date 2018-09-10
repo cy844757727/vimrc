@@ -160,9 +160,9 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
                 \ "    m:       git menu\n" .
-                \ "    d:       diff file (difftool: vimdiff)\n" .
+                \ "    d:       diff file (git difftool)\n" .
                 \ "    r:       reset file staging (git reset)\n" .
-                \ "    R:       reset all file staging\n" .
+                \ "    R:       reset all staged file\n" .
                 \ "    a:       add file (git add)\n" .
                 \ "    A:       add all file\n" .
                 \ "    e:       edit file (new tabpage)\n" .
