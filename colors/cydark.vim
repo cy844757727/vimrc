@@ -39,8 +39,8 @@ hi PMenuSel         ctermfg=232  ctermbg=250  cterm=NONE
 hi PMenuSbar        ctermfg=NONE ctermbg=239  cterm=NONE
 hi PMenuThumb       ctermfg=NONE ctermbg=250  cterm=NONE
 
-hi Folded           ctermfg=222  ctermbg=234
-hi FoldColumn       ctermfg=223  ctermbg=234
+hi Folded           ctermfg=222  ctermbg=232
+hi FoldColumn       ctermfg=223  ctermbg=232
 
 " Language highlight
 hi PreProc          ctermfg=176  ctermbg=NONE cterm=NONE

@@ -174,7 +174,7 @@ endfunction
 function! GIT_FormatBranch()
     let l:local = systemlist('git branch -v')
     let l:remote = systemlist('git remote -v')
-    let l:tag = systemlist('git tag')
+    let l:tag = systemlist('git tag|sort -nr')
     let l:stash = systemlist('git stash list')
     call map(l:local, "'    ' . v:val")
     let l:local = ['Local:', ''] + l:local
@@ -226,7 +226,7 @@ endfunction
 function! GIT_TabPage()
         let l:col = float2nr(0.4 * &columns)
         let l:lin = float2nr(0.4 * &lines)
-        silent tabnew .Git_commit
+        silent $tabnew .Git_commit
         let s:idCommit = win_getid()
         exec 'silent belowright ' . l:col . 'vnew .Git_status'
         let s:idStatus = win_getid()
@@ -244,14 +244,17 @@ function! GIT_TabPage()
 "        let g:GIT_CurrentBranch = split(system("git branch|grep '*'"))[1]
 endfunction
 
+let s:TabPrevious = 1
 function! GIT_Toggle()
     if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
-        let l:nr = tabpagenr()
         tabclose
-        if l:nr == tabpagenr()
-            tabprevious
-        endif
+        try
+            exec s:TabPrevious . 'tabnext'
+        catch
+            $tabnext
+        endtry
     else
+        let s:TabPrevious = tabpagenr()
         let l:list = win_id2tabwin(s:idLog)
         if l:list != [0, 0]
             exec l:list[0] . 'tabnext'
@@ -379,6 +382,7 @@ function! s:SubMenu()
                 \ "    (t)ag HEAD             <git tag>\n" .
                 \ "    (c)heckout new branch  <git checkout -q -b>\n" .
                 \ "    (m)erge branch         <git merge>\n" .
+                \ "    (r)ebase branch        <git rebash>\n"
                 \ "!?:"
     let l:msg = ''
     let l:char = nr2char(getchar())
@@ -409,11 +413,18 @@ function! s:SubMenu()
             let l:msg = system('git checkout -q -b ' . l:name)
         endif
     elseif l:char == 'm'
-        echo "** merge ithe specified branch to current\n" .
+        echo "** merge the specified branch to current\n" .
                     \ '============================================'
         let l:branch = input('Branch: ', '', 'custom,GIT_CompleteBranch')
         if l:branch != ''
             let l:msg = system('git merge ' . l:branch)
+        endif
+    elseif l:char == 'r'
+        echo "** rebase the specified branch to current\n" .
+                    \ '============================================'
+        let l:branch = input('Branch: ', '', 'custom,GIT_CompleteBranch')
+        if l:branch != ''
+            let l:msg = system('git rebase ' . l:branch)
         endif
     endif
     return l:msg

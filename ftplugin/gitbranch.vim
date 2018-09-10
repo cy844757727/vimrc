@@ -19,6 +19,9 @@ nnoremap <buffer> <silent> a :call <SID>ApplyStash()<CR>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
+nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch()<CR>
+nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(1)<CR>
+nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(2)<CR>
 nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
@@ -120,6 +123,22 @@ function <SID>DeleteItem(...)
     endif
 endfunction
 
+function <SID>Merge_Rebase_Branch(...)
+    let l:str = matchstr(getline('.'), '^\s\+\w\+')
+    let l:lin = search('^[^Ll]\w\+:', 'n')
+    if l:str != '' && (l:lin == 0 || l:lin > line('.'))
+        let l:op = a:0 == 0 ? 'merge ' . l:str : 
+                    \ a:1 == 1 ? 'rebase ' . l:str : 'rebase --continue '
+        let l:msg = system('git ' . l:op)
+        if l:msg =~ 'error:\|fatal:'
+            echo l:msg
+        else
+            echo l:msg
+            call GIT_Refresh()
+        endif
+    endif
+endfunction
+
 function s:cursorJump()
     if b:curL != line('.')
         let l:end = line('$')
@@ -154,6 +173,9 @@ function <SID>HelpDoc()
                 \ "    c:       checkout branch\n" .
                 \ "    \\d:      delete current item\n" .
                 \ "    \\D:      delete (force)\n" .
+                \ "    \\m       merge to current branch\n" .
+                \ "    \\r       rebase to current branch\n" .
+                \ "    \\R       rebase continue\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

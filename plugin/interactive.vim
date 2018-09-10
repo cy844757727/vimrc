@@ -202,5 +202,6 @@ function! INTERACTIVE_Start(cmd, type)
 endfunction
 
 command -nargs=* -complete=file SDebug :call INTERACTIVE_Start(<q-args>, 'dbg')
+command -nargs=* -complete=file Dbg :call INTERACTIVE_Start(<q-args>, 'dbg')
 command -nargs=* -complete=file SShell :call INTERACTIVE_Start(<q-args>, 'bash')
 

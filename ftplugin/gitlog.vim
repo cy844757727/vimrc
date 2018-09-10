@@ -81,20 +81,18 @@ endfunction
 
 function <SID>Reset_Revert_Commit(...)
     let l:hash = matchstr(getline('.'), '\w\{7}')
-    if l:hash != ''
-        if a:0 > 0
-            if input('Are you sure to reset commit which will cover workspace yes/no(no): ') != 'yes'
-                let l:op = 'reset --hard '
-            else
-                echo ' Canceled...'
-                return
-            endif
-        else
-            let l:op = 'revert '
-        endif
-        let l:msg = system('git ' . l:op . l:hash)
-        call s:MsgHandle(l:msg)
+    if l:hash == ''
+        return
+    elseif a:0 == 0
+        let l:op = 'revert '
+    elseif input('Are you sure to reset commit which will cover workspace yes/no(no): ') == 'yes'
+        let l:op = 'reset --hard '
+    else
+        redraw!
+        return
     endif
+    let l:msg = system('git ' . l:op . l:hash)
+    call s:MsgHandle(l:msg)
 endfunction
 
 function <SID>CheckOutNewBranck()
