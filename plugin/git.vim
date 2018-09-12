@@ -40,13 +40,6 @@ augroup Git_manager
 	autocmd BufWinEnter .Git_branch set filetype=gitbranch|set nobuflisted
 augroup END
 
-" windows ID
-let s:idLog = -1
-let s:idCommit = -1
-let s:idStatus = -1
-let s:idBranch = -1
-"let g:GIT_CurrentBranch = ''
-
 " For merge complete
 function! GIT_CompleteBranch(L, C, P)
     if a:L =~ '^-'
@@ -241,32 +234,26 @@ function! GIT_TabPage()
         exec '2resize ' . l:lin
         let s:idLog = win_getid()
         call setline(1, GIT_FormatLog())
-"        let g:GIT_CurrentBranch = split(system("git branch|grep '*'"))[1]
 endfunction
 
-let s:TabPrevious = 1
 function! GIT_Toggle()
     if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
         tabclose
         try
             exec s:TabPrevious . 'tabnext'
-        catch
+        catch 'E121'
+            1tabnext
+        catch 'E16'
             $tabnext
         endtry
     else
         let s:TabPrevious = tabpagenr()
-        let l:list = win_id2tabwin(s:idLog)
-        if l:list != [0, 0]
-            exec l:list[0] . 'tabnext'
+        try
+            exec win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0] . 'tabnext'
             call GIT_Refresh()
-        " apply to load session file
-        elseif s:idLog == -1 && win_findbuf(bufnr('Git_log')) != []
-            call win_gotoid(win_findbuf(bufnr('Git_log'))[0])
-            let s:idLog = win_getid()
-            call GIT_Refresh()
-        else
+        catch
             call GIT_TabPage()
-        endif
+        endtry
     endif
 endfunction
 
@@ -296,7 +283,6 @@ function! GIT_Refresh(...)
         call setline(1, GIT_FormatLog())
         call setpos('.', l:pos)
         exec l:winnr . 'wincmd w'
-"        let g:GIT_CurrentBranch = split(system("git branch|grep '*'"))[1]
     endif
 endfunction
 

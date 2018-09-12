@@ -224,7 +224,7 @@ let g:ale_sign_warning = '💡'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-let g:ale_statusline_format = ['⨉ %d', '⚠ %d', '⬥ ok']
+let g:ale_statusline_format = ['× %d', '! %d', '⬥ ok']
 let g:ale_sign_column_always = 1
 "let g:ale_lint_delay = 1000
 let g:ale_lint_on_text_changed = 'normal'
@@ -289,7 +289,7 @@ function! ClosePair(char)
     endif
 endfunction
 
-"	指定范围代码格式化: :CFormat
+"	指定范围代码格式化: CFormat
 function! CodeFormat()
     if &filetype =~ '^c\|cpp$'
         silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&:!?^][-+=/><|&:]\?=\?\)\s*/\1 \2 /ge
@@ -360,14 +360,13 @@ function! StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
     if l:subs != ''
         exec '%s/' . a:str . '/' . l:subs . '/Ig'
-        call setpos(l:pos)
+        call setpos('.', l:pos)
     endif
 endfunction
 
 " 文件保存及后期处理: F3
-let g:DoubleClick_500MSTimer = 0
 function! SaveSpecifiedFile(file)
-    if g:DoubleClick_500MSTimer == 1
+    if exists('g:DoubleClick_500MSTimer') && g:DoubleClick_500MSTimer == 1
         wall
         echo 'Save all'
     elseif filereadable(a:file)
@@ -400,26 +399,25 @@ function! HEXCovent()
 endfunction
 
 " 最大化窗口/恢复：f4
-let g:MaxmizeWindow = []
 function! WinResize()
     let l:winId = win_getid()
-    if g:MaxmizeWindow == []
-        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), g:MaxmizeWindow[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MaxmizeWindow[1]])
-    elseif g:MaxmizeWindow[2] == l:winId
-        exec 'resize ' . g:MaxmizeWindow[0]
-        exec 'vert resize ' . g:MaxmizeWindow[1]
-        let g:MaxmizeWindow = []
+    if !exists('g:MAXMIZEWIN')
+        let g:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), g:MAXMIZEWIN[0]])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MAXMIZEWIN[1]])
+    elseif g:MAXMIZEWIN[2] == l:winId
+        exec 'resize ' . g:MAXMIZEWIN[0]
+        exec 'vert resize ' . g:MAXMIZEWIN[1]
+        unlet g:MAXMIZEWIN
     else
-        if win_gotoid(g:MaxmizeWindow[2]) == 1
-            exec 'resize ' . g:MaxmizeWindow[0]
-            exec 'vert resize ' . g:MaxmizeWindow[1]
+        if win_gotoid(g:MAXMIZEWIN[2]) == 1
+            exec 'resize ' . g:MAXMIZEWIN[0]
+            exec 'vert resize ' . g:MAXMIZEWIN[1]
             call win_gotoid(l:winId)
         endif
-        let g:MaxmizeWindow = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), g:MaxmizeWindow[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MaxmizeWindow[1]])
+        let g:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
+        exec 'resize ' . max([float2nr(0.8 * &lines), g:MAXMIZEWIN[0]])
+        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MAXMIZEWIN[1]])
     endif
 endfunction
 
