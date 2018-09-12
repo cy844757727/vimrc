@@ -366,7 +366,7 @@ endfunction
 
 " 文件保存及后期处理: F3
 function! SaveSpecifiedFile(file)
-    if exists('g:DoubleClick_500MSTimer') && g:DoubleClick_500MSTimer == 1
+    if exists('g:DoubleClick_500MSTimer')
         wall
         echo 'Save all'
     elseif filereadable(a:file)
@@ -384,7 +384,7 @@ function! SaveSpecifiedFile(file)
 endfunction
 
 function! TimerHandle500MS(id)
-    let g:DoubleClick_500MSTimer = 0
+    unlet g:DoubleClick_500MSTimer
 endfunction
 
 " 切换16进制显示: \h
