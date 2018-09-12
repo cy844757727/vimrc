@@ -239,9 +239,10 @@ function s:SaveWorkSpace(pre)
     call s:SaveSignFile(s:bookMarkVec, a:pre . s:bookMarkFile)
     call s:SaveSignFile(s:breakPointVec, a:pre . s:breakPointFile)
     exec 'mksession! ' . a:pre . s:sessionFile
+    let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
-    set viminfo=
+    exec 'set viminfo=' . l:temp
     for l:item in items(g:BMBPSign_SpecialBuf)
         exec "call system(\"sed -i 's/^file " . l:item[0] . ".*$/bw|" . l:item[1] . "/' " . a:pre . s:sessionFile . "\")"
     endfor 
@@ -285,9 +286,10 @@ function s:LoadWorkSpace(pre)
     endif
     filetype detect
     if filereadable(a:pre . s:vimInfoFile)
+        let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100
         exec 'silent! rviminfo! ' . a:pre . s:vimInfoFile
-        set viminfo=
+        exec 'set viminfo=' . l:temp
     endif
     if filereadable(a:pre . s:sessionFile)
         exec 'silent! source ' . a:pre . s:sessionFile
