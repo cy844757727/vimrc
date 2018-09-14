@@ -184,7 +184,7 @@ function s:ProjectMenu()
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
-            if l:mode == 's' && getcwd() != split(s:projectItem[l:start[0] + l:char])[-1]
+            if l:mode == 's' && (expand('%') == '' || getcwd() != split(s:projectItem[l:start[0] + l:char])[-1])
                 call s:SwitchProject(l:char)
                 break
             elseif l:mode == 'd'
@@ -263,7 +263,7 @@ function s:LoadWorkSpace(pre)
         call s:ClearSign('BMBPSignBookMarkDef')
         call s:ClearSign('BMBPSignBreakPointDef')
     endif
-    silent %bwipeout
+    silent %bdelete
     if filereadable(a:pre . s:bookMarkFile)
         let l:sign = readfile(a:pre . s:bookMarkFile)
         for l:item in l:sign

@@ -13,117 +13,59 @@ sign define DBGSignDef text=➤  texthl=DBGSignHl
 let s:newSignId = 100
 let s:cmdWinId = -1
 let s:sourceWinId = -1
-let s:job = -1
-let s:channel = -1
 let s:dbgSign = []
 let s:action = 0
-let s:taskType = ''
 let s:jobBusy = 0
 
-command! -nargs=+ -complete=file Async :call job_start('<args>', {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
-
-function s:StartTask(cmd, type)
-    if s:jobBusy == 1
-        return
-    endif
-    let s:taskType = a:type
-    if a:type == 'dbg'
-        call s:DbgInitial(a:cmd)
-    else
-        call s:DefaultInitial(a:cmd)
-    endif
-    normal G$
-    let s:jobBusy = 1
-    let s:job = job_start(a:cmd, {'mode': 'raw', 'callback': 'Interactive_MsgHandle'})
-    let s:channel = job_getchannel(s:job)
-endfunction
+command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 
 function s:DbgInitial(cmd)
+    if s:jobBusy == 1
+        return
+    else
+        let s:jobBusy = 1
+    endif
     SWorkSpace
     wall
     silent tabonly
     silent only
     let s:sourceWinId = win_getid()
     bo 15new .dbglog
-    let s:cmdWinId = win_getid()
+    let s:dbgWinId = win_getid()
+    set buftype=nofile
     set filetype=dbg
-"    badd ~/.vim/misc/gdb.cmd
+"    set bufhidden=wipe
     let l:time = system('date')[:-2]
-    call append(line('$'), ['', '', '===== Debuging time: ' . l:time . ' =====', '( ' . a:cmd . ' )'])
-    write
-endfunction
-
-function s:DefaultInitial(cmd)
-    let l:nrOfNerd = bufwinnr('NERD_tree')
-    let l:nrOfTag = bufwinnr('TagBar')
-    NERDTreeClose
-    TagbarClose
-    bo 15new .shelllog
-    let s:cmdWinId = win_getid()
-    set filetype=shell
-    if l:nrOfNerd != -1
-        if l:nrOfTag !=-1
-            NERDTree
-            TagbarOpen
-        else
-            NERDTree
-        endif
-    elseif l:nrOfTag != -1
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
-        TagbarOpen
-        let g:tagbar_vertical=19
-        let g:tagbar_left=0
-    endif
-"    badd ~/.vim/misc/shell.cmd
-    call win_gotoid(s:cmdWinId)
-    if s:taskType == 'bash'
-        call append(line('$'), ['', '( ' . a:cmd . ' )', '>> '])
-        write
-    endif
-endfunction
-
-function s:SendMsg(msg, action)
-    let @z = ''
-    let s:action = a:action
-    try
-        call ch_sendraw(s:channel, a:msg . "\n")
-    catch
-        call win_gotoid(s:cmdWinId)
-        write
-        bwipeout
-        let s:jobBusy = 0
-        if s:taskType == 'dbg'
-            if !empty(s:dbgSign)
-                exec 'sign unplace ' . s:dbgSign[1] . ' file=' . s:dbgSign[0]
-            endif
-            let s:dbgSign = []
-"            bdelete ~/.vim/misc/gdb.cmd
-            LWorkSpace
-"        elseif s:taskType == 'bash'
-"            bdelete ~/.vim/misc/shell.cmd
-        endif
-    endtry
-endfunction
-
-function! Interactive_MsgHandle(channel, msg)
-    let @Z = a:msg
-    call win_gotoid(s:cmdWinId)
-    if getline(line('$')) =~ '^>>\|(gdb)'
-        normal Gdd
-    endif
-    if s:taskType == 'dbg'
-        call append(line('$'), split(a:msg, '\n\+'))
-    elseif s:taskType == 'bash'
-        call append(line('$'), split(a:msg, '\n') + ['>> '])
-    else
-        call append(line('$'), split(a:msg, '\n'))
-    endif
+    call setline(1, ['', '', '===== Debuging time: ' . l:time . ' =====', '( ' . a:cmd . ' )'])
     normal G$
-    write
+    let s:dbgJob = job_start(a:cmd, {'mode': 'raw', 'callback': 'Interactive_DbgMsgHandle'})
+    let s:dbgChannel = job_getchannel(s:dbgJob)
+endfunction
+
+function! Interactive_DbgMsgHandle(channel, msg)
+    call win_gotoid(s:dbgWinId)
+    call append(line('$'), split(a:msg, '\n\+'))
+    normal G$
     if s:action == 1
         call s:DbgJumpLine(a:msg)
+        call win_gotoid(s:dbgWinId)
     endif
+endfunction
+
+function s:DbgSendMsg(msg)
+    let s:action = a:msg =~ '^\([rcnsu]\|run\|continue\|next\|step\|until\)$\|^\(j\|jump\) ' ? 1 : 0
+    try
+        call ch_sendraw(s:dbgChannel, a:msg . "\n")
+    catch
+        call win_gotoid(s:dbgWinId)
+        bdelete
+        let s:jobBusy = 0
+        if !empty(s:dbgSign)
+            exec 'sign unplace ' . s:dbgSign[1] . ' file=' . s:dbgSign[0]
+        endif
+        let s:dbgSign = []
+        LWorkSpace
+    endtry
 endfunction
 
 function s:DbgJumpLine(msg)
@@ -140,25 +82,75 @@ function s:DbgJumpLine(msg)
     elseif !empty(l:line)
         call cursor(l:line, 1)
     else
-        call win_gotoid(s:cmdWinId)
         return
     endif
     if !empty(s:dbgSign)
         exec 'sign unplace ' . s:dbgSign[1] . ' file=' . s:dbgSign[0]
     endif
-    let l:file = expand('%') | let l:line = line('.')
-    let l:tmp = @z
-    redir @z
-    silent sign place
-    redir END
-    while !empty(matchlist(@z, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
+    let [l:file, l:line] = [expand('%'), line('.')]
+    let l:signPlace = execute('sign place')
+    while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
         let s:newSignId += 1
     endwhile
     exec 'sign place ' . s:newSignId . ' line=' . l:line . ' name=DBGSignDef' . ' file=' . l:file
-    let @z = l:tmp
     let s:dbgSign = [l:file, s:newSignId]
-    call win_gotoid(s:cmdWinId)
 endfunction
+
+"========================================================================================================
+"========================================================================================================
+function s:ShellInitial(cmd)
+    let l:nrOfNerd = bufwinnr('NERD_tree')
+    let l:nrOfTag = bufwinnr('TagBar')
+    NERDTreeClose
+    TagbarClose
+    bo 15new .shelllog
+    set filetype=shell
+    set buftype=nofile
+    let s:shellWinId = win_getid()
+    if l:nrOfNerd != -1
+        if l:nrOfTag !=-1
+            NERDTree
+            TagbarOpen
+        else
+            NERDTree
+        endif
+    elseif l:nrOfTag != -1
+        let g:tagbar_vertical=0
+        let g:tagbar_left=1
+        TagbarOpen
+        let g:tagbar_vertical=19
+        let g:tagbar_left=0
+    endif
+    call win_gotoid(s:cmdWinId)
+    call setline(1, ['', '( ' . a:cmd . ' )', '>> '])
+    normal G$
+    let s:jobBusy = 1
+    let s:shellJob = job_start(a:cmd, {'mode': 'raw', 'callback': 'Interactive_ShellMsgHandle'})
+    let s:shellChannel = job_getchannel(s:shellJob)
+endfunction
+
+function! Interactive_ShellMsgHandle(channel, msg)
+    call win_gotoid(s:shellWinId)
+    if getline('$') =~ '^>> $'
+        normal Gdd
+    endif
+    call append(line('$'), split(a:msg, '\n'))
+    if getline('$') !~ '^>>'
+        call append('$', ['>> '])
+    endif
+    normal G$
+endfunction
+
+function s:ShellSendMsg(msg)
+    try
+        call ch_sendraw(s:shellChannel, a:msg . "\n")
+    catch
+        call win_gotoid(s:shellWinId)
+        bdelete
+        let s:jobBusy = 0
+    endtry
+endfunction
+
 " ==========================================================
 " ==========================================================
 " ==========================================================
@@ -175,8 +167,12 @@ function! INTERACTIVE__Stop()
 "    call s:SendMsg(l:msg, 0)
 endfunction
 
-function! INTERACTIVE_SendMsg(msg, action)
-    call s:SendMsg(a:msg, a:action)
+function! INTERACTIVE_SendMsg(msg, type)
+    if a:type == 'dbg'
+        call s:DbgSendMsg(a:msg)
+    elseif a:type == 'shell'
+        cal s:ShellSendMsg(a:msg)
+    endif
 endfunction
 
 function! INTERACTIVE_Start(cmd, type)
@@ -193,15 +189,13 @@ function! INTERACTIVE_Start(cmd, type)
                 let l:cmd = 'gdb -q -x .breakpoint ' . a:cmd
             endif
         endif
-    elseif a:type == 'bash' && a:cmd == ''
-        let l:cmd = 'bash'
-    else
-        let l:cmd = a:cmd
+        call s:DbgInitial(l:cmd)
+    elseif a:type == 'shell'
+        call s:ShellInitial(a:cmd == '' ? 'bash' : a:cmd)
     endif
-    call s:StartTask(l:cmd, a:type)
 endfunction
 
 command -nargs=* -complete=file SDebug :call INTERACTIVE_Start(<q-args>, 'dbg')
 command -nargs=* -complete=file Dbg :call INTERACTIVE_Start(<q-args>, 'dbg')
-command -nargs=* -complete=file SShell :call INTERACTIVE_Start(<q-args>, 'bash')
+command -nargs=* -complete=file SShell :call INTERACTIVE_Start(<q-args>, 'shell')
 

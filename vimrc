@@ -91,31 +91,32 @@ inoremap } <c-r>=ClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
 " 更改PWD到当前文件所在目录
-nmap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
-nmap \od :Async xdg-open .<CR>
-nmap \of :Async xdg-open %<CR>
-nmap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
-vmap \cf :call CodeFormat()<CR>
-nmap \h  :call HEXCovent()<CR>
-nmap <silent> \q :call ReverseComment()<CR>
-vmap <silent> \q :call ReverseComment()<CR>
+nnoremap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
+nnoremap \od :Async xdg-open .<CR>
+nnoremap \of :Async xdg-open %<CR>
+nnoremap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
+vnoremap \= :call CodeFormat()<CR>
+nnoremap \= :call CodeFormat()<CR>
+nnoremap \h  :call HEXCovent()<CR>
+nnoremap <silent> \q :call ReverseComment()<CR>
+vnoremap <silent> \q :call ReverseComment()<CR>
 
 " 查找
-vmap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
+vnoremap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
 nmap <C-f> wbve<C-f>
 imap <C-f> <Esc>lwbve<C-f>
 " 查找并替换
-vmap <C-h> y:call StrSubstitute(getreg('0'))<CR>
+vnoremap <C-h> y:call StrSubstitute(getreg('0'))<CR>
 nmap <C-h> wbve<C-h>
 imap <C-h> <Esc>lwbve<C-h>
 
-map  <C-a> <Esc>ggvG$
-map  <C-w> <Esc>:close<CR>
-map  <S-PageUp> <Esc>:wincmd W<CR>
-map  <S-pageDown> <Esc>:wincmd w<CR>
-map  <C-t> <Esc>:tabnew<CR>
-map  <S-t> <Esc>:tabclose<CR>
-map  <S-tab> <Esc>:tabnext<CR>
+noremap <C-a> <Esc>ggvG$
+noremap <C-w> <Esc>:close<CR>
+noremap <S-PageUp> <Esc>:wincmd W<CR>
+noremap <S-pageDown> <Esc>:wincmd w<CR>
+noremap <C-t> <Esc>:tabnew<CR>
+noremap <silent> <S-t> <Esc>:try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
+noremap  <S-tab> <Esc>:tabnext<CR>
 map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
 map! <S-PageUp> <Esc><S-PageUp>
@@ -123,34 +124,34 @@ map! <S-PageDown> <Esc><S-PageDown>
 map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
 " 保存快捷键
-map  <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
+noremap  <silent> <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
 map! <f3> <Esc><f3>
-map  <silent> <f4> :call WinResize()<Cr>
+noremap  <silent> <f4> :call WinResize()<Cr>
 map! <f4> <Esc><f4>
 " 窗口切换
-map  <f7> <Esc>:call GIT_Toggle()<CR>
-map  <f8> <Esc>:call ToggleTagbar()<CR>
-map  <f9> <Esc>:call ToggleNERDTree()<CR>
-map  <f10> <ESC>:call ToggleQuickFix()<CR>
+noremap  <silent> <f7> <Esc>:call GIT_Toggle()<CR>
+noremap  <silent> <f8> <Esc>:call ToggleTagbar()<CR>
+noremap  <silent> <f9> <Esc>:call ToggleNERDTree()<CR>
+noremap  <silent> <f10> <ESC>:call ToggleQuickFix()<CR>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>
 map! <f10> <ESC><f10>
 " 编译执行
-map  <silent> <f5> <Esc>:call CompileRun()<CR>
+noremap  <silent> <f5> <Esc>:call CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
 " 断点 BMBPSign.vim
-map  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
-map  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
-map! <silent> <f6> <Esc><f6>
+noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
+noremap  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
+map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim
-map  <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
-map  <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
-map  <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
-map  <silent> \m <Esc>:BMBPSignClearBookMark<CR>
-map! <silent> <f12> <Esc><f12>
-map! <silent> <C-Down> <Esc><C-Down>
-map! <silent> <C-Up> <Esc><C-Up>
+noremap  <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
+noremap  <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
+noremap  <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
+noremap  <silent> \m <Esc>:BMBPSignClearBookMark<CR>
+map! <f12> <Esc><f12>
+map! <C-Down> <Esc><C-Down>
+map! <C-Up> <Esc><C-Up>
 
 "插件配置======================
 "  Netrw-NERDTree 配置
@@ -267,7 +268,11 @@ function! CompileRun()
             exec 'AsyncRun vlib work && vmap work work && vlog -work work %'
         endif
     elseif &filetype == 'sh'
-        exec 'SShell bash -x ' . expand('%:p')
+        if filereadable('.breakpoint')
+            exec 'SShell bash -x ' . expand('%:p')
+        else
+            exec 'SShell bash -c ' . expand('%:p')
+        endif
     endif
 endfunction
 
