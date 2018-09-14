@@ -173,9 +173,9 @@ function <SID>HelpDoc()
                 \ "    c:       checkout branch\n" .
                 \ "    \\d:      delete current item\n" .
                 \ "    \\D:      delete (force)\n" .
-                \ "    \\m       merge to current branch\n" .
-                \ "    \\r       rebase to current branch\n" .
-                \ "    \\R       rebase continue\n" .
+                \ "    \\m:      merge to current branch\n" .
+                \ "    \\r:      rebase to current branch\n" .
+                \ "    \\R:      rebase continue\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

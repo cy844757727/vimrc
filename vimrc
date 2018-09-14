@@ -266,6 +266,8 @@ function! CompileRun()
         else
             exec 'AsyncRun vlib work && vmap work work && vlog -work work %'
         endif
+    elseif &filetype == 'sh'
+        exec 'SShell bash -x ' . expand('%:p')
     endif
 endfunction
 

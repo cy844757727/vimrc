@@ -219,21 +219,19 @@ endfunction
 function! GIT_TabPage()
         let l:col = float2nr(0.4 * &columns)
         let l:lin = float2nr(0.4 * &lines)
-        silent $tabnew .Git_commit
-        let s:idCommit = win_getid()
+        silent $tabnew .Git_log
+        call setline(1, GIT_FormatLog())
         exec 'silent belowright ' . l:col . 'vnew .Git_status'
-        let s:idStatus = win_getid()
         call setline(1, GIT_FormatStatus())
         call search('^\(\s\+\)\zs\S')
         exec 'silent belowright ' . l:lin . 'new .Git_branch'
-        let s:idBranch = win_getid()
         call setline(1, GIT_FormatBranch())
         call search('^\([ *]\+\)\zs\w')
         1wincmd w
-        silent aboveleft new .Git_log
-        exec '2resize ' . l:lin
-        let s:idLog = win_getid()
-        call setline(1, GIT_FormatLog())
+        exec 'silent belowright ' . l:lin . 'new .Git_commit'
+        call setline(1, GIT_FormatCommit('HEAD'))
+        normal zj
+        3wincmd w
 endfunction
 
 function! GIT_Toggle()

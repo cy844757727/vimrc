@@ -354,6 +354,7 @@ function BMBPSign_ToggleBreakPoint()
         else
             normal dd
         endif
+        write
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     elseif &filetype == 'sh'
         if match(getline('.'),'set [-+]x') == -1
@@ -365,6 +366,7 @@ function BMBPSign_ToggleBreakPoint()
         else
             normal dd
         endif
+        write
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
     elseif &filetype =~ '^c\|cpp$'
         call s:ToggleSign(expand('%'), line('.'), 'BMBPSignBreakPointDef')
