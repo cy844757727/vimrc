@@ -22,7 +22,7 @@ nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch()<CR>
 nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(1)<CR>
 nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(2)<CR>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -42,10 +42,10 @@ function s:Refresh(arg)
     if a:arg == 0
         let l:pos = getpos('.')
         silent edit!
-        call setline(1, GIT_FormatBranch())
+        call setline(1, git#FormatBranch())
         call setpos('.', l:pos)
     else
-        call GIT_Refresh()
+        call git#Refresh()
     endif
 endfunction
 
@@ -53,7 +53,7 @@ function s:RefreshStatus()
     wincmd W
     let l:pos = getpos('.')
     silent edit!
-    call setline(1, GIT_FormatStatus())
+    call setline(1, git#FormatStatus())
     call setpos('.', l:pos)
     wincmd w
 endfunction
@@ -134,7 +134,7 @@ function <SID>Merge_Rebase_Branch(...)
             echo l:msg
         else
             echo l:msg
-            call GIT_Refresh()
+            call git#Refresh()
         endif
     endif
 endfunction

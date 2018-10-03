@@ -18,7 +18,7 @@ setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -70,7 +70,7 @@ function <SID>CheckOutFile()
         else
             wincmd w
             silent edit!
-            call setline(1, GIT_FormatStatus())
+            call setline(1, git#FormatStatus())
             wincmd W
         endif
     endif

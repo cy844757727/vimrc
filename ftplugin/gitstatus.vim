@@ -23,7 +23,7 @@ nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -42,7 +42,7 @@ endif
 function s:Refresh()
     let l:pos = getpos('.')
     silent edit!
-    call setline(1, GIT_FormatStatus())
+    call setline(1, git#FormatStatus())
     call setpos('.', l:pos)
 endfunction
 

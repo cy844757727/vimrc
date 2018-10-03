@@ -17,7 +17,7 @@ nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
-nnoremap <buffer> <silent> m :call GIT_MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -49,7 +49,7 @@ function s:RefreshCommit()
         if l:hash != ''
             wincmd w
             silent edit!
-            call setline(1, GIT_FormatCommit(l:hash))
+            call setline(1, git#FormatCommit(l:hash))
             set filetype=gitcommit
             set nobuflisted
             normal zj
@@ -62,7 +62,7 @@ function s:MsgHandle(msg)
     if a:msg =~ 'error:\|fatal:'
         echo a:msg
     else
-        call GIT_Refresh()
+        call git#Refresh()
     endif
 endfunction
 

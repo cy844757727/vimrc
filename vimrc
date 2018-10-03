@@ -71,10 +71,10 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.d set filetype=make
 augroup END
 
-command! -range=% CFormat :<line1>,<line2>call CodeFormat()
-command! -range RComment :<line1>,<line2>call ReverseComment()
+command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
+command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* 
-command! Qs call BMBPSign_SaveWorkSpace('') | wqall
+command! Qs call BMBPSign#WorkSpaceSave('') | wqall
 
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
@@ -95,18 +95,18 @@ nnoremap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :Async xdg-open %<CR>
 nnoremap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
-vnoremap \= :call CodeFormat()<CR>
-nnoremap \= :call CodeFormat()<CR>
-nnoremap \h  :call HEXCovent()<CR>
-nnoremap <silent> \q :call ReverseComment()<CR>
-vnoremap <silent> \q :call ReverseComment()<CR>
+vnoremap \= :call misc#CodeFormat()<CR>
+nnoremap \= :call misc#CodeFormat()<CR>
+nnoremap \h  :call misc#HEXCovent()<CR>
+nnoremap <silent> \q :call misc#ReverseComment()<CR>
+vnoremap <silent> \q :call misc#ReverseComment()<CR>
 
 " 查找
 vnoremap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
 nmap <C-f> wbve<C-f>
 imap <C-f> <Esc>lwbve<C-f>
 " 查找并替换
-vnoremap <C-h> y:call StrSubstitute(getreg('0'))<CR>
+vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nmap <C-h> wbve<C-h>
 imap <C-h> <Esc>lwbve<C-h>
 
@@ -124,21 +124,21 @@ map! <S-PageDown> <Esc><S-PageDown>
 map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
 " 保存快捷键
-noremap  <silent> <f3> <Esc>:call SaveSpecifiedFile(expand('%'))<CR> 
+noremap  <silent> <f3> <Esc>:call misc#SaveFile(expand('%'))<CR> 
 map! <f3> <Esc><f3>
-noremap  <silent> <f4> :call WinResize()<Cr>
+noremap  <silent> <f4> :call misc#WinResize()<Cr>
 map! <f4> <Esc><f4>
 " 窗口切换
-noremap  <silent> <f7> <Esc>:call GIT_Toggle()<CR>
-noremap  <silent> <f8> <Esc>:call ToggleTagbar()<CR>
-noremap  <silent> <f9> <Esc>:call ToggleNERDTree()<CR>
-noremap  <silent> <f10> <ESC>:call ToggleQuickFix()<CR>
+noremap  <silent> <f7> <Esc>:call git#Toggle()<CR>
+noremap  <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
+noremap  <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
+noremap  <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>
 map! <f10> <ESC><f10>
 " 编译执行
-noremap  <silent> <f5> <Esc>:call CompileRun()<CR>
+noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
 " 断点 BMBPSign.vim
 noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
@@ -248,45 +248,6 @@ let g:BMBPSign_ProjectType = {
                 \ 'default': '~/Documents'
                 \ }
 
-"################### 自定义函数 #############################
-"	编译运行: F5
-function! CompileRun()
-    wall
-    if &filetype == 'nerdtree'
-        silent call nerdtree#ui_glue#invokeKeyMap('R')
-        echo 'Refresh Done!'
-    elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
-        silent call GIT_Refresh()
-    elseif filereadable('makefile') || filereadable('Makefile')
-        AsyncRun make
-    elseif &filetype =~ '^c\|cpp$'
-        AsyncRun g++ -Wall -O0 -g3 % -o binFile
-    elseif &filetype == 'verilog'
-        if isdirectory('work')
-            exec 'AsyncRun vlog -work work %'
-        else
-            exec 'AsyncRun vlib work && vmap work work && vlog -work work %'
-        endif
-    elseif &filetype == 'sh'
-        if filereadable('.breakpoint')
-            exec 'SShell bash -x ' . expand('%:p')
-        else
-            exec 'SShell bash -c ' . expand('%:p')
-        endif
-    endif
-endfunction
-
-"	转换鼠标范围（a，v）: \c
-function! CutMouseBehavior()
-    if &mouse == 'a'
-        set nonumber
-        set mouse=v
-    else
-        set number
-        set mouse=a
-    endif
-endfunction
-
 "  )]}自动补全相关
 function! ClosePair(char)
     if getline('.')[col('.') - 1] == a:char
@@ -295,182 +256,4 @@ function! ClosePair(char)
         return a:char
     endif
 endfunction
-
-"	指定范围代码格式化: CFormat
-function! CodeFormat()
-    if &filetype =~ '^c\|cpp$'
-        silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&:!?^][-+=/><|&:]\?=\?\)\s*/\1 \2 /ge
-        silent! s/\s*\(++\|--\|::\)\s*/\1/ge
-        silent! s/\s*\(<\)\s*\(.\+\w\+\)\s*\(>\)\s*/ \1\2\3 /ge
-        silent! s/\((\)\s*\|\s*\()\)/\1\2/ge
-        silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
-        silent! s/\(\s*\n*\s*\)*{/ {/ge
-        silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-        normal ==
-    elseif &filetype == 'matlab'
-        silent! s/\(\w\|)\)\s*\(\.\?[-+=*/><~|&^][=&|]\?\)\s*/\1 \2 /ge
-        silent! s/\((\)\s*\|\s*\()\)/\1\2/ge
-        silent! s/\(;\)\s*\(\w\)/\1 \2/ge
-        silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-        normal ==
-    elseif &filetype == 'make'
-        silent! s/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge
-        silent! s/\(:\)\s*\(\w\|\$\)/\1 \2/ge
-        silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-        normal ==
-    elseif &filetype == 'python'
-        silent! s/\(\w\|)\|\]\|}\)\s*\([-+=*/%><|&~!^][=*/><]\?=\?\)\s*/\1 \2 /ge
-        silent! s/\((\|\[\|{\)\s*\|\s*\()\|\]\|}\)/\1\2/ge
-        silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
-        silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-        normal ==
-    elseif &filetype =~ '^verilog\|systemverilog$'
-        silent! s/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge
-        silent! s/\((\)\s*\|\s*\()\)/\1\2/ge
-        silent! s/\(,\|;\)\s*\(\w\)/\1 \2/ge
-        silent! s/\(\s*\n\+\)\{3,}/\="\n\n"/ge
-    endif
-    silent! /`!`!`!`!`@#$%^&
-endfunction
-
-"   切换注释状态: \q
-function! ReverseComment()
-    if &filetype =~ '^c\|cpp\|verilog\|systemverilog$'
-        let l:char='//'
-    elseif &filetype == 'matlab'
-        let l:char='%'
-    elseif &filetype =~ '^sh\|make\|python$'
-        let l:char='#'
-    elseif &filetype == 'vim'
-        let l:char="\""
-    else
-        return
-    endif
-    exec 's+^+' . l:char . '+e'
-    exec 's+^' . l:char . l:char . '++e'
-endfunction
-
-"  刷新目录树
-function! UpdateNERTreeView()
-    let l:nrOfNerd_tree=bufwinnr('NERD_tree')
-    if l:nrOfNerd_tree != -1
-        let l:id=win_getid()
-        exec l:nrOfNerd_tree . 'wincmd w'
-        silent call nerdtree#ui_glue#invokeKeyMap('R')
-        call win_gotoid(l:id)
-    endif
-endfunction
-
-" 字符串查找替换: ctrl+h
-function! StrSubstitute(str)
-    let l:pos = getpos('.')
-    let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
-    if l:subs != ''
-        exec '%s/' . a:str . '/' . l:subs . '/Ig'
-        call setpos('.', l:pos)
-    endif
-endfunction
-
-" 文件保存及后期处理: F3
-function! SaveSpecifiedFile(file)
-    if exists('g:DoubleClick_500MSTimer')
-        wall
-        echo 'Save all'
-    elseif filereadable(a:file)
-        let g:DoubleClick_500MSTimer = 1
-        let l:id = timer_start(500, 'TimerHandle500MS')
-        write
-    elseif empty(a:file)
-        exec 'file ' . input('Set file name')
-        filetype detect
-        write
-        call UpdateNERTreeView()
-    else
-        write
-    endif
-endfunction
-
-function! TimerHandle500MS(id)
-    unlet g:DoubleClick_500MSTimer
-endfunction
-
-" 切换16进制显示: \h
-function! HEXCovent()
-    if empty(matchstr(getline(1), '^00000000: \S'))
-        :%!xxd
-        let b:ale_enabled = 0
-    else
-        :%!xxd -r
-        let b:ale_enabled = 1
-    endif
-endfunction
-
-" 最大化窗口/恢复：f4
-function! WinResize()
-    let l:winId = win_getid()
-    if !exists('g:MAXMIZEWIN')
-        let g:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), g:MAXMIZEWIN[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MAXMIZEWIN[1]])
-    elseif g:MAXMIZEWIN[2] == l:winId
-        exec 'resize ' . g:MAXMIZEWIN[0]
-        exec 'vert resize ' . g:MAXMIZEWIN[1]
-        unlet g:MAXMIZEWIN
-    else
-        if win_gotoid(g:MAXMIZEWIN[2]) == 1
-            exec 'resize ' . g:MAXMIZEWIN[0]
-            exec 'vert resize ' . g:MAXMIZEWIN[1]
-            call win_gotoid(l:winId)
-        endif
-        let g:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), g:MAXMIZEWIN[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), g:MAXMIZEWIN[1]])
-    endif
-endfunction
-
-" ############### 窗口相关 ######################################
-"  切换NERDTree窗口: F9
-function! ToggleNERDTree()
-    if bufwinnr('NERD_tree') != -1
-        NERDTreeClose
-    elseif bufwinnr('Tagbar') != -1
-        TagbarClose
-        NERDTree
-        TagbarOpen
-    else
-        NERDTree
-    endif
-endfunction
-
-"  切换TagBar窗口: F8
-function! ToggleTagbar()
-    let l:id=win_getid()
-    if bufwinnr('Tagbar') != -1
-        TagbarClose
-    elseif bufwinnr('NERD_tree') == -1
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
-        TagbarOpen
-        let g:tagbar_vertical=19
-        let g:tagbar_left=0
-        call win_gotoid(l:id)
-    else
-        exec bufwinnr('NERD_tree') . 'wincmd w'
-        TagbarOpen
-        call win_gotoid(l:id)
-    endif
-endfunction
-
-"  切换QuickFix窗口: F10
-function! ToggleQuickFix()
-    let l:id=win_getid()
-    exec tabpagewinnr(tabpagenr(),'$') . 'wincmd w'
-    if &ft == 'qf'
-        cclose
-    else
-        copen 10
-        call win_gotoid(l:id)
-    endif
-endfunction
-"#####################################################################
 
