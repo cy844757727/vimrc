@@ -2,9 +2,20 @@
 " Name: BMBPSign_BookMark_BreakPoint
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if !exists('g:BMBPSign_WinSpecial')
-    let g:BMBPSign_WinSpecial = {}
-endif
+"    针对特殊buf需要处理的操作(字典:保存/加载 工作空间时)
+"    let g:BMBPSign_SpecialBuf
+"
+"    保存工作空间前需要处理的语句列表
+"    let g:BMBPSign_PreSaveHandle
+"
+"    保存工作空间后需要处理的语句列表
+"    let g:BMBPSign_PostSaveHandle
+"
+"    加载工作空间前需要处理的语句列表
+"    let g:BMBPSign_PreLoadHandle
+"
+"    加载工作空间后需要处理的语句列表
+"    let g:BMBPSign_PostLoadHandle
 
 let s:home = system('echo ~')[:-2]
 if !exists('g:BMBPSign_ProjectType')
@@ -13,7 +24,7 @@ else
     call map(g:BMBPSign_ProjectType, "v:val =~ '^\\~' ? s:home . strpart(v:val, 1) : v:val")
 endif
 
-command! BMBPSignToggleBookMark :call BMBPSign#ToggleBookMark()
+command! -nargs=? BMBPSignToggleBookMark :call BMBPSign#ToggleBookMark(<args>)
 command! BMBPSignToggleBreakPoint :call BMBPSign#ToggleBreakPoint()
 command! BMBPSignClearBookMark :call BMBPSign#Clear('BMBPSignBookMarkDef')
 command! BMBPSignClearBreakPoint :call BMBPSign#Clear('BMBPSignBreakPointDef')

@@ -34,7 +34,7 @@ hi DiffChange       ctermfg=230  ctermbg=24   cterm=NONE
 hi DiffDelete       ctermfg=230  ctermbg=95   cterm=NONE
 hi DiffText         ctermfg=230  ctermbg=239  cterm=NONE
 
-hi PMenu            ctermfg=253  ctermbg=239  cterm=NONE
+hi PMenu            ctermfg=253  ctermbg=237  cterm=NONE
 hi PMenuSel         ctermfg=232  ctermbg=250  cterm=NONE
 hi PMenuSbar        ctermfg=NONE ctermbg=239  cterm=NONE
 hi PMenuThumb       ctermfg=NONE ctermbg=250  cterm=NONE

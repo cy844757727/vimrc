@@ -1,6 +1,6 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-" Name: git plugin : tabpage manager
 " Author: CY <844757727@qq.com>
+" Description: git plugin : tabpage manager
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 "if exists('loaded_GIT_Manager')
 "  finish

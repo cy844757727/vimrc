@@ -34,7 +34,7 @@ set viminfo=       "禁用viminfo
 set wildmenu       "命令行增强补全显示
 set noautochdir    "禁用自动切pwd到换文件路径
 set diffopt=vertical,filler
-set bsdir=buffer 
+set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
@@ -52,6 +52,8 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldmethod=syntax "折叠方式（依据语法）
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
+" TODO: add guicolor set
+"set termguicolors
 colorscheme cydark
 set helplang=cn
 set langmenu=zh_CN.UTF-8
@@ -73,9 +75,10 @@ augroup END
 
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
-command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&* 
-command! Qs call BMBPSign#WorkSpaceSave('') | wqall
-
+command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
+command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+command! Qs :call BMBPSign#WorkSpaceSave('') | wall | qall
+command! -nargs=* -complete=file Debug :call misc#Debug("<args>")
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
@@ -90,7 +93,6 @@ inoremap { {}<Esc>i
 inoremap } <c-r>=ClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
-" 更改PWD到当前文件所在目录
 nnoremap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :Async xdg-open %<CR>
@@ -100,6 +102,9 @@ nnoremap \= :call misc#CodeFormat()<CR>
 nnoremap \h  :call misc#HEXCovent()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>
 vnoremap <silent> \q :call misc#ReverseComment()<CR>
+" ctrl-\ ctrl-n : switch to terminal-normal
+noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
+map! <C-x> <Esc><C-x>
 
 " 查找
 vnoremap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
@@ -124,19 +129,25 @@ map! <S-PageDown> <Esc><S-PageDown>
 map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
 " 保存快捷键
-noremap  <silent> <f3> <Esc>:call misc#SaveFile(expand('%'))<CR> 
+noremap <silent> <f3> <Esc>:call misc#SaveFile(expand('%'))<CR>
 map! <f3> <Esc><f3>
-noremap  <silent> <f4> :call misc#WinResize()<Cr>
+noremap <silent> <f4> :call misc#WinResize()<Cr>
 map! <f4> <Esc><f4>
 " 窗口切换
-noremap  <silent> <f7> <Esc>:call git#Toggle()<CR>
-noremap  <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
-noremap  <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
-noremap  <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
+noremap <silent> <f7> <Esc>:call git#Toggle()<CR>
+noremap <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
+noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
+noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
+noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
+noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
+noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('ale')<CR>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>
 map! <f10> <ESC><f10>
+map! <C-f10> <ESC><C-f10>
+map! <S-f10> <ESC><S-f10>
+map! <C-S-f10> <ESC><C-S-f10>
 " 编译执行
 noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
@@ -145,16 +156,19 @@ noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
 noremap  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim
-noremap  <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
-noremap  <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
-noremap  <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
-noremap  <silent> \m <Esc>:BMBPSignClearBookMark<CR>
+noremap <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
+noremap <silent> <C-f12> <Esc>:BMBPSignToggleBookMark 'todo'<CR>
+noremap <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
+noremap <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
+noremap <silent> \m <Esc>:BMBPSignClearBookMark<CR>
 map! <f12> <Esc><f12>
+map! <C-f12> <Esc><C-f12>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
+let g:termdebug_wide = 1
 "插件配置======================
-"  Netrw-NERDTree 配置
+" == Netrw-NERDTree 配置 ==
 let g:netrw_winsize=-25
 let g:netrw_dirhistmax=0
 let g:netrw_browse_split=4
@@ -193,10 +207,10 @@ function! SwitchXPermission()
 endfunction
 
 function! DebugFile(node)
-    call INTERACTIVE_Start(a:node.path.str(), 'dbg')
+    call misc#Debug(a:node.path.str())
 endfunction
 
-"  TagBar 配置
+" == TagBar 配置 ==
 let g:tagbar_width=31
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
@@ -219,7 +233,7 @@ let g:tagbar_type_markdown = {
             \ ]
             \ }
 
-" ale
+" == ale ==
 let g:ale_sign_error = '👽'
 let g:ale_sign_warning = '💡'
 let g:ale_echo_msg_error_str = 'E'
@@ -229,14 +243,30 @@ let g:ale_statusline_format = ['× %d', '! %d', '⬥ ok']
 let g:ale_sign_column_always = 1
 "let g:ale_lint_delay = 1000
 let g:ale_lint_on_text_changed = 'normal'
-let g:ale_set_loclist = 0
-let g:ale_set_quickfix = 1
-"================================
-" BMBPSign configure =================
+"let g:ale_set_loclist = 0
+"let g:ale_set_quickfix = 1
+
+" == BMBPSign configure ==
 let g:BMBPSign_SpecialBuf = {
-            \ 'NERD_tree': 'call ToggleNERDTree()',
-            \ '__Tagbar': 'call ToggleTagbar()|wincmd W'
+            \ 'NERD_tree': 'bw|NERDTree',
+            \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
             \ }
+
+" SpecialBuf hanle
+function! Vimrc_Tagbar()
+    if bufwinnr('NERD_tree') == -1
+        let g:tagbar_vertical=0
+        let g:tagbar_left=1
+        TagbarOpen
+        let g:tagbar_vertical=19
+        let g:tagbar_left=0
+        wincmd W
+    else
+        exec bufwinnr('NERD_tree') . 'wincmd w'
+        TagbarOpen
+        wincmd w
+    endif
+endfunction
 
 let g:BMBPSign_ProjectType = {
                 \ 'c':       '~/Documents/WorkSpace',
@@ -248,6 +278,36 @@ let g:BMBPSign_ProjectType = {
                 \ 'default': '~/Documents'
                 \ }
 
+let g:BMBPSign_PreSaveHandle = [
+            \ 'call PreSaveWorkSpace_TabVar()'
+            \ ]
+
+let g:BMBPSign_PostLoadHandle = [
+            \ 'call PostLoadWorkSpace_TabVar()'
+            \ ]
+
+function! PreSaveWorkSpace_TabVar()
+    let g:TABVAR_MAXMIZEWIN = []
+    for l:nr in range(1, tabpagenr('$') + 1)
+        let l:var = gettabvar(l:nr, 'MAXMIZEWIN')
+        if !empty(l:var)
+            let g:TABVAR_MAXMIZEWIN += [[l:nr] + l:var]
+        endif
+    endfor
+    if empty(g:TABVAR_MAXMIZEWIN)
+        unlet g:TABVAR_MAXMIZEWIN
+    endif
+endfunction
+
+function! PostLoadWorkSpace_TabVar()
+    if exists('g:TABVAR_MAXMIZEWIN')
+        for l:item in g:TABVAR_MAXMIZEWIN
+            call settabvar(l:item[0], 'MAXMIZEWIN', l:item[1:])
+        endfor
+        unlet g:TABVAR_MAXMIZEWIN
+    endif
+endfunction
+" ===============================
 "  )]}自动补全相关
 function! ClosePair(char)
     if getline('.')[col('.') - 1] == a:char
@@ -256,4 +316,5 @@ function! ClosePair(char)
         return a:char
     endif
 endfunction
+
 

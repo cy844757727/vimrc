@@ -1,6 +1,6 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-" Name: git plugin : tabpage manager(commit)
 " Author: CY <844757727@qq.com>
+" Description: git plugin : tabpage manager(commit)
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 if exists("b:did_ftplugin")
     finish
