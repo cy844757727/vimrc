@@ -1,6 +1,6 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 " Author: CY <844757727@qq.com>
-" Description: BMBPSign_BookMark_BreakPoint_ProjectManager
+" Description: BookMark_BreakPoint_ProjectManager
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 if exists('loaded_A_BMBPSign')
   finish
@@ -80,18 +80,18 @@ endfunction
 function s:SaveSignFile(vec,signFile)
     if empty(a:vec)
         call delete(a:signFile)
-    else
-        let l:prefix = matchstr(a:signFile, '\..*$') == s:bookMarkFile ? 'book' : 'break'
-        let l:signPlace = execute('sign place')
-        let l:content = []
-        for l:mark in a:vec
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
-            if !empty(l:line)
-                let l:content += [l:prefix . ' ' . l:mark.file . ':' . l:line[1]]
-            endif
-        endfor
-        call writefile(l:content, a:signFile)
+        return
     endif
+    let l:prefix = matchstr(a:signFile, '\..*$') == s:bookMarkFile ? 'book' : 'break'
+    let l:signPlace = execute('sign place')
+    let l:content = []
+    for l:mark in a:vec
+        let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
+        if !empty(l:line)
+            let l:content += [l:prefix . ' ' . l:mark.file . ':' . l:line[1]]
+        endif
+    endfor
+    call writefile(l:content, a:signFile)
 endfunction
 
 function s:ProjectNew(name, type, path)
@@ -116,10 +116,12 @@ function s:ProjectNew(name, type, path)
         exec 'silent cd ' . l:path
         silent %bwipeout
     endif
+    let g:BMBPSIGNPROJECTIZED = 1
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
 function s:ProjectSwitch(sel)
+    silent %bwipeout
     exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
     call s:WorkSpaceLoad('')
     call insert(s:projectItem, remove(s:projectItem, a:sel))
@@ -131,7 +133,8 @@ function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
     let l:head = "** Project option (cwd: " . substitute(getcwd(), s:home, '~', '') .
                 \ '     num: ' . len(s:projectItem) . "     page: " . l:page . ")\n" .
-                \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  Q:vimleave  a/n:new  0-9:item\n" .
+                \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  " .
+                \ "Q:vimleave  a/n:new  0-9:item\n" .
                 \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode\n" .
                 \ repeat('=', min([&columns - 10, 90]))
     let l:body = s:projectItem[a:start:a:start+9]
@@ -163,7 +166,7 @@ function s:ProjectMenu()
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
-            if l:mode == 's' && (expand('%') == '' || getcwd() != split(s:projectItem[l:start[0] + l:char])[-1])
+            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSIGNPROJECTIZED'))
                 call s:ProjectSwitch(l:char)
                 break
             elseif l:mode == 'd'
@@ -173,7 +176,7 @@ function s:ProjectMenu()
                 let l:path = split(s:projectItem[l:char])[-1]
                 echo s:ProjectUI(l:start[0], '▼ Modelify item ' . str2nr(l:char))
                 let l:argv = split(input("<name > <type>: "))
-                redraw!                         
+                redraw!
                 if len(l:argv) == 2
                     let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
                                 \ l:argv[0], l:argv[1], l:path)
@@ -215,8 +218,8 @@ endfunction
 
 " 保存当前工作状态
 function s:WorkSpaceSave(pre)
-    if exists('g:BMBPSign_PreSaveHandle')
-        for l:statement in g:BMBPSign_PreSaveHandle
+    if exists('g:BMBPSign_PreSaveEvent')
+        for l:statement in g:BMBPSign_PreSaveEvent
             call execute(l:statement)
         endfor
     endif
@@ -246,8 +249,8 @@ function s:WorkSpaceSave(pre)
         endif
     endfor
     call s:ProjectNew(matchstr(l:path, '[^/]*$'), l:type, l:path)
-    if exists('g:BMBPSign_PostSaveHandle')
-        for l:statement in g:BMBPSign_PostSaveHandle
+    if exists('g:BMBPSign_PostSaveEvent')
+        for l:statement in g:BMBPSign_PostSaveEvent
             call execute(l:statement)
         endfor
     endif
@@ -255,22 +258,13 @@ endfunction
 
 " 恢复工作空间
 function s:WorkSpaceLoad(pre)
-    if exists('g:BMBPSign_PreLoadHandle')
-        for l:statement in g:BMBPSign_PreLoadHandle
+    if exists('g:BMBPSign_PreLoadEvent')
+        for l:statement in g:BMBPSign_PreLoadEvent
             call execute(l:statement)
         endfor
     endif
-    if a:pre != ''
-        if !empty(s:bookMarkVec)
-            unlet s:bookMarkVec[:]
-        endif
-        if !empty(s:breakPointVec)
-            unlet s:breakPointVec[:]
-        endif
-    endif
-"    silent %bdelete
-    silent %bwipeout
     if filereadable(a:pre . s:bookMarkFile)
+        unlet s:bookMarkVec[:]
         let l:sign = readfile(a:pre . s:bookMarkFile)
         for l:item in l:sign
             let l:list = split(l:item, '[ :]')
@@ -282,6 +276,7 @@ function s:WorkSpaceLoad(pre)
         endfor
     endif
     if filereadable(a:pre . s:breakPointFile)
+        unlet s:breakPointVec[:]
         let l:sign = readfile(a:pre . s:breakPointFile)
         for l:item in l:sign
             let l:list = split(l:item, '[ :]')
@@ -301,8 +296,8 @@ function s:WorkSpaceLoad(pre)
     if filereadable(a:pre . s:sessionFile)
         exec 'silent! source ' . a:pre . s:sessionFile
     endif
-    if exists('g:BMBPSign_PostLoadHandle')
-        for l:statement in g:BMBPSign_PostLoadHandle
+    if exists('g:BMBPSign_PostLoadEvent')
+        for l:statement in g:BMBPSign_PostLoadEvent
             call execute(l:statement)
         endfor
     endif
@@ -350,13 +345,9 @@ endfunction
 " 撤销所有标记
 function BMBPSign#Clear(name)
     call s:SignClear(a:name)
-    if a:name == 'BMBPSignBreakPointDef'
+    if a:name == 'BMBPSignBreakPointDef' && &filetype == 'sh'
         let l:pos = line('.')
-        if &filetype == 'python'
-            :%s/^\s*#*pdb.set_trace()\s*\n//Ig
-        elseif &filetype == 'sh'
-            :%s/^\s*#*set [-+]x\s*\n//Ig
-        endif
+        :%s/^\s*#*set [-+]x\s*\n//Ig
         call cursor(l:pos, 1)
     endif
 endfunction
@@ -366,13 +357,8 @@ function BMBPSign#ToggleBreakPoint()
     if expand('%') == ''
         echo 'Invalid file name!'
         return
-    elseif &filetype == 'python'
-        if match(getline('.'),'pdb.set_trace()') == -1
-            normal Opdb.set_trace()
-        else
-            normal dd
-        endif
-        write
+    elseif &filetype !~ '^c\|cpp\|python\|perl$'
+        return
     elseif &filetype == 'sh'
         if match(getline('.'),'set [-+]x') == -1
             if len(s:breakPointVec)%2 == 0
@@ -384,8 +370,6 @@ function BMBPSign#ToggleBreakPoint()
             normal dd
         endif
         write
-    elseif &filetype !~ '^c\|cpp$'
-        return
     endif
     call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
 endfunction

@@ -1,21 +1,25 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-" Name: BMBPSign_BookMark_BreakPoint
 " Author: CY <844757727@qq.com>
+" Description: BookMark_BreakPoint_ProjectManager
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-"    针对特殊buf需要处理的操作(字典:保存/加载 工作空间时)
-"    let g:BMBPSign_SpecialBuf
+"    针对特殊buf需要处理的操作:dict (保存/加载 工作空间时)
+"    g:BMBPSign_SpecialBuf
 "
-"    保存工作空间前需要处理的语句列表
-"    let g:BMBPSign_PreSaveHandle
+"    保存工作空间前需要处理的语句:list
+"    g:BMBPSign_PreSaveEvent
 "
-"    保存工作空间后需要处理的语句列表
-"    let g:BMBPSign_PostSaveHandle
+"    保存工作空间后需要处理的语句:list
+"    g:BMBPSign_PostSaveEvent
 "
-"    加载工作空间前需要处理的语句列表
-"    let g:BMBPSign_PreLoadHandle
+"    加载工作空间前需要处理的语句:list
+"    g:BMBPSign_PreLoadEvent
 "
-"    加载工作空间后需要处理的语句列表
-"    let g:BMBPSign_PostLoadHandle
+"    加载工作空间后需要处理的语句:list
+"    g:BMBPSign_PostLoadEvent
+"    
+"    是否项目化管理标志
+"    g:BMBPSIGNPROJECTIZED
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:home = system('echo ~')[:-2]
 if !exists('g:BMBPSign_ProjectType')

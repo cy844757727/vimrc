@@ -16,15 +16,37 @@ function! misc#CompileRun()
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
     elseif &filetype =~ 'sh\|python\|perl\|tcl'
-        let l:winid = win_getid()
-        let l:file = expand('%')
+        let l:winid = -1
         let l:cmd = split(getline(1), '/')[-1]
-        if !bufexists('!bash')
-            belowright terminal ++kill=kill ++rows=12 bash
-        elseif bufwinnr('!bash') == -1
-            belowright 12new | exec l:bufnr . 'buffer'
+        if !filereadable('.breakpoint')
+            let l:winid = win_getid()
+            let l:cmd .= " './" . expand('%') . "'\n"
+        elseif &filetype == 'sh'
+            let l:cmd .= " -x './" . expand('%') . "'\n"
+        elseif &filetype == 'python'
+            let l:cmd .= " -m pdb './" . expand('%') . "'\n" .
+                        \ join(readfile('.breakpoint'), "\n") .
+                        \ "\nbreak\n"
+        elseif &filetype == 'perl'
+            let l:cmd .= " -d './" . expand('%') . "'\n" .
+                        \ "= break b\n" .
+                        \ join(map(readfile('.breakpoint'), "substitute(v:val,'\\S\\+:','','')"), "\n") .
+                        \ "\n=\n"
+            "            "= break b\nsource .breakpoint\n" other way but not
+            "            work, confused
+            "            ====================================================
+        else
+            let l:winid = win_getid()
+            let l:cmd .= " './" . expand('%') . "'\n"
         endif
-        call term_sendkeys(bufnr('!bash'), l:cmd . ' ./' . l:file . "\n")
+        let l:bufnr = bufnr('!bash')
+        if l:bufnr == -1
+            belowright terminal ++kill=kill ++rows=15 bash
+            let l:bufnr = bufnr('!bash')
+        elseif bufwinnr('!bash') == -1
+            belowright 15new | exec l:bufnr . 'buffer'
+        endif
+        call term_sendkeys(l:bufnr, l:cmd)
         call win_gotoid(l:winid)
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
@@ -32,9 +54,9 @@ function! misc#CompileRun()
         AsyncRun g++ -Wall -O0 -g3 % -o binFile
     elseif &filetype == 'verilog'
         if isdirectory('work')
-            exec 'AsyncRun vlog -work work %'
+            AsyncRun vlog -work work %
         else
-            exec 'AsyncRun vlib work && vmap work work && vlog -work work %'
+            AsyncRun vlib work && vmap work work && vlog -work work %
         endif
     endif
 endfunction
@@ -132,9 +154,9 @@ endfunction
 
 " 字符串查找替换
 function! misc#StrSubstitute(str)
-    let l:pos = getpos('.')
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
     if l:subs != ''
+        let l:pos = getpos('.')
         exec '%s/' . a:str . '/' . l:subs . '/Ig'
         call setpos('.', l:pos)
     endif
@@ -142,28 +164,28 @@ endfunction
 
 " 文件保存及后期处理
 function! misc#SaveFile(file)
-    if exists('g:DoubleClick_500MSTimer')
+    if empty(a:file)
+        exec 'file ' . input('Set file name: ')
+        filetype detect
+        write
+        call misc#UpdateNERTreeView()
+        return
+    elseif exists('s:DoubleClick_500MSTimer')
         wall
         echo 'Save all'
-    else
-        if empty(a:file)
-            exec 'file ' . input('Set file name')
-            filetype detect
-            write
-            call misc#UpdateNERTreeView()
-        elseif !filereadable(a:file)
-            write
-            call misc#UpdateNERTreeView()
-        elseif match(execute('ls %'), '+') != -1
-            write
-        endif
-        let g:DoubleClick_500MSTimer = 1
-        let l:id = timer_start(500, 'misc#TimerHandle500MS')
+        return
+    elseif !filereadable(a:file)
+        write
+        call misc#UpdateNERTreeView()
+    elseif match(execute('ls %'), '+') != -1
+        write
     endif
+    let s:DoubleClick_500MSTimer = 1
+    let l:id = timer_start(500, 'misc#TimerHandle500MS')
 endfunction
 " ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 function! misc#TimerHandle500MS(id)
-    unlet g:DoubleClick_500MSTimer
+    unlet s:DoubleClick_500MSTimer
 endfunction
 
 " 切换16进制显示
@@ -177,35 +199,29 @@ function! misc#HEXCovent()
     endif
 endfunction
 
+" ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()
-    let l:winId = win_getid()
-    if !exists('t:MAXMIZEWIN')
-        let t:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
-    elseif t:MAXMIZEWIN[2] == l:winId
-        exec 'resize ' . t:MAXMIZEWIN[0]
-        exec 'vert resize ' . t:MAXMIZEWIN[1]
-        unlet t:MAXMIZEWIN
-    else
-        if win_gotoid(t:MAXMIZEWIN[2]) == 1
-            exec 'resize ' . t:MAXMIZEWIN[0]
-            exec 'vert resize ' . t:MAXMIZEWIN[1]
-            call win_gotoid(l:winId)
+    if exists('t:MAXMIZEWIN')
+        let l:winnr = win_id2win(t:MAXMIZEWIN[2])
+        exec l:winnr . 'resize ' . t:MAXMIZEWIN[0]
+        exec 'vert ' . l:winnr . 'resize ' . t:MAXMIZEWIN[1]
+        if t:MAXMIZEWIN[2] == win_getid()
+            unlet t:MAXMIZEWIN
+            return
         endif
-        let t:MAXMIZEWIN = [winheight(0), winwidth(0), l:winId]
-        exec 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
-        exec 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
     endif
+    let t:MAXMIZEWIN = [winheight(0), winwidth(0), win_getid()]
+    exec 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
+    exec 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
 endfunction
 
-" ############### 窗口相关 ######################################
+"  切换嵌入式终端
 function! misc#ToggleEmbeddedTerminal()
     if !bufexists('!bash')
-        belowright terminal ++kill=kill ++rows=12 bash
+        belowright terminal ++kill=kill ++rows=15 bash
     elseif bufwinnr('!bash') == -1
-        belowright 12new | silent exec bufnr('!bash') . 'buffer'
+        belowright 15new | silent exec bufnr('!bash') . 'buffer'
     else
         exec bufwinnr('!bash') . 'hide'
     endif
@@ -264,4 +280,5 @@ function! misc#ToggleQuickFix(...)
     endif
 endfunction
 "#####################################################################
+
 

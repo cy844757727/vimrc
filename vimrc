@@ -278,11 +278,11 @@ let g:BMBPSign_ProjectType = {
                 \ 'default': '~/Documents'
                 \ }
 
-let g:BMBPSign_PreSaveHandle = [
+let g:BMBPSign_PreSaveEvent = [
             \ 'call PreSaveWorkSpace_TabVar()'
             \ ]
 
-let g:BMBPSign_PostLoadHandle = [
+let g:BMBPSign_PostLoadEvent = [
             \ 'call PostLoadWorkSpace_TabVar()'
             \ ]
 

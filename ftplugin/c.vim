@@ -1,9 +1,8 @@
 "====================================================
-if exists("b:did_ftplugin") || empty(system("grep '" . getcwd() . "' ~/.vim/.projectitem"))
+if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
-
 setlocal cindent
 
 augroup c_cpp_project
@@ -12,6 +11,7 @@ augroup c_cpp_project
 augroup END
 
 command! -buffer -nargs=? RMakefile :call s:RefreshAll('<args>')
+command! -buffer GMakefile :call s:GenerateMakeFile()
 
 if exists("*s:GenerateMakeFile()")
     finish
@@ -37,8 +37,8 @@ let s:makeFile = [
             \ "\tGDBFLAGS := -x \$(DBGFILE)",
             \ 'endif',
             \ '',
-            \ '# Main Target ######################################',
-            \ 'all: $(ALLTARGET)',
+            \ '# Main Target (build: temporary directory)##########',
+            \ 'all: build $(ALLTARGET)',
             \ "\t@echo",
             \ "\t@echo '    [ALL DONE]'",
             \ '',
@@ -50,6 +50,9 @@ let s:makeFile = [
             \ "\t$(LINK) $^ -o $@",
             \ '',
             \ '# Other Targets ####################################',
+            \ 'build:',
+            \ "\tmkdir build",
+            \ '',
             \ '.PHONY: all run dbg clean',
             \ '',
             \ 'run: $(ALLTARGET)',
@@ -66,19 +69,19 @@ let s:makeFile = [
 function s:GenerateMakeFile()
     " 排除主目录
     if getcwd() != system('echo ~')[:-2]
-        call writefile(s:makeFile, 'Makefile')
+        if !filereadable('Makefile') && !filereadable('makefile')
+            call writefile(s:makeFile, 'Makefile')
+        endif
+        if !isdirectory('.d')
+            call mkdir('.d')
+        endif
+        call misc#UpdateNERTreeView()
     endif
 endfunction
 
 function s:DependencyFile(file)
-    if !filereadable('Makefile') && !filereadable('makefile')
-        call s:GenerateMakeFile()
-    endif
-    if !isdirectory('build')
-        call mkdir('build')
-    endif
     if !isdirectory('.d')
-        call mkdir('.d')
+        return
     endif
     let l:name = matchstr(a:file, '[^/]\+\ze\.')
     let l:dir = matchstr(a:file, '^.\+\ze/')
