@@ -50,7 +50,9 @@ function! misc#CompileRun()
         call win_gotoid(l:winid)
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
-    elseif &filetype =~ '^c\|cpp$'
+    elseif &filetype == 'c'
+        AsyncRun gcc -Wall -O0 -g3 % -o binFile
+    elseif &filetype == 'cpp'
         AsyncRun g++ -Wall -O0 -g3 % -o binFile
     elseif &filetype == 'verilog'
         if isdirectory('work')

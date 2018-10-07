@@ -216,7 +216,7 @@ function s:ProjectManager(argc, argv)
     endif
 endfunction
 
-" 保存当前工作状态
+" 保存当前工作空间
 function s:WorkSpaceSave(pre)
     if exists('g:BMBPSign_PreSaveEvent')
         for l:statement in g:BMBPSign_PreSaveEvent
@@ -264,7 +264,7 @@ function s:WorkSpaceLoad(pre)
         endfor
     endif
     if filereadable(a:pre . s:bookMarkFile)
-        unlet s:bookMarkVec[:]
+        let s:bookMarkVec = []
         let l:sign = readfile(a:pre . s:bookMarkFile)
         for l:item in l:sign
             let l:list = split(l:item, '[ :]')
@@ -276,7 +276,7 @@ function s:WorkSpaceLoad(pre)
         endfor
     endif
     if filereadable(a:pre . s:breakPointFile)
-        unlet s:breakPointVec[:]
+        let s:breakPointVec = []
         let l:sign = readfile(a:pre . s:breakPointFile)
         for l:item in l:sign
             let l:list = split(l:item, '[ :]')
