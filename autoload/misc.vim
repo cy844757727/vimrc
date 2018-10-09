@@ -73,7 +73,7 @@ function! misc#Debug(target)
 "    else
 "        let termdebugger = 'gdb'
 "    endif
-    if empty(a:target) || a:target == '%'
+    if a:target == '%'
         let l:target = expand('%')
     else
         let l:target = a:target
