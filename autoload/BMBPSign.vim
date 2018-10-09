@@ -310,9 +310,7 @@ endfunction
 
 " 切换标记
 function BMBPSign#ToggleBookMark(...)
-    if expand('%') == ''
-        echo 'Invalid file name!'
-    elseif &filetype !~ '^tagbar\|nerdtree\|qf$'
+    if filereadable(expand('%')) && empty(&buftype)
         let l:flag = 0
         if a:0 > 0
             if &filetype =~ '^c\|cpp\|verilog\|systemverilog$'
@@ -334,6 +332,8 @@ function BMBPSign#ToggleBookMark(...)
             endif
         endif
         call s:SignToggle(expand('%'), line('.'), 'BMBPSignBookMarkDef', l:flag)
+    else
+        echo 'Invalid object or unsaved'
     endif
 endfunction
 
@@ -354,24 +354,26 @@ endfunction
 
 " 插入断点
 function BMBPSign#ToggleBreakPoint()
-    if expand('%') == ''
-        echo 'Invalid file name!'
-        return
-    elseif &filetype !~ '^c\|cpp\|python\|perl$'
-        return
-    elseif &filetype == 'sh'
-        if match(getline('.'),'set [-+]x') == -1
-            if len(s:breakPointVec)%2 == 0
-                normal Oset -x
+    if filereadable(expand('%')) && empty(&buftype)
+        if &filetype == 'sh'
+            if match(getline('.'),'set [-+]x') == -1
+                if len(s:breakPointVec)%2 == 0
+                    normal Oset -x
+                else
+                    normal Oset +x
+                endif
             else
-                normal Oset +x
+                normal dd
             endif
-        else
-            normal dd
+            write
+            call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
+        elseif &filetype =~ '^c\|cpp\|python\|perl$'
+            call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
         endif
-        write
+    else
+        echo 'Invalid object or unsaved !'
+        return
     endif
-    call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
 endfunction
 
 function BMBPSign#WorkSpaceSave(pre)

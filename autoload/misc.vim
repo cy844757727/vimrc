@@ -73,7 +73,11 @@ function! misc#Debug(target)
 "    else
 "        let termdebugger = 'gdb'
 "    endif
-    let l:target = a:target == '%' ? expand('%') : a:target
+    if empty(a:target) || a:target == '%'
+        let l:target = expand('%')
+    else
+        let l:target = a:target
+    endif
     tabnew
     if filereadable('.breakpoint')
         exec 'Termdebug -x .breakpoint ' . l:target
