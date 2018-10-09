@@ -26,38 +26,21 @@ let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 " ==========================================================
 " ==========================================================
 " 在指定文件对应行切换断点/书签
-function s:SignToggle(file, line, name, flag)
-    let [l:vec, l:signFile] = a:name == 'BMBPSignBookMarkDef' ?
-                \ [s:bookMarkVec, s:bookMarkFile] :
-                \ [s:breakPointVec, s:breakPointFile]
+function s:SignToggle(file, line, vec, signFile, signDef, attr)
     let l:signPlace = execute('sign place')
-    let l:match = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . a:name)
+    let l:match = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . a:signDef)
     if empty(l:match)
         let s:newSignId += 1
         while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
             let s:newSignId += 1
         endwhile
-        exec 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . a:name . ' file=' . a:file
-        call add(l:vec, {'id': s:newSignId, 'file': a:file, 'flag': a:flag})
+        exec 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . a:signDef . ' file=' . a:file
+        call add(a:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
     else
         exec 'sign unplace ' . l:match[1] . ' file=' . a:file
-        call filter(l:vec, 'v:val.id != ' . l:match[1])
+        call filter(a:vec, 'v:val.id != ' . l:match[1])
     endif
-    call s:SaveSignFile(l:vec, l:signFile)
-endfunction
-
-" 撤销所有断点/书签
-function s:SignClear(name)
-    let [l:vec, l:signFile] = a:name == 'BMBPSignBookMarkDef' ?
-                \ [s:bookMarkVec, s:bookMarkFile] :
-                \ [s:breakPointVec, s:breakPointFile]
-    for l:mark in l:vec
-        if l:mark.flag == 0
-            exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
-        endif
-    endfor
-    call filter(l:vec, 'v:val.flag != 0')
-    call s:SaveSignFile(l:vec, l:signFile)
+    call s:SignSave(a:vec, a:signFile)
 endfunction
 
 function s:Signjump(action)
@@ -76,22 +59,65 @@ function s:Signjump(action)
     endif
 endfunction
 
-" 保存断点/书签到指定文件
-function s:SaveSignFile(vec,signFile)
-    if empty(a:vec)
-        call delete(a:signFile)
-        return
-    endif
-    let l:prefix = matchstr(a:signFile, '\..*$') == s:bookMarkFile ? 'book' : 'break'
-    let l:signPlace = execute('sign place')
-    let l:content = []
+" 撤销所有断点/书签
+function s:SignClear(vec, signFile)
     for l:mark in a:vec
-        let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
-        if !empty(l:line)
-            let l:content += [l:prefix . ' ' . l:mark.file . ':' . l:line[1]]
+        if l:mark.attr != 'todo'
+            exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
         endif
     endfor
-    call writefile(l:content, a:signFile)
+    call filter(a:vec, "v:val.attr == 'todo'")
+    call s:SignSave(a:vec, a:signFile)
+endfunction
+
+" just for s:SignLoad()
+function s:SignSet(vec, signFile, signDef)
+    for l:item in readfile(a:signFile)
+        let l:list = split(l:item, '[ :]')
+        if filereadable(l:list[1])
+            exec 'silent badd ' . l:list[1]
+            let s:newSignId += 1
+            let l:signPlace = execute('sign place')
+            while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
+                let s:newSignId += 1
+            endwhile
+            exec 'sign place ' . s:newSignId . ' line=' . l:list[2] . ' name=' . a:signDef . ' file=' . l:list[1]
+            call add(a:vec, {'id': s:newSignId, 'file': l:list[1], 'attr': l:list[0]})
+        endif
+    endfor
+endfunction
+
+function s:SignLoad(pre)
+    if filereadable(a:pre . s:bookMarkFile)
+        if a:pre != ''
+            call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+        endif
+        call s:SignSet(s:bookMarkVec, a:pre . s:bookMarkFile, 'BMBPSignBookMarkDef',)
+    endif
+    if filereadable(a:pre . s:breakPointFile)
+        if a:pre != ''
+            call s:SignClear(s:breakPointVec, s:breakPointFile)
+        endif
+        call s:SignSet(s:breakPointVec, a:pre . s:breakPointFile, 'BMBPSignBreakPointDef',)
+    endif
+    filetype detect
+endfunction
+
+" 保存断点/书签到指定文件
+function s:SignSave(vec,signFile)
+    if empty(a:vec)
+        call delete(a:signFile)
+    else
+        let l:content = []
+        let l:signPlace = execute('sign place')
+        for l:mark in a:vec
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
+            if !empty(l:line)
+                let l:content += [l:mark.attr . ' ' . l:mark.file . ':' . l:line[1]]
+            endif
+        endfor
+        call writefile(l:content, a:signFile)
+    endif
 endfunction
 
 function s:ProjectNew(name, type, path)
@@ -123,6 +149,7 @@ endfunction
 function s:ProjectSwitch(sel)
     silent %bwipeout
     exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
+    call s:SignLoad('')
     call s:WorkSpaceLoad('')
     call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
@@ -223,8 +250,10 @@ function s:WorkSpaceSave(pre)
             call execute(l:statement)
         endfor
     endif
-    call s:SaveSignFile(s:bookMarkVec, a:pre . s:bookMarkFile)
-    call s:SaveSignFile(s:breakPointVec, a:pre . s:breakPointFile)
+    if a:pre != ''
+        call s:SignSave(s:bookMarkVec, a:pre . s:bookMarkFile)
+        call s:SignSave(s:breakPointVec, a:pre . s:breakPointFile)
+    endif
     exec 'mksession! ' . a:pre . s:sessionFile
     let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
@@ -263,30 +292,9 @@ function s:WorkSpaceLoad(pre)
             call execute(l:statement)
         endfor
     endif
-    if filereadable(a:pre . s:bookMarkFile)
-        let s:bookMarkVec = []
-        let l:sign = readfile(a:pre . s:bookMarkFile)
-        for l:item in l:sign
-            let l:list = split(l:item, '[ :]')
-            if filereadable(l:list[1])
-                exec 'silent edit ' . l:list[1]
-                let l:flag = getline(l:list[2]) =~ ' TODO:'
-                call s:SignToggle(l:list[1], l:list[2], 'BMBPSignBookMarkDef', l:flag)
-            endif
-        endfor
+    if a:pre != '' || (empty(s:bookMarkVec + s:breakPointVec) && (filereadable(s:bookMarkFile) || filereadable(s:breakPointFile)))
+        call s:SignLoad(a:pre)
     endif
-    if filereadable(a:pre . s:breakPointFile)
-        let s:breakPointVec = []
-        let l:sign = readfile(a:pre . s:breakPointFile)
-        for l:item in l:sign
-            let l:list = split(l:item, '[ :]')
-            if filereadable(l:list[1])
-                exec 'silent edit ' . l:list[1]
-                call s:SignToggle(l:list[1], l:list[2], 'BMBPSignBreakPointDef', 0)
-            endif
-        endfor
-    endif
-    filetype detect
     if filereadable(a:pre . s:vimInfoFile)
         let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100
@@ -302,22 +310,32 @@ function s:WorkSpaceLoad(pre)
         endfor
     endif
 endfunction
+
+function s:WorkSpaceClear(pre)
+    call delete(a:pre . s:sessionFile)
+    call delete(a:pre . s:vimInfoFile)
+    if a:pre != ''
+        call delete(a:pre . s:bookMarkFile)
+        call delete(a:pre . s:breakPointFile)
+    endif
+endfunction
 " ==========================================================
 " ============== 全局量定义 ================================
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)
 endfunction
 
-" 切换标记
-function BMBPSign#ToggleBookMark(...)
+" 切换书签/断点
+function BMBPSign#Toggle(type, attr)
     if filereadable(expand('%')) && empty(&buftype)
-        let l:flag = 0
-        if a:0 > 0
-            if &filetype =~ '^c\|cpp\|verilog\|systemverilog$'
+        if a:type == 'break' && &filetype !~ '^\(c\|cpp\|sh\|python\|perl\)$'
+            return
+        elseif a:type == 'book' && a:attr == 'todo'
+            if &filetype =~ '^\(c\|cpp\|java\|verilog\|systemverilog\)$'
                 let l:char='//'
             elseif &filetype == 'matlab'
                 let l:char='%'
-            elseif &filetype =~ '^sh\|make\|python$'
+            elseif &filetype =~ '^\(sh\|make\|python\|tcl\)$'
                 let l:char='#'
             elseif &filetype == 'vim'
                 let l:char="\""
@@ -328,10 +346,13 @@ function BMBPSign#ToggleBookMark(...)
                 call append('.', l:char . ' TODO: ')
                 normal j==
                 write
-                let l:flag = 1
             endif
         endif
-        call s:SignToggle(expand('%'), line('.'), 'BMBPSignBookMarkDef', l:flag)
+        let l:attr = a:attr == '' ? a:type : a:attr
+        let [l:vec, l:signFile, l:signDef] = a:type == 'book' ?
+                    \ [s:bookMarkVec, s:bookMarkFile, 'BMBPSignBookMarkDef'] :
+                    \ [s:breakPointVec, s:breakPointFile, 'BMBPSignBreakPointDef']
+        call s:SignToggle(expand('%'), line('.'), l:vec, l:signFile, l:signDef, l:attr)
     else
         echo 'Invalid object or unsaved'
     endif
@@ -342,37 +363,12 @@ function BMBPSign#Jump(action)
     call s:Signjump(a:action)
 endfunction
 
-" 撤销所有标记
-function BMBPSign#Clear(name)
-    call s:SignClear(a:name)
-    if a:name == 'BMBPSignBreakPointDef' && &filetype == 'sh'
-        let l:pos = line('.')
-        :%s/^\s*#*set [-+]x\s*\n//Ig
-        call cursor(l:pos, 1)
-    endif
-endfunction
-
-" 插入断点
-function BMBPSign#ToggleBreakPoint()
-    if filereadable(expand('%')) && empty(&buftype)
-        if &filetype == 'sh'
-            if match(getline('.'),'set [-+]x') == -1
-                if len(s:breakPointVec)%2 == 0
-                    normal Oset -x
-                else
-                    normal Oset +x
-                endif
-            else
-                normal dd
-            endif
-            write
-            call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
-        elseif &filetype =~ '^c\|cpp\|python\|perl$'
-            call s:SignToggle(expand('%'), line('.'), 'BMBPSignBreakPointDef', 0)
-        endif
-    else
-        echo 'Invalid object or unsaved !'
-        return
+" 撤销所有书签/断点
+function BMBPSign#Clear(type)
+    if a:type == 'book'
+        call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+    elseif a:type == 'break'
+        call s:SignClear(s:breakPointVec, s:breakPointFile)
     endif
 endfunction
 
@@ -384,19 +380,13 @@ function BMBPSign#WorkSpaceLoad(pre)
     call s:WorkSpaceLoad(matchstr(a:pre, '^[^.]*'))
 endfunction
 
-function BMBPSign#ClearWorkSpace(pre)
-    let l:pre= matchstr(a:pre, '^[^.]*')
-    call delete(l:pre . s:sessionFile)
-    call delete(l:pre . s:vimInfoFile)
-    if l:pre != ''
-        call delete(l:pre . s:bookMarkFile)
-        call delete(l:pre . s:breakPointFile)
-    endif
+function BMBPSign#WorkSpaceClear(pre)
+    call s:WorkSpaceClear(matchstr(a:pre, '^[^.]*'))
 endfunction
 
 function BMBPSign#GetList(str)
     let l:qf = []
-    let l:signFile = a:str =~ 'book' ? s:bookMarkFile : s:breakPointFile
+    let l:signFile = a:str == 'book' ? s:bookMarkFile : s:breakPointFile
     if filereadable(l:signFile)
         for l:item in readfile(l:signFile)
             let l:list = split(l:item, '[ :]\+')
@@ -406,7 +396,7 @@ function BMBPSign#GetList(str)
                             \ 'bufnr': bufnr(l:list[1]),
                             \ 'filename': l:list[1],
                             \ 'lnum': l:list[2],
-                            \ 'text': l:text
+                            \ 'text': '(' . l:list[0] . ')  ' . l:text
                             \ }]
             endif
         endfor
@@ -414,4 +404,20 @@ function BMBPSign#GetList(str)
     return l:qf
 endfunction
 
+function BMBPSign#VimEnterEvent()
+    if exists('g:BMBPSIGNPROJECTIZED')
+        return
+    endif
+    let l:list = []
+    let l:file = expand('%')
+    if filereadable(s:bookMarkFile)
+        let l:list += systemlist("grep '" . l:file . "' " . s:bookMarkFile)
+    endif
+    if filereadable(s:breakPointFile)
+        let l:list += systemlist("grep '" . l:file . "' " . s:breakPointFile)
+    endif
+    if !empty(l:list)
+        call s:SignLoad('')
+    endif
+endfunction
 

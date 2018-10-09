@@ -15,14 +15,14 @@ function! misc#CompileRun()
         echo 'Refresh Done!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
-    elseif &filetype =~ 'sh\|python\|perl\|tcl'
+    elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'
         let l:winid = -1
         let l:cmd = split(getline(1), '/')[-1]
         if !filereadable('.breakpoint')
             let l:winid = win_getid()
             let l:cmd .= " './" . expand('%') . "'\n"
-        elseif &filetype == 'sh'
-            let l:cmd .= " -x './" . expand('%') . "'\n"
+        elseif l:cmd =~ '^bash'
+            let l:cmd = "bashdb -x .breakpoint './" . expand('%') . "'\n"
         elseif &filetype == 'python'
             let l:cmd .= " -m pdb './" . expand('%') . "'\n" .
                         \ join(readfile('.breakpoint'), "\n") .

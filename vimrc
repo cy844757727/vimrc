@@ -153,11 +153,13 @@ noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
 " 断点 BMBPSign.vim
 noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
+noremap  <silent> <C-f6> <Esc>:BMBPSignToggleBreakPoint tbreak<CR>
 noremap  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
+map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim
 noremap <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
-noremap <silent> <C-f12> <Esc>:BMBPSignToggleBookMark 'todo'<CR>
+noremap <silent> <C-f12> <Esc>:BMBPSignToggleBookMark todo<CR>
 noremap <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
 noremap <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
 noremap <silent> \m <Esc>:BMBPSignClearBookMark<CR>
