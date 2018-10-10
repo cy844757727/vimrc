@@ -135,6 +135,7 @@ function s:ProjectNew(name, type, path)
     endif
     call insert(s:projectItem, l:item)
     call writefile(s:projectItem, s:projectFile)
+    set noautochdir
     if l:path != getcwd()
         if !isdirectory(l:path)
             call mkdir(l:path, 'p')
@@ -148,6 +149,7 @@ endfunction
 
 function s:ProjectSwitch(sel)
     silent %bwipeout
+    set noautochdir
     exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
     call s:SignLoad('')
     call s:WorkSpaceLoad('')
@@ -254,6 +256,7 @@ function s:WorkSpaceSave(pre)
         call s:SignSave(s:bookMarkVec, a:pre . s:bookMarkFile)
         call s:SignSave(s:breakPointVec, a:pre . s:breakPointFile)
     endif
+    set noautochdir
     exec 'mksession! ' . a:pre . s:sessionFile
     let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
@@ -304,6 +307,7 @@ function s:WorkSpaceLoad(pre)
     if filereadable(a:pre . s:sessionFile)
         exec 'silent! source ' . a:pre . s:sessionFile
     endif
+    set noautochdir
     if exists('g:BMBPSign_PostLoadEvent')
         for l:statement in g:BMBPSign_PostLoadEvent
             call execute(l:statement)
@@ -420,4 +424,5 @@ function BMBPSign#VimEnterEvent()
         call s:SignLoad('')
     endif
 endfunction
+
 

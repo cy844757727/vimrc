@@ -32,7 +32,7 @@ set showmatch      "自动匹配
 set matchtime=1    "匹配括号高亮的时间
 set viminfo=       "禁用viminfo
 set wildmenu       "命令行增强补全显示
-set noautochdir    "禁用自动切pwd到换文件路径
+set autochdir
 set diffopt=vertical,filler
 set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
@@ -77,6 +77,7 @@ command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
 command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+command! -nargs=+ -complete=file TermH :call term_start("<args>", {'hidden': 1, 'term_kill': 'kill', 'term_finish': 'close', 'norestore': 1})
 command! Qs :call BMBPSign#WorkSpaceSave('') | wall | qall
 command! -nargs=* -complete=file Debug :call misc#Debug("<args>")
 command! -nargs=* Amake :AsyncRun make

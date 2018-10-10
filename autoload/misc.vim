@@ -41,7 +41,7 @@ function! misc#CompileRun()
         endif
         let l:bufnr = bufnr('!bash')
         if l:bufnr == -1
-            belowright terminal ++kill=kill ++rows=15 bash
+            belowright terminal ++kill=kill ++close ++rows=15 bash
             let l:bufnr = bufnr('!bash')
         elseif bufwinnr('!bash') == -1
             belowright 15new | exec l:bufnr . 'buffer'
@@ -67,12 +67,6 @@ function! misc#Debug(target)
     if !exists(':Termdebug')
         packadd termdebug
     endif
-    " TODO: add debug tool adapt
-"    if &filetype == 'sh'
-"        let termdebugger = 'bashdb'
-"    else
-"        let termdebugger = 'gdb'
-"    endif
     if a:target == '%'
         let l:target = expand('%')
     else
@@ -84,6 +78,7 @@ function! misc#Debug(target)
     else
         exec 'Termdebug ' . l:target
     endif
+    autocmd BufUnload <buffer> 1close
 endfunction
 
 "	转换鼠标范围（a，v）
@@ -175,19 +170,19 @@ function! misc#SaveFile(file)
         filetype detect
         write
         call misc#UpdateNERTreeView()
-        return
     elseif exists('s:DoubleClick_500MSTimer')
         wall
         echo 'Save all'
-        return
-    elseif !filereadable(a:file)
-        write
-        call misc#UpdateNERTreeView()
-    elseif match(execute('ls %'), '+') != -1
-        write
+    else
+        if !filereadable(a:file)
+            write
+            call misc#UpdateNERTreeView()
+        elseif match(execute('ls %'), '+') != -1
+            write
+        endif
+        let s:DoubleClick_500MSTimer = 1
+        let l:id = timer_start(500, 'misc#TimerHandle500MS')
     endif
-    let s:DoubleClick_500MSTimer = 1
-    let l:id = timer_start(500, 'misc#TimerHandle500MS')
 endfunction
 " ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 function! misc#TimerHandle500MS(id)
@@ -225,7 +220,7 @@ endfunction
 "  切换嵌入式终端
 function! misc#ToggleEmbeddedTerminal()
     if !bufexists('!bash')
-        belowright terminal ++kill=kill ++rows=15 bash
+        belowright terminal ++kill=kill ++close ++rows=15 bash
     elseif bufwinnr('!bash') == -1
         belowright 15new | silent exec bufnr('!bash') . 'buffer'
     else
