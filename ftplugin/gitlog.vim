@@ -113,10 +113,10 @@ function <SID>HelpDoc()
                 \ "Git log quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    m:       git menu\n" .
-                \ "    t:       tag commit\n" .
-                \ "    \\rs:     reset commit (carefull)\n" .
-                \ "    \\rv:     revert commit\n" .
-                \ "    \\co:     checkout new branch\n" .
+                \ "    t:       tag commit            (git tag)\n" .
+                \ "    \\rs:     reset commit          (git reset --hard)\n" .
+                \ "    \\rv:     revert commit         (git revert)\n" .
+                \ "    \\co:     checkout new branch   (git checkout -b)\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 

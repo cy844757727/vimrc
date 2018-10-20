@@ -12,7 +12,10 @@ function! misc#CompileRun()
     wall
     if &filetype == 'nerdtree'
         silent call nerdtree#ui_glue#invokeKeyMap('R')
-        echo 'Refresh Done!'
+        echo 'Nerdtree: Refresh done!'
+    elseif &filetype == 'tagbar'
+        call job_start("ctags -R -f .tags", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
+        echo 'Tagbar: Refresh Done (.tags file)!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
     elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'

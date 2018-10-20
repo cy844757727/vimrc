@@ -11,7 +11,7 @@ augroup c_cpp_project
 augroup END
 
 command! -buffer -nargs=? RMakefile :call s:RefreshAll('<args>')
-command! -buffer GMakefile :call s:GenerateMakeFile()
+command! -buffer Makefile :call s:GenerateMakeFile()
 
 if exists("*s:GenerateMakeFile()")
     finish

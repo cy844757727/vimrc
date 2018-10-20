@@ -160,15 +160,15 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
                 \ "    m:       git menu\n" .
-                \ "    d:       diff file (git difftool)\n" .
-                \ "    r:       reset file staging (git reset)\n" .
-                \ "    R:       reset all staged file\n" .
-                \ "    a:       add file (git add)\n" .
-                \ "    A:       add all file\n" .
-                \ "    e:       edit file (new tabpage)\n" .
-                \ "    \\d:      delete file\n" .
-                \ "    \\D:      delete file (force)\n" .
-                \ "    \\co:     checkout file (git checkout)\n" .
+                \ "    d:       diff file              (git difftool)\n" .
+                \ "    r:       reset file staging     (git reset HEAD --)\n" .
+                \ "    R:       reset all staged file  (git reset HEAD)\n" .
+                \ "    a:       add file               (git add)\n" .
+                \ "    A:       add all file           (git add .)\n" .
+                \ "    e:       edit file              (new tabpage)\n" .
+                \ "    \\d:      delete file            (git rm)\n" .
+                \ "    \\D:      delete file            (git rm -f)\n" .
+                \ "    \\co:     checkout file          (git checkout HEAD --)\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

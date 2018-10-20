@@ -80,10 +80,10 @@ function <SID>HelpDoc()
     echo
                 \ "Git commit quick help !?\n" .
                 \ "==================================================\n" .
-                \ "    <spcae>: code fold | unfold (za)\n" .
+                \ "    <spcae>: code fold | unfold    (za)\n" .
                 \ "    m:       git menu\n" .
-                \ "    d:       diff file\n" .
-                \ "    \\co:     checkout file\n" .
+                \ "    d:       diff file             (git difftool -y)\n" .
+                \ "    \\co:     checkout file         (git checkout)\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 
