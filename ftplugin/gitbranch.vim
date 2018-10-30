@@ -38,33 +38,29 @@ if exists('*<SID>CheckOutBranch')
     finish
 endif
 
-function s:Refresh(arg)
-    if a:arg == 0
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, git#FormatBranch())
-        call setpos('.', l:pos)
-    else
-        call git#Refresh()
-    endif
+function s:Refresh()
+    let l:pos = getpos('.')
+    silent edit!
+    call setline(1, git#FormatBranch())
+    call setpos('.', l:pos)
 endfunction
 
 function s:RefreshStatus()
-    wincmd W
+    3wincmd w
     let l:pos = getpos('.')
     silent edit!
     call setline(1, git#FormatStatus())
     call setpos('.', l:pos)
-    wincmd w
+    4wincmd w
 endfunction
 
 function <SID>ApplyStash()
     let l:curL = line('.')
     let l:linT = search('^Tag:', 'n')
     let l:linS = search('^Stash:', 'n')
-    let l:str = matchstr(getline('.'), '^\(\s\+\)\zs\S.*$')
+    let l:str = matchstr(getline('.'), '^\(\s\+\)\zs[^:]*')
     if l:linS != 0 && l:curL > l:linS && (l:linT == 0 || l:curL < l:linT) && l:str != ''
-        let l:msg = system('git stash apply ' . split(l:str, ':')[0])
+        let l:msg = system('git stash apply ' . l:str)
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
@@ -74,22 +70,20 @@ function <SID>ApplyStash()
 endfunction
         
 function <SID>CheckOutBranch()
-    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
-    let l:lin = search('^[^Ll]\w\+:', 'n')
-    if len(l:str) > 0 && l:str[0] != '*' && (l:lin == 0 || l:lin > line('.'))
-        call system('git stash')
-        let l:msg = system("git checkout " . l:str[0])
+    let l:lin = search('^[RST]\w*:', 'n')
+    let l:str = matchstr(getline('.'), '^\(\s\+\)\zs\w*')
+    if !empty(l:str) && (l:lin == 0 || l:lin > line('.'))
+        let l:msg = system('git stash && git checkout ' . l:str)
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
-            for l:item in systemlist('git stash list')
-                if l:item =~ ' ' . l:str[0] . ':'
-                    let l:id = matchstr(l:item, '^[^:]\+')
-                    call system('git stash apply ' . l:id . ' && git stash drop ' . l:id)
-                    break
-                endif
-            endfor
-            call s:Refresh(1)
+            let l:stash = systemlist("git stash list|grep ' WIP on " . l:str . ": '")
+            if !empty(l:stash)
+                let l:id = matchstr(l:stash[0], '^[^:]\+')
+                call system('git stash apply ' . l:id . ' && git stash drop ' . l:id)
+            endif
+            call s:RefreshStatus()
+            call s:Refresh()
         endif
     endif
 endfunction
@@ -112,36 +106,35 @@ endfunction
 
 function <SID>DeleteItem(...)
     let l:curL = line('.')
-    let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:linT = search('^Tag:', 'n')
     let l:linS = search('^Stash:', 'n')
     let l:linR = search('^Remote:', 'n')
-    if (len(l:str) == 0) || (input('Confirm the deletion(yes/no): ') != 'yes')
+    let l:str = matchstr(getline('.'), '^\(\s\+\)\zs\(\w\|[@{}.]\)*')
+    if empty(l:str) || l:str == 'master' || (input('Confirm the deletion(yes/no): ') != 'yes')
         return
     elseif l:linT != 0 && l:curL > l:linT
-        let l:msg = system('git tag -d ' . l:str[0])
-        let l:rA = 1
+        let l:msg = system('git tag -d ' . l:str)
     elseif l:linS != 0 && l:curL > l:linS
-        let l:msg = system('git stash drop ' . strpart(l:str[0], 0, len(l:str[0])-1))
+        let l:msg = system('git stash drop ' . l:str)
+        let l:self = 1
     elseif l:linR != 0 && l:curL > l:linR
-        let l:msg = system('git remote remove ' . l:str[0])
-    elseif l:str[0] != '*'
-        let l:flag = a:0 == 0 ? '-d ' : '-D '
-        let l:msg = system('git branch ' . l:flag . l:str[0])
-        let l:rA = 1
+        let l:msg = system('git remote remove ' . l:str)
     else
-        let l:msg = 'none'
+        let l:flag = a:0 == 0 ? '-d ' : '-D '
+        let l:msg = system('git branch ' . l:flag . l:str)
     endif
     if l:msg =~ 'error:\|fatal:'
         echo l:msg
-    elseif l:msg != 'none'
-        call s:Refresh(exists('l:rA'))
+    elseif exists('l:self')
+        call s:Refresh()
+    else
+        call git#Refresh()
     endif
 endfunction
 
 function <SID>Merge_Rebase_Branch(...)
     let l:str = matchstr(getline('.'), '^\s\+\w\+')
-    let l:lin = search('^[^Ll]\w\+:', 'n')
+    let l:lin = search('^[RST]\w*:', 'n')
     if l:str != '' && (l:lin == 0 || l:lin > line('.'))
         let l:op = a:0 == 0 ? 'merge ' . l:str : 
                     \ a:1 == 1 ? 'rebase ' . l:str : 'rebase --continue '

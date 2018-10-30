@@ -73,8 +73,7 @@ function <SID>TagCommit()
         if l:tag != ''
             let l:note = input('Enter a note: ')
             let l:tag = l:note == '' ? l:tag . ' ' : '-a ' . l:tag . " -m '"  . l:note . "' "
-            let l:msg = system('git tag ' . l:tag . l:hash)
-            call s:MsgHandle(l:msg)
+            call s:MsgHandle(system('git tag ' . l:tag . l:hash))
         endif
     endif
 endfunction
@@ -91,8 +90,7 @@ function <SID>Reset_Revert_Commit(...)
         redraw!
         return
     endif
-    let l:msg = system('git ' . l:op . l:hash)
-    call s:MsgHandle(l:msg)
+    call s:MsgHandle(system('git ' . l:op . l:hash))
 endfunction
 
 function <SID>CheckOutNewBranck()
@@ -100,8 +98,7 @@ function <SID>CheckOutNewBranck()
     if l:hash != ''
         let l:name = input('Enter new branch name(start from ' . l:hash . '): ')
         if l:name != ''
-            let l:msg = system('git stash && git checkout -b ' . l:name . ' ' . l:hash)
-            call s:MsgHandle(l:msg)
+            call s:MsgHandle(system('git stash && git checkout -b ' . l:name . ' ' . l:hash))
         endif
     endif
 endfunction

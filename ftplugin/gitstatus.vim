@@ -20,8 +20,6 @@ nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<CR>
 nnoremap <buffer> <silent> a :call <SID>AddFile()<CR>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
-"nnoremap <buffer> <silent> s :call <SID>Stash(0)<CR>
-"nnoremap <buffer> <silent> S :call <SID>Stash(1)<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
@@ -56,19 +54,8 @@ function s:MsgHandle(msg)
     endif
 endfunction
 
-"function <SID>Stash(flag)
-"    if a:flag == 0
-"        let l:msg = system('git stash')
-"    elseif a:flag == 1
-"        let l:msg = system('git stash pop')
-"    else
-"        let l:msg = ''
-"    endif
-"    call s:MsgHandle(l:msg)
-"endfunction
-
 function <SID>EditFile()
-    let l:file = split(matchstr(getline('.'), '^ \+.*$'))
+    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     if len(l:file) == 1
         let l:file = l:file[0]
     elseif len(l:file) == 2
@@ -88,7 +75,7 @@ function <SID>FileDiff()
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     if len(l:file) == 2
         let l:sign = split(system("git status -s -- " . l:file[1]))[0]
-        if l:sign =~ 'M' "&& l:sign !～ 'A'
+        if l:sign =~ 'M'
             let l:lin = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
             let l:flag = (l:lin == 0) || (line('.') < l:lin) ? ' -y --cached ' : ' -y '
             exec '!git difftool' . l:flag . l:file[1]
@@ -131,15 +118,14 @@ endfunction
 function <SID>CheckOutFile()
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     if len(l:file) == 2
-        let l:msg = system('git checkout HEAD -- ' . l:file[1])
-        call s:MsgHandle(l:msg)
+        call s:MsgHandle(system('git checkout HEAD -- ' . l:file[1]))
     endif
 endfunction
 
 function! <SID>DeleteItem(...)
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:msg = 'none'
-    if input('Confirm the deletion: ') != 'yes'
+    if input('Confirm the deletion(yes/no): ') != 'yes'
         return
     elseif len(l:file) == 1
         let l:msg = system('rm ' . l:file[0])

@@ -79,7 +79,6 @@ function <SID>CheckOutFile()
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
         if l:msg =~ 'error:\|fatal:'
-                \ 'text': 'Switch file (x) permission',
             echo l:msg
         else
             wincmd w

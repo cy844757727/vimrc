@@ -19,6 +19,7 @@ let s:bookMarkFile = '.bookmark'
 let s:breakPointFile = '.breakpoint'
 let s:sessionFile = '.session'
 let s:vimInfoFile = '.viminfo'
+let s:allFileList = [s:sessionFile, s:vimInfoFile, s:breakPointFile, s:bookMarkFile]
 let s:home = system('echo ~')[:-2]
 let s:projectFile = s:home . '/.vim/.projectitem'
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
@@ -89,15 +90,15 @@ endfunction
 
 function s:SignLoad(pre)
     if filereadable(a:pre . s:bookMarkFile)
-        if a:pre != ''
-            call s:SignClear(s:bookMarkVec, s:bookMarkFile)
-        endif
+"        if a:pre != ''
+"            call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+"        endif
         call s:SignSet(s:bookMarkVec, a:pre . s:bookMarkFile, 'BMBPSignBookMarkDef',)
     endif
     if filereadable(a:pre . s:breakPointFile)
-        if a:pre != ''
-            call s:SignClear(s:breakPointVec, s:breakPointFile)
-        endif
+"        if a:pre != ''
+"            call s:SignClear(s:breakPointVec, s:breakPointFile)
+"        endif
         call s:SignSet(s:breakPointVec, a:pre . s:breakPointFile, 'BMBPSignBreakPointDef',)
     endif
     filetype detect
@@ -143,12 +144,17 @@ function s:ProjectNew(name, type, path)
         exec 'silent cd ' . l:path
         silent %bwipeout
     endif
-    let g:BMBPSIGNPROJECTIZED = 1
+    let s:projectized = 1
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
 function s:ProjectSwitch(sel)
-    silent %bwipeout
+    if exists('s:projectized')
+        silent %bwipeout
+        unlet s:projectized
+        let s:bookMarkVec = []
+        let s:breakPointVec = []
+    endif
     set noautochdir
     exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
     call s:SignLoad('')
@@ -195,7 +201,7 @@ function s:ProjectMenu()
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
-            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSIGNPROJECTIZED'))
+            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('s:projectized'))
                 call s:ProjectSwitch(l:char)
                 break
             elseif l:mode == 'd'
@@ -247,11 +253,10 @@ endfunction
 
 " 保存当前工作空间
 function s:WorkSpaceSave(pre)
-    if exists('g:BMBPSign_PreSaveEvent')
-        for l:statement in g:BMBPSign_PreSaveEvent
-            call execute(l:statement)
-        endfor
+    if exists('g:BMBPSign_PreSaveEventList')
+        call execute(g:BMBPSign_PreSaveEventList)
     endif
+    let s:projectized = 1
     if a:pre != ''
         call s:SignSave(s:bookMarkVec, a:pre . s:bookMarkFile)
         call s:SignSave(s:breakPointVec, a:pre . s:breakPointFile)
@@ -281,24 +286,34 @@ function s:WorkSpaceSave(pre)
         endif
     endfor
     call s:ProjectNew(matchstr(l:path, '[^/]*$'), l:type, l:path)
-    if exists('g:BMBPSign_PostSaveEvent')
-        for l:statement in g:BMBPSign_PostSaveEvent
-            call execute(l:statement)
-        endfor
+    if exists('g:BMBPSign_PostSaveEventList')
+        call execute(g:BMBPSign_PostSaveEventList)
     endif
 endfunction
 
 " 恢复工作空间
 function s:WorkSpaceLoad(pre)
-    if exists('g:BMBPSign_PreLoadEvent')
-        for l:statement in g:BMBPSign_PreLoadEvent
-            call execute(l:statement)
-        endfor
+    if empty(a:pre) && exists('s:projectized')
+        return
     endif
-    if a:pre != '' || (empty(s:bookMarkVec + s:breakPointVec) && (filereadable(s:bookMarkFile) || filereadable(s:breakPointFile)))
+    if exists('g:BMBPSign_PreLoadEventList')
+        call execute(g:BMBPSign_PreLoadEventList)
+    endif
+    if exists('s:projectized')
+        %bwipeout
+        let s:bookMarkVec = []
+        let s:breakPointVec = []
+    endif
+    if !empty(a:pre) || !exists('s:projectized') 
         call s:SignLoad(a:pre)
     endif
-    %bwipeout
+    if !empty(a:pre)
+        for l:file in s:allFileList
+            if filereadable(a:pre . l:file)
+                call writefile(readfile(a:pre . l:file), l:file)
+            endif
+        endfor
+    endif
     if filereadable(a:pre . s:vimInfoFile)
         let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100
@@ -309,10 +324,9 @@ function s:WorkSpaceLoad(pre)
         exec 'silent! source ' . a:pre . s:sessionFile
     endif
     set noautochdir
-    if exists('g:BMBPSign_PostLoadEvent')
-        for l:statement in g:BMBPSign_PostLoadEvent
-            call execute(l:statement)
-        endfor
+    let s:projectized = 1
+    if exists('g:BMBPSign_PostLoadEventList')
+        call execute(g:BMBPSign_PostLoadEventList)
     endif
 endfunction
 
@@ -410,7 +424,7 @@ function BMBPSign#GetList(str)
 endfunction
 
 function BMBPSign#VimEnterEvent()
-    if exists('g:BMBPSIGNPROJECTIZED')
+    if exists('s:projectized')
         return
     endif
     let l:list = []
@@ -425,5 +439,4 @@ function BMBPSign#VimEnterEvent()
         call s:SignLoad('')
     endif
 endfunction
-
 
