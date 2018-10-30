@@ -298,6 +298,7 @@ function s:WorkSpaceLoad(pre)
     if a:pre != '' || (empty(s:bookMarkVec + s:breakPointVec) && (filereadable(s:bookMarkFile) || filereadable(s:breakPointFile)))
         call s:SignLoad(a:pre)
     endif
+    %bwipeout
     if filereadable(a:pre . s:vimInfoFile)
         let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100

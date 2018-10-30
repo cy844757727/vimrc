@@ -94,13 +94,29 @@ function <SID>CheckOutBranch()
     endif
 endfunction
 
+function s:Region(lin)
+    let l:linT = search('^Tag:', 'n')
+    let l:linS = search('^Stash:', 'n')
+    let l:linR = search('^Remote:', 'n')
+    if (l:linT != 0) && (a:lin > l:linT)
+        let l:area = 'tag'
+    elseif (l:linS != 0) && (a:lin > l:linS)
+        let l:area = 'stash'
+    elseif (l:linR != 0) && (a:lin > l:linR)
+        let l:area = 'remote'
+    else
+        let l:area = 'local'
+    endif
+    return l:area
+endfunction
+
 function <SID>DeleteItem(...)
     let l:curL = line('.')
     let l:str = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:linT = search('^Tag:', 'n')
     let l:linS = search('^Stash:', 'n')
     let l:linR = search('^Remote:', 'n')
-    if len(l:str) == 0
+    if (len(l:str) == 0) || (input('Confirm the deletion(yes/no): ') != 'yes')
         return
     elseif l:linT != 0 && l:curL > l:linT
         let l:msg = system('git tag -d ' . l:str[0])

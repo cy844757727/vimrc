@@ -320,8 +320,7 @@ function! s:SubMenu()
                     \ '======================================'
         let l:name = input('Branch: ')
         if l:name != ''
-            call system('git stash')
-            let l:msg = system('git checkout -q -b ' . l:name)
+            let l:msg = system('git stash && git checkout -q -b ' . l:name)
         endif
     elseif l:char == 'm'
         echo "** merge the specified branch to current\n" .

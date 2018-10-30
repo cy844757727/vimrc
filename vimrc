@@ -75,7 +75,7 @@ augroup END
 
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
-command! -range=% DBLank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
+command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
 command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 command! -nargs=+ -complete=file TermH :call term_start("<args>", {'hidden': 1, 'term_kill': 'kill', 'term_finish': 'close', 'norestore': 1})
 command! Qs :call BMBPSign#WorkSpaceSave('') | wall | qall

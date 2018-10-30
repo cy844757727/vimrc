@@ -100,10 +100,8 @@ function <SID>CheckOutNewBranck()
     if l:hash != ''
         let l:name = input('Enter new branch name(start from ' . l:hash . '): ')
         if l:name != ''
-            let l:msg = system('git checkout -b ' . l:name . ' ' . l:hash)
+            let l:msg = system('git stash && git checkout -b ' . l:name . ' ' . l:hash)
             call s:MsgHandle(l:msg)
-        else
-            echo '    Abort'
         endif
     endif
 endfunction

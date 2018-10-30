@@ -17,6 +17,7 @@ setlocal statusline=\ [2-Commit]%=\ \ \ \ \ %-5l\ %4P\
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
@@ -58,6 +59,19 @@ function <SID>FileDiff()
     endif
 endfunction
 
+function <SID>EditFile()
+    let l:file = getline('.')
+    if l:file =~ '^diff --git '
+    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
+        let l:winId = win_findbuf(bufnr(l:file))
+        if l:winId != []
+            call win_gotoid(l:winId[0])
+        elseif filereadable(l:file)
+            exec '-tabedit ' . l:file
+        endif
+    endif
+endfunction
+
 function <SID>CheckOutFile()
     let l:file = getline('.')
     if l:file =~ '^diff --git '
@@ -83,6 +97,7 @@ function <SID>HelpDoc()
                 \ "    <spcae>: code fold | unfold    (za)\n" .
                 \ "    m:       git menu\n" .
                 \ "    d:       diff file             (git difftool -y)\n" .
+                \ "    e:       edit file\n" .
                 \ "    \\co:     checkout file         (git checkout)\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction

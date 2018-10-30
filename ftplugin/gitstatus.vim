@@ -20,6 +20,8 @@ nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<CR>
 nnoremap <buffer> <silent> a :call <SID>AddFile()<CR>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
+"nnoremap <buffer> <silent> s :call <SID>Stash(0)<CR>
+"nnoremap <buffer> <silent> S :call <SID>Stash(1)<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
@@ -53,6 +55,17 @@ function s:MsgHandle(msg)
         call s:Refresh()
     endif
 endfunction
+
+"function <SID>Stash(flag)
+"    if a:flag == 0
+"        let l:msg = system('git stash')
+"    elseif a:flag == 1
+"        let l:msg = system('git stash pop')
+"    else
+"        let l:msg = ''
+"    endif
+"    call s:MsgHandle(l:msg)
+"endfunction
 
 function <SID>EditFile()
     let l:file = split(matchstr(getline('.'), '^ \+.*$'))
@@ -126,7 +139,9 @@ endfunction
 function! <SID>DeleteItem(...)
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:msg = 'none'
-    if len(l:file) == 1
+    if input('Confirm the deletion: ') != 'yes'
+        return
+    elseif len(l:file) == 1
         let l:msg = system('rm ' . l:file[0])
     else
         let l:pre = a:0 > 0 ? '-f ' : ''
