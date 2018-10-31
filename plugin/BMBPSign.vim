@@ -6,19 +6,17 @@
 "    g:BMBPSign_SpecialBuf
 "
 "    保存工作空间前需要处理的语句:list
-"    g:BMBPSign_PreSaveEvent
+"    g:BMBPSign_PreSaveEventList
 "
 "    保存工作空间后需要处理的语句:list
-"    g:BMBPSign_PostSaveEvent
+"    g:BMBPSign_PostSaveEventList
 "
 "    加载工作空间前需要处理的语句:list
-"    g:BMBPSign_PreLoadEvent
+"    g:BMBPSign_PreLoadEventList
 "
 "    加载工作空间后需要处理的语句:list
-"    g:BMBPSign_PostLoadEvent
+"    g:BMBPSign_PostLoadEventList
 "    
-"    是否项目化管理标志
-"    g:BMBPSIGNPROJECTIZED
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:home = system('echo ~')[:-2]

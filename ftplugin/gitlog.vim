@@ -80,16 +80,15 @@ endfunction
 
 function <SID>Reset_Revert_Commit(...)
     let l:hash = matchstr(getline('.'), '\w\{7}')
-    if l:hash == ''
+    if l:hash == '' || input('Are you sure to reset/revert commit(yes/no): ') != 'yes'
+        redraw!
         return
     elseif a:0 == 0
         let l:op = 'revert '
-    elseif input('Are you sure to reset commit which will cover workspace yes/no(no): ') == 'yes'
-        let l:op = 'reset --hard '
     else
-        redraw!
-        return
+        let l:op = 'reset --hard '
     endif
+    redraw!
     call s:MsgHandle(system('git ' . l:op . l:hash))
 endfunction
 

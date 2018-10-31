@@ -74,7 +74,7 @@ endfunction
 
 function <SID>CheckOutFile()
     let l:file = getline('.')
-    if l:file =~ '^diff --git '
+    if l:file =~ '^diff --git ' && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
     	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
@@ -97,7 +97,7 @@ function <SID>HelpDoc()
                 \ "    m:       git menu\n" .
                 \ "    d:       diff file             (git difftool -y)\n" .
                 \ "    e:       edit file\n" .
-                \ "    \\co:     checkout file         (git checkout)\n" .
+                \ "    \\co:     checkout file         (git checkout hash --)\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 

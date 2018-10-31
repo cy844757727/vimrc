@@ -117,8 +117,12 @@ endfunction
 
 function <SID>CheckOutFile()
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    if len(l:file) == 2
-        call s:MsgHandle(system('git checkout HEAD -- ' . l:file[1]))
+    let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
+    if len(l:file) == 2 && l:lin != 0 && line('.') > l:lin && input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
+        redraw!
+        call s:MsgHandle(system('git checkout -- ' . l:file[1]))
+    else
+        redraw!
     endif
 endfunction
 
@@ -126,6 +130,7 @@ function! <SID>DeleteItem(...)
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:msg = 'none'
     if input('Confirm the deletion(yes/no): ') != 'yes'
+        redraw!
         return
     elseif len(l:file) == 1
         let l:msg = system('rm ' . l:file[0])
@@ -138,6 +143,7 @@ function! <SID>DeleteItem(...)
             let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:file[-1])
         endif
     endif
+    redraw!
     call s:MsgHandle(l:msg)
 endfunction
 
@@ -169,7 +175,7 @@ function <SID>HelpDoc()
                 \ "    e:       edit file              (new tabpage)\n" .
                 \ "    \\d:      delete file            (git rm)\n" .
                 \ "    \\D:      delete file            (git rm -f)\n" .
-                \ "    \\co:     checkout file          (git checkout HEAD --)\n" .
+                \ "    \\co:     checkout file          (git checkout --)\n" .
                 \ "    1234:    jump to 1234 window"
 endfunction
 

@@ -12,8 +12,10 @@ hi NormalSign  ctermbg=253  ctermfg=16
 sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
 sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
 
+" [{'attr': ..., 'id': ..., 'file': ...} ...]
 let s:bookMarkVec = []
 let s:breakPointVec = []
+
 let s:newSignId = 0
 let s:bookMarkFile = '.bookmark'
 let s:breakPointFile = '.breakpoint'
@@ -31,29 +33,38 @@ function s:SignToggle(file, line, vec, signFile, signDef, attr)
     let l:signPlace = execute('sign place')
     let l:match = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . a:signDef)
     if empty(l:match)
+        " Ensure id uniqueness
         let s:newSignId += 1
         while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
             let s:newSignId += 1
         endwhile
+
+        " Set sign
         exec 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . a:signDef . ' file=' . a:file
         call add(a:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
     else
+        " Unset sign
         exec 'sign unplace ' . l:match[1] . ' file=' . a:file
         call filter(a:vec, 'v:val.id != ' . l:match[1])
     endif
+
     call s:SignSave(a:vec, a:signFile)
 endfunction
 
 function s:Signjump(action)
     if !empty(s:bookMarkVec)
         if a:action == 'next'
+            " Jump next
             call add(s:bookMarkVec, remove(s:bookMarkVec, 0))
         else
+            " Jump previous
             call insert(s:bookMarkVec, remove(s:bookMarkVec, -1))
         endif
+
         try
             exec 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
         catch
+            " For invalid sign
             call remove(s:bookMarkVec, -1)
             call s:Signjump(a:action)
         endtry
@@ -67,6 +78,7 @@ function s:SignClear(vec, signFile)
             exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
         endif
     endfor
+
     call filter(a:vec, "v:val.attr == 'todo'")
     call s:SignSave(a:vec, a:signFile)
 endfunction
@@ -90,17 +102,13 @@ endfunction
 
 function s:SignLoad(pre)
     if filereadable(a:pre . s:bookMarkFile)
-"        if a:pre != ''
-"            call s:SignClear(s:bookMarkVec, s:bookMarkFile)
-"        endif
         call s:SignSet(s:bookMarkVec, a:pre . s:bookMarkFile, 'BMBPSignBookMarkDef',)
     endif
+
     if filereadable(a:pre . s:breakPointFile)
-"        if a:pre != ''
-"            call s:SignClear(s:breakPointVec, s:breakPointFile)
-"        endif
         call s:SignSet(s:breakPointVec, a:pre . s:breakPointFile, 'BMBPSignBreakPointDef',)
     endif
+
     filetype detect
 endfunction
 
@@ -111,12 +119,14 @@ function s:SignSave(vec,signFile)
     else
         let l:content = []
         let l:signPlace = execute('sign place')
+
         for l:mark in a:vec
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:mark.id . '  ')
             if !empty(l:line)
                 let l:content += [l:mark.attr . ' ' . l:mark.file . ':' . l:line[1]]
             endif
         endfor
+
         call writefile(l:content, a:signFile)
     endif
 endfunction
@@ -125,18 +135,25 @@ function s:ProjectNew(name, type, path)
     " path -> absolute path
     let l:type = a:type == '.' ? 'undef' : a:type
     let l:path = a:path == '.' ? getcwd() : a:path
+
+    " Whether it already exists
     for l:i in range(len(s:projectItem))
         if l:path == split(s:projectItem[l:i])[-1]
             let l:item = remove(s:projectItem, l:i)
             break
         endif
     endfor
+
+    " For new item or modifing item(already exists)
     if a:path == '.' || !exists('l:item')
         let l:item = printf('%-20s  Type: %-12s  Path: %s', a:name, l:type, l:path)
     endif
+
     call insert(s:projectItem, l:item)
     call writefile(s:projectItem, s:projectFile)
     set noautochdir
+
+    " cd path
     if l:path != getcwd()
         if !isdirectory(l:path)
             call mkdir(l:path, 'p')
@@ -144,17 +161,20 @@ function s:ProjectNew(name, type, path)
         exec 'silent cd ' . l:path
         silent %bwipeout
     endif
+
     let s:projectized = 1
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
 function s:ProjectSwitch(sel)
     if exists('s:projectized')
+        " Empty the workspace
         silent %bwipeout
         unlet s:projectized
         let s:bookMarkVec = []
         let s:breakPointVec = []
     endif
+
     set noautochdir
     exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
     call s:SignLoad('')
@@ -164,8 +184,11 @@ function s:ProjectSwitch(sel)
     echo substitute(s:projectItem[0], ' ' . s:home, ' ~', '')
 endfunction
 
+" Menu UI
 function s:ProjectUI(start, tip)
+    " ten items per page
     let l:page = a:start / 10 + 1
+
     let l:head = "** Project option (cwd: " . substitute(getcwd(), s:home, '~', '') .
                 \ '     num: ' . len(s:projectItem) . "     page: " . l:page . ")\n" .
                 \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  " .
@@ -173,6 +196,8 @@ function s:ProjectUI(start, tip)
                 \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode\n" .
                 \ repeat('=', min([&columns - 10, 90]))
     let l:body = s:projectItem[a:start:a:start+9]
+
+    " Convert to absolute path
     call map(l:body, "printf(' %3d: ', v:key) . substitute(v:val, ' ' . s:home, ' ~', '')")
     return l:head . "\n" . join(l:body, "\n") . "\n" . a:tip
 endfunction
@@ -181,9 +206,11 @@ function s:ProjectMenu()
     let [l:tip, l:mode] = ['!?:', 's']
     let l:start = empty(s:projectItem) ? [0] : range(0, len(s:projectItem) - 1, 10)
     while 1
+        " Disply UI
         echo s:ProjectUI(l:start[0], l:tip)
         let l:char = nr2char(getchar())
         redraw!
+
         if l:char ==# 'p' && l:start != []
             call add(l:start, remove(l:start, 0))
         elseif l:char ==# 'P' && l:start != []
@@ -251,32 +278,46 @@ function s:ProjectManager(argc, argv)
     endif
 endfunction
 
-" 保存当前工作空间
+" Save current workspace to specified file
+" Saved content: session, viminfo, bookmark, breakpoint
+" pre specify file name prefix
 function s:WorkSpaceSave(pre)
+    " Pre-save processing
     if exists('g:BMBPSign_PreSaveEventList')
         call execute(g:BMBPSign_PreSaveEventList)
     endif
-    let s:projectized = 1
+
+    " Save Sign to specified file(not default file)
+    " bookmark & breakpoint can automatically save to default file
     if a:pre != ''
         call s:SignSave(s:bookMarkVec, a:pre . s:bookMarkFile)
         call s:SignSave(s:breakPointVec, a:pre . s:breakPointFile)
     endif
+
+    " Save session & viminfo
+    let s:projectized = 1
     set noautochdir
     exec 'mksession! ' . a:pre . s:sessionFile
     let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
     exec 'wviminfo! ' . a:pre . s:vimInfoFile
     exec 'set viminfo=' . l:temp
+
+    " For special buf situation(modify session file)
     if exists('g:BMBPSign_SpecialBuf')
         for l:item in items(g:BMBPSign_SpecialBuf)
             call system("sed -i 's/^file " . l:item[0] . ".*$/" . l:item[1] . "/' " . a:pre . s:sessionFile)
         endfor
     endif
+
+    " Remember the current window of each tab(modify session file)
     let l:sub = ''
     for l:i in range(1, tabpagenr('$'))
         let l:sub .= l:i . 'tabdo ' . tabpagewinnr(l:i) . 'wincmd w\n'
     endfor
     call system("sed -i 's/^\\(tabnext " . tabpagenr() . "\\)$/" . l:sub . "\\1/' " . a:pre . s:sessionFile)
+
+    " Project processing
     let [l:type, l:path] = ['undef', getcwd()]
     let l:parent = substitute(l:path, '/\w*$', '', '')
     for l:item in items(g:BMBPSign_ProjectType)
@@ -286,27 +327,40 @@ function s:WorkSpaceSave(pre)
         endif
     endfor
     call s:ProjectNew(matchstr(l:path, '[^/]*$'), l:type, l:path)
+
+    " Post-save processing
     if exists('g:BMBPSign_PostSaveEventList')
         call execute(g:BMBPSign_PostSaveEventList)
     endif
 endfunction
 
-" 恢复工作空间
+" Restore workspace from specified file
+" Context: session, viminfo, bookmark, breakpoint
+" pre specify file name prefix
 function s:WorkSpaceLoad(pre)
+    " Do not allow repeated loading of defaults
     if empty(a:pre) && exists('s:projectized')
         return
     endif
+
+    " Pre-load processing
     if exists('g:BMBPSign_PreLoadEventList')
         call execute(g:BMBPSign_PreLoadEventList)
     endif
+
+    " Empty the workspace
     if exists('s:projectized')
         %bwipeout
         let s:bookMarkVec = []
         let s:breakPointVec = []
     endif
+
+    " Restore bookmark/breakpoint
     if !empty(a:pre) || !exists('s:projectized') 
         call s:SignLoad(a:pre)
     endif
+
+    " Copy file to default file
     if !empty(a:pre)
         for l:file in s:allFileList
             if filereadable(a:pre . l:file)
@@ -314,17 +368,24 @@ function s:WorkSpaceLoad(pre)
             endif
         endfor
     endif
+
+    " Load viminfo
     if filereadable(a:pre . s:vimInfoFile)
         let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100
         exec 'silent! rviminfo! ' . a:pre . s:vimInfoFile
         exec 'set viminfo=' . l:temp
     endif
+
+    " Load session
     if filereadable(a:pre . s:sessionFile)
         exec 'silent! source ' . a:pre . s:sessionFile
     endif
+
     set noautochdir
     let s:projectized = 1
+
+    " Post-load processing
     if exists('g:BMBPSign_PostLoadEventList')
         call execute(g:BMBPSign_PostLoadEventList)
     endif
@@ -333,6 +394,7 @@ endfunction
 function s:WorkSpaceClear(pre)
     call delete(a:pre . s:sessionFile)
     call delete(a:pre . s:vimInfoFile)
+
     if a:pre != ''
         call delete(a:pre . s:bookMarkFile)
         call delete(a:pre . s:breakPointFile)
@@ -361,12 +423,14 @@ function BMBPSign#Toggle(type, attr)
             else
                 let l:char=''
             endif
+
             if l:char != ''
                 call append('.', l:char . ' TODO: ')
                 normal j==
                 write
             endif
         endif
+
         let l:attr = a:attr == '' ? a:type : a:attr
         let [l:vec, l:signFile, l:signDef] = a:type == 'book' ?
                     \ [s:bookMarkVec, s:bookMarkFile, 'BMBPSignBookMarkDef'] :
@@ -406,6 +470,7 @@ endfunction
 function BMBPSign#GetList(str)
     let l:qf = []
     let l:signFile = a:str == 'book' ? s:bookMarkFile : s:breakPointFile
+
     if filereadable(l:signFile)
         for l:item in readfile(l:signFile)
             let l:list = split(l:item, '[ :]\+')
@@ -420,6 +485,7 @@ function BMBPSign#GetList(str)
             endif
         endfor
     endif
+
     return l:qf
 endfunction
 
@@ -427,14 +493,18 @@ function BMBPSign#VimEnterEvent()
     if exists('s:projectized')
         return
     endif
+
     let l:list = []
     let l:file = expand('%')
+
     if filereadable(s:bookMarkFile)
         let l:list += systemlist("grep '" . l:file . "' " . s:bookMarkFile)
     endif
+
     if filereadable(s:breakPointFile)
         let l:list += systemlist("grep '" . l:file . "' " . s:breakPointFile)
     endif
+
     if !empty(l:list)
         call s:SignLoad('')
     endif

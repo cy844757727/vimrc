@@ -111,6 +111,7 @@ function <SID>DeleteItem(...)
     let l:linR = search('^Remote:', 'n')
     let l:str = matchstr(getline('.'), '^\(\s\+\)\zs\(\w\|[@{}.]\)*')
     if empty(l:str) || l:str == 'master' || (input('Confirm the deletion(yes/no): ') != 'yes')
+        redraw!
         return
     elseif l:linT != 0 && l:curL > l:linT
         let l:msg = system('git tag -d ' . l:str)
@@ -123,6 +124,7 @@ function <SID>DeleteItem(...)
         let l:flag = a:0 == 0 ? '-d ' : '-D '
         let l:msg = system('git branch ' . l:flag . l:str)
     endif
+    redraw!
     if l:msg =~ 'error:\|fatal:'
         echo l:msg
     elseif exists('l:self')
