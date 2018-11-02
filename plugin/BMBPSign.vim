@@ -33,14 +33,14 @@ augroup END
 
 command! -nargs=? BMBPSignToggleBookMark :call BMBPSign#Toggle('book', '<args>')
 command! -nargs=? BMBPSignToggleBreakPoint :call BMBPSign#Toggle('break', '<args>')
-command! BMBPSignClearBookMark :call BMBPSign#Clear('book')
-command! BMBPSignClearBreakPoint :call BMBPSign#Clear('break')
+command! BMBPSignClearBookMark :call BMBPSign#SignClear('', 'book')
+command! BMBPSignClearBreakPoint :call BMBPSign#SignClear('', 'break')
 command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
 command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
 
 command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>')
 command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>')
-command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>')
+command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>','')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')

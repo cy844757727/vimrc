@@ -442,26 +442,22 @@ function BMBPSign#Jump(action)
     call s:Signjump(a:action)
 endfunction
 
-" 撤销所有书签/断点
-function BMBPSign#Clear(type)
-    if a:type == 'book'
-        call s:SignClear(s:bookMarkVec, s:bookMarkFile)
-    elseif a:type == 'break'
-        call s:SignClear(s:breakPointVec, s:breakPointFile)
-    endif
-endfunction
-
 function BMBPSign#SignSave(pre)
     let l:pre = matchstr(a:pre, '^[^.]*')
     call s:SignSave(s:bookMarkVec, l:pre . s:bookMarkFile)
     call s:SignSave(s:breakPointVec, l:pre . s:breakPointFile)
 endfunction
 
-function BMBPSign#SignClear(pre)
+" Cancel bookmark/breakpoint
+function BMBPSign#SignClear(pre, type)
     let l:pre = matchstr(a:pre, '^[^.]*')
     if !empty(l:pre)
         call delete(l:pre . s:bookMarkFile)
         call delete(l:pre . s:breakPointFile)
+    elseif a:type == 'book'
+        call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+    elseif a:type == 'break'
+        call s:SignClear(s:breakPointVec, s:breakPointFile)
     endif
 endfunction
 
