@@ -53,9 +53,7 @@ function! GIT_Complete(L, C, P)
     if l:cmd[0] == 'Git' && (len(l:cmd) == 1 || (len(l:cmd) == 2 && a:L != ''))
         let l:list = systemlist("man git|sed -n 's/^ \\+git-\\([-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")
     elseif a:C =~ ' -- '
-        let l:D = matchstr(a:L, '^.*/')
-        let l:L = matchstr(a:L, '[^/]*$')
-        let l:list = map(systemlist('ls -1F ' . l:D . "|grep '^" . l:L . "'"), "'" . l:D . "' . v:val")
+        let l:list = split(glob(a:L . '*'))
     elseif a:L =~ '^-' && l:cmd[0] == 'Git'
         let l:list = systemlist("git help " . l:cmd[1] .
                     \ "|sed -n 's/^ \\+\\(-\\{1,2\\}\\w[-a-zA-Z]*\\).*/\\1/p'|grep '^" . a:L . "'")

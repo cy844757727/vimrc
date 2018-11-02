@@ -98,8 +98,8 @@ nnoremap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :Async xdg-open %<CR>
 nnoremap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
-vnoremap \= :call misc#CodeFormat()<CR>
-nnoremap \= :call misc#CodeFormat()<CR>
+vnoremap <silent> \= :call misc#CodeFormat()<CR>
+nnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap \h  :call misc#HEXCovent()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>
 vnoremap <silent> \q :call misc#ReverseComment()<CR>
@@ -237,14 +237,16 @@ let g:tagbar_type_markdown = {
             \ }
 
 " == ale ==
-let g:ale_sign_error = '👽'
-let g:ale_sign_warning = '💡'
+let g:ale_sign_error = '>>'
+let g:ale_sign_warning = '--'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 let g:ale_statusline_format = ['× %d', '! %d', '⬥ ok']
 let g:ale_sign_column_always = 1
-"let g:ale_lint_delay = 1000
+let g:ale_lint_on_text_changed = 1
+"let g:ale_open_list = 1
+"let g:ale_lint_delay = 200
 let g:ale_lint_on_text_changed = 'normal'
 "let g:ale_set_loclist = 0
 "let g:ale_set_quickfix = 1
@@ -278,6 +280,7 @@ let g:BMBPSign_ProjectType = {
                 \ 'verilog': '~/Documents/Modelsim',
                 \ 'altera':  '~/Documents/Altera',
                 \ 'xilinx':  '~/Documents/Xilinx',
+                \ 'python':  '~/Documents/Python',
                 \ 'default': '~/Documents'
                 \ }
 

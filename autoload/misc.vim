@@ -14,15 +14,15 @@ function! misc#CompileRun()
         silent call nerdtree#ui_glue#invokeKeyMap('R')
         echo 'Nerdtree: Refresh done!'
     elseif &filetype == 'tagbar'
+        " Refresh tags file
         call job_start("ctags -R -f .tags", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
         echo 'Tagbar: Refresh Done (.tags file)!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
     elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'
-        let l:winid = -1
-        let l:cmd = split(getline(1), '/')[-1]
+        " script language
+        let l:cmd = matchstr(getline(1), '\(/\(env\s\+\)\?\)\zs[^/]*$')
         if !filereadable('.breakpoint')
-            let l:winid = win_getid()
             let l:cmd .= " './" . expand('%') . "'\n"
         elseif l:cmd =~ '^bash'
             let l:cmd = "bashdb -x .breakpoint './" . expand('%') . "'\n"
@@ -39,18 +39,23 @@ function! misc#CompileRun()
             "            work, confused
             "            ====================================================
         else
-            let l:winid = win_getid()
             let l:cmd .= " './" . expand('%') . "'\n"
         endif
+
+        " Display & cut to terminal
         let l:bufnr = bufnr('!bash')
+        let l:winnr = bufwinnr('!bash')
         if l:bufnr == -1
             belowright terminal ++kill=kill ++close ++rows=15 bash
             let l:bufnr = bufnr('!bash')
-        elseif bufwinnr('!bash') == -1
+        elseif l:winnr == -1
             belowright 15new | exec l:bufnr . 'buffer'
+        else
+            exe l:winnr . 'wincmd w'
         endif
-        call term_sendkeys(l:bufnr, l:cmd)
-        call win_gotoid(l:winid)
+
+        " run / debug
+        call term_sendkeys(l:bufnr, "clear\n" . l:cmd)
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
     elseif &filetype == 'c'
@@ -95,57 +100,65 @@ function! misc#CutMouseBehavior()
     endif
 endfunction
 
-"	指定范围代码格式化
+" Specified range code formatting
 function! misc#CodeFormat() range
-    let l:range = a:firstline . ',' . a:lastline
-    if &filetype =~ '^c\|cpp$'
-        silent! exec l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&:!?^][-+=/><|&:]\?=\?\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\s*\(++\|--\|::\)\s*/\1/ge'
-        silent! exec l:range . 's/\s*\(<\)\s*\(.\+\w\+\)\s*\(>\)\s*/ \1\2\3 /ge'
-        silent! exec l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
-        silent! exec l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
-        silent! exec l:range . 's/\(\s*\n*\s*\)*{/ {/ge'
-        normal ==
-    elseif &filetype == 'matlab'
-        silent! exec l:range . 's/\(\w\|)\)\s*\(\.\?[-+=*/><~|&^][=&|]\?\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
-        silent! exec l:range . 's/\(;\)\s*\(\w\)/\1 \2/ge'
-        normal ==
-    elseif &filetype == 'make'
-        silent! exec l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
-        normal ==
-    elseif &filetype == 'python'
-        silent! exec l:range . 's/\(\w\|)\|\]\|}\)\s*\([-+=*/%><|&~!^][=*/><]\?=\?\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\((\|\[\|{\)\s*\|\s*\()\|\]\|}\)/\1\2/ge'
-        silent! exec l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
-        normal ==
-    elseif &filetype =~ '^verilog\|systemverilog$'
+    " Determine range
+    let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
+
+    " Custom formatting
+    if &filetype =~ '^verilog\|systemverilog$'
         silent! exec l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge'
         silent! exec l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
         silent! exec l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
+        silent! /`!`!`!`!`@#$%^&
+        return
+    elseif &filetype == 'make'
+        silent! exec l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
+        silent! exec l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
+        silent! /`!`!`!`!`@#$%^&
+        normal ==
+        return
     endif
-    silent! /`!`!`!`!`@#$%^&
+
+    " Use external tools
+    " Config cmd
+    if &filetype =~ '^\(c\|cpp\)$'
+        " Tool: clang-format
+        let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
+    elseif &filetype == 'python'
+        " Tool: autopep8
+        let l:formatCmd = '!autopep8 -'
+    else " Unsupported language
+        return
+    endif
+
+    " Format process
+    let l:pos = getpos('.')
+    exe l:range . l:formatCmd
+    call setpos('.', l:pos)
 endfunction
 
-"   切换注释状态
+"  Switch comment
 function! misc#ReverseComment() range
-    if &filetype =~ '^c\|cpp\|verilog\|systemverilog$'
+    " Comment char
+    if &filetype =~ '^\(c\|cpp\|verilog\|systemverilog\)$'
         let l:char='//'
     elseif &filetype == 'matlab'
         let l:char='%'
-    elseif &filetype =~ '^sh\|make\|python$'
+    elseif &filetype =~ '^\(sh\|make\|python\)$'
         let l:char='#'
     elseif &filetype == 'vim'
         let l:char="\""
-    else
+    else " Unsupported language
         return
     endif
+
+    " switch process
     silent exec a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
     silent exec a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
 endfunction
 
-"  刷新目录树
+"  Refresh NERTree
 function! misc#UpdateNERTreeView()
     let l:nrOfNerd_tree=bufwinnr('NERD_tree')
     if l:nrOfNerd_tree != -1
@@ -274,7 +287,9 @@ function! misc#ToggleQuickFix(...)
             if &filetype == 'qf'
                 wincmd W
             endif
-            call setqflist([], 'r', {'title': 'ale: syntax check', 'items': ale#engine#GetLoclist(bufnr('%'))})
+            lopen
+            return
+"            call setqflist([], 'r', {'title': 'ale: syntax check', 'items': ale#engine#GetLoclist(bufnr('%'))})
         endif
         copen 10
     elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') == -1

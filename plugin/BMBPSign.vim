@@ -38,6 +38,9 @@ command! BMBPSignClearBreakPoint :call BMBPSign#Clear('break')
 command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
 command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
 
+command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>')
+command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>')
+command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
@@ -46,16 +49,19 @@ command! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBP
 
 function BMBPSign_CompleteProject(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P)))
-    if (a:L == '' && l:num == 1) || (a:L != '' && l:num == 2)
-        return join(range(len(s:projectItem)), "\n")
-    elseif (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
+    if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
         return join(keys(g:BMBPSign_ProjectType), "\n")
     elseif (a:L == '' && l:num ==3) || (a:L != '' && l:num == 4)
-        return system("find ~/ -type d -regex '" . '[a-zA-Z0-9_/]*' . "'|sed 's/^\\/\\w\\+\\/\\w\\+/~/'")
+        return glob(a:L . '*')
     endif
 endfunction
 
 function BMBPSign_CompleteWorkFile(L, C, P)
-    return system('ls -1 *.session|sed s/.session$//')
+    return substitute(glob('*.session'), '\.\w*', '', 'g')
+endfunction
+
+function BMBPSign_CompleteSignFile(L, C, P)
+    let l:signFile = substitute(glob('*.bookmark') . "\n" . glob('*.breakpoint'), '\.\w*', '', 'g')
+    return join(uniq(sort(split(l:signFile))), "\n")
 endfunction
 
