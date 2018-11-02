@@ -241,6 +241,7 @@ let g:tagbar_type_markdown = {
 " Tool: pylint(linter), autopep8(fixer) : python
 " Tool: clang-format(fixer)             : c/c++
 " Tool: shellcheck(linter)              : sh
+" Tool: perltidy(fixer)                 : perl
 " *********************
 " Config tool parameter
 let g:ale_c_clangformat_executable = 'clang-format-7'

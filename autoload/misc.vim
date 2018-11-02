@@ -128,6 +128,9 @@ function! misc#CodeFormat() range
     elseif &filetype == 'python'
         " Tool: autopep8
         let l:formatCmd = '!autopep8 -'
+    elseif &filetype == 'perl'
+        " Tool: perltidy
+        let l:formatCmd = '!perltidy'
     elseif &filetype != '' 
         " Unsupported language
         normal ==
