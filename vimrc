@@ -238,22 +238,33 @@ let g:tagbar_type_markdown = {
 
 " == Ale Configure ==
 " ** Need to install **
-" Tool: pylint(linter), autopep8(fixer) : python
-" Tool: clang-format(fixer)             : c/c++
-" Tool: shellcheck(linter)              : sh
-" Tool: perltidy(fixer)                 : perl
+" Tool: flake8 pylint(linter), autopep8(fixer) : python
+" Tool: clang-format(fixer)     : c/c++/java/javascript
+" Tool: shellcheck(linter)      : sh
+" Tool: perltidy(fixer)         : perl
 " *********************
 " Config tool parameter
 let g:ale_c_clangformat_executable = 'clang-format-7'
 let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
-let g:ale_python_pylint_options = "--no-docstring-rgx='.*' --jobs=3"
+let g:ale_python_pylint_options = "--no-docstring-rgx='.*'" .
+            \ " --function-rgx='.*'" .
+            \ " --variable-rgx='.*'" .
+            \ " --const-rgx='.*'" .
+            \ " --attr-rgx='.*'" .
+            \ " --argument-rgx='.*'" .
+            \ " --class-attribute-rgx='.*'" .
+            \ " --inlinevar-rgx='.*'" .
+            \ " --module-rgx='.*'" .
+            \ " --method-rgx='.*'" .
+            \ " --class-rgx='.*'" .
+            \ " --jobs=5"
 
-let g:ale_sign_error = '>>'
-let g:ale_sign_warning = '.'
+let g:ale_sign_error = '▄'
+let g:ale_sign_warning = '▍'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-let g:ale_statusline_format = ['× %d', '! %d', '⬥ ok']
+let g:ale_statusline_format = ['× %d', '! %d', '']
 let g:ale_sign_column_always = 1
 let g:ale_lint_on_text_changed = 1
 let g:ale_lint_on_insert_leave = 1

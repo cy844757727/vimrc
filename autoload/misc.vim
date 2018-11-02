@@ -107,32 +107,28 @@ function! misc#CodeFormat() range
 
     " Custom formatting
     if &filetype =~ '^verilog\|systemverilog$'
-        silent! exec l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
-        silent! exec l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
+        silent! exe l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge'
+        silent! exe l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
+        silent! exe l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
         return
     elseif &filetype == 'make'
-        silent! exec l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
-        silent! exec l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
+        silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
+        silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
         normal ==
         return
     endif
 
-    " Use external tools
-    " Config cmd
-    if &filetype =~ '^\(c\|cpp\)$'
-        " Tool: clang-format
+    " Use external tools & Config cmd 
+    " Tools: clang-format, autopep8, perltidy
+    if &filetype =~ '^\(c\|cpp\|java\|javascript\)$'
         let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
     elseif &filetype == 'python'
-        " Tool: autopep8
         let l:formatCmd = '!autopep8 -'
     elseif &filetype == 'perl'
-        " Tool: perltidy
         let l:formatCmd = '!perltidy'
     elseif &filetype != '' 
-        " Unsupported language
         normal ==
         return
     else
@@ -156,7 +152,7 @@ function! misc#ReverseComment() range
         let l:char='#'
     elseif &filetype == 'vim'
         let l:char="\""
-    else " Unsupported language
+    else
         return
     endif
 

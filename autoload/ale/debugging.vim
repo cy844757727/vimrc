@@ -2,30 +2,57 @@
 " Description: This file implements debugging information for ALE
 
 let s:global_variable_list = [
+\    'ale_cache_executable_check_failures',
+\    'ale_change_sign_column_color',
+\    'ale_command_wrapper',
+\    'ale_completion_delay',
+\    'ale_completion_enabled',
+\    'ale_completion_max_suggestions',
 \    'ale_echo_cursor',
 \    'ale_echo_msg_error_str',
 \    'ale_echo_msg_format',
+\    'ale_echo_msg_info_str',
 \    'ale_echo_msg_warning_str',
 \    'ale_enabled',
 \    'ale_fix_on_save',
 \    'ale_fixers',
+\    'ale_history_enabled',
+\    'ale_history_log_output',
 \    'ale_keep_list_window_open',
 \    'ale_lint_delay',
 \    'ale_lint_on_enter',
+\    'ale_lint_on_filetype_changed',
 \    'ale_lint_on_save',
 \    'ale_lint_on_text_changed',
+\    'ale_lint_on_insert_leave',
 \    'ale_linter_aliases',
 \    'ale_linters',
+\    'ale_linters_explicit',
+\    'ale_list_window_size',
+\    'ale_list_vertical',
+\    'ale_loclist_msg_format',
+\    'ale_max_buffer_history_size',
+\    'ale_max_signs',
+\    'ale_maximum_file_size',
 \    'ale_open_list',
+\    'ale_pattern_options',
+\    'ale_pattern_options_enabled',
+\    'ale_set_balloons',
 \    'ale_set_highlights',
 \    'ale_set_loclist',
 \    'ale_set_quickfix',
 \    'ale_set_signs',
 \    'ale_sign_column_always',
 \    'ale_sign_error',
+\    'ale_sign_info',
 \    'ale_sign_offset',
+\    'ale_sign_style_error',
+\    'ale_sign_style_warning',
 \    'ale_sign_warning',
 \    'ale_statusline_format',
+\    'ale_type_map',
+\    'ale_use_global_executables',
+\    'ale_warn_about_trailing_blank_lines',
 \    'ale_warn_about_trailing_whitespace',
 \]
 
@@ -141,6 +168,30 @@ function! s:EchoLinterAliases(all_linters) abort
     endfor
 endfunction
 
+function! s:EchoLSPErrorMessages(all_linter_names) abort
+    let l:lsp_error_messages = get(g:, 'ale_lsp_error_messages', {})
+    let l:header_echoed = 0
+
+    for l:linter_name in a:all_linter_names
+        let l:error_list = get(l:lsp_error_messages, l:linter_name, [])
+
+        if !empty(l:error_list)
+            if !l:header_echoed
+                call s:Echo(' LSP Error Messages:')
+                call s:Echo('')
+            endif
+
+            call s:Echo('(Errors for ' . l:linter_name . ')')
+
+            for l:message in l:error_list
+                for l:line in split(l:message, "\n")
+                    call s:Echo(l:line)
+                endfor
+            endfor
+        endif
+    endfor
+endfunction
+
 function! ale#debugging#Info() abort
     let l:filetype = &filetype
 
@@ -163,16 +214,22 @@ function! ale#debugging#Info() abort
     " This must be done after linters are loaded.
     let l:variable_list = s:GetLinterVariables(l:filetype, l:enabled_names)
 
+    let l:fixers = ale#fix#registry#SuggestedFixers(l:filetype)
+    let l:fixers = uniq(sort(l:fixers[0] + l:fixers[1]))
+    let l:fixers_string = join(map(copy(l:fixers), '"\n  " . v:val'), '')
+
     call s:Echo(' Current Filetype: ' . l:filetype)
     call s:Echo('Available Linters: ' . string(l:all_names))
     call s:EchoLinterAliases(l:all_linters)
     call s:Echo('  Enabled Linters: ' . string(l:enabled_names))
+    call s:Echo(' Suggested Fixers: ' . l:fixers_string)
     call s:Echo(' Linter Variables:')
     call s:Echo('')
     call s:EchoLinterVariables(l:variable_list)
     call s:Echo(' Global Variables:')
     call s:Echo('')
     call s:EchoGlobalVariables()
+    call s:EchoLSPErrorMessages(l:all_names)
     call s:Echo('  Command History:')
     call s:Echo('')
     call s:EchoCommandHistory()
@@ -184,4 +241,15 @@ function! ale#debugging#InfoToClipboard() abort
     redir END
 
     call s:Echo('ALEInfo copied to your clipboard')
+endfunction
+
+function! ale#debugging#InfoToFile(filename) abort
+    let l:expanded_filename = expand(a:filename)
+
+    redir => l:output
+        silent call ale#debugging#Info()
+    redir END
+
+    call writefile(split(l:output, "\n"), l:expanded_filename)
+    call s:Echo('ALEInfo written to ' . l:expanded_filename)
 endfunction

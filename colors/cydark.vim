@@ -57,6 +57,6 @@ hi Operator         ctermfg=230  ctermbg=NONE cterm=NONE
 
 " ale.vim
 hi ALEErrorSign     ctermfg=9    ctermbg=234
-hi ALEWarningSign   ctermfg=220  ctermbg=234
+hi ALEWarningSign   ctermfg=215  ctermbg=234
 hi link ALEWarning Normal
 
