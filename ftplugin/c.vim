@@ -4,10 +4,7 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 setlocal cindent
-let b:ale_fixers = ['clang-format', 'trim_whitespace']
-" Correction parameter (ale fix : clang-format)
-call ale#Set('c_clangformat_executable', 'clang-format-7')
-call ale#Set('c_clangformat_options', "-style='{IndentWidth: 4}'")
+let b:ale_fixers = ['clang-format']
 
 augroup c_cpp_project
     autocmd!

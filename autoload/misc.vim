@@ -128,7 +128,11 @@ function! misc#CodeFormat() range
     elseif &filetype == 'python'
         " Tool: autopep8
         let l:formatCmd = '!autopep8 -'
-    else " Unsupported language
+    elseif &filetype != '' 
+        " Unsupported language
+        normal ==
+        return
+    else
         return
     endif
 

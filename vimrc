@@ -213,7 +213,7 @@ function! DebugFile(node)
     call misc#Debug(a:node.path.str())
 endfunction
 
-" == TagBar 配置 ==
+" == TagBar Configure ==
 let g:tagbar_width=31
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
@@ -236,22 +236,28 @@ let g:tagbar_type_markdown = {
             \ ]
             \ }
 
-" == ale ==
+" == Ale Configure ==
 " ** Need to install **
 " Tool: pylint(linter), autopep8(fixer) : python
 " Tool: clang-format(fixer)             : c/c++
 " Tool: shellcheck(linter)              : sh
 " *********************
+" Config tool parameter
+let g:ale_c_clangformat_executable = 'clang-format-7'
+let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
+let g:ale_python_pylint_options = "--no-docstring-rgx='.*' --jobs=3"
+
 let g:ale_sign_error = '>>'
-let g:ale_sign_warning = '--'
+let g:ale_sign_warning = '.'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 let g:ale_statusline_format = ['× %d', '! %d', '⬥ ok']
 let g:ale_sign_column_always = 1
 let g:ale_lint_on_text_changed = 1
+let g:ale_lint_on_insert_leave = 1
 "let g:ale_open_list = 1
-"let g:ale_lint_delay = 200
+"let g:ale_lint_delay = 20
 let g:ale_lint_on_text_changed = 'normal'
 "let g:ale_set_loclist = 0
 "let g:ale_set_quickfix = 1

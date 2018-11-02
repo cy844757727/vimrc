@@ -8,8 +8,9 @@ endif
 let b:did_ftplugin = 1
 
 " Check Python files with flake8 and pylint.
-let b:ale_linters = ['pylint']
+"let b:ale_linters = ['pylint']
 " Fix Python files with autopep8 and yapf.
-let b:ale_fixers = ['autopep8', 'trim_whitespace']
+let b:ale_fixers = ['autopep8']
 
+let b:ale_lint_delay = 20
 "let b:ale_fix_on_save = 1
