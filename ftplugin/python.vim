@@ -2,7 +2,7 @@
 " Name:   HDL_Verilog
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if getline('.') =~ 'python3'
+if getline(1) =~ 'python3'
     let b:ale_linters = ['pylint', 'flake8']
     let b:ale_python_pylint_executable = 'pylint3'
     let b:ale_echo_msg_format = '[%linter%3] %s [%severity%]'

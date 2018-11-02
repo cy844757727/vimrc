@@ -60,7 +60,7 @@ set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=
-set statusline+=%{ALEGetStatusLine()}%5(\ %)
+set statusline+=%{LinterStatus()}%5(\ %)
 set statusline+=%{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ │\ %{&ff}\ │\ %Y%5(\ %)
 set statusline+=%-10.(%l:%c%V%)\ %4P%(\ %)
 
@@ -237,8 +237,10 @@ let g:tagbar_type_markdown = {
             \ }
 
 " == Ale Configure ==
+nmap <silent> <C-k> <Plug>(ale_previous_wrap)
+nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " ** Need to install **
-" Tool: flake8 pylint(linter), autopep8(fixer) : python
+" Tool: flake8 pylint(linter), yapf autopep8(fixer) : python
 " Tool: clang-format(fixer)     : c/c++/java/javascript
 " Tool: shellcheck(linter)      : sh
 " Tool: perltidy(fixer)         : perl
@@ -273,6 +275,16 @@ let g:ale_lint_on_insert_leave = 1
 let g:ale_lint_on_text_changed = 'normal'
 "let g:ale_set_loclist = 0
 "let g:ale_set_quickfix = 1
+
+" ale statusline
+function! LinterStatus() abort
+    let l:counts = ale#statusline#Count(bufnr(''))
+    let l:all_errors = l:counts.error + l:counts.style_error
+    let l:all_non_errors = l:counts.total - l:all_errors
+    let l:error = l:all_errors ? printf('x %d', l:all_errors) : ''
+    let l:nonError = l:all_non_errors ? printf('! %d', l:all_non_errors) : ''
+    return l:error . '  ' . l:nonError
+endfunction
 
 " == BMBPSign configure ==
 let g:BMBPSign_SpecialBuf = {
