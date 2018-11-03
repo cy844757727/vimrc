@@ -125,7 +125,7 @@ function! misc#CodeFormat() range
     if &filetype =~ '^\(c\|cpp\|java\|javascript\)$'
         let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
     elseif &filetype == 'python'
-        let l:formatCmd = getline(1) =~ 'python3' : '!yapf3' : '!yapf'
+        let l:formatCmd = getline(1) =~ 'python3' ? '!yapf3' : '!yapf'
     elseif &filetype == 'perl'
         let l:formatCmd = '!perltidy'
     elseif &filetype != '' 
