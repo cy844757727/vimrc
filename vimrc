@@ -242,7 +242,7 @@ let g:tagbar_type_markdown = {
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " ** Need to install **
-" Tool: flake8 pylint(linter), yapf autopep8(fixer) : python
+" Tool: flake8 pylint pyflakes(linter), yapf autopep8(fixer) : python
 " Tool: clang-format(fixer)     : c/c++/java/javascript
 " Tool: shellcheck(linter)      : sh
 " Tool: perltidy(fixer)         : perl
@@ -251,12 +251,14 @@ nmap <silent> <C-j> <Plug>(ale_next_wrap)
 let g:ale_c_clangformat_executable = 'clang-format-7'
 let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
 " flake8 msg id
-" C265: comment start          " C501: line too long
-let g:ale_python_flake8_options = '--ignore=E265,E501'
+" E22_, E231, E241, E242: missing whitespace
+" E26_: comment start          " E501: line too long
+" E722: bare except            " E713: test for membership
+let g:ale_python_flake8_options = '--ignore=E225,E226,E227,E261,E262,E265,E266,E231,E265,E501,E722,E713'
 " pylint msg id
 " C0103: invalid-name          " C0112: empty-docstring 
 " C0111: missing-docstring     " W0603: global-statement
-let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603,E'
+let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603 --jobs=0'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▍'

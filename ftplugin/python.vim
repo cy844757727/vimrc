@@ -6,8 +6,8 @@ if getline(1) =~ 'python3'
     let b:ale_python_pylint_executable = 'pylint3'
     let b:ale_echo_msg_format = '[%linter%3] %s [%severity%]'
 else
-    let b:ale_echo_msg_format = '[%linter%] %s [%severity%]'
     let b:ale_python_pylint_executable = 'pylint'
+    let b:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 endif
 
 if exists("b:did_ftplugin")
@@ -15,6 +15,6 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 
-" Fix Python files with autopep8
+let b:ale_linters = ['pylint', 'pyflakes']
 let b:ale_fixers = ['autopep8']
 

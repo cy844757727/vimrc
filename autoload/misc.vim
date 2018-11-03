@@ -14,7 +14,7 @@ function! misc#CompileRun()
         silent call nerdtree#ui_glue#invokeKeyMap('R')
         echo 'Nerdtree: Refresh done!'
     elseif &filetype == 'tagbar'
-        " Refresh tags file
+        " Refresh tags file, " Tool: ctags
         call job_start("ctags -R -f .tags", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
         echo 'Tagbar: Refresh Done (.tags file)!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
@@ -23,15 +23,15 @@ function! misc#CompileRun()
         " script language
         let l:cmd = matchstr(getline(1), '\(/\(env\s\+\)\?\)\zs[^/]*$')
         if !filereadable('.breakpoint')
-            let l:cmd .= " './" . expand('%') . "'\n"
+            let l:cmd .= ' ' . expand('%') . "\n"
         elseif l:cmd =~ '^bash'
-            let l:cmd = "bashdb -x .breakpoint './" . expand('%') . "'\n"
+            let l:cmd = 'bashdb -x .breakpoint ' . expand('%') . "\n"
         elseif &filetype == 'python'
-            let l:cmd .= " -m pdb './" . expand('%') . "'\n" .
-                        \ join(readfile('.breakpoint'), "\n") .
-                        \ "\nbreak\n"
+            let l:pdb = executable('ipdb') ? ' -m ipdb ' : ' -m pdb '
+            let l:cmd .= l:pdb . expand('%') . "\n" .
+                        \ join(readfile('.breakpoint'), ";;") . "\n"
         elseif &filetype == 'perl'
-            let l:cmd .= " -d './" . expand('%') . "'\n" .
+            let l:cmd .= ' -d ' . expand('%') . "\n" .
                         \ "= break b\n" .
                         \ join(map(readfile('.breakpoint'), "substitute(v:val,'\\S\\+:','','')"), "\n") .
                         \ "\n=\n"
@@ -39,10 +39,10 @@ function! misc#CompileRun()
             "            work, confused
             "            ====================================================
         else
-            let l:cmd .= " './" . expand('%') . "'\n"
-        endif
+            let l:cmd .= ' ' . expand('%') . "\n"
+        endi
 
-        " Display & cut to terminal
+        " Display & switch to terminal
         let l:bufnr = bufnr('!bash')
         let l:winnr = bufwinnr('!bash')
         if l:bufnr == -1
@@ -139,6 +139,7 @@ function! misc#CodeFormat() range
     let l:pos = getpos('.')
     exe l:range . l:formatCmd
     call setpos('.', l:pos)
+    write
 endfunction
 
 "  Switch comment

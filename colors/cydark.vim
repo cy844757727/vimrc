@@ -12,7 +12,7 @@ hi Normal           ctermfg=230
 " ctermbg=235  cterm=NONE
 hi Error            ctermfg=256  ctermbg=160  cterm=NONE
 hi ErrorMsg         ctermfg=256  ctermbg=160  cterm=NONE
-hi WarningMsg       ctermfg=13  ctermbg=220  cterm=NONE
+hi WarningMsg       ctermfg=13   ctermbg=220  cterm=NONE
 hi Search           ctermfg=232  ctermbg=208  cterm=NONE
 hi IncSearch        ctermfg=232  ctermbg=208  cterm=NONE
 
