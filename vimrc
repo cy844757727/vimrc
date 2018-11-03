@@ -54,6 +54,7 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldlevel=1      "折叠级别
 " TODO: add guicolor set
 "set termguicolors
+"colorscheme desert
 colorscheme cydark
 set helplang=cn
 set langmenu=zh_CN.UTF-8
@@ -237,6 +238,7 @@ let g:tagbar_type_markdown = {
             \ }
 
 " == Ale Configure ==
+" map key to jump
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " ** Need to install **
@@ -248,25 +250,17 @@ nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " Config tool parameter
 let g:ale_c_clangformat_executable = 'clang-format-7'
 let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
-let g:ale_python_pylint_options = "--no-docstring-rgx='.*'" .
-            \ " --function-rgx='.*'" .
-            \ " --variable-rgx='.*'" .
-            \ " --const-rgx='.*'" .
-            \ " --attr-rgx='.*'" .
-            \ " --argument-rgx='.*'" .
-            \ " --class-attribute-rgx='.*'" .
-            \ " --inlinevar-rgx='.*'" .
-            \ " --module-rgx='.*'" .
-            \ " --method-rgx='.*'" .
-            \ " --class-rgx='.*'" .
-            \ " --jobs=5"
+let g:ale_python_flake8_options = '--ignore=E265,E501,E121,E123,E126,E226,E24,E704'
+" pylint msg id
+" C0103: invalid-name          " C0112: empty-docstring 
+" C0111: missing-docstring     " W0603: global-statement
+let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▍'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-let g:ale_statusline_format = ['× %d', '! %d', '']
 let g:ale_sign_column_always = 1
 let g:ale_lint_on_text_changed = 1
 let g:ale_lint_on_insert_leave = 1
@@ -275,6 +269,9 @@ let g:ale_lint_on_insert_leave = 1
 let g:ale_lint_on_text_changed = 'normal'
 "let g:ale_set_loclist = 0
 "let g:ale_set_quickfix = 1
+
+" clear warning highlight
+hi link ALEWarning Normal
 
 " ale statusline
 function! LinterStatus() abort

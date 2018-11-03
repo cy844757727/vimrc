@@ -8,7 +8,7 @@ if getline(1) =~ 'python3'
     let b:ale_echo_msg_format = '[%linter%3] %s [%severity%]'
     let b:ale_python_pylint_options = g:ale_python_pylint_options . ' --disable=E'
 else
-    let b:ale_linters = ['pylint']
+    let b:ale_linters = ['pylint', 'flake8']
     let b:ale_echo_msg_format = '[%linter%] %s [%severity%]'
     let b:ale_python_pylint_executable = 'pylint'
     let b:ale_python_pylint_options = g:ale_python_pylint_options
