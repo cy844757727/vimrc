@@ -250,11 +250,13 @@ nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " Config tool parameter
 let g:ale_c_clangformat_executable = 'clang-format-7'
 let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
-let g:ale_python_flake8_options = '--ignore=E265,E501,E121,E123,E126,E226,E24,E704'
+" flake8 msg id
+" C265: comment start          " C501: line too long
+let g:ale_python_flake8_options = '--ignore=E265,E501'
 " pylint msg id
 " C0103: invalid-name          " C0112: empty-docstring 
 " C0111: missing-docstring     " W0603: global-statement
-let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603'
+let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603,E'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▍'
