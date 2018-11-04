@@ -74,16 +74,35 @@ function s:Signjump(action)
     endif
 endfunction
 
-" 撤销所有断点/书签
-function s:SignClear(vec, signFile)
+" clear sign which match attr in vec
+function s:SignClear(vec, signFile, attr)
     for l:mark in a:vec
-        exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
+        if l:mark.attr =~ a:attr
+            exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
+        endif
     endfor
 
-    if !empty(a:vec)
-        unlet a:vec[:]
+    call filter(a:vec, "v:val.attr !~ '" . a:attr . "'")
+    " update signFile
+    call s:SignSave(a:vec, a:signFile)
+endfunction
+
+" generate todo statement
+function s:TodoStatement()
+    let l:todo = ' TODO: '
+
+    " Comment out statement
+    if &filetype =~ '^\(c\|cpp\|verilog\|systemverilog\)$'
+        let l:todo ='//' . l:todo
+    elseif &filetype == 'matlab'
+        let l:todo='%' . l:todo
+    elseif &filetype =~ '^\(sh\|make\|python\)$'
+        let l:todo='#' . l:todo
+    elseif &filetype == 'vim'
+        let l:todo="\"" . l:todo
     endif
-    call delete(a:signFile)
+
+    return l:todo
 endfunction
 
 " Just for s:SignLoad(pre)
@@ -115,7 +134,7 @@ function s:SignLoad(pre)
 
         " Empty default sign & Copy file to default file
         if !empty(a:pre)
-            call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+            call s:SignClear(s:bookMarkVec, s:bookMarkFile, '')
             call writefile(l:signList, s:bookMarkFile)
         endif
 
@@ -129,7 +148,7 @@ function s:SignLoad(pre)
 
         if !empty(a:pre)
             " Empty default sign & Copy file to default file
-            call s:SignClear(s:breakPointVec, s:breakPointFile)
+            call s:SignClear(s:breakPointVec, s:breakPointFile, '')
             call writefile(l:signList, s:breakPointFile)
         endif
 
@@ -428,6 +447,9 @@ function BMBPSign#Toggle(type, attr)
     if filereadable(expand('%')) && empty(&buftype)
         if a:type == 'break' && &filetype !~ '^\(c\|cpp\|sh\|python\|perl\)$'
             return
+        elseif a:type == 'book' && a:attr == 'todo' && getline('.') !~ 'TODO:'
+            call append('.', s:TodoStatement())
+            write | normal j==
         endif
 
         let l:attr = a:attr == '' ? a:type : a:attr
@@ -455,9 +477,9 @@ function BMBPSign#SignClear(pre, type)
         call delete(l:pre . s:bookMarkFile)
         call delete(l:pre . s:breakPointFile)
     elseif a:type == 'book'
-        call s:SignClear(s:bookMarkVec, s:bookMarkFile)
+        call s:SignClear(s:bookMarkVec, s:bookMarkFile, 'book')
     elseif a:type == 'break'
-        call s:SignClear(s:breakPointVec, s:breakPointFile)
+        call s:SignClear(s:breakPointVec, s:breakPointFile, '')
     endif
 endfunction
 
@@ -492,7 +514,7 @@ function BMBPSign#GetList(type)
                             \ 'bufnr': bufnr(l:list[1]),
                             \ 'filename': l:list[1],
                             \ 'lnum': l:list[2],
-                            \ 'text': '(' . l:list[0] . ')  ' . l:text
+                            \ 'text': '[' . l:list[0] . ']  ' . l:text
                             \ }]
             endif
         endfor

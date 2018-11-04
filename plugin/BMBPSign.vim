@@ -38,12 +38,17 @@ command! BMBPSignClearBreakPoint :call BMBPSign#SignClear('', 'break')
 command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
 command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
 
+" sign command
 command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>')
 command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>')
 command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>','')
+
+" workspace command
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
 command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
+
+" project command
 command! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
 command! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
 

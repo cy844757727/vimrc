@@ -137,6 +137,7 @@ function! misc#CodeFormat() range
 
     " Format process
     let l:pos = getpos('.')
+    mark z
     exe l:range . l:formatCmd
     call setpos('.', l:pos)
     write
@@ -183,9 +184,11 @@ function! misc#StrSubstitute(str)
     endif
 endfunction
 
-" 文件保存及后期处理
+" 文件保存 & 处理
 function! misc#SaveFile(file)
-    if empty(a:file)
+    if !empty(&buftype)
+        return
+    elseif empty(a:file)
         exec 'file ' . input('Set file name: ')
         filetype detect
         write
@@ -197,7 +200,7 @@ function! misc#SaveFile(file)
         if !filereadable(a:file)
             write
             call misc#UpdateNERTreeView()
-        elseif match(execute('ls %'), '+') != -1
+        else
             write
         endif
         let s:DoubleClick_500MSTimer = 1
@@ -281,26 +284,16 @@ function! misc#ToggleTagbar()
 endfunction
 
 "  切换QuickFix窗口
-function! misc#ToggleQuickFix(...)
-    if a:0 > 0
-        if a:1 == 'book'
-            call setqflist([], 'r', {'title': 'BookMark', 'items': BMBPSign#GetList('book')})
-        elseif a:1 == 'break'
-            call setqflist([], 'r', {'title': 'BreakPoint', 'items': BMBPSign#GetList('break')})
-        elseif a:1 == 'ale'
-            if &filetype == 'qf'
-                wincmd W
-            endif
-            lopen
-            return
-"            call setqflist([], 'r', {'title': 'ale: syntax check', 'items': ale#engine#GetLoclist(bufnr('%'))})
-        endif
-        copen 10
-    elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') == -1
-        copen 10
-    else
+function! misc#ToggleQuickFix(type)
+    if a:type == 'book'
+        call setqflist([], 'r', {'title': 'BookMark', 'items': BMBPSign#GetList('book')})
+    elseif a:type == 'break'
+        call setqflist([], 'r', {'title': 'BreakPoint', 'items': BMBPSign#GetList('break')})
+    elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') != -1
         cclose
+        return
     endif
+    copen 10
 endfunction
 "#####################################################################
 

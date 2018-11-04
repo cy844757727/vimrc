@@ -139,10 +139,9 @@ map! <f4> <Esc><f4>
 noremap <silent> <f7> <Esc>:call git#Toggle()<CR>
 noremap <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
 noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
-noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
+noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix('self')<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
-noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('ale')<CR>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>
@@ -256,9 +255,9 @@ let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
 " E722: bare except            " E713: test for membership
 let g:ale_python_flake8_options = '--ignore=E225,E226,E227,E261,E262,E265,E266,E231,E265,E501,E722,E713'
 " pylint msg id
-" C0103: invalid-name          " C0112: empty-docstring 
+" C0103: invalid-name          " C0112: empty-docstring     " C0303: trailing whitespace
 " C0111: missing-docstring     " W0603: global-statement
-let g:ale_python_pylint_options = '--disable=C0103,C0111,C0112,W0603 --jobs=0'
+let g:ale_python_pylint_options = '--disable=C0103,C0303,C0111,C0112,W0603 --jobs=0'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▍'
@@ -271,8 +270,8 @@ let g:ale_lint_on_insert_leave = 1
 "let g:ale_open_list = 1
 "let g:ale_lint_delay = 20
 let g:ale_lint_on_text_changed = 'normal'
-"let g:ale_set_loclist = 0
-"let g:ale_set_quickfix = 1
+let g:ale_set_loclist = 0
+let g:ale_set_quickfix = 1
 
 " clear warning highlight
 hi link ALEWarning Normal
