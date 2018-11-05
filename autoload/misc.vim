@@ -7,7 +7,7 @@ if exists('loaded_A_Misc')
 endif
 let loaded_A_Misc = 1
 
-"	编译运行
+"	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun()
     wall
     if &filetype == 'nerdtree'
@@ -42,19 +42,8 @@ function! misc#CompileRun()
             let l:cmd .= ' ' . expand('%') . "\n"
         endi
 
-        " Display & switch to terminal
-        let l:bufnr = bufnr('!bash')
-        let l:winnr = bufwinnr('!bash')
-        if l:bufnr == -1
-            belowright terminal ++kill=kill ++close ++rows=15 bash
-            let l:bufnr = bufnr('!bash')
-        elseif l:winnr == -1
-            belowright 15new | exec l:bufnr . 'buffer'
-        else
-            exe l:winnr . 'wincmd w'
-        endif
-
-        " run / debug
+        " Display & switch to terminal & run/debug
+        let l:bufnr = misc#ToggleEmbeddedTerminal('on')
         call term_sendkeys(l:bufnr, "clear\n" . l:cmd)
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
@@ -135,7 +124,7 @@ function! misc#CodeFormat() range
         return
     endif
 
-    " Format process
+    " Format code
     let l:pos = getpos('.')
     mark z
     exe l:range . l:formatCmd
@@ -143,14 +132,16 @@ function! misc#CodeFormat() range
     write
 endfunction
 
-"  Switch comment
+"  Toggle comment
 function! misc#ReverseComment() range
     " Comment char
-    if &filetype =~ '^\(c\|cpp\|verilog\|systemverilog\)$'
+    if &filetype =~ '^\(c\|cpp\|java\|javascript\|php\|verilog\|systemverilog\)$'
         let l:char='//'
     elseif &filetype == 'matlab'
         let l:char='%'
-    elseif &filetype =~ '^\(sh\|make\|python\)$'
+    elseif &filetype == 'vhdl'
+        let l:char='--'
+    elseif &filetype =~ '^\(sh\|make\|python\|perl\|tcl\)$'
         let l:char='#'
     elseif &filetype == 'vim'
         let l:char="\""
@@ -158,9 +149,9 @@ function! misc#ReverseComment() range
         return
     endif
 
-    " switch process
-    silent exec a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
-    silent exec a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
+    " Processing
+    silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
+    silent exe a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
 endfunction
 
 "  Refresh NERTree
@@ -168,7 +159,7 @@ function! misc#UpdateNERTreeView()
     let l:nrOfNerd_tree=bufwinnr('NERD_tree')
     if l:nrOfNerd_tree != -1
         let l:id=win_getid()
-        exec l:nrOfNerd_tree . 'wincmd w'
+        exe l:nrOfNerd_tree . 'wincmd w'
         silent call nerdtree#ui_glue#invokeKeyMap('R')
         call win_gotoid(l:id)
     endif
@@ -179,17 +170,18 @@ function! misc#StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
     if l:subs != ''
         let l:pos = getpos('.')
-        exec '%s/' . a:str . '/' . l:subs . '/Ig'
+        exe '%s/' . a:str . '/' . l:subs . '/Ig'
         call setpos('.', l:pos)
     endif
 endfunction
 
-" 文件保存 & 处理
-function! misc#SaveFile(file)
+" File save
+function! misc#SaveFile()
+    let l:file = expand('%')
     if !empty(&buftype)
         return
-    elseif empty(a:file)
-        exec 'file ' . input('Set file name: ')
+    elseif empty(l:file)
+        exe 'file ' . input('Set file name: ')
         filetype detect
         write
         call misc#UpdateNERTreeView()
@@ -197,7 +189,7 @@ function! misc#SaveFile(file)
         wall
         echo 'Save all'
     else
-        if !filereadable(a:file)
+        if !filereadable(l:file)
             write
             call misc#UpdateNERTreeView()
         else
@@ -240,18 +232,31 @@ function! misc#WinResize()
     exec 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
 endfunction
 
-"  切换嵌入式终端
-function! misc#ToggleEmbeddedTerminal()
-    if !bufexists('!bash')
-        belowright terminal ++kill=kill ++close ++rows=15 bash
-    elseif bufwinnr('!bash') == -1
-        belowright 15new | silent exec bufnr('!bash') . 'buffer'
-    else
-        exec bufwinnr('!bash') . 'hide'
+" Switch embedded terminal (action: on/off/toggle)
+function! misc#ToggleEmbeddedTerminal(...)
+    let l:action = a:0 == 0 ? 'toggle' : a:1
+    let l:winnr = bufwinnr('!bash')
+    let l:bufnr = bufnr('!bash')
+
+    if l:winnr != -1
+        if l:action == 'on'
+            exe l:winnr . 'wincmd w'
+        else
+            exec l:winnr . 'hide'
+        endif
+    elseif l:action =~ 'on\|toggle'
+        if l:bufnr == -1
+            belowright terminal ++kill=kill ++close ++rows=15 bash
+            let l:bufnr = bufnr('%')
+        else
+            belowright 15new | silent exe l:bufnr . 'buffer'
+        endif
     endif
+
+    return l:bufnr
 endfunction
 
-"  切换NERDTree窗口
+" Toggle NERDTree window
 function! misc#ToggleNERDTree()
     if bufwinnr('NERD_tree') != -1
         NERDTreeClose
@@ -264,7 +269,7 @@ function! misc#ToggleNERDTree()
     endif
 endfunction
 
-"  切换TagBar窗口
+"  Toggle TagBar window
 function! misc#ToggleTagbar()
     let l:id=win_getid()
     if bufwinnr('Tagbar') != -1
@@ -283,11 +288,12 @@ function! misc#ToggleTagbar()
     endif
 endfunction
 
-"  切换QuickFix窗口
-function! misc#ToggleQuickFix(type)
-    if a:type == 'book'
+"  Toggle QuickFix window
+function! misc#ToggleQuickFix(...)
+    let l:type = a:0 == 0 ? 'self' : a:1
+    if l:type == 'book'
         call setqflist([], 'r', {'title': 'BookMark', 'items': BMBPSign#GetList('book')})
-    elseif a:type == 'break'
+    elseif l:type == 'break'
         call setqflist([], 'r', {'title': 'BreakPoint', 'items': BMBPSign#GetList('break')})
     elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') != -1
         cclose
@@ -295,6 +301,6 @@ function! misc#ToggleQuickFix(type)
     endif
     copen 10
 endfunction
-"#####################################################################
+" ####################################################################
 
 

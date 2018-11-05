@@ -1,4 +1,8 @@
-"基本设置======================
+" Basic configure ======================
+" Required external tools 
+" Tools: ctags, git pylint, pyflakes, yapf
+" Tools: perltidy, clang-format, bashdb, [ipdb]
+" """"""""""""""""""""""""""""""""""""""""""""
 set number         "显示行号
 syntax on          "语法高亮
 filetype on        "检查文件类型
@@ -131,7 +135,7 @@ map! <S-PageDown> <Esc><S-PageDown>
 map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
 " 保存快捷键
-noremap <silent> <f3> <Esc>:call misc#SaveFile(expand('%'))<CR>
+noremap <silent> <f3> <Esc>:call misc#SaveFile()<CR>
 map! <f3> <Esc><f3>
 noremap <silent> <f4> :call misc#WinResize()<Cr>
 map! <f4> <Esc><f4>
@@ -139,7 +143,7 @@ map! <f4> <Esc><f4>
 noremap <silent> <f7> <Esc>:call git#Toggle()<CR>
 noremap <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
 noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
-noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix('self')<CR>
+noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
 map! <f7> <Esc><f7>
@@ -265,9 +269,7 @@ let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 let g:ale_sign_column_always = 1
-let g:ale_lint_on_text_changed = 1
 let g:ale_lint_on_insert_leave = 1
-"let g:ale_open_list = 1
 "let g:ale_lint_delay = 20
 let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0

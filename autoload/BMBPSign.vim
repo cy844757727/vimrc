@@ -7,7 +7,7 @@ if exists('loaded_A_BMBPSign')
 endif
 let loaded_A_BMBPSign = 1
 
-" 标记组定义
+" sign definition
 hi NormalSign  ctermbg=253  ctermfg=16
 sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
 sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
@@ -27,7 +27,9 @@ let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 
 " ==========================================================
 " ==========================================================
-" 在指定文件对应行切换断点/书签
+" Toggle sign in the specified line of the specified file
+" Attr: Additional attributes of the sign (break, book, todo, tbreak)
+" Type: bookmark or breakpoint (book, break)
 function s:SignToggle(file, line, type, attr)
     let [l:vec, l:signFile, l:signDef] = a:type == 'book' ?
                 \ [s:bookMarkVec, s:bookMarkFile, 'BMBPSignBookMarkDef'] :
@@ -54,6 +56,8 @@ function s:SignToggle(file, line, type, attr)
     call s:SignSave(l:vec, l:signFile)
 endfunction
 
+" BookMark jump
+" Action: next, previous
 function s:Signjump(action)
     if !empty(s:bookMarkVec)
         if a:action == 'next'
@@ -87,15 +91,17 @@ function s:SignClear(vec, signFile, attr)
     call s:SignSave(a:vec, a:signFile)
 endfunction
 
-" generate todo statement
+" Generate todo statement
 function s:TodoStatement()
     let l:todo = ' TODO: '
 
     " Comment out statement
-    if &filetype =~ '^\(c\|cpp\|verilog\|systemverilog\)$'
+    if &filetype =~ '^\(c\|cpp\|java\|javascript\|verilog\|systemverilog\)$'
         let l:todo ='//' . l:todo
     elseif &filetype == 'matlab'
         let l:todo='%' . l:todo
+    elseif &filetype == 'vhdl'
+        let l:todo='--' . l:todo
     elseif &filetype =~ '^\(sh\|make\|python\)$'
         let l:todo='#' . l:todo
     elseif &filetype == 'vim'
@@ -105,7 +111,8 @@ function s:TodoStatement()
     return l:todo
 endfunction
 
-" Load & set book/break sign
+" Load & set bookmark/breakpoint sign
+" Pre: file prefix
 function s:SignLoad(pre, type)
     if a:type == 'book'
         let [l:vec, l:signFile, l:signDef] = [s:bookMarkVec, s:bookMarkFile, 'BMBPSignBookMarkDef']
@@ -149,7 +156,7 @@ function s:SignLoad(pre, type)
     filetype detect
 endfunction
 
-" Save book/break sign to file
+" Save bookmark/breakpoint sign to a file
 function s:SignSave(vec,signFile)
     if empty(a:vec)
         call delete(a:signFile)
@@ -329,8 +336,8 @@ function s:ProjectManager(argc, argv)
 endfunction
 
 " Save current workspace to specified file
-" Saved content: session, viminfo
-" pre specify file name prefix
+" Content: session, viminfo
+" Pre: specify file name prefix
 function s:WorkSpaceSave(pre)
     " Pre-save processing
     if exists('g:BMBPSign_PreSaveEventList')
@@ -379,7 +386,7 @@ endfunction
 
 " Restore workspace from specified file
 " Context: session, viminfo
-" pre specify file name prefix
+" Pre: specify file name prefix
 function s:WorkSpaceLoad(pre)
     " Pre-load processing
     if exists('g:BMBPSign_PreLoadEventList')
@@ -390,7 +397,7 @@ function s:WorkSpaceLoad(pre)
     if exists('s:projectized')
         %bwipeout
 
-        " Restore sign
+        " Restore sign (bwipeout will clear all sign)
         let s:bookMarkVec = []
         let s:breakPointVec =[]
         call s:SignLoad('', 'book')
@@ -429,12 +436,13 @@ function s:WorkSpaceLoad(pre)
     endif
 endfunction
 " ==========================================================
-" ============== 全局量定义 ================================
+" ============== Global ================================
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)
 endfunction
 
-" 切换书签/断点
+" Toggle bookmark/breakpoint
+" Type: book/break. " Attr: book,todo,break,tbreak or other
 function BMBPSign#Toggle(type, attr)
     if filereadable(expand('%')) && empty(&buftype)
         if a:type == 'break' && &filetype !~ '^\(c\|cpp\|sh\|python\|perl\)$'
@@ -451,7 +459,6 @@ function BMBPSign#Toggle(type, attr)
     endif
 endfunction
 
-" 书签跳转
 function BMBPSign#Jump(action)
     call s:Signjump(a:action)
 endfunction
@@ -467,6 +474,7 @@ function BMBPSign#SignSave(pre, type)
 endfunction
 
 " Cancel bookmark/breakpoint
+" Pre: file prefix    " Type: book, break
 function BMBPSign#SignClear(pre, type)
     let l:pre = matchstr(a:pre, '^[^.]*')
     if !empty(l:pre)
@@ -510,6 +518,8 @@ function BMBPSign#WorkSpaceClear(pre)
     call delete(l:pre . s:vimInfoFile)
 endfunction
 
+" Return qfList used for seting quickfix
+" Type: book, break
 function BMBPSign#GetList(type)
     let l:qf = []
     let l:signFile = a:type == 'book' ? s:bookMarkFile : s:breakPointFile
@@ -532,6 +542,9 @@ function BMBPSign#GetList(type)
     return l:qf
 endfunction
 
+" AutoCmd for VimEnter event
+" Load sign when starting with a file
+" which has bookmark/breakpoint set
 function BMBPSign#VimEnterEvent()
     if !empty(s:bookMarkVec + s:breakPointVec)
         return

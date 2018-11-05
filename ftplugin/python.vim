@@ -18,3 +18,5 @@ let b:did_ftplugin = 1
 let b:ale_linters = ['pylint', 'pyflakes']
 let b:ale_fixers = ['autopep8']
 
+" 
+"let b:ale_lint_on_text_changed = 'always'
