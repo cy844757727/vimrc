@@ -39,18 +39,24 @@ command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
 command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
 
 " sign command
-command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>')
-command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>')
-command! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>','')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>', 'all')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignBook :call BMBPSign#SignSave('<args>', 'book')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignBreak :call BMBPSign#SignSave('<args>', 'break')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>', 'all')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignBook :call BMBPSign#SignLoad('<args>', 'book')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignBreak :call BMBPSign#SignLoad('<args>', 'break')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>', 'all')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignBook :call BMBPSign#SignClear('<args>', 'book')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignBreak :call BMBPSign#SignClear('<args>', 'break')
 
 " workspace command
-command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
-command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
-command! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
 
 " project command
-command! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
-command! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
 
 function BMBPSign_CompleteProject(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P)))
