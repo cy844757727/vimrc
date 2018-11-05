@@ -1,7 +1,7 @@
 " Basic configure ======================
 " Required external tools 
-" Tools: ctags, git pylint, pyflakes, yapf
-" Tools: perltidy, clang-format, bashdb, [ipdb]
+" Tools: ctags, git pylint, pyflakes, yapf, [ipdb]
+" Tools: perltidy, clang-format, bashdb, shfmt
 " """"""""""""""""""""""""""""""""""""""""""""
 set number         "显示行号
 syntax on          "语法高亮

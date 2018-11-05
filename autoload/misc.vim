@@ -110,13 +110,15 @@ function! misc#CodeFormat() range
     endif
 
     " Use external tools & Config cmd 
-    " Tools: clang-format, autopep8, perltidy
+    " Tools: clang-format, autopep8, perltidy, shfmt
     if &filetype =~ '^\(c\|cpp\|java\|javascript\)$'
         let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
     elseif &filetype == 'python'
         let l:formatCmd = getline(1) =~ 'python3' ? '!yapf3' : '!yapf'
     elseif &filetype == 'perl'
         let l:formatCmd = '!perltidy'
+    elseif &filetype == 'sh'
+        let l:formatCmd = '!shfmt -s -i 4'
     elseif &filetype != '' 
         normal ==
         return
