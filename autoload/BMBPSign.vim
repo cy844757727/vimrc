@@ -44,11 +44,11 @@ function s:SignToggle(file, line, type, attr)
         endwhile
 
         " Set sign
-        exec 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . l:signDef . ' file=' . a:file
+        exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . l:signDef . ' file=' . a:file
         call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
     else
         " Unset sign
-        exec 'sign unplace ' . l:match[1] . ' file=' . a:file
+        exe 'sign unplace ' . l:match[1] . ' file=' . a:file
         call filter(l:vec, 'v:val.id != ' . l:match[1])
     endif
 
@@ -69,7 +69,7 @@ function s:Signjump(action)
         endif
 
         try
-            exec 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
+            exe 'sign jump ' . s:bookMarkVec[-1].id . ' file=' . s:bookMarkVec[-1].file
         catch
             " For invalid sign
             call remove(s:bookMarkVec, -1)
@@ -82,7 +82,7 @@ endfunction
 function s:SignClear(vec, signFile, attr)
     for l:mark in a:vec
         if l:mark.attr =~ a:attr
-            exec 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
+            exe 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
         endif
     endfor
 
@@ -141,13 +141,13 @@ function s:SignLoad(pre, type)
         for l:item in l:signList
             let l:list = split(l:item, '[ :]')
             if filereadable(l:list[1])
-                exec 'silent badd ' . l:list[1]
+                exe 'silent badd ' . l:list[1]
                 let s:newSignId += 1
                 let l:signPlace = execute('sign place')
                 while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
                     let s:newSignId += 1
                 endwhile
-                exec 'sign place ' . s:newSignId . ' line=' . l:list[2] . ' name=' . l:signDef . ' file=' . l:list[1]
+                exe 'sign place ' . s:newSignId . ' line=' . l:list[2] . ' name=' . l:signDef . ' file=' . l:list[1]
                 call add(l:vec, {'id': s:newSignId, 'file': l:list[1], 'attr': l:list[0]})
             endif
         endfor
@@ -202,7 +202,7 @@ function s:ProjectNew(name, type, path)
         if !isdirectory(l:path)
             call mkdir(l:path, 'p')
         endif
-        exec 'silent cd ' . l:path
+        exe 'silent cd ' . l:path
         silent %bwipeout
     endif
 
@@ -220,7 +220,7 @@ function s:ProjectSwitch(sel)
     endif
 
     set noautochdir
-    exec 'silent cd ' . split(s:projectItem[a:sel])[-1]
+    exe 'silent cd ' . split(s:projectItem[a:sel])[-1]
     call s:SignLoad('', 'book')
     call s:SignLoad('', 'break')
     call s:WorkSpaceLoad('')
@@ -235,11 +235,11 @@ function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
 
     " ui: head
-    let l:ui = "** Project option (cwd: " . substitute(getcwd(), s:home, '~', '') .
+    let l:ui = "** Project option  (cwd: " . substitute(getcwd(), s:home, '~', '') .
                 \ '     num: ' . len(s:projectItem) . "     page: " . l:page . ")\n" .
                 \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  " .
                 \ "Q:vimleave  a/n:new  0-9:item\n" .
-                \ "   !?:selection mode,  Del:deletion mode,  Mod:modification mode\n" .
+                \ "   !?:selection mode    Del:deletion mode    Mod:modification mode\n" .
                 \ repeat('=', min([&columns - 10, 90])) .
                 \ "\n"
 
@@ -347,11 +347,11 @@ function s:WorkSpaceSave(pre)
     " Save session & viminfo
     let s:projectized = 1
     set noautochdir
-    exec 'mksession! ' . a:pre . s:sessionFile
+    exe 'mksession! ' . a:pre . s:sessionFile
     let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
-    exec 'wviminfo! ' . a:pre . s:vimInfoFile
-    exec 'set viminfo=' . l:temp
+    exe 'wviminfo! ' . a:pre . s:vimInfoFile
+    exe 'set viminfo=' . l:temp
 
     " For special buf situation(modify session file)
     if exists('g:BMBPSign_SpecialBuf')
@@ -418,13 +418,13 @@ function s:WorkSpaceLoad(pre)
     if filereadable(a:pre . s:vimInfoFile)
         let l:temp = &viminfo
         set viminfo='50,!,:100,/100,@100
-        exec 'silent! rviminfo! ' . a:pre . s:vimInfoFile
-        exec 'set viminfo=' . l:temp
+        exe 'silent! rviminfo! ' . a:pre . s:vimInfoFile
+        exe 'set viminfo=' . l:temp
     endif
 
     " Load session
     if filereadable(a:pre . s:sessionFile)
-        exec 'silent! source ' . a:pre . s:sessionFile
+        exe 'silent! source ' . a:pre . s:sessionFile
     endif
 
     set noautochdir

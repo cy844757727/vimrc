@@ -78,6 +78,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.d set filetype=make
 augroup END
 
+command! -nargs=? -complete=file T :tabe <args>
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
@@ -99,10 +100,10 @@ inoremap { {}<Esc>i
 inoremap } <c-r>=ClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
-nnoremap \cd :exec 'cd ' . expand('%:h') . '\|pwd'<CR>
+nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :Async xdg-open %<CR>
-nnoremap \rf :exec 'Async xdg-open ' . expand('%:h')<CR>
+nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap \h  :call misc#HEXCovent()<CR>
@@ -113,7 +114,7 @@ noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
 map! <C-x> <Esc><C-x>
 
 " 查找
-vnoremap <C-f> yk:exec '/' . getreg('0')<CR><BS>n
+vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
 nmap <C-f> wbve<C-f>
 imap <C-f> <Esc>lwbve<C-f>
 " 查找并替换
@@ -304,7 +305,7 @@ function! Vimrc_Tagbar()
         let g:tagbar_left=0
         wincmd W
     else
-        exec bufwinnr('NERD_tree') . 'wincmd w'
+        exe bufwinnr('NERD_tree') . 'wincmd w'
         TagbarOpen
         wincmd w
     endif

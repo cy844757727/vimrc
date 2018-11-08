@@ -58,11 +58,11 @@ endfunction
 
 function! git#Diff(...)
     if a:0 == 0
-        exec '!git difftool -y HEAD -- ' . expand('%')
+        exe '!git difftool -y HEAD -- ' . expand('%')
     elseif a:0 == 1
-        exec '!git difftool -y HEAD -- ' . a:1
+        exe '!git difftool -y HEAD -- ' . a:1
     else
-        exec '!git difftool -y ' . join(a:000, ' ')
+        exe '!git difftool -y ' . join(a:000, ' ')
     endif
 endfunction
 
@@ -148,14 +148,14 @@ function! s:TabPage()
         let l:lin = float2nr(0.4 * &lines)
         silent $tabnew .Git_log
         call setline(1, git#FormatLog())
-        exec 'silent belowright ' . l:col . 'vnew .Git_status'
+        exe 'silent belowright ' . l:col . 'vnew .Git_status'
         call setline(1, git#FormatStatus())
         call search('^\(\s\+\)\zs\S')
-        exec 'silent belowright ' . l:lin . 'new .Git_branch'
+        exe 'silent belowright ' . l:lin . 'new .Git_branch'
         call setline(1, git#FormatBranch())
         call search('^\([ *]\+\)\zs\w')
         1wincmd w
-        exec 'silent belowright ' . l:lin . 'new .Git_commit'
+        exe 'silent belowright ' . l:lin . 'new .Git_commit'
         call setline(1, git#FormatCommit('HEAD'))
         normal zj
         3wincmd w
@@ -165,7 +165,7 @@ function! git#Toggle()
     if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
         tabclose
         try
-            exec s:TabPrevious . 'tabnext'
+            exe s:TabPrevious . 'tabnext'
         catch 'E121'
             1tabnext
         catch 'E16'
@@ -174,7 +174,7 @@ function! git#Toggle()
     else
         let s:TabPrevious = tabpagenr()
         try
-            exec win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0] . 'tabnext'
+            exe win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0] . 'tabnext'
             call git#Refresh()
         catch
             call s:TabPage()
@@ -188,9 +188,9 @@ function! git#Refresh(...)
     	if a:0 > 0
         	let l:col = float2nr(0.4 * &columns)
         	let l:lin = float2nr(0.4 * &lines)
-        	exec '2resize ' . l:lin
-        	exec 'vert 3resize ' . l:col
-        	exec '4resize ' . l:lin
+        	exe '2resize ' . l:lin
+        	exe 'vert 3resize ' . l:col
+        	exe '4resize ' . l:lin
         endif
         4wincmd w
         let l:pos = getpos('.')
@@ -207,7 +207,7 @@ function! git#Refresh(...)
         silent edit!
         call setline(1, git#FormatLog())
         call setpos('.', l:pos)
-        exec l:winnr . 'wincmd w'
+        exe l:winnr . 'wincmd w'
     endif
 endfunction
 

@@ -71,9 +71,9 @@ function! misc#Debug(target)
     endif
     tabnew
     if filereadable('.breakpoint')
-        exec 'Termdebug -x .breakpoint ' . l:target
+        exe 'Termdebug -x .breakpoint ' . l:target
     else
-        exec 'Termdebug ' . l:target
+        exe 'Termdebug ' . l:target
     endif
     autocmd BufUnload <buffer> 1close
 endfunction
@@ -222,16 +222,16 @@ endfunction
 function! misc#WinResize()
     if exists('t:MAXMIZEWIN')
         let l:winnr = win_id2win(t:MAXMIZEWIN[2])
-        exec l:winnr . 'resize ' . t:MAXMIZEWIN[0]
-        exec 'vert ' . l:winnr . 'resize ' . t:MAXMIZEWIN[1]
+        exe l:winnr . 'resize ' . t:MAXMIZEWIN[0]
+        exe 'vert ' . l:winnr . 'resize ' . t:MAXMIZEWIN[1]
         if t:MAXMIZEWIN[2] == win_getid()
             unlet t:MAXMIZEWIN
             return
         endif
     endif
     let t:MAXMIZEWIN = [winheight(0), winwidth(0), win_getid()]
-    exec 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
-    exec 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
+    exe 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
+    exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
 endfunction
 
 " Switch embedded terminal (action: on/off/toggle)
@@ -244,7 +244,7 @@ function! misc#ToggleEmbeddedTerminal(...)
         if l:action == 'on'
             exe l:winnr . 'wincmd w'
         else
-            exec l:winnr . 'hide'
+            exe l:winnr . 'hide'
         endif
     elseif l:action =~ 'on\|toggle'
         if l:bufnr == -1
@@ -284,7 +284,7 @@ function! misc#ToggleTagbar()
         let g:tagbar_left=0
         call win_gotoid(l:id)
     else
-        exec bufwinnr('NERD_tree') . 'wincmd w'
+        exe bufwinnr('NERD_tree') . 'wincmd w'
         TagbarOpen
         call win_gotoid(l:id)
     endif
