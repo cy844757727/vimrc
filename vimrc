@@ -57,7 +57,7 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
 " TODO: add guicolor set
-"set termguicolors
+set termguicolors
 "colorscheme desert
 colorscheme cydark
 set helplang=cn
