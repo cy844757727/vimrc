@@ -93,6 +93,7 @@ endfunction
 function! misc#CodeFormat() range
     " Determine range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
+    let l:pos = getpos('.')
     mark z
 
     " Custom formatting
@@ -101,15 +102,12 @@ function! misc#CodeFormat() range
         silent! exe l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
         silent! exe l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
-        return
+        let l:formatCmd = ''
     elseif &filetype == 'make'
         silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
         silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
-        let l:pos = getpos('.')
-        exe l:range . "normal =="
-        call setpos('.', l:pos)
-        return
+        let l:formatCmd = 'normal =='
     endif
 
     " Use external tools & Config cmd 
@@ -123,16 +121,12 @@ function! misc#CodeFormat() range
     elseif &filetype == 'sh'
         let l:formatCmd = '!shfmt -s -i 4'
     elseif &filetype != ''
-        let l:pos = getpos('.')
-        exe l:range . "normal =="
-        call setpos('.', l:pos)
-        return
+        let l:formatCmd = 'normal =='
     else
         return
     endif
 
     " Format code
-    let l:pos = getpos('.')
     exe l:range . l:formatCmd
     call setpos('.', l:pos)
     write
