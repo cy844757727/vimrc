@@ -144,21 +144,21 @@ function! git#FormatStatus()
 endfunction
 
 function! s:TabPage()
-        let l:col = float2nr(0.4 * &columns)
-        let l:lin = float2nr(0.4 * &lines)
-        silent $tabnew .Git_log
-        call setline(1, git#FormatLog())
-        exe 'silent belowright ' . l:col . 'vnew .Git_status'
-        call setline(1, git#FormatStatus())
-        call search('^\(\s\+\)\zs\S')
-        exe 'silent belowright ' . l:lin . 'new .Git_branch'
-        call setline(1, git#FormatBranch())
-        call search('^\([ *]\+\)\zs\w')
-        1wincmd w
-        exe 'silent belowright ' . l:lin . 'new .Git_commit'
-        call setline(1, git#FormatCommit('HEAD'))
-        normal zj
-        3wincmd w
+    let l:col = float2nr(0.4 * &columns)
+    let l:lin = float2nr(0.4 * &lines)
+    silent $tabnew .Git_log
+    call setline(1, git#FormatLog())
+    exe 'silent belowright ' . l:col . 'vnew .Git_status'
+    call setline(1, git#FormatStatus())
+    call search('^\(\s\+\)\zs\S')
+    exe 'silent belowright ' . l:lin . 'new .Git_branch'
+    call setline(1, git#FormatBranch())
+    call search('^\([ *]\+\)\zs\w')
+    1wincmd w
+    exe 'silent belowright ' . l:lin . 'new .Git_commit'
+    call setline(1, git#FormatCommit('HEAD'))
+    normal zj
+    3wincmd w
 endfunction
 
 function! git#Toggle()
@@ -185,12 +185,12 @@ endfunction
 function! git#Refresh(...)
     if bufwinnr('.Git_log') != -1
         let l:winnr = winnr()
-    	if a:0 > 0
-        	let l:col = float2nr(0.4 * &columns)
-        	let l:lin = float2nr(0.4 * &lines)
-        	exe '2resize ' . l:lin
-        	exe 'vert 3resize ' . l:col
-        	exe '4resize ' . l:lin
+        if a:0 > 0
+            let l:col = float2nr(0.4 * &columns)
+            let l:lin = float2nr(0.4 * &lines)
+            exe '2resize ' . l:lin
+            exe 'vert 3resize ' . l:col
+            exe '4resize ' . l:lin
         endif
         4wincmd w
         let l:pos = getpos('.')

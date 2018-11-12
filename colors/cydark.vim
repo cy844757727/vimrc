@@ -21,7 +21,7 @@ hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#000000 guibg=#E0E0E0 gui
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE
 
 hi SignColumn ctermbg=234 guibg=#1B1B1B
-hi Visual ctermfg=232 ctermbg=253 guifg=#080707 guibg=#E0E0E0
+hi Visual ctermfg=232 ctermbg=253 guifg=#000000 guibg=#F9FAFB
 hi VertSplit ctermfg=253 ctermbg=253 guifg=#DEDEDE guibg=#E0E0E0
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#6E6E6E
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#242424 gui=NONE

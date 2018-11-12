@@ -56,7 +56,6 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldmethod=syntax "折叠方式（依据语法）
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
-" TODO: add guicolor set
 set termguicolors
 "colorscheme desert
 colorscheme cydark
@@ -100,18 +99,20 @@ inoremap { {}<Esc>i
 inoremap } <c-r>=ClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
+
+inoremap <C-\> <Esc>o
+" External open
 nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :Async xdg-open %<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
+
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap \h  :call misc#HEXCovent()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>
 vnoremap <silent> \q :call misc#ReverseComment()<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
-noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
-map! <C-x> <Esc><C-x>
 
 " 查找
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
@@ -147,6 +148,8 @@ noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
 noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
+noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
+map! <C-x> <Esc><C-x>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>

@@ -93,6 +93,7 @@ endfunction
 function! misc#CodeFormat() range
     " Determine range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
+    mark z
 
     " Custom formatting
     if &filetype =~ '^verilog\|systemverilog$'
@@ -105,7 +106,9 @@ function! misc#CodeFormat() range
         silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
         silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
-        normal ==
+        let l:pos = getpos('.')
+        exe l:range . "normal =="
+        call setpos('.', l:pos)
         return
     endif
 
@@ -119,8 +122,10 @@ function! misc#CodeFormat() range
         let l:formatCmd = '!perltidy'
     elseif &filetype == 'sh'
         let l:formatCmd = '!shfmt -s -i 4'
-    elseif &filetype != '' 
-        normal ==
+    elseif &filetype != ''
+        let l:pos = getpos('.')
+        exe l:range . "normal =="
+        call setpos('.', l:pos)
         return
     else
         return
@@ -128,7 +133,6 @@ function! misc#CodeFormat() range
 
     " Format code
     let l:pos = getpos('.')
-    mark z
     exe l:range . l:formatCmd
     call setpos('.', l:pos)
     write
