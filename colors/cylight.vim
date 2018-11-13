@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "light"
 
 " Basic highlight
-hi Normal           guifg=#000000  guibg=#fbfcfd  gui=none  ctermfg=0    ctermbg=231  cterm=NONE
+hi Normal           guifg=#000000  guibg=#FBFCFD  gui=none cterm=NONE
 hi Error            ctermfg=254  ctermbg=160  cterm=NONE
 hi ErrorMsg         ctermfg=254  ctermbg=160  cterm=NONE
 hi WarningMsg       ctermfg=254  ctermbg=160  cterm=NONE
@@ -18,9 +18,9 @@ hi IncSearch        ctermfg=232  ctermbg=208  cterm=NONE
 hi TabLine          ctermfg=232  ctermbg=247  cterm=NONE
 hi TabLinesel       ctermfg=232  ctermbg=254  cterm=Bold
 hi TabLineFill      ctermfg=NONE ctermbg=247  cterm=NONE
-hi SignColumn       guibg=#dbdcdd
+hi SignColumn       guibg=#FBFCFD guifg=#FBFCFD
 hi Visual           ctermfg=254  ctermbg=242  cterm=NONE
-hi VertSplit        guifg=#E9EEF1 guifg=#E9EEF1 ctermfg=254  ctermbg=254  cterm=NONE
+hi VertSplit        guifg=#CCCCCC guibg=#CCCCCC ctermfg=254  ctermbg=254  cterm=NONE
 hi CursorLine       guibg=#dbdcdd  ctermfg=NONE ctermbg=252  cterm=NONE
 hi LineNr           ctermfg=245  ctermbg=NONE cterm=NONE
 hi CursorLineNr     ctermfg=237  ctermbg=NONE cterm=NONE

@@ -8,7 +8,7 @@ endif
 let loaded_A_BMBPSign = 1
 
 " sign definition
-hi NormalSign  ctermbg=253  ctermfg=16
+hi NormalSign  ctermbg=253 ctermfg=16 guibg=#242424 guifg=#FFFFFF
 sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
 sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
 

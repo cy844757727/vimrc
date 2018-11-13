@@ -287,9 +287,17 @@ function! LinterStatus() abort
     let l:counts = ale#statusline#Count(bufnr(''))
     let l:all_errors = l:counts.error + l:counts.style_error
     let l:all_non_errors = l:counts.total - l:all_errors
-    let l:error = l:all_errors ? printf('x %d', l:all_errors) : ''
+    let l:error = l:all_errors ? printf('✘ %d', l:all_errors) : ''
     let l:nonError = l:all_non_errors ? printf('! %d', l:all_non_errors) : ''
-    return l:error . '  ' . l:nonError
+    if empty(l:error) && !empty(l:nonError)
+        return l:nonError
+    elseif !empty(l:error) && empty(l:nonError)
+        return l:error
+    elseif !empty(l:error) && !empty(l:nonError)
+        return l:error . '  ' . l:nonError
+    else
+        return ''
+    endif
 endfunction
 
 " == BMBPSign configure ==
