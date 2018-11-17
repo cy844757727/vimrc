@@ -8,8 +8,8 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " Basic highlight
-hi Normal          ctermfg=230 guifg=#EEEEC7 guibg=NONE "#222120
-" ctermbg=235  cterm=NONE
+hi Normal ctermfg=230 guifg=#EEEEC7 guibg=#222120
+
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#DB0000 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#DB0000
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FF54FE guibg=#FFD700
@@ -20,15 +20,18 @@ hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#000000 guibg=#A2A2A2 gui=NO
 hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#000000 guibg=#E0E0E0 gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE
 
-hi Todo cterm=bold guibg=#FFD00A guifg=#000000
+" misc
+hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
 hi NonText guifg=#222120
 hi Question guifg=#5FDA00
 hi SignColumn ctermbg=234 guibg=#222120
+hi Directory guifg=#88dcdc
 hi Visual ctermfg=232 ctermbg=253 guifg=#FEFEFE guibg=#2D5C76
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#6E6E6E
+hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
 
-hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#262524
-hi CursorLineNr ctermfg=242 ctermbg=235 cterm=NONE guifg=#6E6E6E guibg=#232225
+hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#292929
+hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#6E6E6E guibg=NONE
 hi VertSplit ctermfg=253 ctermbg=253 guifg=#C5C5C5 guibg=#C5C5C5
 hi StatusLine ctermfg=16 ctermbg=253 cterm=bold guifg=#EEEEC7 guibg=#0062A7
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=NONE guifg=#000000 guibg=#C5C5C5 gui=NONE
@@ -53,7 +56,7 @@ hi Number ctermfg=208 guifg=#FE8D00
 hi Identifier ctermfg=75 cterm=NONE guifg=#5EAFFF gui=NONE
 hi Constant ctermfg=208 guifg=#FE8D00
 hi Special ctermfg=208 guifg=#FE8D00
-hi Comment ctermfg=76 guifg=#5FDA00
+hi Comment ctermfg=76 cterm=italic guifg=#5FDA00 gui=italic
 hi Statement ctermfg=220 guifg=#FFE502
 hi String ctermfg=215 guifg=#FEB862
 hi Character ctermfg=215 guifg=#FEB862

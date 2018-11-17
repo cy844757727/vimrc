@@ -78,6 +78,8 @@ augroup UsrDefCmd
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
+command! -range TB :<line1>tabnext
+command! -range TP :<line1>tabprevious
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
@@ -372,4 +374,69 @@ function! ClosePair(char)
     endif
 endfunction
 
+" Customize tabline
+set tabline=%!CYMyTabLine()
+function! CYMyTabLine()
+    let s = ''
+    for i in range(tabpagenr('$'))
+        " select the highlighting
+        if i + 1 == tabpagenr()
+            let s .= '%#TabLineSel#'
+        else
+            let s .= '%#TabLine#'
+        endif
+
+        " set the tab page number (for mouse clicks)
+        let s .= '%' . (i + 1) . 'T'
+
+        " the label is made by MyTabLabel()
+        let s .= ' %{CYMyTabLabel(' . (i + 1) . ')} '
+
+        " Separator
+        if i + 1 != tabpagenr() && i + 2 != tabpagenr() && i + 1 != tabpagenr('$')
+            let s .= '│'
+        else
+            let s .= ' '
+        endif
+    endfor
+
+    " after the last tab fill with TabLineFill and reset tab page nr
+    let s .= '%#TabLineFill#%T'
+
+    " right-align the label to close the current tab page
+    if tabpagenr('$') > 1
+        let s .= '%=%#TabLine#%999X ✘ '
+    endif
+
+    return s
+endfunction
+
+function! CYMyTabLabel(n)
+    let l:buflist = tabpagebuflist(a:n)
+    let l:winnr = tabpagewinnr(a:n) - 1
+    " Extend buflist
+    let l:buflist = l:buflist + l:buflist[0:l:winnr]
+
+    " Display filename which buftype is empty
+    while !empty(getbufvar(l:buflist[l:winnr], '&buftype')) && l:winnr < len(l:buflist) - 1
+        let l:winnr += 1
+    endwhile
+
+    " Add '+' if current buf is modified
+    if getbufvar(l:buflist[l:winnr], '&modified')
+        let l:label = '+'
+    else
+        let l:label = ' '
+    endif
+
+    " Append the buffer name
+    let l:bufname = matchstr(bufname(l:buflist[l:winnr]), '[^/]*$')
+
+    " Unnamed file
+    if empty(l:bufname)
+        let l:bufname = '#'
+    endif
+    
+    return l:label . l:bufname
+endfunction
 
