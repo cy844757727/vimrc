@@ -149,7 +149,8 @@ noremap <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
 noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
 noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
-noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
+noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
+noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
 noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
 map! <C-x> <Esc><C-x>
 map! <f7> <Esc><f7>
@@ -164,13 +165,13 @@ noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
 " 断点 BMBPSign.vim
 noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
-noremap  <silent> <C-f6> <Esc>:BMBPSignToggleBreakPoint tbreak<CR>
+noremap  <silent> <C-f6> <Esc>:BMBPSignToggleTBreakPoint<CR>
 noremap  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
 map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim
 noremap <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
-noremap <silent> <C-f12> <Esc>:BMBPSignToggleBookMark todo<CR>
+noremap <silent> <C-f12> <Esc>:BMBPSignToggleTodoList<CR>
 noremap <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
 noremap <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
 noremap <silent> \m <Esc>:BMBPSignClearBookMark<CR>
@@ -266,8 +267,8 @@ let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
 let g:ale_python_flake8_options = '--ignore=E225,E226,E227,E261,E262,E265,E266,E231,E265,E501,E722,E713'
 " pylint msg id
 " C0103: invalid-name          " C0112: empty-docstring     " C0303: trailing whitespace
-" C0111: missing-docstring     " W0603: global-statement
-let g:ale_python_pylint_options = '--disable=C0103,C0303,C0111,C0112,W0603 --jobs=0'
+" C0111: missing-docstring     " W0603: global-statement    " W0511: todo ignore
+let g:ale_python_pylint_options = '--disable=C0103,C0303,C0111,C0112,W0603,W0511 --jobs=0'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▍'

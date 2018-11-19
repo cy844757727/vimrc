@@ -292,9 +292,11 @@ endfunction
 function! misc#ToggleQuickFix(...)
     let l:type = a:0 == 0 ? 'self' : a:1
     if l:type == 'book'
-        call setqflist([], 'r', {'title': 'BookMark', 'items': BMBPSign#GetList('book')})
+        call BMBPSign#SetQfList('book', 'BookMark')
     elseif l:type == 'break'
-        call setqflist([], 'r', {'title': 'BreakPoint', 'items': BMBPSign#GetList('break')})
+        call BMBPSign#SetQfList('break tbreak', 'BreakPoint')
+    elseif l:type == 'todo'
+        call BMBPSign#SetQfList('todo', 'TodoList')
     elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') != -1
         cclose
         return

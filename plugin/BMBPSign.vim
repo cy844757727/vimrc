@@ -29,25 +29,21 @@ endif
 augroup BMBPSign
     autocmd!
     autocmd VimEnter ?* :call BMBPSign#VimEnterEvent()
+    autocmd VimLeave ?* :call BMBPSign#VimLeaveEvent()
 augroup END
 
-command! -nargs=? BMBPSignToggleBookMark :call BMBPSign#Toggle('book', '<args>')
-command! -nargs=? BMBPSignToggleBreakPoint :call BMBPSign#Toggle('break', '<args>')
-command! BMBPSignClearBookMark :call BMBPSign#SignClear('', 'book')
-command! BMBPSignClearBreakPoint :call BMBPSign#SignClear('', 'break')
+command! BMBPSignToggleBookMark :call BMBPSign#Toggle('book')
+command! BMBPSignToggleTodoList :call BMBPSign#Toggle('todo')
+command! BMBPSignToggleBreakPoint :call BMBPSign#Toggle('break')
+command! BMBPSignToggleTBreakPoint :call BMBPSign#Toggle('tbreak')
+command! BMBPSignClearBookMark :call BMBPSign#SignClear('book')
+command! BMBPSignClearBreakPoint :call BMBPSign#SignClear('break tbreak')
 command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
 command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
 
 " sign command
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignFile :call BMBPSign#SignSave('<args>', 'all')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignBook :call BMBPSign#SignSave('<args>', 'book')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile SSignBreak :call BMBPSign#SignSave('<args>', 'break')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignFile :call BMBPSign#SignLoad('<args>', 'all')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignBook :call BMBPSign#SignLoad('<args>', 'book')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile LSignBreak :call BMBPSign#SignLoad('<args>', 'break')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignFile :call BMBPSign#SignClear('<args>', 'all')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignBook :call BMBPSign#SignClear('<args>', 'book')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignFile CSignBreak :call BMBPSign#SignClear('<args>', 'break')
+com! -nargs=+ -complete=custom,BMBPSign_CompleteSignType CSignType :call BMBPSign#SignClear('<args>')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#Toggle('<args>')
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
@@ -71,8 +67,7 @@ function BMBPSign_CompleteWorkFile(L, C, P)
     return substitute(glob('*.session'), '\.\w*', '', 'g')
 endfunction
 
-function BMBPSign_CompleteSignFile(L, C, P)
-    let l:signFile = substitute(glob('*.bookmark') . "\n" . glob('*.breakpoint'), '\.\w*', '', 'g')
-    return join(uniq(sort(split(l:signFile))), "\n")
+function BMBPSign_CompleteSignType(L, C, P)
+    return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
