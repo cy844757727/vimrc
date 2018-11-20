@@ -8,6 +8,18 @@ endif
 let loaded_A_Misc = 1
 let s:tempPath = '/tmp/'
 
+let misc#commentChar = {
+            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
+            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
+            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
+            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
+            \ 'ada': '--',
+            \ 'lisp': ';', 'scheme': ';',
+            \ 'vim': "\""
+            \ }
+
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun()
     wall
@@ -132,22 +144,26 @@ function! misc#CodeFormat() range
     write
 endfunction
 
+" comment char
+let s:commentChar = {
+            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
+            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
+            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
+            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
+            \ 'ada': '--',
+            \ 'lisp': ';', 'scheme': ';',
+            \ 'vim': "\""
+            \ }
+
 "  Toggle comment
 function! misc#ReverseComment() range
-    " Comment char
-    if &filetype =~ '^\(c\|cpp\|java\|javascript\|php\|verilog\|systemverilog\)$'
-        let l:char='//'
-    elseif &filetype == 'matlab'
-        let l:char='%'
-    elseif &filetype == 'vhdl'
-        let l:char='--'
-    elseif &filetype =~ '^\(sh\|make\|python\|perl\|tcl\)$'
-        let l:char='#'
-    elseif &filetype == 'vim'
-        let l:char="\""
-    else
+    try
+        let l:char = s:commentChar[&filetype]
+    catch
         return
-    endif
+    endtry
 
     " Processing
     silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
