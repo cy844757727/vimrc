@@ -85,7 +85,6 @@ command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
 command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 command! -nargs=+ -complete=file TermH :call term_start("<args>", {'hidden': 1, 'term_kill': 'kill', 'term_finish': 'close', 'norestore': 1})
-command! Qs :call BMBPSign#WorkSpaceSave('') | wall | qall
 command! -nargs=* -complete=file Debug :call misc#Debug("<args>")
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
@@ -163,18 +162,18 @@ map! <C-S-f10> <ESC><C-S-f10>
 " 编译执行
 noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 map! <silent> <f5> <Esc><f5>
-" 断点 BMBPSign.vim
-noremap  <silent> <f6> <Esc>:BMBPSignToggleBreakPoint<CR>
-noremap  <silent> <C-f6> <Esc>:BMBPSignToggleTBreakPoint<CR>
-noremap  <silent> \b <Esc>:BMBPSignClearBreakPoint<CR>
+" 断点 BMBPSign.vim: breakpoint
+noremap  <silent> <f6> <Esc>:call BMBPSign#SignToggle('break')<CR>
+noremap  <silent> <C-f6> <Esc>:call BMBPSign#SignToggle('tbreak')<CR>
+noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break tbreak')<CR>
 map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
-" 书签 BMBPSign.vim
-noremap <silent> <f12> <Esc>:BMBPSignToggleBookMark<CR>
-noremap <silent> <C-f12> <Esc>:BMBPSignToggleTodoList<CR>
-noremap <silent> <C-Down> <Esc>:BMBPSignNextBookMark<CR>
-noremap <silent> <C-Up> <Esc>:BMBPSignPreviousBookMark<CR>
-noremap <silent> \m <Esc>:BMBPSignClearBookMark<CR>
+" 书签 BMBPSign.vim: bookmark
+noremap <silent> <f12> <Esc>:call BMBPSign#SignToggle('book')<CR>
+noremap <silent> <C-f12> <Esc>:call BMBPSign#SignToggle('todo')<CR>
+noremap <silent> <C-Down> <Esc>:call BMBPSign#SignJump('book', 'next')<CR>
+noremap <silent> <C-Up> <Esc>:call BMBPSign#SignJump('book', 'previous')<CR>
+noremap <silent> \m <Esc>:call BMBPSign#SignClear('book')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
 map! <C-Down> <Esc><C-Down>

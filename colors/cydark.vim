@@ -12,12 +12,12 @@ hi Normal ctermfg=230 guifg=#EEEEC7 guibg=#222120
 
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#DB0000 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#DB0000
-hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FF54FE guibg=#FFD700
+hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FEFEFE guibg=#FE8D00
 hi Search ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 
 hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#000000 guibg=#A2A2A2 gui=NONE
-hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#000000 guibg=#E0E0E0 gui=bold
+hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#000000 guibg=#C5C5C5 gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE
 
 " misc

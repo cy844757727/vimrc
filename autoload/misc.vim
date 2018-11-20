@@ -6,6 +6,7 @@ if exists('loaded_A_Misc')
   finish
 endif
 let loaded_A_Misc = 1
+let s:tempPath = '/tmp/'
 
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun()
@@ -22,18 +23,20 @@ function! misc#CompileRun()
     elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'
         " script language
         let l:cmd = matchstr(getline(1), '\(/\(env\s\+\)\?\)\zs[^/]*$')
-        if !filereadable('.breakpoint')
+        let l:breakpoint = BMBPSign#SignRecord('break tbreak')
+
+        if empty(l:breakpoint)
             let l:cmd .= ' ' . expand('%') . "\n"
         elseif l:cmd =~ '^bash'
-            let l:cmd = 'bashdb -x .breakpoint ' . expand('%') . "\n"
+            call writefile(l:breakpoint, s:tempPath . '.breakpoint')
+            let l:cmd = 'bashdb -x ' . s:tempPath . '.breakpoint ' . expand('%') . "\n"
         elseif &filetype == 'python'
             let l:pdb = executable('ipdb') ? ' -m ipdb ' : ' -m pdb '
-            let l:cmd .= l:pdb . expand('%') . "\n" .
-                        \ join(readfile('.breakpoint'), ";;") . "\n"
+            let l:cmd .= l:pdb . expand('%') . "\n" . join(l:breakpoint, ";;") . "\n"
         elseif &filetype == 'perl'
             let l:cmd .= ' -d ' . expand('%') . "\n" .
                         \ "= break b\n" .
-                        \ join(map(readfile('.breakpoint'), "substitute(v:val,'\\S\\+:','','')"), "\n") .
+                        \ join(map(l:breakpoint, "substitute(v:val,'\\S\\+:','','')"), "\n") .
                         \ "\n=\n"
             "            "= break b\nsource .breakpoint\n" other way but not
             "            work, confused
@@ -64,14 +67,11 @@ function! misc#Debug(target)
     if !exists(':Termdebug')
         packadd termdebug
     endif
-    if a:target == '%'
-        let l:target = expand('%')
-    else
-        let l:target = a:target
-    endif
     tabnew
-    if filereadable('.breakpoint')
-        exe 'Termdebug -x .breakpoint ' . l:target
+    let l:breakpoint = BMBPSign#SignRecord('break tbreak')
+    if !empty(l:breakpoint)
+        call writefile(l:breakpoint, s:tempPath . '.breakpoint')
+        exe 'Termdebug -x ' . s:tempPath . '.breakpoint ' . l:target
     else
         exe 'Termdebug ' . l:target
     endif
@@ -304,5 +304,4 @@ function! misc#ToggleQuickFix(...)
     copen 10
 endfunction
 " ####################################################################
-
 

@@ -17,7 +17,7 @@
 "    加载工作空间后需要处理的语句:list
 "    g:BMBPSign_PostLoadEventList
 "    
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:home = system('echo ~')[:-2]
 if !exists('g:BMBPSign_ProjectType')
@@ -29,21 +29,14 @@ endif
 augroup BMBPSign
     autocmd!
     autocmd VimEnter ?* :call BMBPSign#VimEnterEvent()
-    autocmd VimLeave ?* :call BMBPSign#VimLeaveEvent()
+    autocmd VimLeavePre * :call BMBPSign#VimLeaveEvent()
 augroup END
 
-command! BMBPSignToggleBookMark :call BMBPSign#Toggle('book')
-command! BMBPSignToggleTodoList :call BMBPSign#Toggle('todo')
-command! BMBPSignToggleBreakPoint :call BMBPSign#Toggle('break')
-command! BMBPSignToggleTBreakPoint :call BMBPSign#Toggle('tbreak')
-command! BMBPSignClearBookMark :call BMBPSign#SignClear('book')
-command! BMBPSignClearBreakPoint :call BMBPSign#SignClear('break tbreak')
-command! BMBPSignPreviousBookMark :call BMBPSign#Jump('previous')
-command! BMBPSignNextBookMark :call BMBPSign#Jump('next')
-
 " sign command
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignType CSignType :call BMBPSign#SignClear('<args>')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#Toggle('<args>')
+com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSignTypeFile :call BMBPSign#SignClear('<args>')
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#SignToggle('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile SSignFIle :call BMBPSign#SignSave('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile LSignFIle :call BMBPSign#SignLoad('<args>')
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
@@ -67,7 +60,16 @@ function BMBPSign_CompleteWorkFile(L, C, P)
     return substitute(glob('*.session'), '\.\w*', '', 'g')
 endfunction
 
+function BMBPSign_CompleteSignFile(L, C, P)
+    return substitute(glob('*.signrecord'), '\.\w*', '', 'g')
+endfunction
+
 function BMBPSign_CompleteSignType(L, C, P)
     return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
+function BMBPSign_CompleteSignTypeFile(L, C, P)
+    return substitute(glob('*.signrecord'), '\.\w*', '', 'g') .
+                \ "\n|\n" .
+                \ join(BMBPSign#SignTypeList(), "\n")
+endfunction
