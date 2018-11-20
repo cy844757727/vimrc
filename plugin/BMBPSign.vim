@@ -37,6 +37,8 @@ com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSignTypeFile :call
 com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#SignToggle('<args>')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile SSignFIle :call BMBPSign#SignSave('<args>')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile LSignFIle :call BMBPSign#SignLoad('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSignTpye :call BMBPSign#SignJump('<args>', 'next')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSignType :call BMBPSign#Signjump('<args>', 'previous')
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
