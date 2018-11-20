@@ -302,6 +302,7 @@ function! misc#ToggleQuickFix(...)
         return
     endif
     copen 10
+    set nowrap
 endfunction
 " ####################################################################
 
