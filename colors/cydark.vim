@@ -23,7 +23,7 @@ hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE
 " misc
 hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
 hi NonText guifg=#222120
-hi Question guifg=#5FDA00
+hi Question guifg=#FEFEFE
 hi SignColumn ctermbg=234 guibg=#222120
 hi Directory guifg=#88dcdc
 hi Visual ctermfg=232 ctermbg=253 guifg=#FEFEFE guibg=#2D5C76

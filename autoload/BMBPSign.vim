@@ -96,23 +96,27 @@ function s:SignClear(type)
     let l:vec = []
 endfunction
 
+" comment char
+let s:commentChar = {
+            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
+            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
+            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
+            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
+            \ 'ada': '--',
+            \ 'lisp': ';', 'scheme': ';',
+            \ 'vim': "\""
+            \ }
+
 " Generate todo statement
 function s:TodoStatement()
-    let l:todo = ' TODO: '
-
-    " Comment out statement
-    if &filetype =~ '^\(c\|cpp\|java\|javascript\|verilog\|systemverilog\)$'
-        let l:todo ='//' . l:todo
-    elseif &filetype == 'matlab'
-        let l:todo='%' . l:todo
-    elseif &filetype == 'vhdl'
-        let l:todo='--' . l:todo
-    elseif &filetype =~ '^\(sh\|make\|python\)$'
-        let l:todo='#' . l:todo
-    elseif &filetype == 'vim'
-        let l:todo="\"" . l:todo
-    endif
-
+    try
+        let l:todo = s:commentChar[&filetype] . ' TODO: '
+    catch
+        let l:todo = ' TODO: '
+    endtry
+    
     return l:todo
 endfunction
 
