@@ -124,13 +124,13 @@ function! misc#CodeFormat() range
 
     " Use external tools & Config cmd 
     " Tools: clang-format, autopep8, perltidy, shfmt
-    if &filetype =~ '^\(c\|cpp\|java\|javascript\)$'
+    if &filetype =~ '^\(c\|cpp\|java\|javascript\)$' && executable('clang-format-7')
         let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
-    elseif &filetype == 'python'
+    elseif &filetype == 'python' && executable('yapf') && executable('yapf3')
         let l:formatCmd = getline(1) =~ 'python3' ? '!yapf3' : '!yapf'
-    elseif &filetype == 'perl'
+    elseif &filetype == 'perl' && executable('perltidy')
         let l:formatCmd = '!perltidy'
-    elseif &filetype == 'sh'
+    elseif &filetype == 'sh' && executable('shfmt')
         let l:formatCmd = '!shfmt -s -i 4'
     elseif &filetype != ''
         let l:formatCmd = 'normal =='
