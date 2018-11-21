@@ -22,6 +22,7 @@ nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch()<CR>
 nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(1)<CR>
 nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(2)<CR>
+nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
 nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
@@ -84,6 +85,22 @@ function <SID>CheckOutBranch()
             endif
             call s:RefreshStatus()
             call s:Refresh()
+        endif
+    endif
+endfunction
+
+function <SID>CheckOutNewBranck()
+    let l:lin = search('^[RST]\w*:', 'n')
+    let l:str = matchstr(getline('.'), '^\(\s\+\*\?\s\+\)\zs\w\+')
+    if !empty(l:str) && (l:lin == 0 || l:lin > line('.'))
+        let l:name = input('Enter new branch name(start from ' . l:str . '): ')
+        if l:name != ''
+            let l:msg = system('git stash && git checkout -b ' . l:name . ' ' . l:str)
+            if l:msg =~ 'error:\|fatal:'
+                echo l:msg
+            else
+                call git#Refresh()
+            endif
         endif
     endif
 endfunction
