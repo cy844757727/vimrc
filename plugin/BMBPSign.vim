@@ -16,7 +16,7 @@
 "
 "    加载工作空间后需要处理的语句:list
 "    g:BMBPSign_PostLoadEventList
-"    
+"
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:home = system('echo ~')[:-2]
@@ -49,7 +49,7 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSi
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
 
-function BMBPSign_CompleteProject(L, C, P)
+function! BMBPSign_CompleteProject(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P)))
     if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
         return join(keys(g:BMBPSign_ProjectType), "\n")
@@ -58,20 +58,27 @@ function BMBPSign_CompleteProject(L, C, P)
     endif
 endfunction
 
-function BMBPSign_CompleteWorkFile(L, C, P)
+function! BMBPSign_CompleteWorkFile(L, C, P)
     return substitute(glob('*.session'), '\.\w*', '', 'g')
 endfunction
 
-function BMBPSign_CompleteSignFile(L, C, P)
+function! BMBPSign_CompleteSignFile(L, C, P)
     return substitute(glob('*.signrecord'), '\.\w*', '', 'g')
 endfunction
 
-function BMBPSign_CompleteSignType(L, C, P)
+function! BMBPSign_CompleteSignType(L, C, P)
     return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
-function BMBPSign_CompleteSignTypeFile(L, C, P)
+function! BMBPSign_CompleteSignTypeFile(L, C, P)
     return substitute(glob('*.signrecord'), '\.\w*', '', 'g') .
                 \ "\n|\n" .
                 \ join(BMBPSign#SignTypeList(), "\n")
+endfunction
+
+function! BMBPSign_Status()
+    if BMBPSign#ProjectStatus()
+        return ' '
+    endif
+    return ''
 endfunction

@@ -8,7 +8,8 @@ endif
 let loaded_A_BMBPSign = 1
 
 " sign definition
-hi NormalSign  ctermbg=253 ctermfg=16 guibg=#222120 guifg=#FFFFFF
+hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#FFFFFF
+hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CC1100
 sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
 sign define BMBPSignTodoListDef text=🔖 texthl=NormalSign
 sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
@@ -616,3 +617,9 @@ function BMBPSign#SignRecord(type)
     return l:signRecord
 endfunction
 
+function BMBPSign#ProjectStatus()
+    if exists('s:projectized')
+        return 1
+    endif
+    return 0
+endfunction

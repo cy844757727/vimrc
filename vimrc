@@ -57,16 +57,16 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
 set termguicolors
-"colorscheme desert
-colorscheme cydark
+colorscheme cydark2
 set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
-set statusline=[%{mode('2')}]\ %f%m%r%h%w%<%=
+set statusline=\ %f%m%r%h%w%<%=
 set statusline+=%{LinterStatus()}%5(\ %)
-set statusline+=%{''.(&fenc!=''?&fenc:&enc).''}%{(&bomb?\",BOM\":\"\")}\ │\ %{&ff}\ │\ %Y%5(\ %)
-set statusline+=%-10.(%l:%c%V%)\ %4P%(\ %)
+set statusline+=%{WebDevIconsGetFileTypeSymbol(expand('%'))}\ %Y
+set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %5(\ %)
+set statusline+=%-10.(%l:%c%V%)\ %4P%(\ %)%{BMBPSign_Status()}
 
 "自定义命令/自动命令=====================
 augroup UsrDefCmd
@@ -75,6 +75,8 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
+    autocmd InsertEnter * :hi statusline guibg=#6D0EF2
+    autocmd InsertLeave * :hi statusline guibg=#007ACC
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
@@ -188,11 +190,11 @@ let g:netrw_browse_split=4
 let g:netrw_altv=1
 let g:netrw_banner=0
 let g:netrw_liststyle=3
-
-let g:NERDTreeStatusline='[NERDTree]'
+let g:NERDTreeStatusline=' פּ NERDTree'
 let g:NERDTreeAutoDeleteBuffer=1
 let g:NERDTreeMouseMode=2
-
+let g:NERDTreeDirArrowExpandable = ''
+let g:NERDTreeDirArrowCollapsible = ''
 " Add "call NERDTreeAddKey_Menu_Def()" to ~/.vim/plugin/NERD_tree
 function! NERDTreeAddKey_Menu_Def()
     call NERDTreeAddMenuItem({
@@ -228,6 +230,17 @@ let g:tagbar_width=31
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
 let g:tagbar_left=0
+let g:tagbar_iconchars = ['▸', '▾']
+let g:tagbar_status_func = 'TagbarStatusFunc'
+
+function! TagbarStatusFunc(current, sort, fname, flags, ...) abort
+    let l:flagstr = join(a:flags, '')
+    if l:flagstr != ''
+        let l:flagstr = '[' . l:flagstr . '] '
+    endif
+    return '  Tagbar: ' . l:flagstr . a:fname
+endfunction
+
 "  TagBar 其他语言支持
 "    Makefile
 let g:tagbar_type_make = {
@@ -289,14 +302,14 @@ function! LinterStatus() abort
     let l:counts = ale#statusline#Count(bufnr(''))
     let l:all_errors = l:counts.error + l:counts.style_error
     let l:all_non_errors = l:counts.total - l:all_errors
-    let l:error = l:all_errors ? printf('✘ %d', l:all_errors) : ''
-    let l:nonError = l:all_non_errors ? printf('! %d', l:all_non_errors) : ''
+    let l:error = l:all_errors ? printf(' %d', l:all_errors) : ''
+    let l:nonError = l:all_non_errors ? printf(' %d', l:all_non_errors) : ''
     if empty(l:error) && !empty(l:nonError)
         return l:nonError
     elseif !empty(l:error) && empty(l:nonError)
         return l:error
     elseif !empty(l:error) && !empty(l:nonError)
-        return l:error . '  ' . l:nonError
+        return l:error . ' ' . l:nonError
     else
         return ''
     endif
@@ -364,6 +377,7 @@ function! PostLoadWorkSpace_TabVar()
         unlet g:TABVAR_MAXMIZEWIN
     endif
 endfunction
+
 " ===============================
 "  )]}自动补全相关
 function! ClosePair(char)
@@ -394,7 +408,7 @@ function! CYMyTabLine()
 
         " Separator
         if i + 1 != tabpagenr() && i + 2 != tabpagenr() && i + 1 != tabpagenr('$')
-            let s .= '│'
+            let s .= '%#TabLineSeparator#│'
         else
             let s .= ' '
         endif
@@ -422,21 +436,28 @@ function! CYMyTabLabel(n)
         let l:winnr += 1
     endwhile
 
-    " Add '+' if current buf is modified
+    " Add a flag if current buf is modified
     if getbufvar(l:buflist[l:winnr], '&modified')
-        let l:label = '+'
+        let l:label = ''
     else
         let l:label = ' '
     endif
 
     " Append the buffer name
-    let l:bufname = matchstr(bufname(l:buflist[l:winnr]), '[^/]*$')
+    let l:bufname = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
 
-    " Unnamed file
-    if empty(l:bufname)
-        let l:bufname = '#'
+    let l:type = getbufvar(l:bufname, '&filetype')
+
+    " Append the glyph
+    if l:bufname =~ '^\.Git_'
+        let l:bufname = 'Git-Manager'
+        let l:glyph = ''
+    elseif l:type == 'help'
+        let l:glyph = ''
+    else
+        let l:glyph = WebDevIconsGetFileTypeSymbol(l:bufname)
     endif
-    
-    return l:label . l:bufname
+ 
+    return l:glyph . ' ' . l:bufname . ' ' . l:label
 endfunction
 

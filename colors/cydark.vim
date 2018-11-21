@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " Basic highlight
-hi Normal ctermfg=230 guifg=#EEEEC7 guibg=#222120
+hi Normal ctermfg=230 guifg=#DDDDC0 guibg=#1E1E1E
 
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#DB0000 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#DB0000
@@ -16,25 +16,26 @@ hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FEFEFE guibg=#FE8D00
 hi Search ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 
-hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#000000 guibg=#A2A2A2 gui=NONE
-hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#000000 guibg=#C5C5C5 gui=bold
-hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE
+hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#CCCCB0 guibg=#555555 gui=NONE
+hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#CCCCB0 guibg=#1E1E1E gui=bold
+hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
+hi TabLineSeparator guibg=#555555 guifg=#1E1E1E
 
 " misc
 hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
-hi NonText guifg=#222120
+hi NonText guifg=#1E1E1E
 hi Question guifg=#FEFEFE
-hi SignColumn ctermbg=234 guibg=#222120
+hi SignColumn ctermbg=234 guibg=#1E1E1E
 hi Directory guifg=#88dcdc
-hi Visual ctermfg=232 ctermbg=253 guifg=#FEFEFE guibg=#2D5C76
-hi LineNr ctermfg=242 ctermbg=NONE guifg=#6E6E6E
+hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#264F78
+hi LineNr ctermfg=242 ctermbg=NONE guifg=#5E6165
 hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
 
-hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#292929
+hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#232323
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#6E6E6E guibg=NONE
-hi VertSplit ctermfg=253 ctermbg=253 guifg=#C5C5C5 guibg=#C5C5C5
-hi StatusLine ctermfg=16 ctermbg=253 cterm=bold guifg=#EEEEC7 guibg=#0062A7
-hi StatusLineNC ctermfg=16 ctermbg=252 cterm=NONE guifg=#000000 guibg=#C5C5C5 gui=NONE
+hi VertSplit ctermfg=253 ctermbg=253 guifg=#333333 guibg=#333333
+hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#007ACC
+hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#BBBBA0 guibg=#333333
 
 hi DiffAdd ctermfg=230 ctermbg=65 guifg=#FFFFDD guibg=#618A61
 hi DiffChange ctermfg=230 ctermbg=24 guifg=#FFFFDD guibg=#00608B
@@ -56,15 +57,14 @@ hi Number ctermfg=208 guifg=#FE8D00
 hi Identifier ctermfg=75 cterm=NONE guifg=#5EAFFF gui=NONE
 hi Constant ctermfg=208 guifg=#FE8D00
 hi Special ctermfg=208 guifg=#FE8D00
-hi Comment ctermfg=76 cterm=italic guifg=#5FDA00 gui=italic
+hi Comment ctermfg=76 cterm=italic guifg=#44b000 gui=italic
 hi Statement ctermfg=220 guifg=#FFE502
 hi String ctermfg=215 guifg=#FEB862
 hi Character ctermfg=215 guifg=#FEB862
 hi Operator ctermfg=230 guifg=#FFFFDD
 
 " BMBPSign
-hi NormalSign  ctermbg=253 ctermfg=16 guifg=#FFFFFF guibg=#222120
+hi NormalSign  ctermbg=253 ctermfg=16 guifg=#FFFFFF guibg=#1E1E1E
 " ale.vim
-hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#FF361E guibg=#222120
-hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#FEB862 guibg=#222120
-
+hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#FF361E guibg=#1E1E1E
+hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#FEB862 guibg=#1E1E1E
