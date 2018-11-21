@@ -16,8 +16,8 @@ hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FEFEFE guibg=#FE8D00
 hi Search ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#080707 guibg=#FE8D00
 
-hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#CCCCB0 guibg=#555555 gui=NONE
-hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#CCCCB0 guibg=#1E1E1E gui=bold
+hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#BBBBA0 guibg=#555555 gui=NONE
+hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#BBBBA0 guibg=#1E1E1E gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
 hi TabLineSeparator guibg=#555555 guifg=#1E1E1E
 
