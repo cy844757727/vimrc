@@ -57,7 +57,7 @@ set errorformat+=**\ at\ %f(%l.%c):\ %m
 "set foldcolumn=1     "折叠级别显示
 "set foldlevel=1      "折叠级别
 set termguicolors
-colorscheme cydark2
+colorscheme cydark
 set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
