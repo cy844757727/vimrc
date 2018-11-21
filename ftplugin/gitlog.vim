@@ -11,7 +11,7 @@ let b:curL = -1
 setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
-setlocal statusline=\ 1\ Log\ %=\ \ \ \ \ %-5l\ %4P\ 
+setlocal statusline=\ 1\ Log\ %=\ 
 
 nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>

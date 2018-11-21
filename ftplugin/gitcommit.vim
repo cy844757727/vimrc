@@ -13,7 +13,7 @@ setlocal buftype=nofile
 setlocal foldmethod=marker
 setlocal foldmarker={[(<{,}>)]}
 setlocal foldtext=Git_MyCommitFoldInfo()
-setlocal statusline=\ 2\ Commit\ %=\ \ \ \ \ %-5l\ %4P\ 
+setlocal statusline=\ 2\ Commit\ %=\ 
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
