@@ -66,7 +66,7 @@ set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline set
-set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
+set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
 set statusline+=%{LinterStatus()}%3(\ %)
 set statusline+=%{WebDevIconsGetFileTypeSymbol(expand('%'))}\ %Y
 set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %3(\ %)
