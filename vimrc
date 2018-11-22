@@ -37,7 +37,7 @@ set matchtime=1    "匹配括号高亮的时间
 set viminfo=       "禁用viminfo
 set wildmenu       "命令行增强补全显示
 set autochdir
-set diffopt=vertical,filler
+set diffopt=vertical,filler,foldcolumn:0,context:3
 set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
@@ -45,7 +45,7 @@ set laststatus=2      "始终显示状态栏
 set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
-" verilog
+" verilog: modelsim
 set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m
 set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m
 set errorformat+=**\ Error:\ (suppressible):\ %f(%l.%c):\ %m
@@ -53,20 +53,24 @@ set errorformat+=**\ Error:\ %f(%l):\ %m
 set errorformat+=**\ Error:\ %f(%l.%c):\ %m
 set errorformat+=**\ at\ %f(%l):\ %m
 set errorformat+=**\ at\ %f(%l.%c):\ %m
-"set foldmethod=syntax "折叠方式（依据语法）
-"set foldcolumn=1     "折叠级别显示
-"set foldlevel=1      "折叠级别
+" code folding
+"set foldcolumn=1
+set foldmethod=syntax
+set foldlevel=99
+" Use RGB color scheme in terminal
 set termguicolors
 colorscheme cydark
+" Language & encode set
 set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
-set statusline=\ %f%m%r%h%w%<%=
-set statusline+=%{LinterStatus()}%5(\ %)
+" Statusline set
+set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
+set statusline+=%{LinterStatus()}%3(\ %)
 set statusline+=%{WebDevIconsGetFileTypeSymbol(expand('%'))}\ %Y
-set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %5(\ %)
-set statusline+=%-10.(%l:%c%V%)\ %4P%(\ %)%{BMBPSign_Status()}
+set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %3(\ %)
+set statusline+=%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
 "自定义命令/自动命令=====================
 augroup UsrDefCmd
@@ -230,6 +234,7 @@ let g:tagbar_width=31
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
 let g:tagbar_left=0
+"let g:tagbar_iconchars = ['', '']
 let g:tagbar_iconchars = ['▸', '▾']
 let g:tagbar_status_func = 'TagbarStatusFunc'
 
@@ -461,3 +466,9 @@ function! CYMyTabLabel(n)
     return l:glyph . ' ' . l:bufname . ' ' . l:label
 endfunction
 
+set foldtext=CyFoldText()
+function! CyFoldText()
+    let l:str = getline(v:foldstart)
+    let l:num = v:foldend - v:foldstart + 1
+    return '▶ ' . l:num . ': ' . l:str . '  '
+endfunction

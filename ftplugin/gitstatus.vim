@@ -11,7 +11,7 @@ let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal nonu
 setlocal buftype=nofile
-setlocal statusline=\ 3\ Status\ \ %{b:currentDir}%=\ 
+setlocal statusline=%2(\ %)ﰧ\ Status\ \ %{b:currentDir}%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>

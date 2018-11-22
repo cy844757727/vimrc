@@ -12,7 +12,7 @@ setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
 setlocal tabstop=1
-setlocal statusline=\ 4\ Branch%=\ 
+setlocal statusline=%2(\ %)ﲹ\ Branch%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> a :call <SID>ApplyStash()<CR>

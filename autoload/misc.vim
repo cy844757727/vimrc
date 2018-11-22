@@ -8,18 +8,6 @@ endif
 let loaded_A_Misc = 1
 let s:tempPath = '/tmp/'
 
-let misc#commentChar = {
-            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
-            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
-            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
-            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
-            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
-            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
-            \ 'ada': '--',
-            \ 'lisp': ';', 'scheme': ';',
-            \ 'vim': "\""
-            \ }
-
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun()
     wall
@@ -305,6 +293,7 @@ function! misc#ToggleTagbar()
 endfunction
 
 "  Toggle QuickFix window
+"  BMBPSign#SetQfList(type, title)
 function! misc#ToggleQuickFix(...)
     let l:type = a:0 == 0 ? 'self' : a:1
     if l:type == 'book'

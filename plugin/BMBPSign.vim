@@ -39,6 +39,7 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile SSignFIle :call BMBPSig
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile LSignFIle :call BMBPSign#SignLoad('<args>')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSignTpye :call BMBPSign#SignJump('<args>', 'next')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSignType :call BMBPSign#SignJump('<args>', 'previous')
+com! -nargs=0 ASignAttr :call BMBPSign#SignAddAttr()
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
@@ -77,8 +78,5 @@ function! BMBPSign_CompleteSignTypeFile(L, C, P)
 endfunction
 
 function! BMBPSign_Status()
-    if BMBPSign#ProjectStatus()
-        return ' '
-    endif
-    return ''
+    return BMBPSign#ProjectStatus()
 endfunction

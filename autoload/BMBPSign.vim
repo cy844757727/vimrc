@@ -10,9 +10,9 @@ let loaded_A_BMBPSign = 1
 " sign definition
 hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#FFFFFF
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CC1100
-sign define BMBPSignBookMarkDef text=🚩 texthl=NormalSign
-sign define BMBPSignTodoListDef text=🔖 texthl=NormalSign
-sign define BMBPSignBreakPointDef text=💊 texthl=NormalSign
+sign define BMBPSignBook text=🚩 texthl=NormalSign
+sign define BMBPSignTodo text=🔖 texthl=NormalSign
+sign define BMBPSignBreak text=💊 texthl=BreakPoint
 
 let s:newSignId = 0
 let s:signFile = '.signrecord'
@@ -21,14 +21,15 @@ let s:signFile = '.signrecord'
 let s:allSignType = ['book', 'todo', 'break', 'tbreak']
 
 " SignVec Record
-" 'type': ['signDef', [{'id': ..., 'file': ...}]
+" 'type': ['signDef', [{'id': ..., 'file': ..., 'attr': ...}]]
 let s:signVec = {
-            \ 'book': ['BMBPSignBookMarkDef', []],
-            \ 'todo': ['BMBPSignTodoListDef', []],
-            \ 'break': ['BMBPSignBreakPointDef', []],
-            \ 'tbreak': ['BMBPSignBreakPointDef', []]
+            \ 'book': ['BMBPSignBook', []],
+            \ 'todo': ['BMBPSignTodo', []],
+            \ 'break': ['BMBPSignBreak', []],
+            \ 'tbreak': ['BMBPSignBreak', []]
             \ }
 
+" Workspace & project related
 let s:sessionFile = '.session'
 let s:vimInfoFile = '.viminfo'
 let s:home = system('echo ~')[:-2]
@@ -36,14 +37,15 @@ let s:projectFile = s:home . '/.vim/.projectitem'
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 
 " ==========================================================
+" == Sign Def ==============================================
 " ==========================================================
 " Toggle sign in the specified line of the specified file
 " Type: Sign type: book, todo, break, tbreak
-function s:SignToggle(file, line, type)
+function s:SignToggle(file, line, type, attr)
     let l:def = s:signVec[a:type][0]
     let l:vec = s:signVec[a:type][-1]
 
-    let l:signPlace = execute('sign place')
+    let l:signPlace = execute('sign place file=' . a:file)
     let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
     if empty(l:id)
         " Ensure id uniqueness
@@ -54,7 +56,7 @@ function s:SignToggle(file, line, type)
 
         " Set sign
         exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . l:def . ' file=' . a:file
-        call add(l:vec, {'id': s:newSignId, 'file': a:file})
+        call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
     else
         " Unset sign
         exe 'sign unplace ' . l:id[1] . ' file=' . a:file
@@ -87,54 +89,35 @@ endfunction
 
 " clear sign of a type
 function s:SignClear(type)
-    let l:vec = s:signVec[a:type][-1]
-
     " Unset sign
-    for l:mark in l:vec
-        exe 'sign unplace ' . l:mark.id . ' file=' . l:mark.file
+    for l:sign in s:signVec[a:type][-1]
+        exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
     endfor
 
-    let l:vec = []
-endfunction
-
-" comment char
-let s:commentChar = {
-            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
-            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
-            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
-            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
-            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
-            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
-            \ 'ada': '--',
-            \ 'lisp': ';', 'scheme': ';',
-            \ 'vim': "\""
-            \ }
-
-" Generate todo statement
-function s:TodoStatement()
-    try
-        let l:todo = s:commentChar[&filetype] . ' TODO: '
-    catch
-        let l:todo = ' TODO: '
-    endtry
-    
-    return l:todo
+    " Empty vec
+    let s:signVec[a:type][-1] = []
 endfunction
 
 " Load & set sign from a signFile
 function s:SignLoad()
     if filereadable(s:signFile)
-        " Read specifid sign file
+        " Read sign file
         let l:signList = readfile(s:signFile)
 
         " Load sign
-        for l:list in l:signList
-            let [l:type, l:file, l:line] = split(l:list, '[ :]\+')
+        for l:str in l:signList
+            try
+                let [l:type, l:file, l:line] = split(l:str, '[ :]\+')[0:2]
+            catch
+                " Ignore damaged item
+                continue
+            endtry
+            let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
             if filereadable(l:file)
                 if !bufexists(l:file)
                     exe 'silent badd ' . l:file
                 endif
-                call s:SignToggle(l:file, l:line, l:type)
+                call s:SignToggle(l:file, l:line, l:type, l:attr)
             endif
         endfor
     endif
@@ -143,15 +126,24 @@ endfunction
 " Save sign to a file
 function s:SignSave()
     let l:content = []
-    let l:signPlace = execute('sign place')
+    let l:signs = {}
+    for l:item in split(execute('sign place'), "\n")
+        let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' . '  id=\(\d\+\)  \S\+=BMBPSign\S\+')
+        if !empty(l:match)
+            let l:signs[l:match[2]] = l:match[1]
+        endif
+    endfor
 
     " Get row information & set l:content
     for [l:type, l:vec] in items(s:signVec)
         for l:sign in l:vec[-1]
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  ')
-            if !empty(l:line)
-                let l:content += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
-            endif
+            try
+                let l:line = l:signs[l:sign.id]
+            catch
+                " Ignore invalid data
+                continue
+            endtry
+            let l:content += [l:type . ' ' . l:sign.file . ':' . l:line . ' ' . l:sign.attr]
         endfor
     endfor
 
@@ -163,8 +155,51 @@ function s:SignSave()
     endif
 endfunction
 
+" Add attr to a sign
+function s:SignAddAttr(file, line)
+    try
+        let l:signPlace = split(execute('sign place file=' . a:file), "\n")[2:]
+    catch
+        " No sign set 
+        return
+    endtry
+
+    " Consider multiple signs setint at same line
+    let l:getSign = []
+    let l:ind = 1
+    for l:sign in l:signPlace
+        let l:list = matchlist(l:sign, '    \S\+' . a:line . '  id=\(\d\+\)' . '  \S\+=BMBPSign\(\S\+\)')
+        if !empty(l:list)
+            let l:getSign += [{'ind': l:ind, 'type': tolower(l:list[2]), 'id': l:list[1]}]
+            let l:ind += 1
+        endif
+    endfor
+
+    if empty(l:getSign)
+        return
+    elseif len(l:getSign) == 1
+        let l:target = l:getSign[0]
+    else
+        echo l:getSign
+        try
+            let l:target = l:getSign[input('Select one (ind): ') + 1]
+        catch
+            return
+        endtry
+    endif
+
+    " Add attr to a sign
+    for l:sign in s:signVec[l:target.type][-1]
+        if l:target.id == l:sign.id
+            let l:sign.attr = input("Input attr: ")
+            break
+        endif
+    endfor
+endfunction
+
 " ===================================================================
-" == Project Function ===============================================
+" == Project def ====================================================
+" ===================================================================
 " New project & save workspace or modify current project
 function s:ProjectNew(name, type, path)
     " path -> absolute path | Default state
@@ -199,7 +234,6 @@ function s:ProjectNew(name, type, path)
     endif
 
     let s:projectized = 1
-    " Display project item
     echo substitute(l:item, ' ' . s:home, ' ~', '')
 endfunction
 
@@ -349,9 +383,8 @@ function s:ProjectManager(argc, argv)
     endif
 endfunction
 
-" Save current workspace to specified file
+" Save current workspace to a file
 " Content: session, viminfo
-" Pre: specify file name prefix
 function s:WorkSpaceSave()
     " Pre-save processing
     if exists('g:BMBPSign_PreSaveEventList')
@@ -398,9 +431,8 @@ function s:WorkSpaceSave()
     endif
 endfunction
 
-" Restore workspace from specified file
+" Restore workspace from a file
 " Context: session, viminfo
-" Pre: specify file name prefix
 function s:WorkSpaceLoad()
     " Pre-load processing
     if exists('g:BMBPSign_PreLoadEventList')
@@ -445,7 +477,9 @@ function s:WorkSpaceLoad()
     endif
 endfunction
 
-" == misc function ==============================================
+" ===============================================================
+" == misc def ==============================================
+" ===============================================================
 " Return qfList used for seting quickfix
 " Type: book, break, todo, tbreak
 function s:GetQfList(type)
@@ -456,19 +490,51 @@ function s:GetQfList(type)
         let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  ')
         if !empty(l:line)
             let l:text = system("sed -n '" . l:line[1] . "p' " . l:sign.file)[:-2]
+            if l:sign.attr =~ '\S'
+                let l:text = '[' . a:type . ':' . l:sign.attr . '] ' . l:text
+            else
+                let l:text = '['. a:type . '] ' . l:text
+            endif
+
             let l:qf += [{
                         \ 'bufnr': bufnr(l:sign.file),
                         \ 'filename': l:sign.file,
                         \ 'lnum': l:line[1],
-                        \ 'text': '[' . a:type . ']  ' . l:text
+                        \ 'text': l:text
                         \ }]
         endif
     endfor
 
     return l:qf
 endfunction
-" ==========================================================
-" ============== Global ================================
+
+" comment char
+let s:commentChar = {
+            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
+            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
+            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
+            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
+            \ 'ada': '--',
+            \ 'lisp': ';', 'scheme': ';',
+            \ 'vim': "\""
+            \ }
+
+" Generate todo statement
+function s:TodoStatement()
+    try
+        let l:todo = s:commentChar[&filetype] . ' TODO: '
+    catch
+        let l:todo = ' TODO: '
+    endtry
+    
+    return l:todo
+endfunction
+
+" ======================================================
+" == Global def ========================================
+" ======================================================
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)
 endfunction
@@ -485,7 +551,7 @@ function BMBPSign#SignToggle(type)
             silent write
         endif
 
-        call s:SignToggle(l:file, line('.'), a:type)
+        call s:SignToggle(l:file, line('.'), a:type, '')
     endif
 endfunction
 
@@ -526,6 +592,10 @@ function BMBPSign#SignLoad(pre)
         endfor
         call s:SignLoad()
     endif
+endfunction
+
+function BMBPSign#SignAddAttr()
+    call s:SignAddAttr(expand('%'), line('.'))
 endfunction
 
 function BMBPSign#WorkSpaceSave(pre)
@@ -576,6 +646,7 @@ endfunction
 " AutoCmd for VimEnter event
 " Load sign when starting with a file
 function BMBPSign#VimEnterEvent()
+    " Stop load when signs already exists
     for l:vec in values(s:signVec)
         if !empty(l:vec[-1])
             return
@@ -609,7 +680,7 @@ function BMBPSign#SignRecord(type)
         for l:sign in s:signVec[l:type][-1]
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  ')
             if !empty(l:line)
-                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
+                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1] . ' ' . l:sign.attr]
             endif
         endfor
     endfor
@@ -617,6 +688,7 @@ function BMBPSign#SignRecord(type)
     return l:signRecord
 endfunction
 
+" Return status whether saving workspace when :qa
 function BMBPSign#ProjectStatus()
     if exists('s:projectized')
         return 1
