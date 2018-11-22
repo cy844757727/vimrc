@@ -37,7 +37,7 @@ let s:projectFile = s:home . '/.vim/.projectitem'
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 
 " ==========================================================
-" == Sign Def ==============================================
+" == Sign Def ========================================= {{{1
 " ==========================================================
 " Toggle sign in the specified line of the specified file
 " Type: Sign type: book, todo, break, tbreak
@@ -198,7 +198,7 @@ function s:SignAddAttr(file, line)
 endfunction
 
 " ===================================================================
-" == Project def ====================================================
+" == Project def =============================================== {{{1
 " ===================================================================
 " New project & save workspace or modify current project
 function s:ProjectNew(name, type, path)
@@ -478,7 +478,7 @@ function s:WorkSpaceLoad()
 endfunction
 
 " ===============================================================
-" == misc def ==============================================
+" == misc def ============================================== {{{1
 " ===============================================================
 " Return qfList used for seting quickfix
 " Type: book, break, todo, tbreak
@@ -533,7 +533,7 @@ function s:TodoStatement()
 endfunction
 
 " ======================================================
-" == Global def ========================================
+" == Global def =================================== {{{1
 " ======================================================
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)

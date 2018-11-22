@@ -55,7 +55,7 @@ set errorformat+=**\ at\ %f(%l):\ %m
 set errorformat+=**\ at\ %f(%l.%c):\ %m
 " code folding
 "set foldcolumn=1
-set foldmethod=syntax
+"set foldmethod=syntax
 set foldlevel=99
 " Use RGB color scheme in terminal
 set termguicolors

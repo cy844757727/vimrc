@@ -10,6 +10,8 @@ let b:ale_enabled = 0
 
 setlocal nonu
 setlocal buftype=nofile
+setlocal foldcolumn=0
+setlocal foldlevel=0
 setlocal foldmethod=marker
 setlocal foldmarker={[(<{,}>)]}
 setlocal foldtext=Git_MyCommitFoldInfo()

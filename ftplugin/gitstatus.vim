@@ -11,6 +11,7 @@ let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal nonu
 setlocal buftype=nofile
+setlocal foldcolumn=0
 setlocal statusline=%2(\ %)ﰧ\ Status\ \ %{b:currentDir}%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>

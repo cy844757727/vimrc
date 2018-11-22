@@ -11,6 +11,7 @@ let b:curL = -1
 setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
+setlocal foldcolumn=0
 setlocal statusline=%2(\ %)\ Log%=%2(\ %)
 
 nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>

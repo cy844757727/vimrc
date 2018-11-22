@@ -12,6 +12,7 @@ setlocal nonu
 setlocal nowrap
 setlocal buftype=nofile
 setlocal tabstop=1
+setlocal foldcolumn=0
 setlocal statusline=%2(\ %)ﲹ\ Branch%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
