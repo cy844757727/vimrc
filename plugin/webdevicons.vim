@@ -636,7 +636,7 @@ function! WebDevIconsGetFileTypeSymbol(...)
   elseif a:0 == 1
     let l:file = a:1
   else
-    let l:file == a:1
+    let l:file = a:1
     let isDirectory = a:2
   endif
 

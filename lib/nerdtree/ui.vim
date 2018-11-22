@@ -274,10 +274,16 @@ endfunction
 
 " FUNCTION: s:UI._indentLevelFor(line) {{{1
 function! s:UI._indentLevelFor(line)
+    if empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') && g:WebDevIconsUnicodeDecorateFolderNodes == 0)
+        let line = '  ' . a:line
+    else
+        let line = a:line
+    endif
+
     " have to do this work around because match() returns bytes, not chars
-    let numLeadBytes = match(a:line, '\M\[^ '.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.']')
+    let numLeadBytes = match(line, '\M\[^ '.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.']')
     " The next line is a backward-compatible workaround for strchars(a:line(0:numLeadBytes-1]). strchars() is in 7.3+
-    let leadChars = len(split(a:line[0:numLeadBytes-1], '\zs'))
+    let leadChars = len(split(line[0:numLeadBytes-1], '\zs'))
 
     return leadChars / s:UI.IndentWid()
 endfunction

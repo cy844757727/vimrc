@@ -199,7 +199,29 @@ let g:NERDTreeAutoDeleteBuffer=1
 let g:NERDTreeMouseMode=2
 let g:NERDTreeDirArrowExpandable = ''
 let g:NERDTreeDirArrowCollapsible = ''
+" Do not use fold decorate from webicons (use above set instead)
+let g:WebDevIconsUnicodeDecorateFolderNodes = 0
+" When g:WebDevIconsUnicodeDecorateFolderNodes set to 1: use below set
+"let g:NERDTreeDirArrowExpandable = '▸'
+"let g:NERDTreeDirArrowCollapsible = '▾'
+
+" =================================================================================
+" ===== Modify NERDtree plug: ~/.vim/lib/nerdtree/tree_file_node.vim  line:347 ====
+" ===== To reduce excess whitespace for align (file, fold) ========================
+"     if !self.path.isDirectory && (!exists('g:WebDevIconsUnicodeDecorateFolderNodes') || g:WebDevIconsUnicodeDecorateFolderNodes != 0)
+"
+" ===== Modify NERDtree plug: ~/.vim/lib/nerdtree/ui.vim  line:277 ================
+" ===== To add extra indent for normal file (cause reduce whitespace: above)=======
+"    if empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') && g:WebDevIconsUnicodeDecorateFolderNodes == 0)
+"        let line = '  ' . a:line
+"    else
+"        let line = a:line
+"    endif
+" ===== change a:line to line below ===============================================
+" =================================================================================
+
 " Add "call NERDTreeAddKey_Menu_Def()" to ~/.vim/plugin/NERD_tree
+
 function! NERDTreeAddKey_Menu_Def()
     call NERDTreeAddMenuItem({
                 \ 'text': 'Switch file (x) permission',

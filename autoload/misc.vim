@@ -160,16 +160,12 @@ endfunction
 
 "  Refresh NERTree
 function! misc#UpdateNERTreeView()
-"    let l:nrOfNerd_tree=bufwinnr('NERD_tree')
-"    if l:nrOfNerd_tree != -1
-"        let l:id=win_getid()
-"        exe l:nrOfNerd_tree . 'wincmd w'
-"        silent call nerdtree#ui_glue#invokeKeyMap('R')
-"        call win_gotoid(l:id)
-"    endif
-    if bufwinnr('NERD_tre') != -1
-        NERDTreeClose
-        call misc#ToggleNERDTree()
+    let l:nrOfNerd_tree=bufwinnr('NERD_tree')
+    if l:nrOfNerd_tree != -1
+        let l:id=win_getid()
+        exe l:nrOfNerd_tree . 'wincmd w'
+        silent call nerdtree#ui_glue#invokeKeyMap('R')
+        call win_gotoid(l:id)
     endif
 endfunction
 

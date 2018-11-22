@@ -344,7 +344,8 @@ function! s:TreeFileNode._renderToString(depth, drawText)
 
         let treeParts = repeat('  ', a:depth - 1)
 
-        if !self.path.isDirectory
+        if !self.path.isDirectory && (!exists('g:WebDevIconsUnicodeDecorateFolderNodes') || g:WebDevIconsUnicodeDecorateFolderNodes != 0)
+"        if !self.path.isDirectory
             let treeParts = treeParts . '  '
         endif
 
