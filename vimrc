@@ -99,11 +99,11 @@ command! Avdel :Async vdel -lib work -all
 "快捷键映射=====================
 " 括号引号自动补全
 inoremap ( ()<Esc>i
-inoremap ) <c-r>=ClosePair(')')<CR>
+inoremap ) <c-r>=CyClosePair(')')<CR>
 inoremap [ []<Esc>i
-inoremap ] <c-r>=ClosePair(']')<CR>
+inoremap ] <c-r>=CyClosePair(']')<CR>
 inoremap { {}<Esc>i
-inoremap } <c-r>=ClosePair('}')<CR>
+inoremap } <c-r>=CyClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
 
@@ -385,7 +385,7 @@ endfunction
 
 " ===============================
 "  )]}自动补全相关
-function! ClosePair(char)
+function! CyClosePair(char)
     if getline('.')[col('.') - 1] == a:char
         return "\<Right>"
     else

@@ -439,6 +439,9 @@ function s:WorkSpaceLoad()
         call execute(g:BMBPSign_PreLoadEventList)
     endif
 
+    set noautochdir
+    let s:projectized = 1
+
     " Empty workspace
     if exists('s:projectized')
         " Restore sign (bwipeout will clear all sign)
@@ -467,9 +470,6 @@ function s:WorkSpaceLoad()
     if filereadable(s:sessionFile)
         exe 'silent! source ' . s:sessionFile
     endif
-
-    set noautochdir
-    let s:projectized = 1
 
     " Post-load processing
     if exists('g:BMBPSign_PostLoadEventList')
@@ -577,14 +577,14 @@ function BMBPSign#SignSave(pre)
     call s:SignSave()
     let l:pre = matchstr(a:pre, '^[^.]*')
     if !empty(l:pre)
-        call writefile(readfile(s:signFile), l:pre . s:signFile)
+        call system('cp ' . s:signFile . ' ' . l:pre . s:signFile)
     endif
 endfunction
 
 function BMBPSign#SignLoad(pre)
     let l:pre = matchstr(a:pre, '^[^.]*')
     if !empty(l:pre) && filereadable(l:pre . s:signFile)
-        call writefile(readfile(l:pre . s:signFile), s:signFile)
+        call system('cp ' . l:pre . s:signFile . ' ' . s:signFile)
     endif
     if filereadable(s:signFile)
         for l:type in s:allSignType
@@ -602,16 +602,16 @@ function BMBPSign#WorkSpaceSave(pre)
     let l:pre = matchstr(a:pre, '^[^.]*')
     call s:WorkSpaceSave()
     if !empty(l:pre)
-        call writefile(readfile(s:sessionFile), l:pre . s:sessionFile)
-        call writefile(readfile(s:vimInfoFile), l:pre . s:vimInfoFile)
+        call system('cp ' . s:sessionFile . ' ' . l:pre . s:sessionFile)
+        call system('cp ' . s:vimInfoFile . ' ' . l:pre . s:vimInfoFile)
     endif
 endfunction
 
 function BMBPSign#WorkSpaceLoad(pre)
     let l:pre = matchstr(a:pre, '^[^.]*')
     if !empty(l:pre) && filereadable(l:pre . s:sessionFile)
-        call writefile(readfile(l:pre . s:sessionFile), s:sessionFile)
-        call writefile(readfile(l:pre . s:vimInfoFile), s:vimInfoFile)
+        call system('cp ' . l:pre . s:sessionFile . ' ' . s:sessionFile)
+        call system('cp ' . l:pre . s:vimInfoFile . ' ' . s:vimInfoFile)
     endif
     if filereadable(s:sessionFile)
         call s:WorkSpaceLoad()
