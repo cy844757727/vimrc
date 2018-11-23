@@ -436,6 +436,8 @@ let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
             \ 'git'      : '',
             \ 'pdf'      : ''
             \ }
+
+let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 " ===============================
 "  )]}自动补全相关
 function! CyClosePair(char)
