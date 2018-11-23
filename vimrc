@@ -199,18 +199,18 @@ let g:NERDTreeAutoDeleteBuffer=1
 let g:NERDTreeMouseMode=2
 let g:NERDTreeDirArrowExpandable = ''
 let g:NERDTreeDirArrowCollapsible = ''
-" Do not use fold decorate from webicons (use above set instead)
+" Do not use fold decoration from webicons (use above set instead)
 let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 " When g:WebDevIconsUnicodeDecorateFolderNodes set to 1: use below set
 "let g:NERDTreeDirArrowExpandable = '▸'
 "let g:NERDTreeDirArrowCollapsible = '▾'
 
 " =================================================================================
-" ===== Modify NERDtree plug: ~/.vim/lib/nerdtree/tree_file_node.vim  line:347 ====
+" ===== Modify NERDtree plugin: ~/.vim/lib/nerdtree/tree_file_node.vim  line:347 ====
 " ===== To reduce excess whitespace for align (file, fold) ========================
 "     if !self.path.isDirectory && (!exists('g:WebDevIconsUnicodeDecorateFolderNodes') || g:WebDevIconsUnicodeDecorateFolderNodes != 0)
 "
-" ===== Modify NERDtree plug: ~/.vim/lib/nerdtree/ui.vim  line:277 ================
+" ===== Modify NERDtree plugin: ~/.vim/lib/nerdtree/ui.vim  line:277 ================
 " ===== To add extra indent for normal file (cause reduce whitespace: above)=======
 "    if empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') && g:WebDevIconsUnicodeDecorateFolderNodes == 0)
 "        let line = '  ' . a:line
@@ -320,9 +320,6 @@ let g:ale_lint_on_insert_leave = 1
 let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
-
-" clear warning highlight
-hi link ALEWarning Normal
 
 " ale statusline
 function! LinterStatus() abort
@@ -491,6 +488,6 @@ endfunction
 set foldtext=CyFoldText()
 function! CyFoldText()
     let l:str = getline(v:foldstart)
-    let l:num = v:foldend - v:foldstart + 1
-    return '▶ ' . l:num . ': ' . l:str . '  '
+    let l:num = printf('%5d', v:foldend - v:foldstart + 1)
+    return '▶' . l:num . ': ' . l:str . '  '
 endfunction
