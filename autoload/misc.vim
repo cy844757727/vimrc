@@ -219,6 +219,25 @@ function! misc#HEXCovent()
     endif
 endfunction
 
+" For Handling situations without suffixes
+" WebDevIcons plugin
+function! misc#GetWebIcon(...)
+    if a:0 == 0
+        let l:file = expand('%')
+        let l:tfile = expand('%:t')
+        let l:extend = expand('%:e')
+    else
+        let l:file = a:1
+        let l:tfile = fnamemodify(a:1, ':t')
+        let l:extend = fnamemodify(a:1, ':e')
+    endif
+
+    if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
+        let l:tfile .= '.' . getbufvar(l:file, '&filetype')
+    endif
+
+    return WebDevIconsGetFileTypeSymbol(l:tfile)
+endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()

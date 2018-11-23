@@ -122,7 +122,7 @@ if !exists('g:WebDevIconsUnicodeGlyphDoubleWidth')
 endif
 
 if !exists('g:WebDevIconsNerdTreeBeforeGlyphPadding')
-  let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
+  let g:WebDevIconsNerdTreeBeforeGlyphPadding = ' '
 endif
 
 if !exists('g:WebDevIconsNerdTreeAfterGlyphPadding')
@@ -300,16 +300,6 @@ function! s:setDictionaries()
         \ 'erl'      : '',
         \ 'hrl'      : '',
         \ 'vim'      : '',
-        \ 'v'        : '',
-        \ 'vhdl'     : '',
-        \ 'vhd'      : '',
-        \ 'verilog'  : '',
-        \ 'systemverilog'  : '',
-        \ 'help'     : '',
-        \ 'sv'       : '',
-        \ 'vt'       : '',
-        \ 'vo'       : '',
-        \ 'vg'       : '',
         \ 'ai'       : '',
         \ 'psd'      : '',
         \ 'psb'      : '',
@@ -332,7 +322,7 @@ function! s:setDictionaries()
         \ 'dropbox'                          : '',
         \ '.ds_store'                        : '',
         \ '.gitconfig'                       : '',
-        \ '.gitignore'                       : '',
+        \ '.gitignore'                       : '',
         \ '.bashrc'                          : '',
         \ '.zshrc'                           : '',
         \ '.vimrc'                           : '',
@@ -347,7 +337,6 @@ function! s:setDictionaries()
         \ 'procfile'                         : '',
         \ 'dockerfile'                       : '',
         \ 'docker-compose.yml'               : '',
-        \ 'readme'                           : '',
         \}
 
   let s:file_node_pattern_matches = {
@@ -630,26 +619,17 @@ endfunction
 " a:1 (bufferName), a:2 (isDirectory)
 " scope: public
 function! WebDevIconsGetFileTypeSymbol(...)
-  let isDirectory = 0
   if a:0 == 0
-    let l:file = expand('%')
-  elseif a:0 == 1
-    let l:file = a:1
+    let fileNodeExtension = expand('%:e')
+    let fileNode = expand('%:t')
+    let isDirectory = 0
   else
-    let l:file = a:1
-    let isDirectory = a:2
-  endif
-
-  let fileNodeExtension = fnamemodify(l:file, ':e')
-  let fileNode = fnamemodify(l:file, ':t')
-
-  if bufexists(l:file)
-    let l:type = getbufvar(l:file, '&filetype')
-
-    if l:type == 'help'
-      let fileNodeExtension = 'help'
-    elseif empty(fileNodeExtension)
-      let fileNodeExtension = l:type
+    let fileNodeExtension = fnamemodify(a:1, ':e')
+    let fileNode = fnamemodify(a:1, ':t')
+    if a:0 > 1
+      let isDirectory = a:2
+    else
+      let isDirectory = 0
     endif
   endif
 

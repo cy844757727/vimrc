@@ -68,7 +68,7 @@ set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline set
 set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
 set statusline+=%{LinterStatus()}%3(\ %)
-set statusline+=%{WebDevIconsGetFileTypeSymbol(expand('%'))}\ %Y
+set statusline+=%{misc#GetWebIcon(expand('%'))}\ %Y
 set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %3(\ %)
 set statusline+=%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
@@ -402,6 +402,40 @@ function! PostLoadWorkSpace_TabVar()
     endif
 endfunction
 
+" === webdevicons.vim ==================
+" Extended icon
+let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
+            \ 'v'        : '',
+            \ 'vhdl'     : '',
+            \ 'vhd'      : '',
+            \ 'verilog'  : '',
+            \ 'systemverilog'  : '',
+            \ 'help'     : '',
+            \ 'sv'       : '',
+            \ 'vt'       : '',
+            \ 'vo'       : '',
+            \ 'vg'       : '',
+            \ 'mp3'      : '',
+            \ 'aac'      : '',
+            \ 'flac'     : '',
+            \ 'ape'      : '',
+            \ 'ogg'      : '',
+            \ 'jar'      : '',
+            \ 'zip'      : '',
+            \ 'rar'      : '',
+            \ 'gzip'     : '',
+            \ 'gz'       : '',
+            \ '7z'       : '',
+            \ 'tar'      : '',
+            \ 'iso'      : '',
+            \ 'mp4'      : '',
+            \ 'avi'      : '',
+            \ 'mkv'      : '',
+            \ 'xls'      : '',
+            \ 'xlsx'     : '',
+            \ 'git'      : '',
+            \ 'pdf'      : ''
+            \ }
 " ===============================
 "  )]}自动补全相关
 function! CyClosePair(char)
@@ -470,18 +504,14 @@ function! CYMyTabLabel(n)
     " Append the buffer name
     let l:bufname = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
 
-    let l:type = getbufvar(l:bufname, '&filetype')
-
     " Append the glyph
     if l:bufname =~ '^\.Git_'
         let l:bufname = 'Git-Manager'
         let l:glyph = ''
-    elseif l:type == 'help'
-        let l:glyph = ''
     else
-        let l:glyph = WebDevIconsGetFileTypeSymbol(l:bufname)
+        let l:glyph = misc#GetWebIcon(l:bufname)
     endif
- 
+
     return l:glyph . ' ' . l:bufname . ' ' . l:label
 endfunction
 
@@ -491,3 +521,4 @@ function! CyFoldText()
     let l:num = printf('%5d', v:foldend - v:foldstart + 1)
     return '▶' . l:num . ': ' . l:str . '  '
 endfunction
+
