@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " === Basic highlight ===
-hi Normal ctermfg=230 guifg=#C5C5A9 guibg=#1E1E1E
+hi Normal ctermfg=230 guifg=#CCCCB0 guibg=#1E1E1E
 
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#EEEED0 guibg=#B91919 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#EEEED0 guibg=#B91919
@@ -43,7 +43,7 @@ hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#BBBBA0 guibg=#333333
 hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#192920
 hi DiffChange ctermfg=230 ctermbg=24 guifg=NONE guibg=#20304F
 hi DiffDelete ctermfg=230 ctermbg=95 guifg=#4F2525 guibg=#4F2525
-hi DiffText ctermfg=230 ctermbg=239 cterm=NONE guifg=NONE guibg=#333333
+hi DiffText ctermfg=230 ctermbg=239 cterm=NONE guifg=NONE guibg=#161515
 
 " === Popup menu ui ===
 hi PMenu ctermfg=253 ctermbg=237 guifg=#CCCCB0 guibg=#333333
