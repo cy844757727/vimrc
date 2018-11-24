@@ -10,23 +10,32 @@ let loaded_A_BMBPSign = 1
 " sign definition
 hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#D73130
+" Sign name rule: 'BMBPSign' . type
 sign define BMBPSignBook text=🚩 texthl=NormalSign
 sign define BMBPSignTodo text=🔖 texthl=NormalSign
 sign define BMBPSignBreak text=💊 texthl=BreakPoint
+sign define BMBPSignTBreak text=💊 texthl=BreakPoint
 
 let s:newSignId = 0
 let s:signFile = '.signrecord'
 
-" Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
-let s:allSignType = ['book', 'todo', 'break', 'tbreak']
-
 " SignVec Record
-" 'type': ['signDef', [{'id': ..., 'file': ..., 'attr': ...}]]
+" Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
+" 'type': [{'id': ..., 'file': ..., 'attr': ...}]]
 let s:signVec = {
-            \ 'book': ['BMBPSignBook', []],
-            \ 'todo': ['BMBPSignTodo', []],
-            \ 'break': ['BMBPSignBreak', []],
-            \ 'tbreak': ['BMBPSignBreak', []]
+            \ 'book':   [],
+            \ 'todo':   [],
+            \ 'break':  [],
+            \ 'tbreak': []
+            \ }
+
+" Sign type binding
+" 'type': 'signDef'
+let s:signDef = {
+            \ 'book':   'BMBPSignBook',
+            \ 'todo':   'BMBPSignTodo',
+            \ 'break':  'BMBPSignBreak',
+            \ 'tbreak': 'BMBPSignTBreak'
             \ }
 
 " Workspace & project related
@@ -42,8 +51,8 @@ let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 " Toggle sign in the specified line of the specified file
 " Type: Sign type: book, todo, break, tbreak
 function s:SignToggle(file, line, type, attr)
-    let l:def = s:signVec[a:type][0]
-    let l:vec = s:signVec[a:type][-1]
+    let l:def = s:signDef[a:type]
+    let l:vec = s:signVec[a:type]
 
     let l:signPlace = execute('sign place file=' . a:file)
     let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
@@ -67,7 +76,7 @@ endfunction
 " BookMark jump
 " Action: next, previous
 function s:Signjump(type, action)
-    let l:vec = s:signVec[a:type][-1]
+    let l:vec = s:signVec[a:type]
     if !empty(l:vec)
         if a:action == 'next'
             " Jump next
@@ -82,7 +91,7 @@ function s:Signjump(type, action)
         catch
             " For invalid sign
             call remove(l:vec, -1)
-            call s:Signjump(a:action)
+            call s:Signjump(a:type, a:action)
         endtry
     endif
 endfunction
@@ -90,12 +99,12 @@ endfunction
 " clear sign of a type
 function s:SignClear(type)
     " Unset sign
-    for l:sign in s:signVec[a:type][-1]
+    for l:sign in s:signVec[a:type]
         exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
     endfor
 
     " Empty vec
-    let s:signVec[a:type][-1] = []
+    let s:signVec[a:type] = []
 endfunction
 
 " Load & set sign from a signFile
@@ -136,7 +145,7 @@ function s:SignSave()
 
     " Get row information & set l:content
     for [l:type, l:vec] in items(s:signVec)
-        for l:sign in l:vec[-1]
+        for l:sign in l:vec
             try
                 let l:line = l:signs[l:sign.id]
             catch
@@ -189,7 +198,7 @@ function s:SignAddAttr(file, line)
     endif
 
     " Add attr to a sign
-    for l:sign in s:signVec[l:target.type][-1]
+    for l:sign in s:signVec[l:target.type]
         if l:target.id == l:sign.id
             let l:sign.attr = input("Input attr: ")
             break
@@ -252,8 +261,8 @@ function s:ProjectSwitch(sel)
         call s:SignSave()
 
         " Empty signVec
-        for l:value in values(s:signVec)
-            let l:value[-1] = []
+        for l:vec in values(s:signVec)
+            let l:vec = []
         endfor
 
         exe 'silent cd ' . l:path
@@ -449,8 +458,8 @@ function s:WorkSpaceLoad()
         call s:SignSave()
 
         " Empty signVec
-        for l:value in values(s:signVec)
-            let l:value[-1] = []
+        for l:vec in values(s:signVec)
+            let l:vec = []
         endfor
 
         %bwipeout
@@ -486,7 +495,7 @@ function s:GetQfList(type)
     let l:qf = []
     let l:signPlace = execute('sign place')
 
-    for l:sign in s:signVec[a:type][-1]
+    for l:sign in s:signVec[a:type]
         let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  ')
         if !empty(l:line)
             let l:text = system("sed -n '" . l:line[1] . "p' " . l:sign.file)[:-2]
@@ -587,7 +596,7 @@ function BMBPSign#SignLoad(pre)
         call system('cp ' . l:pre . s:signFile . ' ' . s:signFile)
     endif
     if filereadable(s:signFile)
-        for l:type in s:allSignType
+        for l:type in keys(s:signVec)
             call s:SignClear(l:type)
         endfor
         call s:SignLoad()
@@ -640,7 +649,7 @@ function BMBPSign#SetQfList(type, title)
 endfunction
 
 function BMBPSign#SignTypeList()
-    return s:allSignType
+    return keys(s:signVec)
 endfunction
 
 " AutoCmd for VimEnter event
@@ -648,7 +657,7 @@ endfunction
 function BMBPSign#VimEnterEvent()
     " Stop load when signs already exists
     for l:vec in values(s:signVec)
-        if !empty(l:vec[-1])
+        if !empty(l:vec)
             return
         endif
     endfor
@@ -677,7 +686,7 @@ function BMBPSign#SignRecord(type)
 
     " Get row information & set l:signRecord
     for l:type in split(a:type, '\s\+')
-        for l:sign in s:signVec[l:type][-1]
+        for l:sign in s:signVec[l:type]
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  ')
             if !empty(l:line)
                 let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1] . ' ' . l:sign.attr]

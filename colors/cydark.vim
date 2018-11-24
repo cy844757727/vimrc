@@ -47,7 +47,7 @@ hi DiffText ctermfg=230 ctermbg=239 cterm=NONE guifg=NONE guibg=#333333
 
 " === Popup menu ui ===
 hi PMenu ctermfg=253 ctermbg=237 guifg=#CCCCB0 guibg=#333333
-hi PMenuSel ctermfg=232 ctermbg=250 cterm=bold guifg=#1E1E1E guibg=#BBBBA0 "#C0C0C0
+hi PMenuSel ctermfg=232 ctermbg=250 cterm=bold guifg=#1E1E1E guibg=#BBBBA0
 hi PMenuSbar ctermfg=NONE ctermbg=239 guifg=NONE guibg=#333333
 hi PMenuThumb ctermfg=NONE ctermbg=250 guifg=NONE guibg=#BBBBA0
 
@@ -57,7 +57,7 @@ hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515
 
 " === Language highlight ===
 hi PreProc ctermfg=176 guifg=#C980E0
-hi Type ctermfg=75 cterm=NONE guifg=#5FAEEC "#5EAFFF gui=NONE
+hi Type ctermfg=75 cterm=NONE guifg=#5FAEEC
 hi Number ctermfg=208 guifg=#FE8D00
 hi Identifier ctermfg=75 cterm=NONE guifg=#5EAFFF gui=NONE
 hi Constant ctermfg=208 guifg=#FE8D00
@@ -68,7 +68,7 @@ hi String ctermfg=215 guifg=#FEB862
 hi Character ctermfg=215 guifg=#FEB862
 hi Operator ctermfg=230 guifg=#FFFFDD
 
-" BMBPSign
+" === BMBPSign.vim ===
 hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#D73130
 
