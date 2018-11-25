@@ -9,7 +9,7 @@ let g:loaded_A_Misc = 1
 let s:tempPath = '/tmp/'
 
 "	Compile c/cpp/verilog, Run script language ...
-function! misc#CompileRun()
+function! misc#CompileRun(...)
     wall
     if &filetype == 'nerdtree'
         silent call nerdtree#ui_glue#invokeKeyMap('R')
@@ -23,7 +23,7 @@ function! misc#CompileRun()
     elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'
         " script language
         let l:cmd = matchstr(getline(1), '\(/\(env\s\+\)\?\)\zs[^/]*$')
-        let l:breakpoint = BMBPSign#SignRecord('break tbreak')
+        let l:breakpoint = BMBPSign#SignRecord('break', 'tbreak')
 
         if empty(l:breakpoint)
             let l:cmd .= ' ' . expand('%') . "\n"
@@ -391,11 +391,11 @@ endfunction
 function! misc#ToggleQuickFix(...)
     let l:type = a:0 == 0 ? 'self' : a:1
     if l:type == 'book'
-        call BMBPSign#SetQfList('book', 'BookMark')
+        call BMBPSign#SetQfList('BookMark', 'book')
     elseif l:type == 'break'
-        call BMBPSign#SetQfList('break tbreak', 'BreakPoint')
+        call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
     elseif l:type == 'todo'
-        call BMBPSign#SetQfList('todo', 'TodoList')
+        call BMBPSign#SetQfList('TodoList', 'todo')
     elseif match(split(execute('tabs'), 'Tab \S\+ \d\+')[tabpagenr()], '\[Quickfix \S\+\]') != -1
         cclose
         return

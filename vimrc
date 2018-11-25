@@ -174,7 +174,7 @@ map! <silent> <f5> <Esc><f5>
 " 断点 BMBPSign.vim: breakpoint
 noremap  <silent> <f6> <Esc>:call BMBPSign#SignToggle('break')<CR>
 noremap  <silent> <C-f6> <Esc>:call BMBPSign#SignToggle('tbreak')<CR>
-noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break tbreak')<CR>
+noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break', 'tbreak')<CR>
 map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim: bookmark

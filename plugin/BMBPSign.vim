@@ -30,18 +30,18 @@ augroup BMBPSign
 augroup END
 
 " sign command
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSignTypeFile :call BMBPSign#SignClear('<args>')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#SignToggle('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile SSignFIle :call BMBPSign#SignSave('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile LSignFIle :call BMBPSign#SignLoad('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSignTpye :call BMBPSign#SignJump('<args>', 'next')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSignType :call BMBPSign#SignJump('<args>', 'previous')
+com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSign :call BMBPSign#SignClear(<f-args>)
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<q-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile SSign :call BMBPSign#SignSave(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile LSign :call BMBPSign#SignLoad(<f-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump(<q-args>, 'next')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump(<q-args>, 'previous')
 com! -nargs=0 ASignAttr :call BMBPSign#SignAddAttr()
 
 " workspace command
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
 
 " project command
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
