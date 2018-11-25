@@ -2,10 +2,10 @@
 " Name: git plugin : tabpage manager
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if exists('loaded_A_GIT_Manager')
+if exists('g:loaded_A_GIT_Manager') || !executable('git')
   finish
 endif
-let loaded_A_GIT_Manager = 1
+let g:loaded_A_GIT_Manager = 1
 
 function! git#Add_Rm_Mv(arg, flag)
     let l:op = a:flag == 0 ? 'add ' :

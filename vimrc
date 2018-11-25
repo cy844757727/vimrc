@@ -65,6 +65,9 @@ set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
+" TabLine & foldtext
+set tabline=%!misc#TabLine()
+set foldtext=misc#FoldText()
 " Statusline set
 set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
 set statusline+=%{LinterStatus()}%3(\ %)
@@ -446,81 +449,5 @@ function! CyClosePair(char)
     else
         return a:char
     endif
-endfunction
-
-" Customize tabline
-set tabline=%!CYMyTabLine()
-function! CYMyTabLine()
-    let s = ''
-    for i in range(tabpagenr('$'))
-        " select the highlighting
-        if i + 1 == tabpagenr()
-            let s .= '%#TabLineSel#'
-        else
-            let s .= '%#TabLine#'
-        endif
-
-        " set the tab page number (for mouse clicks)
-        let s .= '%' . (i + 1) . 'T'
-
-        " the label is made by MyTabLabel()
-        let s .= ' %{CYMyTabLabel(' . (i + 1) . ')} '
-
-        " Separator
-        if i + 1 != tabpagenr() && i + 2 != tabpagenr() && i + 1 != tabpagenr('$')
-            let s .= '%#TabLineSeparator#│'
-        else
-            let s .= ' '
-        endif
-    endfor
-
-    " after the last tab fill with TabLineFill and reset tab page nr
-    let s .= '%#TabLineFill#%T'
-
-    " right-align the label to close the current tab page
-    if tabpagenr('$') > 1
-        let s .= '%=%#TabLine#%999X ✘ '
-    endif
-
-    return s
-endfunction
-
-function! CYMyTabLabel(n)
-    let l:buflist = tabpagebuflist(a:n)
-    let l:winnr = tabpagewinnr(a:n) - 1
-    " Extend buflist
-    let l:buflist = l:buflist + l:buflist[0:l:winnr]
-
-    " Display filename which buftype is empty
-    while !empty(getbufvar(l:buflist[l:winnr], '&buftype')) && l:winnr < len(l:buflist) - 1
-        let l:winnr += 1
-    endwhile
-
-    " Add a flag if current buf is modified
-    if getbufvar(l:buflist[l:winnr], '&modified')
-        let l:label = ''
-    else
-        let l:label = ' '
-    endif
-
-    " Append the buffer name
-    let l:bufname = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
-
-    " Append the glyph
-    if l:bufname =~ '^\.Git_'
-        let l:bufname = 'Git-Manager'
-        let l:glyph = ''
-    else
-        let l:glyph = misc#GetWebIcon(l:bufname)
-    endif
-
-    return l:glyph . ' ' . l:bufname . ' ' . l:label
-endfunction
-
-set foldtext=CyFoldText()
-function! CyFoldText()
-    let l:str = getline(v:foldstart)
-    let l:num = printf('%5d', v:foldend - v:foldstart + 1)
-    return '▶' . l:num . ': ' . l:str . '  '
 endfunction
 

@@ -18,13 +18,10 @@
 "    g:BMBPSign_PostLoadEventList
 "
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-
-let s:home = system('echo ~')[:-2]
-if !exists('g:BMBPSign_ProjectType')
-    let g:BMBPSign_ProjectType = {'default': s:home . '/Documents'}
-else
-    call map(g:BMBPSign_ProjectType, "v:val =~ '^\\~' ? s:home . strpart(v:val, 1) : v:val")
+if exists('g:loaded_BMBPSign') || !has('signs')
+    finish
 endif
+let g:loaded_BMBPSign = 1
 
 augroup BMBPSign
     autocmd!
@@ -59,12 +56,18 @@ function! BMBPSign_CompleteProject(L, C, P)
     endif
 endfunction
 
+if has('unix') || has('mac')
+    let s:dot = '.'
+else
+    let s:dot = ''
+endif
+
 function! BMBPSign_CompleteWorkFile(L, C, P)
-    return substitute(glob('*.session'), '\.\w*', '', 'g')
+    return substitute(glob('*' . s:dot . 'session'), '\.\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignFile(L, C, P)
-    return substitute(glob('*.signrecord'), '\.\w*', '', 'g')
+    return substitute(glob('*' . s:dot . 'signrecord'), '\.\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignType(L, C, P)
@@ -72,7 +75,7 @@ function! BMBPSign_CompleteSignType(L, C, P)
 endfunction
 
 function! BMBPSign_CompleteSignTypeFile(L, C, P)
-    return substitute(glob('*.signrecord'), '\.\w*', '', 'g') .
+    return substitute(glob('*' . s:dot . 'signrecord'), '\.\w*', '', 'g') .
                 \ "\n|\n" .
                 \ join(BMBPSign#SignTypeList(), "\n")
 endfunction
