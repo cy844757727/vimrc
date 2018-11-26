@@ -6,7 +6,6 @@ if exists('g:loaded_A_Misc')
   finish
 endif
 let g:loaded_A_Misc = 1
-let s:tempPath = '/tmp/'
 
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun(...)
@@ -20,34 +19,51 @@ function! misc#CompileRun(...)
         echo 'Tagbar: Refresh Done (.tags file)!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
-    elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$' && getline(1) =~ '^#!'
+    elseif &filetype =~ '^\(sh\|python\|perl\|tcl\)$'
         " script language
-        let l:cmd = matchstr(getline(1), '\(/\(env\s\+\)\?\)\zs[^/]*$')
+        let l:lineOne = getline(1)
+        let l:file = expand('%')
         let l:breakpoint = BMBPSign#SignRecord('break', 'tbreak')
 
         if empty(l:breakpoint)
-            let l:cmd .= ' ' . expand('%') . "\n"
-        elseif l:cmd =~ '^bash'
-            call writefile(l:breakpoint, s:tempPath . '.breakpoint')
-            let l:cmd = 'bashdb -x ' . s:tempPath . '.breakpoint ' . expand('%') . "\n"
+            if l:lineOne =~ '^#!'
+                let l:cmd = matchstr(l:lineOne, '\(/\(env\s\+\)\?\)\zs[^/]*$') . ' ' . l:file
+            else
+                let l:cmd = &filetype . ' ' . l:file
+            endif
+
+            let l:bufnr = misc#ToggleEmbeddedTerminal('on')
+            call term_sendkeys(l:bufnr, "clear\n" . l:cmd . "\n")
+            return
+        elseif l:lineOne =~ 'bash'
+            let l:tempFile = tempname()
+            call writefile(l:breakpoint, l:tempFile)
+            let l:cmd = 'bashdb -x ' . l:tempFile . ' ' . l:file
+            let l:prompt = 'bashdb<\d\+>'
+            let l:re = '(\(/\S\+\):\(\d\+\))'
         elseif &filetype == 'python'
+            let l:cmd = l:lineOne =~ 'python3' ? 'python3' : 'python'
             let l:pdb = executable('ipdb') ? ' -m ipdb ' : ' -m pdb '
-            let l:cmd .= l:pdb . expand('%') . "\n" . join(l:breakpoint, ";;") . "\n"
+            let l:cmd .= l:pdb . l:file
+            let l:args = join(l:breakpoint, ';;')
+            let l:prompt = executable('ipdb') ? 'ipdb>' : '(Pdb)'
+            let l:re = executable('ipdb') ? '\(/[/a-zA-Z0-9_.]\+\).*(\(\d\+\))' : '> \(\S\+\)(\(\d\+\))'
         elseif &filetype == 'perl'
-            let l:cmd .= ' -d ' . expand('%') . "\n" .
-                        \ "= break b\n" .
+            let l:cmd = 'perl -d ' . l:file
+            let l:args =  "= break b\n" .
                         \ join(map(l:breakpoint, "substitute(v:val,'\\S\\+:','','')"), "\n") .
                         \ "\n=\n"
-            "            "= break b\nsource .breakpoint\n" other way but not
+            "            "= break b\nsource .breakpoint" other way but not
             "            work, confused
             "            ====================================================
+            return
         else
-            let l:cmd .= ' ' . expand('%') . "\n"
+            return
         endi
 
-        " Display & switch to terminal & run/debug
-        let l:bufnr = misc#ToggleEmbeddedTerminal('on')
-        call term_sendkeys(l:bufnr, "clear\n" . l:cmd)
+        " Start to debug
+        let l:args = exists('l:args') ? l:args : ''
+        call dbg#start(l:file, l:cmd, l:args, l:prompt, l:re)
     elseif filereadable('makefile') || filereadable('Makefile')
         AsyncRun make
     elseif &filetype == 'c'
@@ -70,8 +86,9 @@ function! misc#Debug(target)
     tabnew
     let l:breakpoint = BMBPSign#SignRecord('break tbreak')
     if !empty(l:breakpoint)
-        call writefile(l:breakpoint, s:tempPath . '.breakpoint')
-        exe 'Termdebug -x ' . s:tempPath . '.breakpoint ' . l:target
+        let l:tempFile = tempname()
+        call writefile(l:breakpoint, l:tempFile)
+        exe 'Termdebug -x ' . l:tempFile . l:target
     else
         exe 'Termdebug ' . l:target
     endif
@@ -300,6 +317,9 @@ function! misc#TabLabel(n)
     if l:bufname =~ '^\.Git_'
         let l:bufname = 'Git-Manager'
         let l:glyph = ''
+    elseif !empty(gettabvar(a:n, 'dbgWinId'))
+        let l:bufname = '-- Debug --'
+        let l:glyph = ''
     else
         let l:glyph = misc#GetWebIcon(l:bufname)
     endif

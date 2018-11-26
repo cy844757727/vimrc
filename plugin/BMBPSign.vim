@@ -56,18 +56,12 @@ function! BMBPSign_CompleteProject(L, C, P)
     endif
 endfunction
 
-if has('unix') || has('mac')
-    let s:dot = '.'
-else
-    let s:dot = ''
-endif
-
 function! BMBPSign_CompleteWorkFile(L, C, P)
-    return substitute(glob('*' . s:dot . 'session'), '\.\w*', '', 'g')
+    return substitute(glob('*session'), '[_.]\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignFile(L, C, P)
-    return substitute(glob('*' . s:dot . 'signrecord'), '\.\w*', '', 'g')
+    return substitute(glob('*signrecord'), '[_.]\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignType(L, C, P)
@@ -75,7 +69,7 @@ function! BMBPSign_CompleteSignType(L, C, P)
 endfunction
 
 function! BMBPSign_CompleteSignTypeFile(L, C, P)
-    return substitute(glob('*' . s:dot . 'signrecord'), '\.\w*', '', 'g') .
+    return substitute(glob('*signrecord'), '[_.]\w*', '', 'g') .
                 \ "\n|\n" .
                 \ join(BMBPSign#SignTypeList(), "\n")
 endfunction
