@@ -30,10 +30,10 @@ augroup BMBPSign
 augroup END
 
 " sign command
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSign :call BMBPSign#SignClear(<f-args>)
+com! -nargs=+ -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
 com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<q-args>)
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile SSign :call BMBPSign#SignSave(<f-args>)
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile LSign :call BMBPSign#SignLoad(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSign#SignSave(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump(<q-args>, 'next')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump(<q-args>, 'previous')
 com! -nargs=0 ASignAttr :call BMBPSign#SignAddAttr()
@@ -47,6 +47,11 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSi
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
 
+function! BMBPSign_Status()
+    return BMBPSign#ProjectStatus()
+endfunction
+
+" Completion function
 function! BMBPSign_CompleteProject(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P)))
     if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
@@ -68,12 +73,9 @@ function! BMBPSign_CompleteSignType(L, C, P)
     return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
-function! BMBPSign_CompleteSignTypeFile(L, C, P)
-    return substitute(glob('*signrecord'), '[_.]\w*', '', 'g') .
+function! BMBPSign_CompleteSignFileType(L, C, P)
+    return BMBPSign_CompleteSignFile(a:L, a:C, a:P) .
                 \ "\n|\n" .
-                \ join(BMBPSign#SignTypeList(), "\n")
+                \ BMBPSign_CompleteSignType(a:L, a:C, a:P)
 endfunction
 
-function! BMBPSign_Status()
-    return BMBPSign#ProjectStatus()
-endfunction
