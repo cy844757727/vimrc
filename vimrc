@@ -65,8 +65,11 @@ set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
+" TabLine & foldtext
+set tabline=%!misc#TabLine()
+set foldtext=misc#FoldText()
 " Statusline set
-set statusline=\ %{BMBPSign_Status()?'':''}\ %f%m%r%h%w%<%=
+set statusline=\ %{misc#StatuslineIcon()}\ %f%m%r%h%w%<%=
 set statusline+=%{LinterStatus()}%3(\ %)
 set statusline+=%{misc#GetWebIcon(expand('%'))}\ %Y
 set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %3(\ %)
@@ -89,9 +92,7 @@ command! -range TP :<line1>tabprevious
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
-command! -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
-command! -nargs=+ -complete=file TermH :call term_start("<args>", {'hidden': 1, 'term_kill': 'kill', 'term_finish': 'close', 'norestore': 1})
-command! -nargs=* -complete=file Debug :call misc#Debug("<args>")
+command! -nargs=+ -complete=file Debug :call async#GdbStart(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
@@ -156,8 +157,10 @@ noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
 noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
-noremap <silent> <C-x> :call misc#ToggleEmbeddedTerminal()<CR>
-map! <C-x> <Esc><C-x>
+noremap <silent> <f12> :call async#ToggleTerminal('toggle', fnamemodify(&shell, ':t'))<CR>
+noremap <silent> <C-f12> :call async#ToggleTerminal('toggle', 'ipython')<CR>
+map! <f12> <Esc><f12>
+map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <f9> <Esc><f9>
@@ -167,21 +170,23 @@ map! <S-f10> <ESC><S-f10>
 map! <C-S-f10> <ESC><C-S-f10>
 " 编译执行
 noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
+noremap  <silent> <C-f5> <Esc>:call misc#CompileRun('r')<CR>
 map! <silent> <f5> <Esc><f5>
+map! <silent> <C-f5> <Esc><C-f5>
 " 断点 BMBPSign.vim: breakpoint
 noremap  <silent> <f6> <Esc>:call BMBPSign#SignToggle('break')<CR>
 noremap  <silent> <C-f6> <Esc>:call BMBPSign#SignToggle('tbreak')<CR>
-noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break tbreak')<CR>
+noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break', 'tbreak')<CR>
 map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim: bookmark
-noremap <silent> <f12> <Esc>:call BMBPSign#SignToggle('book')<CR>
-noremap <silent> <C-f12> <Esc>:call BMBPSign#SignToggle('todo')<CR>
+noremap <silent> <C-m> <Esc>:call BMBPSign#SignToggle('book')<CR>
+noremap <silent> <S-m> <Esc>:call BMBPSign#SignToggle('todo')<CR>
 noremap <silent> <C-Down> <Esc>:call BMBPSign#SignJump('book', 'next')<CR>
 noremap <silent> <C-Up> <Esc>:call BMBPSign#SignJump('book', 'previous')<CR>
 noremap <silent> \m <Esc>:call BMBPSign#SignClear('book')<CR>
-map! <f12> <Esc><f12>
-map! <C-f12> <Esc><C-f12>
+"map! <C-m> <Esc><C-m>
+"map! <S-m> <Esc><S-m>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
@@ -248,7 +253,7 @@ function! SwitchXPermission()
 endfunction
 
 function! DebugFile(node)
-    call misc#Debug(a:node.path.str())
+    call async#GdbStart(a:node.path.str, BMBPSign#SignRecord('break', 'tbreak'))
 endfunction
 
 " == TagBar Configure ==
@@ -446,81 +451,5 @@ function! CyClosePair(char)
     else
         return a:char
     endif
-endfunction
-
-" Customize tabline
-set tabline=%!CYMyTabLine()
-function! CYMyTabLine()
-    let s = ''
-    for i in range(tabpagenr('$'))
-        " select the highlighting
-        if i + 1 == tabpagenr()
-            let s .= '%#TabLineSel#'
-        else
-            let s .= '%#TabLine#'
-        endif
-
-        " set the tab page number (for mouse clicks)
-        let s .= '%' . (i + 1) . 'T'
-
-        " the label is made by MyTabLabel()
-        let s .= ' %{CYMyTabLabel(' . (i + 1) . ')} '
-
-        " Separator
-        if i + 1 != tabpagenr() && i + 2 != tabpagenr() && i + 1 != tabpagenr('$')
-            let s .= '%#TabLineSeparator#│'
-        else
-            let s .= ' '
-        endif
-    endfor
-
-    " after the last tab fill with TabLineFill and reset tab page nr
-    let s .= '%#TabLineFill#%T'
-
-    " right-align the label to close the current tab page
-    if tabpagenr('$') > 1
-        let s .= '%=%#TabLine#%999X ✘ '
-    endif
-
-    return s
-endfunction
-
-function! CYMyTabLabel(n)
-    let l:buflist = tabpagebuflist(a:n)
-    let l:winnr = tabpagewinnr(a:n) - 1
-    " Extend buflist
-    let l:buflist = l:buflist + l:buflist[0:l:winnr]
-
-    " Display filename which buftype is empty
-    while !empty(getbufvar(l:buflist[l:winnr], '&buftype')) && l:winnr < len(l:buflist) - 1
-        let l:winnr += 1
-    endwhile
-
-    " Add a flag if current buf is modified
-    if getbufvar(l:buflist[l:winnr], '&modified')
-        let l:label = ''
-    else
-        let l:label = ' '
-    endif
-
-    " Append the buffer name
-    let l:bufname = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
-
-    " Append the glyph
-    if l:bufname =~ '^\.Git_'
-        let l:bufname = 'Git-Manager'
-        let l:glyph = ''
-    else
-        let l:glyph = misc#GetWebIcon(l:bufname)
-    endif
-
-    return l:glyph . ' ' . l:bufname . ' ' . l:label
-endfunction
-
-set foldtext=CyFoldText()
-function! CyFoldText()
-    let l:str = getline(v:foldstart)
-    let l:num = printf('%5d', v:foldend - v:foldstart + 1)
-    return '▶' . l:num . ': ' . l:str . '  '
 endfunction
 

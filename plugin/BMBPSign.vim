@@ -18,13 +18,10 @@
 "    g:BMBPSign_PostLoadEventList
 "
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-
-let s:home = system('echo ~')[:-2]
-if !exists('g:BMBPSign_ProjectType')
-    let g:BMBPSign_ProjectType = {'default': s:home . '/Documents'}
-else
-    call map(g:BMBPSign_ProjectType, "v:val =~ '^\\~' ? s:home . strpart(v:val, 1) : v:val")
+if exists('g:loaded_BMBPSign') || !has('signs')
+    finish
 endif
+let g:loaded_BMBPSign = 1
 
 augroup BMBPSign
     autocmd!
@@ -33,23 +30,28 @@ augroup BMBPSign
 augroup END
 
 " sign command
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignTypeFile CSignTypeFile :call BMBPSign#SignClear('<args>')
-com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSignType :call BMBPSign#SignToggle('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile SSignFIle :call BMBPSign#SignSave('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignFile LSignFIle :call BMBPSign#SignLoad('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSignTpye :call BMBPSign#SignJump('<args>', 'next')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSignType :call BMBPSign#SignJump('<args>', 'previous')
+com! -nargs=+ -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
+com! -nargs=1 -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<q-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSign#SignSave(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump(<q-args>, 'next')
+com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump(<q-args>, 'previous')
 com! -nargs=0 ASignAttr :call BMBPSign#SignAddAttr()
 
 " workspace command
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear('<args>')
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad('<args>')
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
 
 " project command
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
 
+function! BMBPSign_Status()
+    return BMBPSign#ProjectStatus()
+endfunction
+
+" Completion function
 function! BMBPSign_CompleteProject(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P)))
     if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
@@ -60,23 +62,20 @@ function! BMBPSign_CompleteProject(L, C, P)
 endfunction
 
 function! BMBPSign_CompleteWorkFile(L, C, P)
-    return substitute(glob('*.session'), '\.\w*', '', 'g')
+    return substitute(glob('*session'), '[_.]\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignFile(L, C, P)
-    return substitute(glob('*.signrecord'), '\.\w*', '', 'g')
+    return substitute(glob('*signrecord'), '[_.]\w*', '', 'g')
 endfunction
 
 function! BMBPSign_CompleteSignType(L, C, P)
     return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
-function! BMBPSign_CompleteSignTypeFile(L, C, P)
-    return substitute(glob('*.signrecord'), '\.\w*', '', 'g') .
+function! BMBPSign_CompleteSignFileType(L, C, P)
+    return BMBPSign_CompleteSignFile(a:L, a:C, a:P) .
                 \ "\n|\n" .
-                \ join(BMBPSign#SignTypeList(), "\n")
+                \ BMBPSign_CompleteSignType(a:L, a:C, a:P)
 endfunction
 
-function! BMBPSign_Status()
-    return BMBPSign#ProjectStatus()
-endfunction

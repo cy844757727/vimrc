@@ -2,10 +2,10 @@
 " Author: CY <844757727@qq.com>
 " Description: git plugin : tabpage manager
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-"if exists('loaded_GIT_Manager')
-"  finish
-"endif
-"let loaded_GIT_Manager = 1
+if exists('g:loaded_GIT_Manager') || !executable('git')
+  finish
+endif
+let g:loaded_GIT_Manager = 1
 
 command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
 command! Ginit :echo system('git init')[:-2]
