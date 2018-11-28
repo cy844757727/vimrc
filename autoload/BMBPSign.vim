@@ -509,7 +509,10 @@ function s:WorkSpaceSave(pre)
     let l:vimInfoFile = a:pre . s:vimInfoFile
 
     " Save session & viminfo
+    let l:temp = &sessionoptions
+    set sessionoptions=blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal
     exe 'mksession! ' . l:sessionFile
+    exe 'set sessionoptions=' . l:temp
     let l:temp = &viminfo
     set viminfo='50,!,:100,/100,@100
     exe 'wviminfo! ' . l:vimInfoFile

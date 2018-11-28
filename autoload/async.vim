@@ -61,8 +61,8 @@ function async#DbgScript(...)
                 \ 'term_rows': 15,
                 \ 'out_cb': function('s:DbgMsgHandle'),
                 \ 'exit_cb': function('s:DbgOnExit'),
-                \ 'term_kill': 'q',
                 \ 'term_finish': 'close', 
+                \ 'term_kill': 'kill',
                 \ 'norestore': 1,
                 \ 'curwin': 1
                 \ })
@@ -72,6 +72,7 @@ function async#DbgScript(...)
         call term_sendkeys(t:dbg.dbgBufnr, t:dbg.postCmd . "\n")
     endif
 endfunction
+
 
 " Analyze script type & set val: cmd, postCmd, prompt, re
 function s:DbgScriptAnalyze(file, breakPoint)
@@ -112,7 +113,8 @@ function s:DbgScriptAnalyze(file, breakPoint)
         let t:dbg.re = '(\(\S\+\):\(\d\+\))'
     endif
 endfunction
-        
+
+
 " 
 function s:DbgMsgHandle(job, msg)
     if a:msg =~ t:dbg.prompt
@@ -131,6 +133,7 @@ function s:DbgMsgHandle(job, msg)
     endif
 endfunction
 
+
 " 
 function s:setSign(file, line)
     let l:signPlace = execute('sign place file=' . a:file)
@@ -147,6 +150,7 @@ function s:setSign(file, line)
     exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=DBGCurrent' . ' file=' . a:file
     let t:dbg.sign = {'id': s:newSignId, 'file': a:file}
 endfunction
+
 
 " 
 function s:DbgOnExit(...)
@@ -184,6 +188,7 @@ function async#RunScript(file)
     call term_sendkeys(l:bufnr, "clear\n" . l:cmd . "\n")
 endfunction
     
+
 " Gdb tool： debug binary file
 " BreakPoint: list type
 function async#GdbStart(...)
@@ -214,6 +219,7 @@ function async#GdbStart(...)
     autocmd BufUnload <buffer> unlet t:dbg|1close
 endfunction
 
+
 " Switch embedded terminal
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
@@ -232,6 +238,7 @@ function async#ToggleTerminal(...)
 
         let l:cmd = s:terminalType[l:type]
     catch
+        " Invalid terminal type
         return
     endtry
 
@@ -257,19 +264,26 @@ function async#ToggleTerminal(...)
             endif
         endfor
 
+        " Skip window containing buf with non empty buftype
+        let l:num = winnr('$')
+        while !empty(&buftype) && l:num > 0
+            wincmd w
+            let l:num -= 1
+        endwhile
+
         if l:bufnr == -1
             " Start a terminal
-            belowright 15new
+            belowright 15split
             let l:bufnr = term_start(l:cmd, {
+                        \ 'term_name': l:name,
                         \ 'term_kill': 'kill',
                         \ 'term_finish': 'close',
-                        \ 'curwin' : 1,
-                        \ 'term_name': l:name,
-                        \ 'norestore': 1
+                        \ 'norestore': 1,
+                        \ 'curwin' : 1
                         \ })
         else
             " Display terminal
-            exe 'belowright 15new +' . l:bufnr . 'buffer'
+            exe 'belowright 15split +' . l:bufnr . 'buffer'
         endif
     endif
 
