@@ -25,8 +25,8 @@ let g:loaded_BMBPSign = 1
 
 augroup BMBPSign
     autocmd!
-    autocmd VimEnter ?* :call BMBPSign#VimEnterEvent()
-    autocmd VimLeavePre * :call BMBPSign#VimLeaveEvent()
+    autocmd VimEnter ?* :call s:VimEnterEvent()
+    autocmd VimLeavePre * :call s:VimLeaveEvent()
 augroup END
 
 " sign command
@@ -46,10 +46,6 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSi
 " project command
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
-
-function! BMBPSign_Status()
-    return BMBPSign#ProjectStatus()
-endfunction
 
 " Completion function
 function! BMBPSign_CompleteProject(L, C, P)
@@ -78,4 +74,33 @@ function! BMBPSign_CompleteSignFileType(L, C, P)
                 \ "\n|\n" .
                 \ BMBPSign_CompleteSignType(a:L, a:C, a:P)
 endfunction
+
+" AutoCmd for VimEnter event
+" Load sign when starting with a file
+function s:VimEnterEvent()
+    " Stop load twice when signs already exists
+    " Occurs after loading the project
+    if exists('g:BMBPSign_SignSetFlag')
+        return
+    endif
+
+    let l:file = expand('%')
+    if filereadable('.signrecord') && !empty(l:file) && !empty(systemlist('grep ' . l:file . ' .signrecord'))
+        call BMBPSign#SignLoad()
+    endif
+endfunction
+
+" AutoCmd for VimLeave event
+" For saving | updating signFile
+" And save workspace when set g:BMBPSign_Projectized
+function s:VimLeaveEvent()
+    if exists('g:BMBPSign_SignSetFlag')
+        call BMBPSign#SignSave()
+    endif
+
+    if exists('g:BMBPSign_Projectized')
+        call BMBPSign#WorkSpaceSave()
+    endif
+endfunction
+
 

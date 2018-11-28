@@ -128,15 +128,13 @@ let s:commentChar = {
 
 "  Toggle comment
 function! misc#ReverseComment() range
-    try
-        let l:char = s:commentChar[&filetype]
-    catch
-        return
-    endtry
+    let l:char = get(s:commentChar, &filetype, '')
 
     " Processing
-    silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
-    silent exe a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
+    if !empty(l:char)
+        silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
+        silent exe a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
+    endif
 endfunction
 
 
@@ -181,7 +179,7 @@ function! misc#SaveFile()
             write
             call misc#UpdateNERTreeView()
         else
-            write
+            update
         endif
         let s:DoubleClick_500MSTimer = 1
         let l:id = timer_start(500, 'misc#TimerHandle500MS')
@@ -229,7 +227,7 @@ endfunction
 function! misc#StatuslineIcon()
     if bufname('%') =~ '^!'
         return ''
-    elseif BMBPSign_Status()
+    elseif exists('g:BMBPSign_Projectized')
         return ''
     else
         return ''

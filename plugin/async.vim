@@ -8,7 +8,8 @@ endif
 let g:loaded_Async = 1
 
 
-command -nargs=? TTerm :call async#ToggleTerminal('toggle', <q-args>)
+command -nargs=? TTerm :call async#ToggleTerminal('toggle', <f-args>)
+command -nargs=+ Term :call async#ToggleTerminal('on', '', <f-args>)
 command -nargs=+ -complete=file Async :call job_start("<args>", {'in_io': 'null', 'out_io': 'null', 'err_io': 'null'})
 command! -nargs=+ -complete=file TermH :call term_start("<args>", {'hidden': 1, 'term_kill': 'kill', 'term_finish': 'close', 'norestore': 1})
 

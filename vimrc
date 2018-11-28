@@ -157,7 +157,7 @@ noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
 noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
-noremap <silent> <f12> :call async#ToggleTerminal('toggle', fnamemodify(&shell, ':t'))<CR>
+noremap <silent> <f12> :call async#ToggleTerminal()<CR>
 noremap <silent> <C-f12> :call async#ToggleTerminal('toggle', 'ipython')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
@@ -190,9 +190,26 @@ noremap <silent> \m <Esc>:call BMBPSign#SignClear('book')<CR>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
+" Termdebug
 let g:termdebug_wide = 1
-"插件配置======================
-" == Netrw-NERDTree 配置 ==
+"  )]}自动补全相关
+function! CyClosePair(char)
+    if getline('.')[col('.') - 1] == a:char
+        return "\<Right>"
+    else
+        return a:char
+    endif
+endfunction
+
+" Plugin Configure======================
+" === async.vim === {{{1
+let g:Async_TerminalType = {
+            \ 'pyton': 'python',
+            \ 'python3': 'python3',
+            \ 'ipython': 'ipython'
+            \ }
+
+" === Netrw-NERDTree 配置 === {{{1
 let g:netrw_winsize=-25
 let g:netrw_dirhistmax=0
 let g:netrw_browse_split=4
@@ -256,7 +273,7 @@ function! DebugFile(node)
     call async#GdbStart(a:node.path.str, BMBPSign#SignRecord('break', 'tbreak'))
 endfunction
 
-" == TagBar Configure ==
+" === TagBar Configure === {{{1
 let g:tagbar_width=31
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
@@ -291,7 +308,7 @@ let g:tagbar_type_markdown = {
             \ ]
             \ }
 
-" == Ale Configure ==
+" === Ale Configure === {{{1
 " map key to jump
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
@@ -344,7 +361,7 @@ function! LinterStatus() abort
     endif
 endfunction
 
-" == BMBPSign configure ==
+" === BMBPSign configure === {{{1
 let g:BMBPSign_SpecialBuf = {
             \ 'NERD_tree': 'bw|NERDTree',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
@@ -407,7 +424,7 @@ function! PostLoadWorkSpace_TabVar()
     endif
 endfunction
 
-" === webdevicons.vim ==================
+" === webdevicons.vim === {{{1
 " Extended icon
 let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
             \ 'v'        : '',
@@ -444,12 +461,4 @@ let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
 
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 " ===============================
-"  )]}自动补全相关
-function! CyClosePair(char)
-    if getline('.')[col('.') - 1] == a:char
-        return "\<Right>"
-    else
-        return a:char
-    endif
-endfunction
-
+" set foldmethod=marker

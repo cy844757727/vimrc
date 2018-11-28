@@ -1,14 +1,15 @@
-"
-"
-"
-"
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Author: CY <844757727@qq.com>
+" Description: Asynchronous task
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 if exists('g:loaded_A_Async') && v:version >= 800
   finish
 endif
 let g:loaded_A_Async = 1
 
-hi AsyncDbg ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
-sign define DBGCurrent text=⏩ texthl=AsyncDbg
+hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
+sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
 
 let s:newSignId = 1
 " Get default shell interpreter
@@ -19,12 +20,10 @@ let s:terminalType = {
             \ s:shell . '2': s:shell,
             \ s:shell . '3': s:shell,
             \ s:shell . '4': s:shell,
-            \ s:shell . '5': s:shell,
-            \ 'ipython': 'ipython',
-            \ 'python': 'python',
-            \ 'python3': 'python3'
+            \ s:shell . '5': s:shell
             \ }
 
+" Extend terminal type
 if exists('g:Async_TerminalType')
     call extend(s:terminalType, g:Async_TerminalType, 'force')
 endif
@@ -44,7 +43,7 @@ function async#DbgScript(...)
     let t:dbg = {}
     let t:dbg.srcWinId = win_getid()
     let t:dbg.srcBufnr = bufnr('%')
-    belowright 15new
+    belowright 15split
     let t:dbg.dbgWinId = win_getid()
     let t:dbg.tempMsg = ''
     let t:dbg.sign = {}
@@ -103,11 +102,11 @@ function s:DbgScriptAnalyze(file, breakPoint)
         let t:dbg.postCmd = join(a:breakPoint, ';;')
         let t:dbg.prompt = executable('ipdb') ? 'ipdb>' : '(Pdb)'
         let t:dbg.re = executable('ipdb') ? '\(/[/a-zA-Z0-9_.]\+\).*(\(\d\+\))' : '> \(\S\+\)(\(\d\+\))'
-    elseif l:interpreter == 'perl'
+    elseif l:interpreter =~ 'perl'
         " Perl script
         let l:breakFile = tempname()
         call writefile(['= break b'] + a:breakPoint, l:breakFile)
-        let t:dbg.cmd = 'perl -d ' . a:file
+        let t:dbg.cmd = l:interpreter . ' -d ' . a:file
         let t:dbg.postCmd = 'source ' . l:breakFile
         let t:dbg.prompt = ' DB<\d\+> '
         let t:dbg.re = '(\(\S\+\):\(\d\+\))'
@@ -121,6 +120,7 @@ function s:DbgMsgHandle(job, msg)
         let t:dbg.match = matchlist(t:dbg.tempMsg . a:msg, t:dbg.re)
         let t:dbg.tempMsg = ''
 
+        " Jump line
         if !empty(t:dbg.match) && filereadable(t:dbg.match[1])
             call win_gotoid(t:dbg.srcWinId)
             exe 'edit ' . t:dbg.match[1]
@@ -207,15 +207,15 @@ function async#GdbStart(...)
     tabnew
     let t:dbg = 1
 
-    if !empty(l:breakPoint)
+    if empty(l:breakPoint)
+        exe 'Termdebug ' . l:binFile
+    else
         let l:tempFile = tempname()
         call writefile(l:breakPoint, l:tempFile)
-
         exe 'Termdebug -x ' . l:tempFile .  ' ' . l:binFile
-    else
-        exe 'Termdebug ' . l:binFile
     endif
 
+    " Gdb on exit
     autocmd BufUnload <buffer> unlet t:dbg|1close
 endfunction
 
@@ -230,17 +230,17 @@ function async#ToggleTerminal(...)
     let [l:type, l:name] = a:0 > 1 && !empty(a:2) ? [a:2, '!' . a:2] : [s:shell, '!' . s:shell]
     let l:postCmd = a:0 > 2 ? a:3 : ''
 
-    try
-        if l:type
-            let l:type = s:shell . l:type
-            let l:name = '!' . l:type
-        endif
+    if l:type
+        let l:type = s:shell . l:type
+        let l:name = '!' . l:type
+    endif
 
-        let l:cmd = s:terminalType[l:type]
-    catch
+    let l:cmd = get(s:terminalType, l:type, '')
+
+    if empty(l:cmd)
         " Invalid terminal type
         return
-    endtry
+    endif
 
     let l:winnr = bufwinnr(l:name)
     let l:bufnr = bufnr(l:name)

@@ -52,30 +52,42 @@ else
     let s:vimInfoFile = '_viminfo'
 endif
 
+" Default project type associate with specified path
+let s:projectType = {'default': $HOME . '/Documents'}
+" Default content to save
+let s:sessionOptions = 'blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal'
+let s:vimInfo="'50,!,:100,/100,@100"
+
 " Project record file defination
-if exists('g:BMBPSign_ProjectFile')
-    let s:projectFile = g:BMBPSign_ProjectFile
-elseif has('unix') || has('mac')
+if has('unix') || has('mac')
     let s:projectFile = $HOME . '/.vim/.projectitem'
 else
     let s:projectFile = $HOME . '/vimfiles/.projectitem'
 endif
 
+
+
+if exists('g:BMBPSign_SessionOption')
+    let s:sessionOptions = g:BMBPSign_SessionOption
+endif
+
+if exists('g:BMBPSign_VimInfo')
+    let s:vimInfo = g:BMBPSign_VimInfo
+endif
+
+if exists('g:BMBPSign_ProjectFile')
+    let s:projectFile = g:BMBPSign_ProjectFile
+endif
+
 " Load project items
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 
-" Default project type associate with specified path
 if exists('g:BMBPSign_ProjectType')
-    let s:projectType = g:BMBPSign_ProjectType
-    " For $HOME path substitute
-    call map(s:projectType, "v:val =~ '^\\~' ? $HOME . strpart(v:val, 1) : v:val")
-else
-    let s:projectType = {}
+    call extend(s:projectType, g:BMBPSign_ProjectType, 'force')
 endif
 
-if !has_key(s:projectType , 'default')
-    let s:projectType['default'] = $HOME . '/Documents'
-endif
+" For $HOME path substitute
+call map(s:projectType, "v:val =~ '^\\~' ? $HOME . strpart(v:val, 1) : v:val")
 
 " Sign type extendsion: customized
 if exists('g:BMBPSignTypeExtend')
@@ -111,6 +123,7 @@ function s:SignToggle(file, line, type, attr, skip)
     let l:vec = get(s:signVec, a:type, [])
     let l:signPlace = execute('sign place file=' . a:file)
     let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
+    let g:BMBPSign_SignSetFlag = 1
 
     if empty(l:id)
         " Ensure id uniqueness
@@ -312,7 +325,7 @@ endfunction
 " New project & save workspace or modify current project
 function s:ProjectNew(name, type, path)
     set noautochdir
-    let s:projectized = 1
+    let g:BMBPSign_Projectized = 1
 
     " path -> absolute path | Default
     let l:type = a:type == '.' ? 'undef' : a:type
@@ -354,25 +367,32 @@ function s:ProjectSwitch(sel)
     let l:path = split(s:projectItem[a:sel])[-1]
 
     " Do not load twice
-    if l:path == getcwd() && exists('s:projectized')
+    if l:path == getcwd() && exists('g:BMBPSign_Projectized')
         return
     endif
 
     if l:path != getcwd()
         " Save current workspace
-        call s:SignSave('', keys(s:signVec))
-        if exists('s:projectized')
+        if exists('g:BMBPSign_SignSetFlag')
+            call s:SignSave('', keys(s:signVec))
+        endif
+
+        if exists('g:BMBPSign_Projectized')
             call s:WorkSpaceSave('')
         endif
 
         exe 'silent cd ' . l:path
 
         " Empth workspace
-        silent %bwipeout
+        silent! %bwipeout
     endif
 
-    if exists('s:projectized')
-        unlet s:projectized
+    if exists('g:BMBPSign_SignSetFlag')
+        unlet g:BMBPSign_SignSetFlag
+    endif
+
+    if exists('g:BMBPSign_Projectized')
+        unlet g:BMBPSign_Projectized
     endif
     
     " Load target sign & workspace
@@ -439,7 +459,7 @@ function s:ProjectMenu()
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
             " Specific operation
-            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('s:projectized'))
+            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSign_Projectized'))
                 " select
                 call s:ProjectSwitch(l:char + 10 * (l:page - 1))
                 break
@@ -504,17 +524,19 @@ function s:WorkSpaceSave(pre)
     endif
 
     set noautochdir
-    let s:projectized = 1
+    let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre . s:sessionFile
     let l:vimInfoFile = a:pre . s:vimInfoFile
 
-    " Save session & viminfo
+    " Save session
     let l:temp = &sessionoptions
-    set sessionoptions=blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal
+    exe 'set sessionoptions=' . s:sessionOptions
     exe 'mksession! ' . l:sessionFile
     exe 'set sessionoptions=' . l:temp
+
+    " Save viminfo
     let l:temp = &viminfo
-    set viminfo='50,!,:100,/100,@100
+    exe 'set viminfo=' . s:vimInfo
     exe 'wviminfo! ' . l:vimInfoFile
     exe 'set viminfo=' . l:temp
 
@@ -557,23 +579,22 @@ function s:WorkSpaceLoad(pre)
         call execute(g:BMBPSign_PreLoadEventList)
     endif
 
+    " Empty workspace
+    if exists('g:BMBPSign_Projectized')
+        silent wall
+        call s:SignSave('', keys(s:signVec))
+        silent %bwipeout!
+        call s:SignLoad('', [])
+    endif
+
     set noautochdir
-    let s:projectized = 1
+    let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre . s:sessionFile
     let l:vimInfoFile = a:pre . s:vimInfoFile
 
-    " Empty workspace
-    if exists('s:projectized')
-        tabnew
-        tabonly
-    endif
-
     " Load viminfo
     if filereadable(l:vimInfoFile)
-        let l:temp = &viminfo
-        set viminfo='50,!,:100,/100,@100
         exe 'silent! rviminfo! ' . l:vimInfoFile
-        exe 'set viminfo=' . l:temp
     endif
 
     " Load session
@@ -597,26 +618,21 @@ function s:GetQfList(types)
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
-            if !empty(l:line) && filereadable(l:sign.file)
-                if !bufexists(l:sign.file)
-                    exe 'badd ' . l:sign.file
-                endif
-
-                if l:sign.attr =~ '\S'
-                    let l:text = '[' . l:type . ':' . l:sign.id . ':' . l:sign.attr . '] '
-                else
-                    let l:text = '[' . l:type . ':' . l:sign.id . '] '
-                endif
-
-                let l:text .= getbufline(l:sign.file, l:line[1])[0]
-
-                let l:qf += [{
-                            \ 'bufnr': bufnr(l:sign.file),
-                            \ 'filename': l:sign.file,
-                            \ 'lnum': l:line[1],
-                            \ 'text': l:text
-                            \ }]
+            if !filereadable(l:sign.file) || empty(l:line)
+                continue
+            elseif !bufexists(l:sign.file)
+                exe 'badd ' . l:sign.file
             endif
+
+            let l:text = '[' . l:type . ':' . l:sign.id
+            let l:text .= l:sign.attr =~ '\S' ? ':' . l:sign.attr . '] ' : '] '
+
+            let l:qf += [{
+                        \ 'bufnr': bufnr(l:sign.file),
+                        \ 'filename': l:sign.file,
+                        \ 'lnum': l:line[1],
+                        \ 'text': l:text . getbufline(l:sign.file, l:line[1])[0]
+                        \ }]
         endfor
     endfor
 
@@ -637,14 +653,8 @@ let s:commentChar = {
             \ }
 
 " Generate todo statement
-function s:TodoStatement()
-    try
-        let l:todo = s:commentChar[&filetype] . ' TODO: '
-    catch
-        let l:todo = ' TODO: '
-    endtry
-    
-    return l:todo
+function s:TodoStatement(filetype)
+    return get(s:commentChar, a:filetype, '') . ' TODO: '
 endfunction
 
 " == Global def =================================== {{{1
@@ -653,22 +663,35 @@ function BMBPSign#Project(...)
 endfunction
 
 " Toggle sign of a type
-function BMBPSign#SignToggle(type)
-    let l:file = expand('%')
+function BMBPSign#SignToggle(...)
+    let l:type = a:0 > 0 ? a:1 : 'book'
+    let l:file = a:0 > 1 ? a:2 : expand('%')
+    let l:lin = a:0 > 2 ? a:3 : line('.')
 
-    if empty(&buftype) && filereadable(l:file)
-        if a:type == 'todo' && getline('.') !~ 'TODO:'
-            call append('.', s:TodoStatement())
+    if !filereadable(l:file)
+        return
+    elseif !bufexists(l:file)
+        exe 'badd ' . l:file
+    endif
+
+    if empty(getbufvar(l:file, '&buftype'))
+        if l:type == 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
+            exe 'buffer ' . l:file
+            call cursor(l:lin, 1)
+            call append('.', s:TodoStatement(getbufvar(l:file, '&filetype')))
             normal j==
             silent write
+            let l:lin += 1
         endif
 
-        call s:SignToggle(l:file, line('.'), a:type, '', 0)
+        call s:SignToggle(l:file, l:lin, l:type, '', 0)
     endif
 endfunction
 
-function BMBPSign#SignJump(type, action)
-    call s:Signjump(empty(a:type) ? 'book' : a:type, a:action)
+function BMBPSign#SignJump(...)
+    let l:type = a:0 > 0 ? a:1 : 'book'
+    let l:action = a:0 > 1 ? a:2 : 'next'
+    call s:Signjump(l:type , l:action)
 endfunction
 
 " Cancel sign of types | ids or delete sign file
@@ -694,9 +717,8 @@ endfunction
 " Save sign to file, Can specify types to save
 " Default saving none
 function BMBPSign#SignSave(...)
-    let l:pre = a:0 != 0 ? matchstr(a:1, '^[^_.]*') : ''
-    let l:types = a:0 > 1 ? a:000[1:] : []
-
+    let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
+    let l:types = a:0 > 1 ? a:000[1:] : keys(s:signVec)
     call s:SignSave(l:pre, l:types)
 endfunction
 
@@ -704,7 +726,7 @@ endfunction
 " Default clearing none
 function BMBPSign#SignLoad(...)
     let l:pre = a:0 != 0 ? matchstr(a:1, '^[^_.]*') : ''
-    let l:types = a:0 > 1 ? a:000[1:] : []
+    let l:types = a:0 > 1 ? a:2 == 'all' ? keys(s:signVec) : a:000[1:] : []
 
     if !empty(l:pre)
         call s:SignSave('', l:types)
@@ -713,33 +735,38 @@ function BMBPSign#SignLoad(...)
     call s:SignLoad(l:pre, l:types)
 endfunction
 
-function BMBPSign#SignAddAttr()
-    call s:SignAddAttr(expand('%'), line('.'))
+function BMBPSign#SignAddAttr(...)
+    let l:file = a:0 > 0 ? a:1 : expand('%')
+    let l:lin = a:0 > 1 ? a:2 : line('.')
+    call s:SignAddAttr(l:file, l:lin)
 endfunction
 
-function BMBPSign#WorkSpaceSave(pre)
-    let l:pre = matchstr(a:pre, '^[^_.]*')
+function BMBPSign#WorkSpaceSave(...)
+    let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call s:WorkSpaceSave(l:pre)
     call s:SignSave(l:pre, keys(s:signVec))
 endfunction
 
-function BMBPSign#WorkSpaceLoad(pre)
-    let l:pre = matchstr(a:pre, '^[^_.]*')
+function BMBPSign#WorkSpaceLoad(...)
+    let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
+
     if !empty(l:pre)
         call s:WorkSpaceSave('')
         call s:SignSave('', keys(s:signVec))
     endif
+
     call s:WorkSpaceLoad(l:pre)
     call s:SignLoad(l:pre, keys(s:signVec))
 endfunction
 
-function BMBPSign#WorkSpaceClear(pre)
-    let l:pre = matchstr(a:pre, '^[^_.]*')
+function BMBPSign#WorkSpaceClear(...)
+    let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
     call delete(l:pre . s:signFile)
-    if empty(l:pre) && exists('s:projectized')
-        unlet s:projectized
+
+    if empty(l:pre) && exists('g:BMBPSign_Projectized')
+        unlet g:BMBPSign_Projectized
     endif
 endfunction
 
@@ -754,32 +781,6 @@ endfunction
 
 function BMBPSign#SignTypeList()
     return keys(s:signVec)
-endfunction
-
-" AutoCmd for VimEnter event
-" Load sign when starting with a file
-function BMBPSign#VimEnterEvent()
-    " Stop load twice when signs already exists
-    " Occurs after loading the project
-    if exists('s:projectized')
-        return
-    endif
-
-    let l:file = expand('%')
-    if filereadable(s:signFile) && !empty(l:file) && !empty(systemlist('grep ' . l:file . ' ' . s:signFile))
-        call s:SignLoad('', [])
-    endif
-endfunction
-
-" AutoCmd for VimLeave event
-" For saving | updating signFile
-" And save workspace when set s:projectized
-function BMBPSign#VimLeaveEvent()
-    call s:SignSave('', keys(s:signVec))
-
-    if exists('s:projectized')
-        call s:WorkSpaceSave('')
-    endif
 endfunction
 
 " Api: Get sign record info for other purpose
@@ -800,15 +801,6 @@ function BMBPSign#SignRecord(...)
     endfor
 
     return l:signRecord
-endfunction
-
-" Return status whether saving workspace when :qa
-function BMBPSign#ProjectStatus()
-    if exists('s:projectized')
-        return 1
-    endif
-
-    return 0
 endfunction
 
 " set foldmethod=marker
