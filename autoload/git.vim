@@ -147,6 +147,7 @@ function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)
     let l:lin = float2nr(0.4 * &lines)
     silent $tabnew .Git_log
+    let t:tab_lable = ['', 'Git-Manager']
     call setline(1, git#FormatLog())
     exe 'silent belowright ' . l:col . 'vnew .Git_status'
     call setline(1, git#FormatStatus())
@@ -163,7 +164,7 @@ endfunction
 
 function! git#Toggle()
     if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
-        tabclose
+        let l:gitTab = tabpagenr()
         try
             exe s:TabPrevious . 'tabnext'
         catch 'E121'
@@ -171,6 +172,7 @@ function! git#Toggle()
         catch 'E16'
             $tabnext
         endtry
+        exe l:gitTab . 'tabclose'
     else
         let s:TabPrevious = tabpagenr()
         try

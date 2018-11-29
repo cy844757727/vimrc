@@ -65,7 +65,8 @@ set helplang=cn
 set langmenu=zh_CN.UTF-8
 set enc=utf-8
 set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
-" TabLine & foldtext
+" TabLine: using t:tab_lable (['glyph', 'name']) variable in tabpage can set custom label
+" if Non-existent, using default configure
 set tabline=%!misc#TabLine()
 set foldtext=misc#FoldText()
 " Statusline set
@@ -112,7 +113,7 @@ inoremap <C-\> <Esc>o
 " External open
 nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
-nnoremap \of :Async xdg-open %<CR>
+nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -131,13 +132,13 @@ vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nmap <C-h> wbve<C-h>
 imap <C-h> <Esc>lwbve<C-h>
 
-noremap <C-a> <Esc>ggvG$
-noremap <C-w> <Esc>:close<CR>
-noremap <S-PageUp> <Esc>:wincmd W<CR>
-noremap <S-pageDown> <Esc>:wincmd w<CR>
-noremap <C-t> <Esc>:tabnew<CR>
+noremap <silent> <C-a> <Esc>ggvG$
+noremap <silent> <C-w> <Esc>:close<CR>
+noremap <silent> <S-PageUp> <Esc>:call WindowDownUp('up')<CR>
+noremap <silent> <S-pageDown> <Esc>:call WindowDownUp('down')<CR>
+noremap <silent> <C-t> <Esc>:tabnew<CR>
 noremap <silent> <S-t> <Esc>:try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
-noremap  <S-tab> <Esc>:tabnext<CR>
+noremap <silent> <S-tab> <Esc>:tabnext<CR>
 map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
 map! <S-PageUp> <Esc><S-PageUp>
@@ -150,19 +151,25 @@ map! <f3> <Esc><f3>
 noremap <silent> <f4> :call misc#WinResize()<Cr>
 map! <f4> <Esc><f4>
 " 窗口切换
-noremap <silent> <f7> <Esc>:call git#Toggle()<CR>
-noremap <silent> <f8> <Esc>:call misc#ToggleTagbar()<CR>
-noremap <silent> <f9> <Esc>:call misc#ToggleNERDTree()<CR>
+noremap <silent> <f9> <Esc>:call git#Toggle()<CR>
+noremap <silent> <f8> <Esc>:call misc#ToggleSidebar()<CR>
+noremap <silent> <C-S-f8> <Esc>:call misc#ToggleSidebar('off')<CR>
+noremap <silent> <C-f8> <Esc>:call misc#ToggleTagbar()<CR>
+noremap <silent> <S-f8> <Esc>:call misc#ToggleNERDTree()<CR>
 noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
 noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
 noremap <silent> <f12> :call async#ToggleTerminal()<CR>
-noremap <silent> <C-f12> :call async#ToggleTerminal('toggle', 'ipython')<CR>
+noremap <silent> <C-f12> :call async#ToggleTerminal('toggle', 'ipy')<CR>
+noremap <silent> <S-f12> :call async#ToggleTerminal('toggle', 'py3')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
+map! <C-f8> <Esc><C-f8>
+map! <S-f8> <Esc><S-f8>
+map! <C-S-f8> <Esc><C-S-f8>
 map! <f9> <Esc><f9>
 map! <f10> <ESC><f10>
 map! <C-f10> <ESC><C-f10>
@@ -171,8 +178,8 @@ map! <C-S-f10> <ESC><C-S-f10>
 " 编译执行
 noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
 noremap  <silent> <C-f5> <Esc>:call misc#CompileRun('r')<CR>
-map! <silent> <f5> <Esc><f5>
-map! <silent> <C-f5> <Esc><C-f5>
+map! <f5> <Esc><f5>
+map! <C-f5> <Esc><C-f5>
 " 断点 BMBPSign.vim: breakpoint
 noremap  <silent> <f6> <Esc>:call BMBPSign#SignToggle('break')<CR>
 noremap  <silent> <C-f6> <Esc>:call BMBPSign#SignToggle('tbreak')<CR>
@@ -180,18 +187,37 @@ noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break', 'tbreak')<CR>
 map! <C-f6> <Esc><C-f6>
 map! <f6> <Esc><f6>
 " 书签 BMBPSign.vim: bookmark
-noremap <silent> <C-m> <Esc>:call BMBPSign#SignToggle('book')<CR>
-noremap <silent> <S-m> <Esc>:call BMBPSign#SignToggle('todo')<CR>
+noremap <silent> <f7> <Esc>:call BMBPSign#SignToggle('book')<CR>
+noremap <silent> <C-f7> <Esc>:call BMBPSign#SignToggle('todo')<CR>
 noremap <silent> <C-Down> <Esc>:call BMBPSign#SignJump('book', 'next')<CR>
 noremap <silent> <C-Up> <Esc>:call BMBPSign#SignJump('book', 'previous')<CR>
 noremap <silent> \m <Esc>:call BMBPSign#SignClear('book')<CR>
-"map! <C-m> <Esc><C-m>
-"map! <S-m> <Esc><S-m>
+map! <f7> <Esc><f7>
+map! <C-f7> <Esc><C-f7>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
-" Termdebug
-let g:termdebug_wide = 1
+" Terminal map
+tnoremap <silent> <S-PageUp> <C-w>N:wincmd W<CR>
+tnoremap <silent> <S-pageDown> <C-w>N:wincmd w<CR>
+tnoremap <silent> <f12> <C-w>N:call async#ToggleTerminal()<CR>
+tnoremap <silent> <C-f12> <C-w>N:call async#ToggleTerminal('toggle', 'ipy')<CR>
+tnoremap <silent> <S-f12> <C-w>N:call async#ToggleTerminal('toggle', 'py3')<CR>
+
+" === misc func def === {{{1
+" For starting insert mode when switching to terminal 
+function! WindowDownUp(action)
+    if a:action == 'down'
+        wincmd w
+    else
+        wincmd W
+    endif
+
+    if &bt == 'terminal' && mode() == 'n'
+        normal a
+    endif
+endfunction
+
 "  )]}自动补全相关
 function! CyClosePair(char)
     if getline('.')[col('.') - 1] == a:char
@@ -201,15 +227,14 @@ function! CyClosePair(char)
     endif
 endfunction
 
+" Termdebug
+let g:termdebug_wide = 1
 " Plugin Configure======================
 " === async.vim === {{{1
 let g:Async_TerminalType = {
             \ 'py': 'python',
             \ 'py3': 'python3',
-            \ 'ipy': 'ipython',
-            \ 'python': 'python',
-            \ 'python3': 'python3',
-            \ 'ipython': 'ipython'
+            \ 'ipy': 'ipython'
             \ }
 
 " === Netrw-NERDTree 配置 === {{{1

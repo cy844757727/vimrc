@@ -12,21 +12,25 @@ hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
 
 let s:newSignId = 1
-let s:numIcon = {'1': '➊', '2': '➋', '3': '➌', '4': '➍', '5': '➎',
-            \ '6': '➏', '7': '➐', '8': '➑', '9': '➒'}
 " Get default shell interpreter
 let s:shell = fnamemodify(&shell, ':t')
-let s:shellPrefix = '!Terminal'
+let s:termPrefix = '!Terminal'
+let s:termIcon = {
+            \ '1': ' ➊', '2': ' ➋', '3': ' ➌',
+            \ '4': ' ➍', '5': ' ➎', '6': ' ➏',
+            \ '7': ' ➐', '8': ' ➑', '9': ' ➒'
+            \ }
 
 " Default terminal option
 let s:termOption = {
             \ 'term_rows': 15,
             \ 'term_kill': 'kill',
             \ 'term_finish': 'close',
+            \ 'stoponexit': 'exit',
             \ 'norestore': 1
             \ }
 
-let s:terminalType = {
+let s:termType = {
             \ s:shell: s:shell,
             \ s:shell . '1': s:shell,
             \ s:shell . '2': s:shell,
@@ -40,12 +44,15 @@ let s:terminalType = {
             \ }
 
 let s:asyncJob = {}
-let s:maxJob = 12
-" Extend terminal type
+let s:maxJob = 20
+" Extend terminal type & icon
 if exists('g:Async_TerminalType')
-    call extend(s:terminalType, g:Async_TerminalType)
+    call extend(s:termType, g:Async_TerminalType)
 endif
 
+if exists('g:Async_TermIcon')
+    call extend(s:termIcon, g:Async_TermIcom)
+endif
 
 " Debug a script file
 function async#DbgScript(...)
@@ -54,6 +61,7 @@ function async#DbgScript(...)
     
     " Ui & val initialization
     exe 'tabedit ' . l:file
+    let t:tab_lable = ['', '-- Debug --']
     let t:dbg = {}
     let t:dbg.srcWinId = win_getid()
     let t:dbg.srcBufnr = bufnr('%')
@@ -245,7 +253,7 @@ endfunction
 " Switch embedded terminal
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
-" Type: specified by s:terminalType (default: s:shell)
+" Type: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd when terminal started
 function async#ToggleTerminal(...)
     let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
@@ -254,16 +262,16 @@ function async#ToggleTerminal(...)
 
     if empty(l:type)
         let l:type = s:shell
-        let l:name = s:shellPrefix . ' '
+        let l:name = s:termPrefix
     elseif l:type
-        let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:numIcon) + 1
-        let l:name = s:shellPrefix .  ' ' . get(s:numIcon, l:type, '') . ' '
+        let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:termIcon) + 1
+        let l:name = s:termPrefix . get(s:termIcon, l:type, '')
         let l:type = s:shell . l:type
     else
-        let l:name = s:shellPrefix . ': ' . l:type . ' '
+        let l:name = s:termPrefix . get(s:termIcon, l:type, ': ') . l:type
     endif
 
-    let l:cmd = get(s:terminalType, l:type, '')
+    let l:cmd = get(s:termType, l:type, '')
 
     if empty(l:cmd)
         " Invalid type
@@ -281,7 +289,7 @@ function async#ToggleTerminal(...)
         endif
     elseif l:action =~ 'on\|toggle'
         " Hide other terminal
-        let l:other = bufwinnr(s:shellPrefix)
+        let l:other = bufwinnr(s:termPrefix)
         if l:other != -1
             exe l:other . 'hide'
         endif
@@ -296,7 +304,7 @@ function async#ToggleTerminal(...)
         if l:bufnr == -1
             " Start a terminal
             let l:option = copy(s:termOption)
-            let l:option['term_name'] = l:name
+            let l:option['term_name'] = l:name . ' '
             let l:option['curwin'] = 1
             belowright 15split
             let l:bufnr = term_start(l:cmd, l:option)
@@ -304,10 +312,15 @@ function async#ToggleTerminal(...)
             " Display terminal
             silent exe 'belowright 15split +' . l:bufnr . 'buffer'
         endif
+
+        " Ensure starting insert mode
+        if mode() == 'n'
+            normal a
+        endif
     elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution
         let l:option = copy(s:termOption)
-        let l:option['term_name'] = l:name
+        let l:option['term_name'] = l:name . ' '
         let l:option['hidden'] = 1
         let l:bufnr = term_start(l:cmd, l:option)
     endif
@@ -321,21 +334,22 @@ function async#ToggleTerminal(...)
 endfunction
 
 
+" Cmd: list or string
 function async#RunJob(cmd)
     if len(s:asyncJob) > s:maxJob
         return
     endif
 
     let l:job = job_start(a:cmd, {
+                \ 'exit_cb': function('s:JobOnExit'),
                 \ 'in_io': 'null',
                 \ 'out_io': 'null',
-                \ 'err_io': 'null',
-                \ 'exit_cb': function('s:JobOnExit')
+                \ 'err_io': 'null'
                 \ })
 
     if job_status(l:job) == 'run'
         let l:id = matchstr(l:job, '\d\+')
-        let s:asyncJob[l:id] = [a:cmd, l:job]
+        let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}
     endif
 endfunction
 
@@ -344,7 +358,9 @@ function s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
     
     if a:status > 0
-        echo 'Failed: ' . s:asyncJob[l:id][0]
+        echo 'Failed: ' . s:asyncJob[l:id].cmd
+    else
+        echo 'Done: ' . s:asyncJob[l:id].cmd
     endif
 
     unlet s:asyncJob[l:id]
@@ -357,12 +373,12 @@ function async#StopJob(...)
         let l:prompt = async#ListJob("Select one to stop ...")
         
         while 1
-            let l:job = get(s:asyncJob, input(l:prompt . "\nInput id: "), [])
+            let l:job = get(s:asyncJob, input(l:prompt . "\nInput id: "), {'job': ''}).job
 
             if empty(l:job)
                 redraw
             else
-                call job_stop(l:job[1], l:how)
+                call job_stop(l:job, l:how)
                 break
             endif
         endwhile
@@ -372,8 +388,8 @@ endfunction
 function async#ListJob(...)
     let l:prompt = a:0 > 0 ? a:1 : "Job List ..."
 
-    for [l:id, l:cmd] in items(s:asyncJob)
-        let l:prompt .= printf("\n    %d:  %s", l:id, l:cmd[0])
+    for [l:id, l:job] in items(s:asyncJob)
+        let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
     endfor
 
     return l:prompt

@@ -12,12 +12,9 @@ let g:loaded_A_Misc = 1
 function! misc#CompileRun(...)
     wall
     if &filetype == 'nerdtree'
-        silent call nerdtree#ui_glue#invokeKeyMap('R')
-        echo 'Nerdtree: Refresh done!'
+        call nerdtree#ui_glue#invokeKeyMap('R')
     elseif &filetype == 'tagbar'
-        " Refresh tags file, " Tool: ctags
         Async ctags -R -f .tags
-        echo 'Tagbar: Refresh Done (.tags file)!'
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         silent call git#Refresh()
     elseif &filetype == 'verilog'
@@ -27,6 +24,7 @@ function! misc#CompileRun(...)
             AsyncRun vlib work && vmap work work && vlog -work work %
         endif
     else
+        " Compile, Run, Debug
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
         let l:runMode = (empty(l:breakPoint) && a:0 == 0) || (!empty(l:breakPoint) && a:0 > 0)
 
@@ -287,26 +285,18 @@ function! misc#TabLabel(n)
 
     " Add a flag if current buf is modified
     if getbufvar(l:buflist[l:winnr], '&modified')
-        let l:label = ''
+        let l:modFlag = ''
     else
-        let l:label = ' '
+        let l:modFlag = ' '
     endif
 
     " Append the buffer name
-    let l:bufname = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
+    let l:name = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
 
-    " Append the glyph
-    if l:bufname =~ '^\.Git_'
-        let l:bufname = 'Git-Manager'
-        let l:glyph = ''
-    elseif !empty(gettabvar(a:n, 'dbg', ''))
-        let l:bufname = '-- Debug --'
-        let l:glyph = ''
-    else
-        let l:glyph = misc#GetWebIcon(l:bufname)
-    endif
+    " Append the glyph & modify name
+    let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon(l:name), l:name])
 
-    return l:glyph . ' ' . l:bufname . ' ' . l:label
+    return l:glyph . ' ' . l:name . ' ' . l:modFlag
 endfunction
 
 
@@ -319,6 +309,10 @@ endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()
+    if !empty(&buftype)
+        return
+    endif
+
     if exists('t:MAXMIZEWIN')
         let l:winnr = win_id2win(t:MAXMIZEWIN[2])
         exe l:winnr . 'resize ' . t:MAXMIZEWIN[0]
@@ -333,6 +327,35 @@ function! misc#WinResize()
     exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
 endfunction
 
+" Combine nerdtree & tagbar
+" Switch between the two
+function! misc#ToggleSidebar(...)
+    let l:winId = win_getid()
+    let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
+    let l:tag = bufwinnr('Tagbar') == -1 ? 0 : 2
+    let l:statue = l:nerd + l:tag
+
+    if a:0 > 0
+        NERDTreeClose
+        TagbarClose
+    elseif l:statue == 0
+        NERDTree
+    elseif l:statue == 1
+        NERDTreeClose
+        let g:tagbar_vertical=0
+        let g:tagbar_left=1
+        TagbarOpen
+        let g:tagbar_vertical=19
+        let g:tagbar_left=0
+    elseif l:statue == 2
+        TagbarClose
+        NERDTree
+    else
+        TagbarClose
+    endif
+
+    call win_gotoid(l:winId)
+endfunction
 
 " Toggle NERDTree window
 function! misc#ToggleNERDTree()
@@ -379,7 +402,7 @@ function! misc#ToggleQuickFix(...)
         call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
     elseif l:type == 'todo'
         call BMBPSign#SetQfList('TodoList', 'todo')
-    elseif max(map(tabpagebuflist(), "getbufvar(v:val, '&ft') == 'qf'"))
+    elseif max(map(tabpagebuflist(), "getbufvar(v:val, '&bt') == 'quickfix'"))
         cclose
         return
     endif
