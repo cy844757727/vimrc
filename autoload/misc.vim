@@ -227,6 +227,8 @@ endfunction
 function! misc#StatuslineIcon()
     if bufname('%') =~ '^!'
         return ''
+    elseif &buftype == 'help'
+        return ''
     elseif exists('g:BMBPSign_Projectized')
         return ''
     else

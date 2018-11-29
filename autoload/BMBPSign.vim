@@ -292,7 +292,7 @@ function s:SignAddAttr(file, line)
         " Multiple signs
         let l:str = 'Select one(ind   type)!'
         for [l:ind, l:sign] in items(l:signs)
-            let l:str .= printf("\n  %-3d   %s", l:ind, l:sign[1])
+            let l:str .= printf("\n    %-3d   %s", l:ind, l:sign[1])
         endfor
         echo l:str
         let [l:id, l:type] = get(l:signs, nr2char(getchar()), [-1, 'invalid'])
@@ -725,7 +725,7 @@ endfunction
 " Load sign from file, Can specify types to clear first
 " Default clearing none
 function BMBPSign#SignLoad(...)
-    let l:pre = a:0 != 0 ? matchstr(a:1, '^[^_.]*') : ''
+    let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     let l:types = a:0 > 1 ? a:2 == 'all' ? keys(s:signVec) : a:000[1:] : []
 
     if !empty(l:pre)

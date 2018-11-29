@@ -12,30 +12,44 @@ hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
 
 let s:newSignId = 1
+let s:numIcon = {'1': '➊', '2': '➋', '3': '➌', '4': '➍', '5': '➎',
+            \ '6': '➏', '7': '➐', '8': '➑', '9': '➒'}
 " Get default shell interpreter
 let s:shell = fnamemodify(&shell, ':t')
+let s:shellPrefix = '!Terminal'
+
+" Default terminal option
+let s:termOption = {
+            \ 'term_rows': 15,
+            \ 'term_kill': 'kill',
+            \ 'term_finish': 'close',
+            \ 'norestore': 1
+            \ }
+
 let s:terminalType = {
             \ s:shell: s:shell,
             \ s:shell . '1': s:shell,
             \ s:shell . '2': s:shell,
             \ s:shell . '3': s:shell,
             \ s:shell . '4': s:shell,
-            \ s:shell . '5': s:shell
+            \ s:shell . '5': s:shell,
+            \ s:shell . '6': s:shell,
+            \ s:shell . '7': s:shell,
+            \ s:shell . '8': s:shell,
+            \ s:shell . '9': s:shell
             \ }
 
+let s:asyncJob = {}
+let s:maxJob = 12
 " Extend terminal type
 if exists('g:Async_TerminalType')
-    call extend(s:terminalType, g:Async_TerminalType, 'force')
+    call extend(s:terminalType, g:Async_TerminalType)
 endif
 
 
 " Debug a script file
 function async#DbgScript(...)
-    if a:0 == 0
-        return
-    endif
-
-    let l:file = a:1
+    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
     let l:breakPoint = a:0 > 1 ? a:2 : []
     
     " Ui & val initialization
@@ -56,15 +70,11 @@ function async#DbgScript(...)
     endif
 
     " Start debuge
-    let t:dbg.dbgBufnr = term_start(t:dbg.cmd, {
-                \ 'term_rows': 15,
-                \ 'out_cb': function('s:DbgMsgHandle'),
-                \ 'exit_cb': function('s:DbgOnExit'),
-                \ 'term_finish': 'close', 
-                \ 'term_kill': 'kill',
-                \ 'norestore': 1,
-                \ 'curwin': 1
-                \ })
+    let l:option = copy(s:termOption)
+    let l:option['curwin'] = 1
+    let l:option['out_cb'] = function('s:DbgMsgHandle')
+    let l:option['exit_cb'] = function('s:DbgOnExit')
+    let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
 
     " Excuting postCmd
     if has_key(t:dbg, 'postCmd')
@@ -125,7 +135,7 @@ function s:DbgMsgHandle(job, msg)
             call win_gotoid(t:dbg.srcWinId)
             exe 'edit ' . t:dbg.match[1]
             call cursor(t:dbg.match[2], 1)
-            call s:setSign(expand('%'), t:dbg.match[2])
+            call s:DbgSetSign(expand('%'), t:dbg.match[2])
             call win_gotoid(t:dbg.dbgWinId)
         endif
     else
@@ -135,7 +145,7 @@ endfunction
 
 
 " 
-function s:setSign(file, line)
+function s:DbgSetSign(file, line)
     let l:signPlace = execute('sign place file=' . a:file)
 
     if !empty(t:dbg.sign)
@@ -162,28 +172,30 @@ function s:DbgOnExit(...)
         try
             tabclose
         catch
-            call win_gotoid(t:srcWinId)
+            call win_gotoid(t:dbg.srcWinId)
             unlet t:dbg
         endtry
     endif
 endfunction
 
 
-function async#RunScript(file)
-    if !filereadable(a:file)
+function async#RunScript(...)
+    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
+
+    if !filereadable(l:file)
         return
-    elseif !bufexists(a:file)
-        exe 'badd ' . a:file
+    elseif !bufexists(l:file)
+        exe 'badd ' . l:file
     endif
 
-    let l:lineOne = getbufline(a:file, 1)[0]
+    let l:lineOne = getbufline(l:file, 1)[0]
     let l:interpreter = matchstr(l:lineOne, '\(/\(env\s\+\)\?\)\zs[^/]*$')
 
     if empty(l:interpreter)
-        let l:interpreter = &filetype
+        let l:interpreter = getbufvar(l:file, '&filetype')
     endif
 
-    let l:cmd = l:interpreter . ' ' . a:file
+    let l:cmd = l:interpreter . ' ' . l:file
     let l:bufnr = async#ToggleTerminal('on')
     call term_sendkeys(l:bufnr, "clear\n" . l:cmd . "\n")
 endfunction
@@ -216,38 +228,50 @@ function async#GdbStart(...)
     endif
 
     " Gdb on exit
-    autocmd BufUnload <buffer> unlet t:dbg|1close
+    autocmd BufUnload <buffer> call s:GdbOnExit()
+endfunction
+
+function s:GdbOnExit()
+    if exists('t:dbg')
+        try
+            tabclose
+        catch
+            unlet t:dbg
+        endtry
+    endif
 endfunction
 
 
 " Switch embedded terminal
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
-" Type: specified by s:terminalType (default: bash)
+" Type: specified by s:terminalType (default: s:shell)
 " PostCmd: executing cmd when terminal started
 function async#ToggleTerminal(...)
-    let l:action = a:0 > 0 && !empty(a:1) ? a:1 : 'toggle'
-    let [l:type, l:name] = a:0 > 1 && !empty(a:2) ? [a:2, '!' . a:2] : [s:shell, '!' . s:shell]
-    let l:postCmd = a:0 > 2 ? a:3 : ''
+    let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
+    let l:type = a:0 > 1 && a:2 != '.' ? a:2 : ''
+    let l:postCmd = a:0 > 2 ? join(a:000[2:], ' ') : ''
 
-    if l:type
+    if empty(l:type)
+        let l:type = s:shell
+        let l:name = s:shellPrefix . ' '
+    elseif l:type
+        let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:numIcon) + 1
+        let l:name = s:shellPrefix .  ' ' . get(s:numIcon, l:type, '') . ' '
         let l:type = s:shell . l:type
-        let l:name = '!' . l:type
+    else
+        let l:name = s:shellPrefix . ': ' . l:type . ' '
     endif
 
     let l:cmd = get(s:terminalType, l:type, '')
 
     if empty(l:cmd)
-        " Invalid terminal type
+        " Invalid type
         return
     endif
 
     let l:winnr = bufwinnr(l:name)
     let l:bufnr = bufnr(l:name)
-
-    if l:type == 'ipython' && l:bufnr == -1 && empty(l:postCmd)
-        let l:postCmd = 'cd ' . getcwd()
-    endif
 
     if l:winnr != -1
         if l:action == 'on'
@@ -257,12 +281,10 @@ function async#ToggleTerminal(...)
         endif
     elseif l:action =~ 'on\|toggle'
         " Hide other terminal
-        for l:type in keys(s:terminalType)
-            let l:otherWin = bufwinnr('!' . l:type)
-            if l:otherWin != -1
-                exe l:otherWin . 'hide'
-            endif
-        endfor
+        let l:other = bufwinnr(s:shellPrefix)
+        if l:other != -1
+            exe l:other . 'hide'
+        endif
 
         " Skip window containing buf with non empty buftype
         let l:num = winnr('$')
@@ -273,25 +295,87 @@ function async#ToggleTerminal(...)
 
         if l:bufnr == -1
             " Start a terminal
+            let l:option = copy(s:termOption)
+            let l:option['term_name'] = l:name
+            let l:option['curwin'] = 1
             belowright 15split
-            let l:bufnr = term_start(l:cmd, {
-                        \ 'term_name': l:name,
-                        \ 'term_kill': 'kill',
-                        \ 'term_finish': 'close',
-                        \ 'norestore': 1,
-                        \ 'curwin' : 1
-                        \ })
+            let l:bufnr = term_start(l:cmd, l:option)
         else
             " Display terminal
-            exe 'belowright 15split +' . l:bufnr . 'buffer'
+            silent exe 'belowright 15split +' . l:bufnr . 'buffer'
         endif
+    elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
+        " Allow background execution
+        let l:option = copy(s:termOption)
+        let l:option['term_name'] = l:name
+        let l:option['hidden'] = 1
+        let l:bufnr = term_start(l:cmd, l:option)
     endif
 
-    " Excuting postCmd after establishing terminal
+    " Excuting postCmd after establishing a terminal
     if !empty(l:postCmd)
         call term_sendkeys(l:bufnr, l:postCmd . "\n")
     endif
 
     return l:bufnr
+endfunction
+
+
+function async#RunJob(cmd)
+    if len(s:asyncJob) > s:maxJob
+        return
+    endif
+
+    let l:job = job_start(a:cmd, {
+                \ 'in_io': 'null',
+                \ 'out_io': 'null',
+                \ 'err_io': 'null',
+                \ 'exit_cb': function('s:JobOnExit')
+                \ })
+
+    if job_status(l:job) == 'run'
+        let l:id = matchstr(l:job, '\d\+')
+        let s:asyncJob[l:id] = [a:cmd, l:job]
+    endif
+endfunction
+
+
+function s:JobOnExit(job, status)
+    let l:id = matchstr(a:job, '\d\+')
+    
+    if a:status > 0
+        echo 'Failed: ' . s:asyncJob[l:id][0]
+    endif
+
+    unlet s:asyncJob[l:id]
+endfunction
+
+
+function async#StopJob(...)
+    if !empty(s:asyncJob)
+        let l:how = a:0 > 0 ? a:1 : 'term'
+        let l:prompt = async#ListJob("Select one to stop ...")
+        
+        while 1
+            let l:job = get(s:asyncJob, input(l:prompt . "\nInput id: "), [])
+
+            if empty(l:job)
+                redraw
+            else
+                call job_stop(l:job[1], l:how)
+                break
+            endif
+        endwhile
+    endif
+endfunction
+
+function async#ListJob(...)
+    let l:prompt = a:0 > 0 ? a:1 : "Job List ..."
+
+    for [l:id, l:cmd] in items(s:asyncJob)
+        let l:prompt .= printf("\n    %d:  %s", l:id, l:cmd[0])
+    endfor
+
+    return l:prompt
 endfunction
 

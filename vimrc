@@ -204,7 +204,10 @@ endfunction
 " Plugin Configure======================
 " === async.vim === {{{1
 let g:Async_TerminalType = {
-            \ 'pyton': 'python',
+            \ 'py': 'python',
+            \ 'py3': 'python3',
+            \ 'ipy': 'ipython',
+            \ 'python': 'python',
             \ 'python3': 'python3',
             \ 'ipython': 'ipython'
             \ }
