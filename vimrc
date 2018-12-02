@@ -232,7 +232,7 @@ let g:termdebug_wide = 1
 " Plugin Configure======================
 " === async.vim === {{{1
 let g:Async_TerminalType = {
-            \ 'py': 'python',
+            \ 'py2': 'python',
             \ 'py3': 'python3',
             \ 'ipy': 'ipython'
             \ }

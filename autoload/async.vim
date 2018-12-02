@@ -21,6 +21,7 @@ let s:termIcon = {
             \ '7': ' ➐', '8': ' ➑', '9': ' ➒'
             \ }
 
+" ""
 " Default terminal option
 let s:termOption = {
             \ 'term_rows': 15,
@@ -268,7 +269,7 @@ function async#ToggleTerminal(...)
         let l:name = s:termPrefix . get(s:termIcon, l:type, '')
         let l:type = s:shell . l:type
     else
-        let l:name = s:termPrefix . get(s:termIcon, l:type, ': ') . l:type
+        let l:name = s:termPrefix . get(s:termIcon, l:type, ': ' . l:type)
     endif
 
     let l:cmd = get(s:termType, l:type, '')
@@ -306,16 +307,11 @@ function async#ToggleTerminal(...)
             let l:option = copy(s:termOption)
             let l:option['term_name'] = l:name . ' '
             let l:option['curwin'] = 1
-            belowright 15split
+            exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split'
             let l:bufnr = term_start(l:cmd, l:option)
         else
             " Display terminal
-            silent exe 'belowright 15split +' . l:bufnr . 'buffer'
-        endif
-
-        " Ensure starting insert mode
-        if mode() == 'n'
-            normal a
+            silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:bufnr . 'buffer'
         endif
     elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution
@@ -325,8 +321,13 @@ function async#ToggleTerminal(...)
         let l:bufnr = term_start(l:cmd, l:option)
     endif
 
+    " Ensure starting insert mode
+    if &buftype == 'terminal' && mode() == 'n'
+        normal a
+    endif
+
     " Excuting postCmd after establishing a terminal
-    if !empty(l:postCmd)
+    if !empty(l:postCmd) && l:bufnr != -1
         call term_sendkeys(l:bufnr, l:postCmd . "\n")
     endif
 
