@@ -147,17 +147,25 @@ function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)
     let l:lin = float2nr(0.4 * &lines)
     silent $tabnew .Git_log
+    setlocal noreadonly modifiable
     let t:tab_lable = ['', 'Git-Manager']
     call setline(1, git#FormatLog())
+    setlocal readonly nomodifiable
     exe 'silent belowright ' . l:col . 'vnew .Git_status'
+    setlocal noreadonly modifiable
     call setline(1, git#FormatStatus())
     call search('^\(\s\+\)\zs\S')
+    setlocal readonly nomodifiable
     exe 'silent belowright ' . l:lin . 'new .Git_branch'
+    setlocal noreadonly modifiable
     call setline(1, git#FormatBranch())
     call search('^\([ *]\+\)\zs\w')
+    setlocal readonly nomodifiable
     1wincmd w
     exe 'silent belowright ' . l:lin . 'new .Git_commit'
+    setlocal noreadonly modifiable
     call setline(1, git#FormatCommit('HEAD'))
+    setlocal readonly nomodifiable
     normal zj
     3wincmd w
 endfunction
@@ -195,20 +203,26 @@ function! git#Refresh(...)
             exe '4resize ' . l:lin
         endif
         4wincmd w
+        setlocal noreadonly modifiable
         let l:pos = getpos('.')
         silent edit!
         call setline(1, git#FormatBranch())
         call setpos('.', l:pos)
+        setlocal readonly nomodifiable
         wincmd W
+        setlocal noreadonly modifiable
         let l:pos = getpos('.')
         silent edit!
         call setline(1, git#FormatStatus())
         call setpos('.', l:pos)
+        setlocal readonly nomodifiable
         1wincmd w
+        setlocal noreadonly modifiable
         let l:pos = getpos('.')
         silent edit!
         call setline(1, git#FormatLog())
         call setpos('.', l:pos)
+        setlocal readonly nomodifiable
         exe l:winnr . 'wincmd w'
     endif
 endfunction

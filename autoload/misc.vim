@@ -2,21 +2,27 @@
 " Author: CY <844757727@qq.com>
 " Description: Miscellaneous function
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if exists('g:loaded_A_Misc')
-  finish
-endif
-let g:loaded_A_Misc = 1
+"if exists('g:loaded_A_Misc')
+"  finish
+"endif
+"let g:loaded_A_Misc = 1
 
 
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun(...)
     wall
     if &filetype == 'nerdtree'
-        call nerdtree#ui_glue#invokeKeyMap('R')
+        if a:0 > 0 && exists('t:RecordOfTree')
+            call search('^/\S*/$')
+            silent normal oX
+            call misc#RecordOfNERDTree('.', t:RecordOfTree)
+        else
+            call g:NERDTreeKeyMap.Invoke('R')
+        endif
     elseif &filetype == 'tagbar'
         Async ctags -R -f .tags
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
-        silent call git#Refresh()
+        call git#Refresh()
     elseif &filetype == 'verilog'
         if isdirectory('work')
             AsyncRun vlog -work work %
@@ -51,18 +57,6 @@ function! misc#CompileRun(...)
                 call async#GdbStart('binFile', l:BreakPoint)
             endif
         endif
-    endif
-endfunction
-
-
-"	转换鼠标范围（a，v）
-function! misc#CutMouseBehavior()
-    if &mouse == 'a'
-        set nonumber
-        set mouse=v
-    else
-        set number
-        set mouse=a
     endif
 endfunction
 
@@ -138,11 +132,12 @@ endfunction
 
 "  Refresh NERTree
 function! misc#UpdateNERTreeView()
-    let l:nrOfNerd_tree=bufwinnr('NERD_tree')
-    if l:nrOfNerd_tree != -1
-        let l:id=win_getid()
-        exe l:nrOfNerd_tree . 'wincmd w'
-        silent call nerdtree#ui_glue#invokeKeyMap('R')
+    let l:nerd = bufwinnr('NERD_tree')
+    if l:nerd != -1
+        let l:id = win_getid()
+        exe l:nerd . 'wincmd w'
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
         call win_gotoid(l:id)
     endif
 endfunction
@@ -306,6 +301,120 @@ function! misc#FoldText()
     return '▶' . l:num . ': ' . l:str . '  '
 endfunction
 
+
+function! misc#RecordOfNERDTree(...)
+    let l:bufnr = a:0 > 0 && a:1 != '.' ? a:1 : bufnr('%')
+    let l:record = a:0 > 1 ? a:2 : {}
+
+    if getbufvar(l:bufnr, '&filetype') != 'nerdtree'
+        return {}
+    endif
+
+    if empty(l:record)
+        let l:holeBuf = getbufline(l:bufnr, 1, '$')
+        let l:length = len(l:holeBuf)
+        let l:curLin = getbufinfo(l:bufnr)[0].lnum - 1
+
+        let l:record.list = []
+        let l:record.cur = matchstr(l:holeBuf[l:curLin], '[^]]*$')
+        " Opened path
+        let l:openIcon = get(g:, 'NERDTreeDirArrowCollapsible', '▾')
+
+        " Root path (index 0)
+        let l:i = 0
+        while l:i < l:length
+            if l:holeBuf[l:i] =~ '^/\S*/$'
+                let l:path = [l:holeBuf[l:i]]
+                break
+            endif
+
+            let l:i += 1
+        endwhile
+
+        let l:i += 1
+        while l:i < l:length
+            let l:indent = matchstr(l:holeBuf[l:i], '^\s*' . l:openIcon)
+
+            if empty(l:indent)
+                let l:i += 1
+                continue
+            else
+                let l:indent = (strchars(l:indent) + 1)/2
+            endif
+
+            let l:str = matchstr(l:holeBuf[l:i], '\S*$')
+
+            if l:indent >= len(l:path)
+                let l:path += [l:str]
+            else
+                let l:path[l:indent] = l:str
+            endif
+
+            let l:list = [join(l:path[0:l:indent-1], '')]
+            for l:item in split(l:str, '/')
+                let l:list += [l:list[-1] . l:item . '/']
+            endfor
+
+            let l:record.list += l:list[1:]
+            let l:i += 1
+        endwhile
+
+        if empty(l:record.list)
+            return {}
+        else
+            return l:record
+        endif
+    else
+        for l:absPath in get(l:record, 'list', [])
+            let l:path = g:NERDTreePath.New(l:absPath)
+            let l:node = b:NERDTree.root.findNode(l:path)
+            call l:node.open()
+        endfor
+
+        call b:NERDTree.render()
+        call search(get(l:record, 'cur', 1), 'e')
+    endif
+endfunction
+
+
+function! misc#BufHisInAWindow(...)
+    let l:action = a:0 > 0 ? a:1 : 'record'
+
+    if !empty(&buftype) || empty(expand('%'))
+        return
+    endif
+
+    if l:action == 'record'
+        let l:nr = bufnr('%')
+        if !exists('w:bufHis')
+            let w:bufHis = [l:nr]
+        else
+            let l:ind = index(w:bufHis, l:nr)
+
+            if l:ind == -1
+                let w:bufHis += [l:nr]
+            elseif l:ind < len(w:bufHis) - 1
+                call add(w:bufHis, remove(w:bufHis, l:ind))
+            endif
+        endif
+    elseif exists('w:bufHis') && len(w:bufHis) > 1
+        if l:action == 'previous'
+            call insert(w:bufHis, remove(w:bufHis, -1))
+        elseif l:action == 'next'
+            call add(w:bufHis, remove(w:bufHis, 0))
+        else
+            return
+        endif
+
+        if bufexists(w:bufHis[-1])
+            exe w:bufHis[-1] . 'buffer'
+        else
+            call remove(w:bufHis, -1)
+            call misc#BufHisInAWindow(l:action)
+        endif
+    endif
+endfunction
+
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()
@@ -313,35 +422,45 @@ function! misc#WinResize()
         return
     endif
 
-    if exists('t:MAXMIZEWIN')
-        let l:winnr = win_id2win(t:MAXMIZEWIN[2])
-        exe l:winnr . 'resize ' . t:MAXMIZEWIN[0]
-        exe 'vert ' . l:winnr . 'resize ' . t:MAXMIZEWIN[1]
-        if t:MAXMIZEWIN[2] == win_getid()
-            unlet t:MAXMIZEWIN
+    if exists('t:MaxmizeWin')
+        let l:winnr = win_id2win(t:MaxmizeWin[2])
+        exe l:winnr . 'resize ' . t:MaxmizeWin[0]
+        exe 'vert ' . l:winnr . 'resize ' . t:MaxmizeWin[1]
+        if t:MaxmizeWin[2] == win_getid()
+            unlet t:MaxmizeWin
             return
         endif
     endif
-    let t:MAXMIZEWIN = [winheight(0), winwidth(0), win_getid()]
-    exe 'resize ' . max([float2nr(0.8 * &lines), t:MAXMIZEWIN[0]])
-    exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MAXMIZEWIN[1]])
+
+    let t:MaxmizeWin = [winheight(0), winwidth(0), win_getid()]
+    exe 'resize ' . max([float2nr(0.8 * &lines), t:MaxmizeWin[0]])
+    exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
 endfunction
 
 " Combine nerdtree & tagbar
 " Switch between the two
 function! misc#ToggleSidebar(...)
-    let l:winId = win_getid()
     let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
     let l:tag = bufwinnr('Tagbar') == -1 ? 0 : 2
     let l:statue = l:nerd + l:tag
 
     if a:0 > 0
-        NERDTreeClose
-        TagbarClose
+        if l:statue > 0
+            if l:nerd != -1
+                call misc#ToggleNERDTree()
+            endif
+
+            if l:tag != -1
+                TagbarClose
+            endif
+        else
+            call misc#ToggleNERDTree()
+            TagbarOpen
+        endif
     elseif l:statue == 0
-        NERDTree
+        call misc#ToggleNERDTree()
     elseif l:statue == 1
-        NERDTreeClose
+        call misc#ToggleNERDTree()
         let g:tagbar_vertical=0
         let g:tagbar_left=1
         TagbarOpen
@@ -349,31 +468,41 @@ function! misc#ToggleSidebar(...)
         let g:tagbar_left=0
     elseif l:statue == 2
         TagbarClose
-        NERDTree
+        call misc#ToggleNERDTree()
     else
         TagbarClose
     endif
-
-    call win_gotoid(l:winId)
 endfunction
 
 " Toggle NERDTree window
 function! misc#ToggleNERDTree()
     if bufwinnr('NERD_tree') != -1
+        exe bufwinnr('NERD_tree') . 'wincmd w'
+        let t:RecordOfTree = misc#RecordOfNERDTree()
         NERDTreeClose
     elseif bufwinnr('Tagbar') != -1
         TagbarClose
-        NERDTree
+        if !g:NERDTree.ExistsForTab() && exists('t:RecordOfTree')
+            NERDTree
+            call misc#RecordOfNERDTree('.', t:RecordOfTree)
+        else
+            NERDTreeToggle
+        endif
         TagbarOpen
-    else
+    elseif !g:NERDTree.ExistsForTab() && exists('t:RecordOfTree')
         NERDTree
+        call misc#RecordOfNERDTree('.', t:RecordOfTree)
+    else
+        NERDTreeToggle
+    endif
+
+    if exists('t:RecordOfTree') && empty(t:RecordOfTree)
+        unlet t:RecordOfTree
     endif
 endfunction
 
-
 "  Toggle TagBar window
 function! misc#ToggleTagbar()
-    let l:id=win_getid()
     if bufwinnr('Tagbar') != -1
         TagbarClose
     elseif bufwinnr('NERD_tree') == -1
@@ -382,8 +511,8 @@ function! misc#ToggleTagbar()
         TagbarOpen
         let g:tagbar_vertical=19
         let g:tagbar_left=0
-        call win_gotoid(l:id)
     else
+        let l:id = win_getid()
         exe bufwinnr('NERD_tree') . 'wincmd w'
         TagbarOpen
         call win_gotoid(l:id)

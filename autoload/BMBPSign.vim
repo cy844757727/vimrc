@@ -594,7 +594,10 @@ function s:WorkSpaceLoad(pre)
 
     " Load viminfo
     if filereadable(l:vimInfoFile)
+        let l:temp = &viminfo
+        exe 'set viminfo=' . s:vimInfo
         exe 'silent! rviminfo! ' . l:vimInfoFile
+        exe 'set viminfo=' . l:temp
     endif
 
     " Load session

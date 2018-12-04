@@ -85,20 +85,22 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
     autocmd InsertLeave * :hi statusline guibg=#007ACC
+    autocmd BufEnter * call misc#BufHisInAWindow()
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
-command! -range TB :<line1>tabnext
+command! -range TN :<line1>tabnext
 command! -range TP :<line1>tabprevious
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
-command! -nargs=+ -complete=file Debug :call async#GdbStart(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
 
 "快捷键映射=====================
+noremap <silent> <C-left> :call misc#BufHisInAWindow('previous')<CR>
+noremap <silent> <C-right> :call misc#BufHisInAWindow('next')<CR>
 " 括号引号自动补全
 inoremap ( ()<Esc>i
 inoremap ) <c-r>=CyClosePair(')')<CR>
@@ -134,8 +136,8 @@ imap <C-h> <Esc>lwbve<C-h>
 
 noremap <silent> <C-a> <Esc>ggvG$
 noremap <silent> <C-w> <Esc>:close<CR>
-noremap <silent> <S-PageUp> <Esc>:call WindowDownUp('up')<CR>
-noremap <silent> <S-pageDown> <Esc>:call WindowDownUp('down')<CR>
+noremap <silent> <S-PageUp> <Esc>:call WindowSwitch('up')<CR>
+noremap <silent> <S-pageDown> <Esc>:call WindowSwitch('down')<CR>
 noremap <silent> <C-t> <Esc>:tabnew<CR>
 noremap <silent> <S-t> <Esc>:try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 noremap <silent> <S-tab> <Esc>:tabnext<CR>
@@ -206,7 +208,7 @@ tnoremap <silent> <S-f12> <C-w>N:call async#ToggleTerminal('toggle', 'py3')<CR>
 
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
-function! WindowDownUp(action)
+function! WindowSwitch(action)
     if a:action == 'down'
         wincmd w
     else
@@ -431,24 +433,83 @@ let g:BMBPSign_PostLoadEventList = [
             \ ]
 
 function! PreSaveWorkSpace_TabVar()
-    let g:TABVAR_MAXMIZEWIN = []
-    for l:nr in range(1, tabpagenr('$') + 1)
-        let l:var = gettabvar(l:nr, 'MAXMIZEWIN')
+    let g:TABVAR_MAXMIZEWIN = {}
+    let g:TABVAR_RECORDOFTREE = {}
+    let g:WINVAR_BUFHIS = {}
+
+    for l:nr in range(1, tabpagenr('$'))
+        " Record win status
+        let l:var = gettabvar(l:nr, 'MaxmizeWin', [])
         if !empty(l:var)
-            let g:TABVAR_MAXMIZEWIN += [[l:nr] + l:var]
+            let g:TABVAR_MAXMIZEWIN[l:nr] = l:var
+        endif
+
+        " Record nerdtree status
+        for l:bufnr in tabpagebuflist(l:nr) + [0]
+            if getbufvar(l:bufnr, '&filetype', '') == 'nerdtree'
+                break
+            endif
+        endfor
+
+        if l:bufnr != 0
+            let l:var = misc#RecordOfNERDTree(l:bufnr)
+        else
+            let l:var = gettabvar(l:nr, 'RecordOfTree', {})
+        endif
+
+        if !empty(l:var)
+            let g:TABVAR_RECORDOFTREE[l:nr] = l:var
+        endif
+
+        " Record buf history in every window
+        let g:WINVAR_BUFHIS[l:nr] = {}
+        for l:winnr in range(1, tabpagewinnr(l:nr, '$'))
+            let l:var = gettabwinvar(l:nr, l:winnr, 'bufHis', [])
+            if len(l:var) > 1
+                let g:WINVAR_BUFHIS[l:nr][l:winnr] = l:var
+            endif
+        endfor
+
+        if empty(g:WINVAR_BUFHIS[l:nr])
+            unlet g:WINVAR_BUFHIS[l:nr]
         endif
     endfor
+
     if empty(g:TABVAR_MAXMIZEWIN)
         unlet g:TABVAR_MAXMIZEWIN
+    endif
+
+    if empty(g:TABVAR_RECORDOFTREE)
+        unlet g:TABVAR_RECORDOFTREE
+    endif
+
+    if empty(g:WINVAR_BUFHIS)
+        unlet g:WINVAR_BUFHIS
     endif
 endfunction
 
 function! PostLoadWorkSpace_TabVar()
     if exists('g:TABVAR_MAXMIZEWIN')
-        for l:item in g:TABVAR_MAXMIZEWIN
-            call settabvar(l:item[0], 'MAXMIZEWIN', l:item[1:])
+        for [l:nr, l:val] in items(g:TABVAR_MAXMIZEWIN)
+            call settabvar(l:nr, 'MaxmizeWin', l:val)
         endfor
         unlet g:TABVAR_MAXMIZEWIN
+    endif
+
+    if exists('g:TABVAR_RECORDOFTREE')
+        for [l:nr, l:val] in items(g:TABVAR_RECORDOFTREE)
+            call settabvar(l:nr, 'RecordOfTree', l:val)
+        endfor
+        unlet g:TABVAR_RECORDOFTREE
+    endif
+
+    if exists('g:WINVAR_BUFHIS')
+        for [l:nr, l:dict] in items(g:WINVAR_BUFHIS)
+            for [l:winnr, l:val] in items(l:dict)
+                call settabwinvar(l:nr, l:winnr, 'bufHis', l:val)
+            endfor
+        endfor
+        unlet g:WINVAR_BUFHIS
     endif
 endfunction
 

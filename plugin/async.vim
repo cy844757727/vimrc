@@ -14,4 +14,5 @@ command -nargs=+ -complete=shellcmd HTerm :call async#ToggleTerminal('off', <f-a
 command -nargs=+ -complete=shellcmd Async :call async#RunJob(<q-args>)
 command -nargs=? SAsync :call async#StopJob(<f-args>)
 command LAsync :echo async#ListJob()
+command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, BMBPSign#SignRecord('break', 'tbreak'))
 

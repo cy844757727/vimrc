@@ -41,18 +41,22 @@ if exists('*<SID>CheckOutBranch')
 endif
 
 function s:Refresh()
+    setlocal noreadonly modifiable
     let l:pos = getpos('.')
     silent edit!
     call setline(1, git#FormatBranch())
     call setpos('.', l:pos)
+    setlocal readonly nomodifiable
 endfunction
 
 function s:RefreshStatus()
     3wincmd w
+    setlocal noreadonly modifiable
     let l:pos = getpos('.')
     silent edit!
     call setline(1, git#FormatStatus())
     call setpos('.', l:pos)
+    setlocal readonly nomodifiable
     4wincmd w
 endfunction
 
@@ -183,10 +187,12 @@ function s:cursorJump()
         if l:lin != 0 && b:curL > l:lin
             let l:msg = systemlist('git show ' . getline('.') . "|sed '/^diff --\\w/s/$/ {[(<{1/'")
             2wincmd w
+            setlocal noreadonly modifiable
             silent edit!
             call setline(1, l:msg)
             set filetype=gitcommit
             set nobuflisted
+            setlocal readonly nomodifiable
             4wincmd w
         endif
     endif

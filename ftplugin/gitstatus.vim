@@ -41,10 +41,12 @@ if exists('*<SID>FileDiff')
 endif
 
 function s:Refresh()
+    setlocal noreadonly modifiable
     let l:pos = getpos('.')
     silent edit!
     call setline(1, git#FormatStatus())
     call setpos('.', l:pos)
+    setlocal readonly nomodifiable
 endfunction
 
 function s:MsgHandle(msg)

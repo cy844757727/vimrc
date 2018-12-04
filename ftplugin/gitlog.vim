@@ -49,11 +49,13 @@ function s:RefreshCommit()
         let l:hash = matchstr(getline('.'), '\w\{7}')
         if l:hash != ''
             wincmd w
+            setlocal noreadonly modifiable
             silent edit!
             call setline(1, git#FormatCommit(l:hash))
             set filetype=gitcommit
             set nobuflisted
             normal zj
+            setlocal readonly nomodifiable
             wincmd W
         endif
     endif

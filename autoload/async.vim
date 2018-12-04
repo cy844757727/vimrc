@@ -52,7 +52,7 @@ if exists('g:Async_TerminalType')
 endif
 
 if exists('g:Async_TermIcon')
-    call extend(s:termIcon, g:Async_TermIcom)
+    call extend(s:termIcon, g:Async_TermIcon)
 endif
 
 " Debug a script file
@@ -358,7 +358,7 @@ endfunction
 function s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
     
-    if a:status > 0
+    if a:status != 0
         echo 'Failed: ' . s:asyncJob[l:id].cmd
     else
         echo 'Done: ' . s:asyncJob[l:id].cmd
