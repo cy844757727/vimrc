@@ -437,6 +437,7 @@ function! misc#BufHisInAWindow(...)
 endfunction
 
 function! s:StrRejustOutput(list, ind, start)
+    let l:start = a:start
     let l:str = join(a:list)
     let l:len = len(l:str)
 
@@ -450,8 +451,6 @@ function! s:StrRejustOutput(list, ind, start)
             let l:start = max([0, l:A - 2])
         elseif l:B > a:start + &columns - 1
             let l:start = max([0, l:B + 4 - &columns])
-        else
-            let l:start = a:start
         endif
 
         " Cut out a section of l:str
