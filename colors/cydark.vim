@@ -26,6 +26,7 @@ hi TabLineSeparator guibg=#555555 guifg=#1E1E1E
 hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
 hi NonText guifg=#1E1E1E
 hi Question cterm=NONE guifg=#000000 guibg=#BBBBA0
+"hi MoreMsg cterm=NONE guifg=#000000 guibg=#BBBBA0
 hi SignColumn ctermbg=234 guibg=#1E1E1E
 hi Directory guifg=#70C7C7
 hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#264F78

@@ -83,9 +83,9 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
+    autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
     autocmd InsertLeave * :hi statusline guibg=#007ACC
-    autocmd BufEnter * call misc#BufHisInAWindow()
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
@@ -464,8 +464,8 @@ function! PreSaveWorkSpace_TabVar()
         " Record buf history in every window
         let g:WINVAR_BUFHIS[l:nr] = {}
         for l:winnr in range(1, tabpagewinnr(l:nr, '$'))
-            let l:var = gettabwinvar(l:nr, l:winnr, 'bufHis', [])
-            if len(l:var) > 1
+            let l:var = gettabwinvar(l:nr, l:winnr, 'bufHis', {})
+            if len(get(l:var, 'list', [])) > 1
                 let g:WINVAR_BUFHIS[l:nr][l:winnr] = l:var
             endif
         endfor
@@ -544,10 +544,21 @@ let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
             \ 'mkv'      : '',
             \ 'xls'      : '',
             \ 'xlsx'     : '',
+            \ 'doc'      : '',
+            \ 'docx'     : '',
+            \ 'ppt'      : '',
+            \ 'pptx'     : '',
+            \ 'text'     : '',
             \ 'git'      : '',
-            \ 'pdf'      : ''
+            \ 'pdf'      : '',
+            \ 'tags'     : '',
+            \ 'tag'      : ''
             \ }
 
+let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
+            \ '.tags'     : '',
+            \ '.tag'      : ''
+            \ }
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 " ===============================
 " set foldmethod=marker

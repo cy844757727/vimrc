@@ -31,6 +31,7 @@ let s:termOption = {
             \ 'norestore': 1
             \ }
 
+" Default terminal type
 let s:termType = {
             \ s:shell: s:shell,
             \ s:shell . '1': s:shell,
@@ -66,7 +67,7 @@ function async#DbgScript(...)
     let t:dbg = {}
     let t:dbg.srcWinId = win_getid()
     let t:dbg.srcBufnr = bufnr('%')
-    belowright 15split
+    exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split'
     let t:dbg.dbgWinId = win_getid()
     let t:dbg.tempMsg = ''
     let t:dbg.sign = {}
@@ -75,7 +76,7 @@ function async#DbgScript(...)
     call s:DbgScriptAnalyze(l:file, l:breakPoint)
     if !has_key(t:dbg, 'cmd')
         call s:DbgOnExit()
-        return 0
+        return -1
     endif
 
     " Start debuge
@@ -93,6 +94,8 @@ endfunction
 
 
 " Analyze script type & set val: cmd, postCmd, prompt, re
+" Cmd: Debug statement       " PostCmd: Excuting after starting a debug
+" Prompt: command prompt     " Re: Regular expressions used to match file and line number
 function s:DbgScriptAnalyze(file, breakPoint)
     if !filereadable(a:file)
         return
@@ -101,8 +104,9 @@ function s:DbgScriptAnalyze(file, breakPoint)
     endif
 
     let l:lineOne = getbufline(a:file, 1)[0]
-    let l:interpreter = matchstr(l:lineOne, '\(/\(env\s\+\)\?\)\zs\w\+\ze\([^/]*\)$')
+    let l:interpreter = matchstr(l:lineOne, '^\(#!.*/\(env\s*\)\?\)\zs\w\+')
 
+    " No #!, try to use filetype
     if empty(l:interpreter)
         let l:interpreter = getbufvar(a:file, '&filetype')
     endif
@@ -135,6 +139,7 @@ endfunction
 
 " 
 function s:DbgMsgHandle(job, msg)
+    " Use command prompt to determine a message block
     if a:msg =~ t:dbg.prompt
         let t:dbg.match = matchlist(t:dbg.tempMsg . a:msg, t:dbg.re)
         let t:dbg.tempMsg = ''
@@ -153,7 +158,7 @@ function s:DbgMsgHandle(job, msg)
 endfunction
 
 
-" 
+" Indicates the current debugging line
 function s:DbgSetSign(file, line)
     let l:signPlace = execute('sign place file=' . a:file)
 
@@ -198,8 +203,9 @@ function async#RunScript(...)
     endif
 
     let l:lineOne = getbufline(l:file, 1)[0]
-    let l:interpreter = matchstr(l:lineOne, '\(/\(env\s\+\)\?\)\zs[^/]*$')
+    let l:interpreter = matchstr(l:lineOne, '^\(#!.*/\(env\s*\)\?\)\zs.*$')
 
+    " No #!, try to use filetype
     if empty(l:interpreter)
         let l:interpreter = getbufvar(l:file, '&filetype')
     endif
@@ -255,20 +261,23 @@ endfunction
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
 " Type: specified by s:termType (default: s:shell)
-" PostCmd: executing cmd when terminal started
+" PostCmd: executing cmd after terminal started
 function async#ToggleTerminal(...)
     let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
     let l:type = a:0 > 1 && a:2 != '.' ? a:2 : ''
     let l:postCmd = a:0 > 2 ? join(a:000[2:], ' ') : ''
 
     if empty(l:type)
+        " Default terminal
         let l:type = s:shell
         let l:name = s:termPrefix
     elseif l:type
+        " Default number terminal (1..9, -1..-9)
         let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:termIcon) + 1
         let l:name = s:termPrefix . get(s:termIcon, l:type, '')
         let l:type = s:shell . l:type
     else
+        " Custom added terminal type
         let l:name = s:termPrefix . get(s:termIcon, l:type, ': ' . l:type)
     endif
 
@@ -295,7 +304,7 @@ function async#ToggleTerminal(...)
             exe l:other . 'hide'
         endif
 
-        " Skip window containing buf with non empty buftype
+        " Skip window containing buf with nonempty buftype
         let l:num = winnr('$')
         while !empty(&buftype) && l:num > 0
             wincmd w
@@ -303,7 +312,7 @@ function async#ToggleTerminal(...)
         endwhile
 
         if l:bufnr == -1
-            " Start a terminal
+            " Creat a terminal
             let l:option = copy(s:termOption)
             let l:option['term_name'] = l:name . ' '
             let l:option['curwin'] = 1
@@ -334,7 +343,6 @@ function async#ToggleTerminal(...)
     return l:bufnr
 endfunction
 
-
 " Cmd: list or string
 function async#RunJob(cmd)
     if len(s:asyncJob) > s:maxJob
@@ -348,6 +356,7 @@ function async#RunJob(cmd)
                 \ 'err_io': 'null'
                 \ })
 
+    " Record a job
     if job_status(l:job) == 'run'
         let l:id = matchstr(l:job, '\d\+')
         let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}

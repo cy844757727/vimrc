@@ -8,11 +8,18 @@
 "let g:loaded_A_Misc = 1
 
 
+augroup MISC_autocmd
+    autocmd!
+    " Auto record buf history for each window
+    autocmd BufEnter ?* call misc#BufHisInAWindow()
+augroup END
+
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun(...)
     wall
     if &filetype == 'nerdtree'
         if a:0 > 0 && exists('t:RecordOfTree')
+            " Recovery status of last closed
             call search('^/\S*/$')
             silent normal oX
             call misc#RecordOfNERDTree('.', t:RecordOfTree)
@@ -219,7 +226,7 @@ endfunction
 
 function! misc#StatuslineIcon()
     if bufname('%') =~ '^!'
-        return ''
+        return 'ﲵ'
     elseif &buftype == 'help'
         return ''
     elseif exists('g:BMBPSign_Projectized')
@@ -232,38 +239,34 @@ endfunction
 
 " Customize tabline
 function! misc#TabLine()
-    let s = ''
-    for i in range(tabpagenr('$'))
+    let l:s = ''
+    let l:cur = tabpagenr() - 1
+    let l:num = tabpagenr('$')
+    let l:list = [l:cur, l:cur - 1, l:num - 1]
+
+    for l:i in range(l:num)
         " select the highlighting
-        if i + 1 == tabpagenr()
-            let s .= '%#TabLineSel#'
-        else
-            let s .= '%#TabLine#'
-        endif
+        let l:s .= l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#'
 
         " set the tab page number (for mouse clicks)
-        let s .= '%' . (i + 1) . 'T'
+        let l:s .= '%' . (l:i + 1) . 'T'
 
         " the label is made by MyTabLabel()
-        let s .= ' %{misc#TabLabel(' . (i + 1) . ')} '
+        let l:s .= ' %{misc#TabLabel(' . (l:i + 1) . ')} '
 
         " Separator
-        if i + 1 != tabpagenr() && i + 2 != tabpagenr() && i + 1 != tabpagenr('$')
-            let s .= '%#TabLineSeparator#│'
-        else
-            let s .= ' '
-        endif
+        let l:s .= index(l:list, l:i) == -1 ? '%#TabLineSeparator#│' : ' '
     endfor
 
     " after the last tab fill with TabLineFill and reset tab page nr
-    let s .= '%#TabLineFill#%T'
+    let l:s .= '%#TabLineFill#%T'
 
     " right-align the label to close the current tab page
     if tabpagenr('$') > 1
-        let s .= '%=%#TabLine#%999X ✘ '
+        let l:s .= '%=%#TabLine#%999X ✘ '
     endif
 
-    return s
+    return l:s
 endfunction
 
 
@@ -279,11 +282,7 @@ function! misc#TabLabel(n)
     endwhile
 
     " Add a flag if current buf is modified
-    if getbufvar(l:buflist[l:winnr], '&modified')
-        let l:modFlag = ''
-    else
-        let l:modFlag = ' '
-    endif
+    let l:modFlag = getbufvar(l:buflist[l:winnr], '&modified') ? '' : ' '
 
     " Append the buffer name
     let l:name = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
@@ -295,6 +294,7 @@ function! misc#TabLabel(n)
 endfunction
 
 
+" Custom format instead of default
 function! misc#FoldText()
     let l:str = getline(v:foldstart)
     let l:num = printf('%5d', v:foldend - v:foldstart + 1)
@@ -302,6 +302,8 @@ function! misc#FoldText()
 endfunction
 
 
+" Record statue of NERDTree
+" Can used for restoring
 function! misc#RecordOfNERDTree(...)
     let l:bufnr = a:0 > 0 && a:1 != '.' ? a:1 : bufnr('%')
     let l:record = a:0 > 1 ? a:2 : {}
@@ -335,21 +337,24 @@ function! misc#RecordOfNERDTree(...)
         while l:i < l:length
             let l:indent = matchstr(l:holeBuf[l:i], '^\s*' . l:openIcon)
 
+            " Not opened directory
             if empty(l:indent)
                 let l:i += 1
                 continue
-            else
-                let l:indent = (strchars(l:indent) + 1)/2
             endif
 
+            let l:indent = (strchars(l:indent) + 1)/2
             let l:str = matchstr(l:holeBuf[l:i], '\S*$')
 
+            " Apend l:str to l:path
             if l:indent >= len(l:path)
                 let l:path += [l:str]
             else
                 let l:path[l:indent] = l:str
             endif
 
+            " Expand l:str to multiple paths
+            " (like lib/cur/... to lib/, lib/cur/, lib/cur/...)
             let l:list = [join(l:path[0:l:indent-1], '')]
             for l:item in split(l:str, '/')
                 let l:list += [l:list[-1] . l:item . '/']
@@ -385,34 +390,85 @@ function! misc#BufHisInAWindow(...)
     endif
 
     if l:action == 'record'
-        let l:nr = bufnr('%')
+        let l:name = bufname('%')
+
         if !exists('w:bufHis')
-            let w:bufHis = [l:nr]
+            let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0}
         else
-            let l:ind = index(w:bufHis, l:nr)
+            let l:ind = index(w:bufHis.list, l:name)
 
             if l:ind == -1
-                let w:bufHis += [l:nr]
-            elseif l:ind < len(w:bufHis) - 1
-                call add(w:bufHis, remove(w:bufHis, l:ind))
+                let w:bufHis.list += [l:name]
+            elseif l:ind < len(w:bufHis.list) - 1
+                " When editing existing buf (not next or previous)
+                call add(w:bufHis.list, remove(w:bufHis.list, l:ind))
             endif
         endif
-    elseif exists('w:bufHis') && len(w:bufHis) > 1
+    elseif exists('w:bufHis') && len(w:bufHis.list) > 1
         if l:action == 'previous'
-            call insert(w:bufHis, remove(w:bufHis, -1))
+            call insert(w:bufHis.list, remove(w:bufHis.list, -1))
         elseif l:action == 'next'
-            call add(w:bufHis, remove(w:bufHis, 0))
+            call add(w:bufHis.list, remove(w:bufHis.list, 0))
         else
             return
         endif
 
-        if bufexists(w:bufHis[-1])
-            exe w:bufHis[-1] . 'buffer'
+        if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
+            silent exe 'buffer ' . w:bufHis.list[-1]
+            let l:ind = index(w:bufHis.list, w:bufHis.init)
+            let l:buf = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
+
+            " Mark out the current item
+            let l:buf[-1] = '[' . l:buf[-1][1:-2] . ']'
+
+            " Readjusting position (Put the initial edited text first)
+            let l:buf = remove(l:buf, l:ind, -1) + l:buf
+            let [l:str, w:bufHis.start] = s:StrRejustOutput(l:buf, len(l:buf) - l:ind - 1, w:bufHis.start)
+            echo l:str
         else
-            call remove(w:bufHis, -1)
+            " Discard invalid item
+            if w:bufHis.list[-1] == w:bufHis.init
+                let w:bufHis.init == w:bufHis.list[0]
+            endif
+            call remove(w:bufHis.list, -1)
             call misc#BufHisInAWindow(l:action)
         endif
     endif
+endfunction
+
+function! s:StrRejustOutput(list, ind, start)
+    let l:str = join(a:list)
+    let l:len = len(l:str)
+
+    if l:len > &columns
+        " Current item start point: A, end point: B
+        let l:B = len(join(a:list[:a:ind])) - 1
+        let l:A = l:B - len(a:list[a:ind]) + 1
+
+        " Determine the start point of l:str to display
+        if l:A < a:start
+            let l:start = max([0, l:A - 2])
+        elseif l:B > a:start + &columns - 1
+            let l:start = max([0, l:B + 4 - &columns])
+        else
+            let l:start = a:start
+        endif
+
+        " Cut out a section of l:str
+        let l:str = l:str[l:start:l:start + &columns - 2]
+
+        " Append prefix to head when not displayed completely
+        if l:start > 0
+            let l:str = '<' . l:str[1:]
+        endif
+
+        " Append prefix to tail when not displayed completely
+        if l:start + &columns - 1 < l:len
+            let l:str = l:str[:-2] . '>'
+        endif
+    endif
+
+    return [l:str, l:start]
 endfunction
 
 " ############### 窗口相关 ######################################
