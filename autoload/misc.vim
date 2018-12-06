@@ -14,6 +14,21 @@ augroup MISC_autocmd
     autocmd BufEnter ?* call misc#BufHisInAWindow()
 augroup END
 
+command Qa :call misc#VimExit()
+
+function misc#VimExit()
+    " Hide all terminal window in current tabpage
+    while 1
+        let l:winnr = bufwinnr('^!')
+        if l:winnr != -1
+            exe l:winnr . 'hide'
+        else
+            break
+        endif
+    endwhile
+    qall
+endfunction
+
 "	Compile c/cpp/verilog, Run script language ...
 function! misc#CompileRun(...)
     wall
@@ -231,9 +246,9 @@ function! misc#StatuslineIcon()
         return ''
     elseif exists('g:BMBPSign_Projectized')
         return ''
-    else
-        return ''
     endif
+
+    return ''
 endfunction
 
 
@@ -360,8 +375,9 @@ function! misc#RecordOfNERDTree(...)
                 let l:list += [l:list[-1] . l:item . '/']
             endfor
 
-            let l:record.list += l:list[1:]
             let l:i += 1
+            " Start from 1 to avoid duplicating parent directories
+            let l:record.list += l:list[1:]
         endwhile
 
         if empty(l:record.list)
@@ -370,6 +386,7 @@ function! misc#RecordOfNERDTree(...)
             return l:record
         endif
     else
+        " Recovery statue
         for l:absPath in get(l:record, 'list', [])
             let l:path = g:NERDTreePath.New(l:absPath)
             let l:node = b:NERDTree.root.findNode(l:path)
@@ -382,32 +399,32 @@ function! misc#RecordOfNERDTree(...)
 endfunction
 
 
+" a:1 if exists define the action
+" otherwise record the history to w:bufHis
 function! misc#BufHisInAWindow(...)
-    let l:action = a:0 > 0 ? a:1 : 'record'
-
     if !empty(&buftype) || empty(expand('%'))
         return
     endif
 
-    if l:action == 'record'
+    if a:0 == 0
         let l:name = bufname('%')
 
         if !exists('w:bufHis')
             let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0}
-        else
+        elseif l:name != w:bufHis.list[-1]
+            " When existing, remove first
             let l:ind = index(w:bufHis.list, l:name)
-
-            if l:ind == -1
-                let w:bufHis.list += [l:name]
-            elseif l:ind < len(w:bufHis.list) - 1
-                " When editing existing buf (not next or previous)
-                call add(w:bufHis.list, remove(w:bufHis.list, l:ind))
+            if l:ind != -1
+                call remove(w:bufHis.list, l:ind)
             endif
+
+            " Put it to last position
+            let w:bufHis.list += [l:name]
         endif
-    elseif exists('w:bufHis') && len(w:bufHis.list) > 1
-        if l:action == 'previous'
+    elseif exists('w:bufHis.list') && len(w:bufHis.list) > 1
+        if a:1 == 'previous'
             call insert(w:bufHis.list, remove(w:bufHis.list, -1))
-        elseif l:action == 'next'
+        elseif a:1 == 'next'
             call add(w:bufHis.list, remove(w:bufHis.list, 0))
         else
             return
@@ -423,19 +440,21 @@ function! misc#BufHisInAWindow(...)
 
             " Readjusting position (Put the initial edited text first)
             let l:buf = remove(l:buf, l:ind, -1) + l:buf
+
             let [l:str, w:bufHis.start] = s:StrRejustOutput(l:buf, len(l:buf) - l:ind - 1, w:bufHis.start)
             echo l:str
         else
             " Discard invalid item
             if w:bufHis.list[-1] == w:bufHis.init
-                let w:bufHis.init == w:bufHis.list[0]
+                let w:bufHis.init = w:bufHis.list[0]
             endif
             call remove(w:bufHis.list, -1)
-            call misc#BufHisInAWindow(l:action)
+            call misc#BufHisInAWindow(a:1)
         endif
     endif
 endfunction
 
+" Make displayed width to adapt one line
 function! s:StrRejustOutput(list, ind, start)
     let l:start = a:start
     let l:str = join(a:list)
@@ -456,12 +475,12 @@ function! s:StrRejustOutput(list, ind, start)
         " Cut out a section of l:str
         let l:str = l:str[l:start:l:start + &columns - 2]
 
-        " Append prefix to head when not displayed completely
+        " Add prefix to head when not displayed completely
         if l:start > 0
             let l:str = '<' . l:str[1:]
         endif
 
-        " Append prefix to tail when not displayed completely
+        " Add suffix to tail when not displayed completely
         if l:start + &columns - 1 < l:len
             let l:str = l:str[:-2] . '>'
         endif
@@ -588,11 +607,10 @@ function! misc#ToggleQuickFix(...)
         call BMBPSign#SetQfList('TodoList', 'todo')
     elseif max(map(tabpagebuflist(), "getbufvar(v:val, '&bt') == 'quickfix'"))
         cclose
-        return
+    else
+        copen 10
     endif
 
-    copen 10
-    set nowrap
 endfunction
 " ####################################################################
 

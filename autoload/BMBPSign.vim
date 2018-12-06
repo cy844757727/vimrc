@@ -156,6 +156,7 @@ function s:Signjump(type, action)
             call insert(l:vec, remove(l:vec, -1))
         endif
 
+        " Try jumping to a tab containing this buf
         let l:bufnr = bufnr(l:vec[-1].file)
         if index(tabpagebuflist(), l:bufnr) == -1
             let l:winId = win_findbuf(l:bufnr)
@@ -786,6 +787,8 @@ function BMBPSign#SetQfList(title, ...)
         return
     endif
 
+    copen
+    set nowrap
     call setqflist([], 'r', {'title': a:title, 'items': s:GetQfList(a:000)})
 endfunction
 

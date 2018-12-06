@@ -11,6 +11,7 @@ filetype indent on
 set tags+=./.tags
 set tags+=.tags
 set showcmd
+set mousetime=1000
 "set splitbelow
 set splitright
 set confirm        "退出保存询问
@@ -457,11 +458,7 @@ function! PreSaveWorkSpace_TabVar()
             endif
         endfor
 
-        if l:bufnr != 0
-            let l:var = misc#RecordOfNERDTree(l:bufnr)
-        else
-            let l:var = gettabvar(l:nr, 'RecordOfTree', {})
-        endif
+        let l:var = l:bufnr == 0 ? gettabvar(l:nr, 'RecordOfTree', {}) : misc#RecordOfNERDTree(l:bufnr)
 
         if !empty(l:var)
             let g:TABVAR_RECORDOFTREE[l:nr] = l:var
@@ -491,11 +488,6 @@ function! PreSaveWorkSpace_TabVar()
 
     if empty(g:WINVAR_BUFHIS)
         unlet g:WINVAR_BUFHIS
-    endif
-
-    let l:winnr = bufwinnr('!Terminal ')
-    if l:winnr != -1
-        exe l:winnr . 'hide'
     endif
 endfunction
 

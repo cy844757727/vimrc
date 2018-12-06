@@ -193,6 +193,7 @@ function s:DbgMsgHandle(job, msg)
             call cursor(t:dbg.match[2], 1)
             call s:DbgSetSign(expand('%'), t:dbg.match[2])
 
+            " Whether from shortcut in source window
             if !exists('t:dbg.keyAction')
                 call win_gotoid(t:dbg.dbgWinId)
             else
