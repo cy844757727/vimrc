@@ -79,6 +79,9 @@ function async#DbgScript(...)
         return -1
     endif
 
+    " Creat maping
+    call s:DbgMaping()
+
     " Start debuge
     let l:option = copy(s:termOption)
     let l:option['curwin'] = 1
@@ -137,6 +140,45 @@ function s:DbgScriptAnalyze(file, breakPoint)
 endfunction
 
 
+function s:DbgMaping(...)
+    if a:0 == 0
+        call win_gotoid(t:dbg.srcWinId)
+        noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd('continue')<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd('step')<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd('next')<CR>
+        noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
+        noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
+        noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
+        noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
+        call win_gotoid(t:dbg.dbgWinId)
+    else
+        call win_gotoid(t:dbg.srcWinId)
+        unmap <buffer> <CR>
+        unmap <buffer> c
+        unmap <buffer> s
+        unmap <buffer> n
+        unmap <buffer> j
+        unmap <buffer> u
+        unmap <buffer> p
+    endif
+endfunction
+
+function <SID>DbgSendCmd(cmd)
+    if a:cmd == 'quit' && confirm('Quit debug ?', "&Yes\n&No", 2) == 2
+        return
+    elseif a:cmd == 'jump' || a:cmd == 'until'
+        let l:cmd = a:cmd . ' ' . input('Enter line number: ')
+    elseif a:cmd == 'p'
+        let l:cmd = a:cmd . ' ' . input('Input Expression to print: ')
+    else
+        let l:cmd = a:cmd
+    endif
+
+    call term_sendkeys(t:dbg.dbgBufnr, l:cmd . "\n")
+    let t:dbg.keyAction = 1
+endfunction
+
 " 
 function s:DbgMsgHandle(job, msg)
     " Use command prompt to determine a message block
@@ -150,7 +192,12 @@ function s:DbgMsgHandle(job, msg)
             exe 'edit ' . t:dbg.match[1]
             call cursor(t:dbg.match[2], 1)
             call s:DbgSetSign(expand('%'), t:dbg.match[2])
-            call win_gotoid(t:dbg.dbgWinId)
+
+            if !exists('t:dbg.keyAction')
+                call win_gotoid(t:dbg.dbgWinId)
+            else
+                unlet t:dbg.keyAction
+            endif
         endif
     else
         let t:dbg.tempMsg .= a:msg
@@ -187,6 +234,7 @@ function s:DbgOnExit(...)
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
+            call s:DbgMaping('unmap')
             unlet t:dbg
         endtry
     endif
@@ -262,7 +310,7 @@ endfunction
 " Action: on, off, toggle (default: toggle)
 " Type: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd after terminal started
-function async#ToggleTerminal(...)
+function async#TermToggle(...)
     let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
     let l:type = a:0 > 1 && a:2 != '.' ? a:2 : ''
     let l:postCmd = a:0 > 2 ? join(a:000[2:], ' ') : ''
@@ -289,7 +337,7 @@ function async#ToggleTerminal(...)
     endif
 
     let l:winnr = bufwinnr(l:name)
-    let l:bufnr = bufnr(l:name)
+    let l:bufnr = bufnr(l:name . ' ')
 
     if l:winnr != -1
         if l:action == 'on'
@@ -343,8 +391,37 @@ function async#ToggleTerminal(...)
     return l:bufnr
 endfunction
 
+" Switch terminal window between exists terminal
+function async#TermSwitch(...)
+    let l:action = a:0 > 0 ? a:1 : 'next'
+    let l:termList = filter(split(execute('ls R'), "\n"), "v:val =~ '!Terminal'")
+
+    if len(l:termList) > 1
+        call map(l:termList, "split(v:val)[0] + 0")
+        let l:ind = index(l:termList, bufnr('%'))
+        let l:num = len(l:termList)
+
+        if l:action == 'next'
+            let l:ind = (l:ind + 1) % l:num
+        else
+            let l:ind -= 1
+        endif
+
+        let l:buf = map(copy(l:termList), "' ' .bufname(v:val)")
+        let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
+        echo join(l:buf)
+
+        hide
+        silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:termList[l:ind] . 'buffer'
+    endif
+
+    if mode() == 'n'
+        normal a
+    endif
+endfunction
+
 " Cmd: list or string
-function async#RunJob(cmd)
+function async#JobRun(cmd)
     if len(s:asyncJob) > s:maxJob
         return
     endif
@@ -377,13 +454,19 @@ function s:JobOnExit(job, status)
 endfunction
 
 
-function async#StopJob(...)
+function async#JobStop(...)
     if !empty(s:asyncJob)
         let l:how = a:0 > 0 ? a:1 : 'term'
-        let l:prompt = async#ListJob("Select one to stop ...")
+        let l:prompt = async#JobList("Select one to stop ...")
         
         while 1
-            let l:job = get(s:asyncJob, input(l:prompt . "\nInput id: "), {'job': ''}).job
+            let l:jobId = input(l:prompt . "\nInput id: ")
+
+            if l:jobId == 'q'
+                return
+            endif
+
+            let l:job = get(s:asyncJob, l:jobId, {'job': ''}).job
 
             if empty(l:job)
                 redraw
@@ -395,13 +478,14 @@ function async#StopJob(...)
     endif
 endfunction
 
-function async#ListJob(...)
+function async#JobList(...)
     let l:prompt = a:0 > 0 ? a:1 : "Job List ..."
 
+    let l:jobs = ''
     for [l:id, l:job] in items(s:asyncJob)
-        let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
+        let l:jobs .= printf("\n    %d:  %s", l:id, l:job.cmd)
     endfor
 
-    return l:prompt
+    return l:prompt . l:jobs
 endfunction
 

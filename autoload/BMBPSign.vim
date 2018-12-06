@@ -151,12 +151,19 @@ function s:Signjump(type, action)
 
     if !empty(l:vec)
         if a:action == 'next'
-            " Jump next
             call add(l:vec, remove(l:vec, 0))
         else
-            " Jump previous
             call insert(l:vec, remove(l:vec, -1))
         endif
+
+        let l:bufnr = bufnr(l:vec[-1].file)
+        if index(tabpagebuflist(), l:bufnr) == -1
+            let l:winId = win_findbuf(l:bufnr)
+
+            if !empty(l:winId)
+               exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
+           endif
+       endif
 
         try
             exe 'sign jump ' . l:vec[-1].id . ' file=' . l:vec[-1].file

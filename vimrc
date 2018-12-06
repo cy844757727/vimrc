@@ -134,6 +134,7 @@ vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nmap <C-h> wbve<C-h>
 imap <C-h> <Esc>lwbve<C-h>
 
+noremap <silent> <C-l> <Esc>:redraw!<CR>
 noremap <silent> <C-a> <Esc>ggvG$
 noremap <silent> <C-w> <Esc>:close<CR>
 noremap <silent> <S-PageUp> <Esc>:call WindowSwitch('up')<CR>
@@ -162,9 +163,9 @@ noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
 noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
 noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
 noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
-noremap <silent> <f12> :call async#ToggleTerminal()<CR>
-noremap <silent> <C-f12> :call async#ToggleTerminal('toggle', 'ipy')<CR>
-noremap <silent> <S-f12> :call async#ToggleTerminal('toggle', 'py3')<CR>
+noremap <silent> <f12> :call async#TermToggle()<CR>
+noremap <silent> <C-f12> :call async#TermToggle('toggle', 'ipy')<CR>
+noremap <silent> <S-f12> :call async#TermToggle('toggle', 'py3')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
@@ -202,9 +203,11 @@ map! <C-Up> <Esc><C-Up>
 " Terminal map
 tnoremap <silent> <S-PageUp> <C-w>N:wincmd W<CR>
 tnoremap <silent> <S-pageDown> <C-w>N:wincmd w<CR>
-tnoremap <silent> <f12> <C-w>N:call async#ToggleTerminal()<CR>
-tnoremap <silent> <C-f12> <C-w>N:call async#ToggleTerminal('toggle', 'ipy')<CR>
-tnoremap <silent> <S-f12> <C-w>N:call async#ToggleTerminal('toggle', 'py3')<CR>
+tnoremap <silent> <f12> <C-w>N:call async#TermToggle()<CR>
+tnoremap <silent> <C-f12> <C-w>N:call async#TermToggle('toggle', 'ipy')<CR>
+tnoremap <silent> <S-f12> <C-w>N:call async#TermToggle('toggle', 'py3')<CR>
+tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
+tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
@@ -232,6 +235,9 @@ endfunction
 " Termdebug
 let g:termdebug_wide = 1
 " Plugin Configure======================
+" === leaderf.vim === {{{1
+let g:Lf_DefaultMode = 'NameOnly'
+
 " === async.vim === {{{1
 let g:Async_TerminalType = {
             \ 'py2': 'python',
@@ -485,6 +491,11 @@ function! PreSaveWorkSpace_TabVar()
 
     if empty(g:WINVAR_BUFHIS)
         unlet g:WINVAR_BUFHIS
+    endif
+
+    let l:winnr = bufwinnr('!Terminal ')
+    if l:winnr != -1
+        exe l:winnr . 'hide'
     endif
 endfunction
 
