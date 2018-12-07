@@ -28,6 +28,7 @@ let s:signVec = {
             \ }
 
 let s:newSignId = 0
+let s:typesGroup = {}
 " Sign id record
 " Content: 'id': ['type', 'file']
 let s:signId = {}
@@ -212,9 +213,11 @@ function s:SignLoad(pre, types)
         call s:SignClear(a:types)
 
         " Load sign
+        let l:types = []
         for l:str in l:signList
             try
                 let [l:type, l:file, l:line] = split(l:str, '[ :]\+')[0:2]
+                let l:types += [l:type]
             catch
                 " Ignore damaged item
                 continue
@@ -229,6 +232,10 @@ function s:SignLoad(pre, types)
                 call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
             endif
         endfor
+
+        if !empty(l:types)
+            call s:QfListUpdate(uniq(l:types))
+        endif
     endif
 endfunction
 
@@ -313,11 +320,15 @@ function s:SignAddAttr(file, line)
             break
         endif
     endfor
+
+    call s:QfListUpdate([l:type])
 endfunction
 
 " Unset sign by ids
 " Ids -> list
 function s:SignUnsetById(ids)
+    let l:types = []
+
     for l:id in a:ids
         let [l:type, l:file] = get(s:signId, l:id, ['invalid', ''])
 
@@ -325,8 +336,13 @@ function s:SignUnsetById(ids)
             exe 'sign unplace ' . l:id . ' file=' . l:file
             call filter(s:signVec[l:type], 'v:val.id != ' . l:id)
             unlet s:signId[l:id]
+            let l:types += [l:type]
         endif
     endfor
+
+    if !empty(l:types)
+        call s:QfListUpdate(uniq(l:types))
+    endif
 endfunction
 
 " == Project def =============================================== {{{1
@@ -622,8 +638,8 @@ endfunction
 " == misc def ============================================== {{{1
 " Return qfList used for seting quickfix
 " Types -> list
-function s:GetQfList(types)
-    let l:qf = []
+function s:QfListSet(title, types)
+    let l:qf = {'items': []}
     let l:signPlace = execute('sign place')
 
     for l:type in a:types
@@ -638,7 +654,7 @@ function s:GetQfList(types)
             let l:text = '[' . l:type . ':' . l:sign.id
             let l:text .= l:sign.attr =~ '\S' ? ':' . l:sign.attr . '] ' : '] '
 
-            let l:qf += [{
+            let l:qf.items += [{
                         \ 'bufnr': bufnr(l:sign.file),
                         \ 'filename': l:sign.file,
                         \ 'lnum': l:line[1],
@@ -647,7 +663,31 @@ function s:GetQfList(types)
         endfor
     endfor
 
-    return l:qf
+    if !empty(a:title)
+        let l:qf['title'] = a:title
+    endif
+
+    call setqflist([], 'r', l:qf)
+endfunction
+
+" Update quickfix when sign changes and quickfix exists
+function s:QfListUpdate(types)
+    for l:nr in range(winnr('$'), 1, -1)
+        let l:group = tolower(getwinvar(l:nr, 'quickfix_title', ''))
+        " Quickfix_title may have ':' prefix
+        let l:group = matchstr(l:group, '\w*$')
+        let l:list = get(s:typesGroup, l:group, [])
+
+        if !empty(l:list)
+            for l:type in a:types
+                if index(l:list, l:type) != -1
+                    call s:QfListSet('', l:list)
+                    return
+                endif
+            endfor
+            break
+        endif
+    endfor
 endfunction
 
 " comment char
@@ -696,6 +736,7 @@ function BMBPSign#SignToggle(...)
         endif
 
         call s:SignToggle(l:file, l:lin, l:type, '', 0)
+        call s:QfListUpdate([a:type])
     endif
 endfunction
 
@@ -720,8 +761,11 @@ function BMBPSign#SignClear(...)
         endfor
     elseif a:1
         call s:SignUnsetById(a:000)
+        let l:types = uniq(map(a:000, "get(s:signId,v:val,['']).[0]"))
+        call s:QfListUpdate(l:types)
     else
         call s:SignClear(a:000)
+        call s:QfListUpdate(a:000)
     endif
 endfunction
 
@@ -782,14 +826,28 @@ function BMBPSign#WorkSpaceClear(...)
 endfunction
 
 " Set QuickFix window with qfList
-function BMBPSign#SetQfList(title, ...)
+function BMBPSign#SetQfList(...)
     if a:0 == 0
         return
+    else
+        let l:group = tolower(a:1)
+
+        if a:0 == 1 
+            let l:types = get(s:typesGroup, l:group, [])
+        else
+            let l:types = a:000[1:]
+        endif
     endif
 
-    copen
-    set nowrap
-    call setqflist([], 'r', {'title': a:title, 'items': s:GetQfList(a:000)})
+    if !empty(l:types)
+        call s:QfListSet(a:1, l:types)
+        copen
+        set nowrap
+    endif
+
+    if !has_key(s:typesGroup, l:group) && a:0 > 1
+        call extend(s:typesGroup, {l:group: a:000[1:]})
+    endif
 endfunction
 
 function BMBPSign#SignTypeList()
