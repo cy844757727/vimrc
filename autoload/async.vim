@@ -16,9 +16,9 @@ let s:newSignId = 1
 let s:shell = fnamemodify(&shell, ':t')
 let s:termPrefix = '!Terminal'
 let s:termIcon = {
-            \ '1': ' ➊', '2': ' ➋', '3': ' ➌',
-            \ '4': ' ➍', '5': ' ➎', '6': ' ➏',
-            \ '7': ' ➐', '8': ' ➑', '9': ' ➒'
+            \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
+            \ '4': ' ➍ ', '5': ' ➎ ', '6': ' ➏ ',
+            \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
             \ }
 
 " ""
@@ -312,6 +312,11 @@ endfunction
 " Type: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd after terminal started
 function async#TermToggle(...)
+    " Ensure starting insert mode
+    if &buftype == 'terminal' && mode() == 'n'
+        normal a
+    endif
+
     let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
     let l:type = a:0 > 1 && a:2 != '.' ? a:2 : ''
     let l:postCmd = a:0 > 2 ? join(a:000[2:], ' ') : ''
@@ -323,11 +328,11 @@ function async#TermToggle(...)
     elseif l:type
         " Default number terminal (1..9, -1..-9)
         let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:termIcon) + 1
-        let l:name = s:termPrefix . get(s:termIcon, l:type, '')
+        let l:name = s:termPrefix . get(s:termIcon, l:type, ' ')
         let l:type = s:shell . l:type
     else
         " Custom added terminal type
-        let l:name = s:termPrefix . get(s:termIcon, l:type, ': ' . l:type)
+        let l:name = s:termPrefix . get(s:termIcon, l:type, ': ' . l:type . ' ')
     endif
 
     let l:cmd = get(s:termType, l:type, '')
@@ -338,7 +343,7 @@ function async#TermToggle(...)
     endif
 
     let l:winnr = bufwinnr(l:name)
-    let l:bufnr = bufnr(l:name . ' ')
+    let l:bufnr = bufnr(l:name)
 
     if l:winnr != -1
         if l:action == 'on'
@@ -363,7 +368,7 @@ function async#TermToggle(...)
         if l:bufnr == -1
             " Creat a terminal
             let l:option = copy(s:termOption)
-            let l:option['term_name'] = l:name . ' '
+            let l:option['term_name'] = l:name
             let l:option['curwin'] = 1
             exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split'
             let l:bufnr = term_start(l:cmd, l:option)
@@ -374,7 +379,7 @@ function async#TermToggle(...)
     elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution
         let l:option = copy(s:termOption)
-        let l:option['term_name'] = l:name . ' '
+        let l:option['term_name'] = l:name
         let l:option['hidden'] = 1
         let l:bufnr = term_start(l:cmd, l:option)
     endif
@@ -394,23 +399,26 @@ endfunction
 
 " Switch terminal window between exists terminal
 function async#TermSwitch(...)
+    if mode() == 'n'
+        normal a
+    endif
+
     let l:action = a:0 > 0 ? a:1 : 'next'
     let l:termList = filter(split(execute('ls R'), "\n"), "v:val =~ '!Terminal'")
 
     if len(l:termList) > 1
         call map(l:termList, "split(v:val)[0] + 0")
         let l:ind = index(l:termList, bufnr('%'))
-        let l:num = len(l:termList)
 
         if l:action == 'next'
-            let l:ind = (l:ind + 1) % l:num
+            let l:ind = (l:ind + 1) % len(l:termList)
         else
             let l:ind -= 1
         endif
 
         let l:buf = map(copy(l:termList), "' ' .bufname(v:val)")
         let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
-        echo join(l:buf)
+        echo strpart(join(l:buf), 0, &columns)
 
         hide
         silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:termList[l:ind] . 'buffer'

@@ -167,6 +167,7 @@ noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
 noremap <silent> <f12> :call async#TermToggle()<CR>
 noremap <silent> <C-f12> :call async#TermToggle('toggle', 'ipy')<CR>
 noremap <silent> <S-f12> :call async#TermToggle('toggle', 'py3')<CR>
+noremap <silent> <C-S-f12> :call async#TermToggle('toggle', 'dc')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
@@ -202,17 +203,22 @@ map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
 " Terminal map
-tnoremap <silent> <S-PageUp> <C-w>N:wincmd W<CR>
-tnoremap <silent> <S-pageDown> <C-w>N:wincmd w<CR>
+tnoremap <silent> <S-PageUp> <C-w>N:call WindowSwitch('up')<CR>
+tnoremap <silent> <S-pageDown> <C-w>N:call WindowSwitch('down')<CR>
 tnoremap <silent> <f12> <C-w>N:call async#TermToggle()<CR>
 tnoremap <silent> <C-f12> <C-w>N:call async#TermToggle('toggle', 'ipy')<CR>
 tnoremap <silent> <S-f12> <C-w>N:call async#TermToggle('toggle', 'py3')<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc')<CR>
 tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
 function! WindowSwitch(action)
+    if &bt == 'terminal' && mode() == 'n'
+        normal a
+    endif
+
     if a:action == 'down'
         wincmd w
     else
@@ -241,6 +247,7 @@ let g:Lf_DefaultMode = 'NameOnly'
 
 " === async.vim === {{{1
 let g:Async_TerminalType = {
+            \ 'dc' : 'dc_shell',
             \ 'py2': 'python',
             \ 'py3': 'python3',
             \ 'ipy': 'ipython'

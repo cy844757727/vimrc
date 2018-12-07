@@ -670,21 +670,14 @@ function s:QfListSet(title, types)
     call setqflist([], 'r', l:qf)
 endfunction
 
-" Update quickfix when sign changes and quickfix exists
+" Update quickfix when sign changes
 function s:QfListUpdate(types)
-    for l:nr in range(winnr('$'), 1, -1)
-        let l:group = tolower(getwinvar(l:nr, 'quickfix_title', ''))
-        " Quickfix_title may have ':' prefix
-        let l:group = matchstr(l:group, '\w*$')
-        let l:list = get(s:typesGroup, l:group, [])
+    let l:group = tolower(getqflist({'title': 1}).title)
+    let l:list = get(s:typesGroup, l:group, [])
 
-        if !empty(l:list)
-            for l:type in a:types
-                if index(l:list, l:type) != -1
-                    call s:QfListSet('', l:list)
-                    return
-                endif
-            endfor
+    for l:type in l:list
+        if index(a:types, l:type) != -1
+            call s:QfListSet('', l:list)
             break
         endif
     endfor
@@ -736,7 +729,7 @@ function BMBPSign#SignToggle(...)
         endif
 
         call s:SignToggle(l:file, l:lin, l:type, '', 0)
-        call s:QfListUpdate([a:type])
+        call s:QfListUpdate([l:type])
     endif
 endfunction
 

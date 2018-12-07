@@ -667,12 +667,11 @@ function! misc#ToggleQuickFix(...)
         call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
     elseif l:type == 'todo'
         call BMBPSign#SetQfList('TodoList', 'todo')
-    elseif max(map(tabpagebuflist(), "getbufvar(v:val, '&bt') == 'quickfix'"))
+    elseif getqflist({'winid': 1}).winid != 0
         cclose
     else
         copen 10
     endif
-
 endfunction
 " ####################################################################
 
