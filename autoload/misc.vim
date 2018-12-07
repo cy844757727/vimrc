@@ -6,7 +6,7 @@ if exists('g:loaded_A_Misc')
   finish
 endif
 let g:loaded_A_Misc = 1
-"
+
 
 augroup MISC_autocmd
     autocmd!
@@ -252,14 +252,55 @@ function! misc#StatuslineIcon()
 endfunction
 
 
+let s:TabLineStart = 0
 " Customize tabline
 function! misc#TabLine()
     let l:s = ''
     let l:cur = tabpagenr() - 1
     let l:num = tabpagenr('$')
-    let l:list = [l:cur, l:cur - 1, l:num - 1]
 
-    for l:i in range(l:num)
+    let l:str = map(range(l:num), "' '.misc#TabLabel(v:val+1).' '")
+    let l:width = &columns - 3
+    let [l:start, l:end, l:left, l:right] = [0, l:num-1, 0, 0]
+
+    if l:width < strchars(join(l:str))
+        let l:B = strchars(join(l:str[:l:cur])) - 1
+        let l:A = l:B - strchars(l:str[l:cur]) + 1
+
+        if  l:A < s:TabLineStart
+            let s:TabLineStart = l:A
+        elseif l:B > s:TabLineStart + l:width - 1
+            let s:TabLineStart = l:B - l:width + 1
+        endif
+
+
+        let l:i = 0
+        if s:TabLineStart != 0
+            while l:i < l:num
+                let l:len = strchars(join(l:str[0:l:i]))
+                if s:TabLineStart < l:len
+                    let l:start = l:i
+                    let l:left = s:TabLineStart - l:len - 1
+                    break
+                endif
+                let l:i += 1
+            endwhile
+        endif
+
+        while l:i < l:num
+            let l:len = strchars(join(l:str[0:l:i]))
+            if s:TabLineStart + l:width - 1 < l:len
+                let l:end = l:i
+                if l:len != s:TabLineStart + l:width
+                    let l:right = strchars(l:str[l:i]) - l:len + s:TabLineStart + l:width - 2
+                endif
+                break
+            endif
+            let l:i += 1
+        endwhile
+    endif
+
+    for l:i in range(l:start, l:end)
         " select the highlighting
         let l:s .= l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#'
 
@@ -267,10 +308,22 @@ function! misc#TabLine()
         let l:s .= '%' . (l:i + 1) . 'T'
 
         " the label is made by MyTabLabel()
-        let l:s .= ' %{misc#TabLabel(' . (l:i + 1) . ')} '
+        if l:i == l:start && (l:left != 0 || l:i != 0)
+            let l:s .= '<%{misc#TabLabel('.(l:i + 1).','.l:left.')} '
+        elseif l:i == l:end && (l:right != 0 || l:end != l:num - 1)
+            let l:s .= ' %{misc#TabLabel('.(l:i + 1).','.l:right.')}>'
+        else
+            let l:s .= ' %{misc#TabLabel('.(l:i + 1).')} '
+        endif
 
         " Separator
-        let l:s .= index(l:list, l:i) == -1 ? '%#TabLineSeparator#│' : ' '
+        if l:i != l:end
+            if l:i != l:cur && l:i + 1 != l:cur
+                let l:s .= '%#TabLineSeparator#│'
+            else
+                let l:s .= ' '
+            endif
+        endif
     endfor
 
     " after the last tab fill with TabLineFill and reset tab page nr
@@ -285,7 +338,8 @@ function! misc#TabLine()
 endfunction
 
 
-function! misc#TabLabel(n)
+function! misc#TabLabel(n, ...)
+    let l:width = a:0 > 0 ? a:1 : 0
     let l:buflist = tabpagebuflist(a:n)
     let l:winnr = tabpagewinnr(a:n) - 1
     " Extend buflist
@@ -305,7 +359,15 @@ function! misc#TabLabel(n)
     " Append the glyph & modify name
     let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon(l:name), l:name])
 
-    return l:glyph . ' ' . l:name . ' ' . l:modFlag
+    let l:lable = l:glyph . ' ' . l:name . ' ' . l:modFlag
+
+    if l:width == 0
+        return l:lable
+    elseif l:width < 0
+        return strcharpart(l:lable, l:width)
+    else
+        return strcharpart(l:lable, 0, l:width)
+    endif
 endfunction
 
 

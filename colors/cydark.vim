@@ -21,6 +21,7 @@ hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#BBBBA0 guibg=#555555 gui=NO
 hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#BBBBA0 guibg=#1E1E1E gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
 hi TabLineSeparator guibg=#555555 guifg=#1E1E1E
+hi TabLineSeparatorPre guibg=#1E1E1E guifg=#555555
 
 " === misc ===
 hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
