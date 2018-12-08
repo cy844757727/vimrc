@@ -3,7 +3,7 @@
 " Description: Asynchronous task
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_A_Async') && v:version >= 800
+if exists('g:loaded_A_Async') || v:version < 800
   finish
 endif
 let g:loaded_A_Async = 1
@@ -61,7 +61,7 @@ function async#DbgScript(...)
     let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
     let l:breakPoint = a:0 > 1 ? a:2 : []
     
-    " Ui & val initialization
+    " Ui & var initialization
     exe 'tabedit ' . l:file
     let t:tab_lable = ['', '-- Debug --']
     let t:dbg = {}
@@ -72,7 +72,7 @@ function async#DbgScript(...)
     let t:dbg.tempMsg = ''
     let t:dbg.sign = {}
 
-    " Analyze script type & set val: cmd, postCmd, prompt, re
+    " Analyze script type & set var: cmd, postCmd, prompt, re
     call s:DbgScriptAnalyze(l:file, l:breakPoint)
     if !has_key(t:dbg, 'cmd')
         call s:DbgOnExit()
@@ -82,7 +82,7 @@ function async#DbgScript(...)
     " Creat maping
     call s:DbgMaping()
 
-    " Start debuge
+    " Start debug
     let l:option = copy(s:termOption)
     let l:option['curwin'] = 1
     let l:option['out_cb'] = function('s:DbgMsgHandle')
@@ -260,7 +260,7 @@ function async#RunScript(...)
     endif
 
     let l:cmd = l:interpreter . ' ' . l:file
-    let l:bufnr = async#ToggleTerminal('on')
+    let l:bufnr = async#TermToggle('on')
     call term_sendkeys(l:bufnr, "clear\n" . l:cmd . "\n")
 endfunction
     
@@ -281,7 +281,7 @@ function async#GdbStart(...)
 
     " New tab to debug
     tabnew
-    let t:dbg = 1
+    let t:tab_lable = ['', '-- Debug --']
 
     if empty(l:breakPoint)
         exe 'Termdebug ' . l:binFile
@@ -300,7 +300,7 @@ function s:GdbOnExit()
         try
             tabclose
         catch
-            unlet t:dbg
+            unlet t:tab_lable
         endtry
     endif
 endfunction
@@ -335,12 +335,12 @@ function async#TermToggle(...)
         let l:name = s:termPrefix . get(s:termIcon, l:type, ': ' . l:type . ' ')
     endif
 
-    let l:cmd = get(s:termType, l:type, '')
-
-    if empty(l:cmd)
+    try
+        let l:cmd = s:termType[l:type]
+    catch 'E716'
         " Invalid type
         return
-    endif
+    endtry
 
     let l:winnr = bufwinnr(l:name)
     let l:bufnr = bufnr(l:name)
@@ -416,12 +416,11 @@ function async#TermSwitch(...)
             let l:ind -= 1
         endif
 
-        let l:buf = map(copy(l:termList), "' ' .bufname(v:val)")
-        let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
-        echo strpart(join(l:buf), 0, &columns)
-
         hide
         silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:termList[l:ind] . 'buffer'
+        let l:buf = map(l:termList, "' '.bufname(v:val)")
+        let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
+        echo strpart(join(l:buf), 0, &columns)
     endif
 
     if mode() == 'n'

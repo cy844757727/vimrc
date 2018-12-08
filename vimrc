@@ -86,7 +86,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
-    autocmd InsertLeave * :hi statusline guibg=#007ACC
+    autocmd InsertLeave * :hi statusline guibg=#006999
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
@@ -250,7 +250,7 @@ let g:Async_TerminalType = {
             \ 'dc' : 'dc_shell',
             \ 'py2': 'python',
             \ 'py3': 'python3',
-            \ 'ipy': 'ipython'
+            \ 'ipy': 'ipython3'
             \ }
 
 " === Netrw-NERDTree 配置 === {{{1

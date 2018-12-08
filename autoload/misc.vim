@@ -258,7 +258,6 @@ function! misc#TabLine()
     let l:s = ''
     let l:cur = tabpagenr() - 1
     let l:num = tabpagenr('$')
-
     let l:str = map(range(l:num), "' '.misc#TabLabel(v:val+1).' '")
     let l:width = &columns - 3
     let [l:start, l:end, l:left, l:right] = [0, l:num-1, 0, 0]
@@ -361,6 +360,7 @@ function! misc#TabLabel(n, ...)
 
     let l:lable = l:glyph . ' ' . l:name . ' ' . l:modFlag
 
+    " Cut out a section of lable
     if l:width == 0
         return l:lable
     elseif l:width < 0
@@ -469,7 +469,7 @@ function! misc#BufHisInAWindow(...)
     endif
 
     if a:0 == 0
-        let l:name = bufname('%')
+        let l:name = expand('%:p')
 
         if !exists('w:bufHis')
             let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0}
@@ -483,7 +483,7 @@ function! misc#BufHisInAWindow(...)
             " Put it to last position
             let w:bufHis.list += [l:name]
         endif
-    elseif exists('w:bufHis.list') && len(w:bufHis.list) > 1
+    elseif exists('w:bufHis') && len(get(w:bufHis, 'list', [])) > 1
         if a:1 == 'previous'
             call insert(w:bufHis.list, remove(w:bufHis.list, -1))
         elseif a:1 == 'next'
@@ -494,17 +494,7 @@ function! misc#BufHisInAWindow(...)
 
         if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
             silent exe 'buffer ' . w:bufHis.list[-1]
-            let l:ind = index(w:bufHis.list, w:bufHis.init)
-            let l:buf = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
-
-            " Mark out the current item
-            let l:buf[-1] = '[' . l:buf[-1][1:-2] . ']'
-
-            " Readjusting position (Put the initial edited text first)
-            let l:buf = remove(l:buf, l:ind, -1) + l:buf
-
-            let [l:str, w:bufHis.start] = s:StrRejustOutput(l:buf, len(l:buf) - l:ind - 1, w:bufHis.start)
-            echo l:str
+            call s:EchoBufHistory()
         else
             " Discard invalid item
             if w:bufHis.list[-1] == w:bufHis.init
@@ -516,39 +506,45 @@ function! misc#BufHisInAWindow(...)
     endif
 endfunction
 
-" Make displayed width to adapt one line
-function! s:StrRejustOutput(list, ind, start)
-    let l:start = a:start
-    let l:str = join(a:list)
-    let l:len = len(l:str)
+function s:EchoBufHistory()
+    let l:buf = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
+    " Mark out the current item
+    let l:buf[-1] = '[' . l:buf[-1][1:-2] . ']'
 
-    if l:len > &columns
+    " Readjusting position (Put the initial edited text first)
+    let l:ind = index(w:bufHis.list, w:bufHis.init)
+    let l:buf = remove(l:buf, l:ind, -1) + l:buf
+    let l:str = join(l:buf)
+
+    " Make displayed width to adapt one line ↓↓↓↓↓
+    if len(l:str) > &columns
+        let l:ind = len(l:buf) - l:ind - 1
         " Current item start point: A, end point: B
-        let l:B = len(join(a:list[:a:ind])) - 1
-        let l:A = l:B - len(a:list[a:ind]) + 1
+        let l:B = len(join(l:buf[:l:ind])) - 1
+        let l:A = l:B - len(l:buf[l:ind]) + 1
 
         " Determine the start point of l:str to display
-        if l:A < a:start
-            let l:start = max([0, l:A - 2])
-        elseif l:B > a:start + &columns - 1
-            let l:start = max([0, l:B + 4 - &columns])
+        if l:A < w:bufHis.start
+            let w:bufHis.start = max([0, l:A - 2])
+        elseif l:B > w:bufHis.start + &columns - 1
+            let w:bufHis.start = max([0, l:B + 4 - &columns])
         endif
 
         " Cut out a section of l:str
-        let l:str = l:str[l:start:l:start + &columns - 2]
+        let l:str = l:str[w:bufHis.start:w:bufHis.start + &columns - 2]
 
         " Add prefix to head when not displayed completely
-        if l:start > 0
+        if w:bufHis.start > 0
             let l:str = '<' . l:str[1:]
         endif
 
         " Add suffix to tail when not displayed completely
-        if l:start + &columns - 1 < l:len
+        if w:bufHis.start + &columns - 1 < len(l:str)
             let l:str = l:str[:-2] . '>'
         endif
     endif
 
-    return [l:str, l:start]
+    echo l:str
 endfunction
 
 " ############### 窗口相关 ######################################

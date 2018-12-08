@@ -10,8 +10,8 @@ let g:colors_name = "cydark"
 " === Basic highlight ===
 hi Normal ctermfg=230 guifg=#CCCCB0 guibg=#1E1E1E
 
-hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#EEEED0 guibg=#B91919 gui=NONE
-hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#EEEED0 guibg=#B91919
+hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#EEEED0 guibg=#D73130 gui=NONE
+hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#EEEED0 guibg=#B02525
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#EEEED0 guibg=#834000
 hi Search ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800
@@ -24,6 +24,7 @@ hi TabLineSeparator guibg=#555555 guifg=#1E1E1E
 hi TabLineSeparatorPre guibg=#1E1E1E guifg=#555555
 
 " === misc ===
+hi SpellBad cterm=underline ctermbg=NONE guibg=NONE
 hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
 hi NonText guifg=#1E1E1E
 hi Question cterm=NONE guifg=#000000 guibg=#BBBBA0
@@ -38,7 +39,9 @@ hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#232323
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#5E6165 guibg=NONE
 hi VertSplit ctermfg=253 ctermbg=253 guifg=#333333 guibg=#333333
-hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#007ACC
+hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006999
+hi StatusLineNormal ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006999
+hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#BBBBA0 guibg=#333333
 
 " === Diff mode ===

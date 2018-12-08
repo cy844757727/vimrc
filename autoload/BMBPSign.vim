@@ -868,4 +868,3 @@ function BMBPSign#SignRecord(...)
 endfunction
 
 " set foldmethod=marker
-
