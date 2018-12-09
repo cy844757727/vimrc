@@ -263,7 +263,7 @@ function async#RunScript(...)
     let l:bufnr = async#TermToggle('on')
     call term_sendkeys(l:bufnr, "clear\n" . l:cmd . "\n")
 endfunction
-    
+
 
 " Gdb tool： debug binary file
 " BreakPoint: list type

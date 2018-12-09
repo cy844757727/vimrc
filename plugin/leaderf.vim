@@ -53,10 +53,10 @@ function! g:LfRegisterSelf(cmd, description)
     let g:Lf_SelfContent[a:cmd] = a:description
 endfunction
 
-augroup LeaderF_Mru
-    autocmd BufAdd,BufEnter,BufWritePost * call lfMru#record(expand('<afile>:p')) |
-                \ call lfMru#recordBuffer(expand('<abuf>'))
-augroup END
+"augroup LeaderF_Mru
+"    autocmd BufAdd,BufEnter,BufWritePost * call lfMru#record(expand('<afile>:p')) |
+"                \ call lfMru#recordBuffer(expand('<abuf>'))
+"augroup END
 
 noremap <silent> <Plug>LeaderfFileTop        :<C-U>call leaderf#File#startExpl('top')<CR>
 noremap <silent> <Plug>LeaderfFileBottom     :<C-U>call leaderf#File#startExpl('bottom')<CR>
@@ -70,11 +70,11 @@ noremap <silent> <Plug>LeaderfBufferLeft       :<C-U>call leaderf#Buffer#startEx
 noremap <silent> <Plug>LeaderfBufferRight      :<C-U>call leaderf#Buffer#startExpl('right')<CR>
 noremap <silent> <Plug>LeaderfBufferFullScreen :<C-U>call leaderf#Buffer#startExpl('fullScreen')<CR>
 
-noremap <silent> <Plug>LeaderfMruCwdTop        :<C-U>call leaderf#Mru#startExpl('top')<CR>
-noremap <silent> <Plug>LeaderfMruCwdBottom     :<C-U>call leaderf#Mru#startExpl('bottom')<CR>
-noremap <silent> <Plug>LeaderfMruCwdLeft       :<C-U>call leaderf#Mru#startExpl('left')<CR>
-noremap <silent> <Plug>LeaderfMruCwdRight      :<C-U>call leaderf#Mru#startExpl('right')<CR>
-noremap <silent> <Plug>LeaderfMruCwdFullScreen :<C-U>call leaderf#Mru#startExpl('fullScreen')<CR>
+"noremap <silent> <Plug>LeaderfMruCwdTop        :<C-U>call leaderf#Mru#startExpl('top')<CR>
+"noremap <silent> <Plug>LeaderfMruCwdBottom     :<C-U>call leaderf#Mru#startExpl('bottom')<CR>
+"noremap <silent> <Plug>LeaderfMruCwdLeft       :<C-U>call leaderf#Mru#startExpl('left')<CR>
+"noremap <silent> <Plug>LeaderfMruCwdRight      :<C-U>call leaderf#Mru#startExpl('right')<CR>
+"noremap <silent> <Plug>LeaderfMruCwdFullScreen :<C-U>call leaderf#Mru#startExpl('fullScreen')<CR>
 
 noremap <Plug>LeaderfRgPrompt :<C-U>Leaderf rg -e<Space>
 noremap <Plug>LeaderfRgCwordLiteralNoBoundary :<C-U><C-R>=leaderf#Rg#startCmdline(0, 0, 0, 0)<CR>
@@ -114,12 +114,12 @@ command! -bar -nargs=0 LeaderfTabBufferAll call leaderf#Buffer#startExpl(g:Lf_Wi
 command! -bar -nargs=1 LeaderfBufferPattern call leaderf#Buffer#startExplPattern(g:Lf_WindowPosition, <q-args>)
 command! -bar -nargs=0 LeaderfBufferCword call leaderf#Buffer#startExplPattern(g:Lf_WindowPosition, expand('<cword>'))
 
-command! -bar -nargs=0 LeaderfMru call leaderf#Mru#startExpl(g:Lf_WindowPosition)
-command! -bar -nargs=0 LeaderfMruCwd call leaderf#Mru#startExpl(g:Lf_WindowPosition, 1)
-command! -bar -nargs=1 LeaderfMruPattern call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 0, <q-args>)
-command! -bar -nargs=0 LeaderfMruCword call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 0, expand('<cword>'))
-command! -bar -nargs=1 LeaderfMruCwdPattern call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 1, <q-args>)
-command! -bar -nargs=0 LeaderfMruCwdCword call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 1, expand('<cword>'))
+"command! -bar -nargs=0 LeaderfMru call leaderf#Mru#startExpl(g:Lf_WindowPosition)
+"command! -bar -nargs=0 LeaderfMruCwd call leaderf#Mru#startExpl(g:Lf_WindowPosition, 1)
+"command! -bar -nargs=1 LeaderfMruPattern call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 0, <q-args>)
+"command! -bar -nargs=0 LeaderfMruCword call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 0, expand('<cword>'))
+"command! -bar -nargs=1 LeaderfMruCwdPattern call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 1, <q-args>)
+"command! -bar -nargs=0 LeaderfMruCwdCword call leaderf#Mru#startExplPattern(g:Lf_WindowPosition, 1, expand('<cword>'))
 
 command! -bar -nargs=0 LeaderfTag call leaderf#Tag#startExpl(g:Lf_WindowPosition)
 command! -bar -nargs=1 LeaderfTagPattern call leaderf#Tag#startExplPattern(g:Lf_WindowPosition, <q-args>)

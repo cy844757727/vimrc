@@ -2,10 +2,10 @@
 " Author: CY <844757727@qq.com>
 " Description: Miscellaneous function
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if exists('g:loaded_A_Misc')
-  finish
-endif
-let g:loaded_A_Misc = 1
+"if exists('g:loaded_A_Misc')
+"  finish
+"endif
+"let g:loaded_A_Misc = 1
 
 
 augroup MISC_autocmd
@@ -253,75 +253,87 @@ endfunction
 
 
 let s:TabLineStart = 0
+let s:TabLineChars = 500
 " Customize tabline
 function! misc#TabLine()
     let l:s = ''
     let l:cur = tabpagenr() - 1
     let l:num = tabpagenr('$')
-    let l:str = map(range(l:num), "' '.misc#TabLabel(v:val+1).' '")
+    let l:tabList = map(range(l:num), "' '.misc#TabLabel(v:val+1).' '")
+    let l:str = join(l:tabList)
     let l:width = &columns - 3
-    let [l:start, l:end, l:left, l:right] = [0, l:num-1, 0, 0]
 
-    if l:width < strchars(join(l:str))
-        let l:B = strchars(join(l:str[:l:cur])) - 1
-        let l:A = l:B - strchars(l:str[l:cur]) + 1
+    if strdisplaywidth(l:str) > l:width
+        let l:B = strchars(join(l:tabList[:l:cur])) - 1
+        let l:A = l:B - strchars(l:tabList[l:cur]) + 1
 
         if  l:A < s:TabLineStart
             let s:TabLineStart = l:A
-        elseif l:B > s:TabLineStart + l:width - 1
-            let s:TabLineStart = l:B - l:width + 1
-        endif
+            let s:TabLineChars = l:width
 
+            while strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)) > l:width
+                let s:TabLineChars -= 1
+            endwhile
+        elseif strdisplaywidth(strcharpart(l:str, s:TabLineStart, l:B - s:TabLineStart + 1)) > l:width
+            let s:TabLineStart = max([0, l:B - l:width + 1])
+            let s:TabLineChars = l:width
 
-        let l:i = 0
-        if s:TabLineStart != 0
-            while l:i < l:num
-                let l:len = strchars(join(l:str[0:l:i]))
-                if s:TabLineStart < l:len
-                    let l:start = l:i
-                    let l:left = s:TabLineStart - l:len - 1
-                    break
-                endif
-                let l:i += 1
+            while strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)) > l:width
+                let s:TabLineChars -= 1
+                let s:TabLineStart += 1
             endwhile
         endif
 
-        while l:i < l:num
-            let l:len = strchars(join(l:str[0:l:i]))
-            if s:TabLineStart + l:width - 1 < l:len
-                let l:end = l:i
-                if l:len != s:TabLineStart + l:width
-                    let l:right = strchars(l:str[l:i]) - l:len + s:TabLineStart + l:width - 2
-                endif
-                break
-            endif
-            let l:i += 1
-        endwhile
+        let l:endSpace = repeat(' ',
+                    \ l:width - strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)))
+    else
+        let l:endSpace = ''
     endif
 
-    for l:i in range(l:start, l:end)
-        " select the highlighting
-        let l:s .= l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#'
+    for l:i in range(l:num)
+        let l:chars = strchars(join(l:tabList[:l:i]))
 
-        " set the tab page number (for mouse clicks)
-        let l:s .= '%' . (l:i + 1) . 'T'
-
-        " the label is made by MyTabLabel()
-        if l:i == l:start && (l:left != 0 || l:i != 0)
-            let l:s .= '<%{misc#TabLabel('.(l:i + 1).','.l:left.')} '
-        elseif l:i == l:end && (l:right != 0 || l:end != l:num - 1)
-            let l:s .= ' %{misc#TabLabel('.(l:i + 1).','.l:right.')}>'
-        else
-            let l:s .= ' %{misc#TabLabel('.(l:i + 1).')} '
+        if s:TabLineStart >= l:chars
+            continue
         endif
 
-        " Separator
-        if l:i != l:end
-            if l:i != l:cur && l:i + 1 != l:cur
-                let l:s .= '%#TabLineSeparator#│'
-            else
-                let l:s .= ' '
-            endif
+        " the label is made by misc#TabLabel()
+        if empty(l:s)
+            " The first lable
+            let l:width = s:TabLineStart - l:chars + 1
+            let l:lable = s:TabLineStart > 0 ? '<' : ' '
+            let l:lable .= '%{misc#TabLabel('.(l:i+1).','.l:width.')} '
+        elseif s:TabLineStart + s:TabLineChars == l:chars + 1
+            " Encounter segmentation symbols (last tab)
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} ' . l:endSpace . '>'
+            let l:last = 1
+        elseif s:TabLineStart + s:TabLineChars == l:chars + 2
+            " After segmentation symbols (last tab)
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '
+            let l:lable .= '%#TabLineSeparator#│' . l:endSpace . '%#TabLine#>'
+            let l:last = 1
+        elseif s:TabLineStart + s:TabLineChars == l:chars
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')}' . l:endSpace
+            let l:lable .= l:i != l:num - 1 ? '>' : ' '
+            let l:last = 1
+        elseif s:TabLineStart + s:TabLineChars < l:chars
+            let l:width = strchars(l:tabList[l:i]) - l:chars + s:TabLineStart + s:TabLineChars - 2
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).','.l:width.')}' . l:endSpace
+            let l:lable .=  '>'
+            let l:last = 1
+        else
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '
+        endif
+
+        " select the highlighting & tab page number (for mouse clicks)
+        let l:s .= l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#'
+        let l:s .= '%' . (l:i + 1) . 'T' . l:lable
+
+        " Separator symbols
+        if !exists('l:last') && l:i != l:num - 1
+            let l:s .= l:i != l:cur && l:i + 1 != l:cur ? '%#TabLineSeparator#│' : ' '
+        else
+            break
         endif
     endfor
 
@@ -338,7 +350,6 @@ endfunction
 
 
 function! misc#TabLabel(n, ...)
-    let l:width = a:0 > 0 ? a:1 : 0
     let l:buflist = tabpagebuflist(a:n)
     let l:winnr = tabpagewinnr(a:n) - 1
     " Extend buflist
@@ -361,12 +372,14 @@ function! misc#TabLabel(n, ...)
     let l:lable = l:glyph . ' ' . l:name . ' ' . l:modFlag
 
     " Cut out a section of lable
-    if l:width == 0
+    if a:0 == 0
         return l:lable
-    elseif l:width < 0
-        return strcharpart(l:lable, l:width)
+    elseif a:1 == 0
+        return ''
+    elseif a:1 < 0
+        return strcharpart(l:lable, a:1)
     else
-        return strcharpart(l:lable, 0, l:width)
+        return strcharpart(l:lable, 0, a:1)
     endif
 endfunction
 
@@ -472,7 +485,7 @@ function! misc#BufHisInAWindow(...)
         let l:name = expand('%:p')
 
         if !exists('w:bufHis')
-            let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0}
+            let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
         elseif l:name != w:bufHis.list[-1]
             " When existing, remove first
             let l:ind = index(w:bufHis.list, l:name)
@@ -506,41 +519,56 @@ function! misc#BufHisInAWindow(...)
     endif
 endfunction
 
-function s:EchoBufHistory()
-    let l:buf = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
+function! s:EchoBufHistory()
+    let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
     " Mark out the current item
-    let l:buf[-1] = '[' . l:buf[-1][1:-2] . ']'
+    let l:bufList[-1] = '[' . l:bufList[-1][1:-2] . ']'
 
     " Readjusting position (Put the initial edited text first)
     let l:ind = index(w:bufHis.list, w:bufHis.init)
-    let l:buf = remove(l:buf, l:ind, -1) + l:buf
-    let l:str = join(l:buf)
+    let l:bufList = remove(l:bufList, l:ind, -1) + l:bufList
+    let l:str = join(l:bufList)
+    let l:width = &columns - 1
 
     " Make displayed width to adapt one line ↓↓↓↓↓
-    if len(l:str) > &columns
-        let l:ind = len(l:buf) - l:ind - 1
-        " Current item start point: A, end point: B
-        let l:B = len(join(l:buf[:l:ind])) - 1
-        let l:A = l:B - len(l:buf[l:ind]) + 1
+    if strdisplaywidth(l:str) > l:width
+        let l:allChars = strchars(l:str)
+        let l:ind = len(l:bufList) - l:ind - 1
 
-        " Determine the start point of l:str to display
+        " Current item start point: A, end point: B
+        let l:B = strchars(join(l:bufList[:l:ind])) - 1
+        let l:A = l:B - strchars(l:bufList[l:ind]) + 1
+
+        " Determine the start pos & chars of l:str to display
         if l:A < w:bufHis.start
-            let w:bufHis.start = max([0, l:A - 2])
-        elseif l:B > w:bufHis.start + &columns - 1
-            let w:bufHis.start = max([0, l:B + 4 - &columns])
+            let w:bufHis.start = max([0, l:A - 1])
+            let w:bufHis.chars = l:width
+
+            while strdisplaywidth(strcharpart(l:str, w:bufHis.start, w:bufHis.chars)) > l:width
+                let w:bufHis.chars -= 1
+            endwhile
+        elseif strdisplaywidth(strcharpart(l:str, w:bufHis.start, l:B - w:bufHis.start + 1)) > l:width
+            let w:bufHis.start = max([0, l:B - l:width + 2])
+            let w:bufHis.chars = l:width
+
+            while strdisplaywidth(strcharpart(l:str, w:bufHis.start, w:bufHis.chars)) > l:width
+                let w:bufHis.chars -= 1
+                let w:bufHis.start += 1
+            endwhile
         endif
 
         " Cut out a section of l:str
-        let l:str = l:str[w:bufHis.start:w:bufHis.start + &columns - 2]
+        let l:str = strcharpart(l:str, w:bufHis.start, w:bufHis.chars)
+        let l:str .= repeat(' ', l:width - strdisplaywidth(l:str))
 
         " Add prefix to head when not displayed completely
         if w:bufHis.start > 0
-            let l:str = '<' . l:str[1:]
+            let l:str = '<' . strcharpart(l:str, 1)
         endif
 
         " Add suffix to tail when not displayed completely
-        if w:bufHis.start + &columns - 1 < len(l:str)
-            let l:str = l:str[:-2] . '>'
+        if w:bufHis.start + w:bufHis.chars < l:allChars
+            let l:str = strcharpart(l:str, 0, strchars(l:str) - 1) . '>'
         endif
     endif
 
