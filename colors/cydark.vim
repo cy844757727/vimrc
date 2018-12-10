@@ -67,7 +67,7 @@ hi Number ctermfg=208 guifg=#E07030
 hi Identifier ctermfg=75 cterm=NONE guifg=#5AA5C5 gui=NONE
 hi Constant ctermfg=208 guifg=#E07030
 hi Special ctermfg=208 guifg=#FE8D00
-hi Comment ctermfg=76 cterm=italic guifg=#468B2B gui=italic
+hi Comment ctermfg=76 cterm=italic guifg=#468B20 gui=italic
 hi Statement ctermfg=220 guifg=#C5A030
 hi String ctermfg=215 guifg=#D09050
 hi Character ctermfg=215 guifg=#E09050
