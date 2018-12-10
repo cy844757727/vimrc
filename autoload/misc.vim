@@ -527,6 +527,7 @@ function! s:EchoBufHistory()
     " Readjusting position (Put the initial edited text first)
     let l:ind = index(w:bufHis.list, w:bufHis.init)
     let l:bufList = remove(l:bufList, l:ind, -1) + l:bufList
+
     let l:str = join(l:bufList)
     let l:width = &columns - 1
 
@@ -535,7 +536,7 @@ function! s:EchoBufHistory()
         let l:allChars = strchars(l:str)
         let l:ind = len(l:bufList) - l:ind - 1
 
-        " Current item start point: A, end point: B
+        " Current item start position: A, end point: B
         let l:B = strchars(join(l:bufList[:l:ind])) - 1
         let l:A = l:B - strchars(l:bufList[l:ind]) + 1
 
