@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " === Basic highlight ===
-hi Normal ctermfg=230 guifg=#B5B5A5 guibg=#1E1E1E
+hi Normal ctermfg=230 guifg=#BBBBA5 guibg=#1E1E1E
 
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#EEEED0 guibg=#D73130 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#EEEED0 guibg=#B02525
@@ -25,15 +25,16 @@ hi TabLineSeparatorPre guibg=#1E1E1E guifg=#555555
 
 " === misc ===
 hi SpellBad cterm=underline ctermbg=NONE guibg=NONE
-hi Todo cterm=bold guibg=#FFD00A guifg=#000000 gui=bold
+hi Todo cterm=bold guibg=#CCC04A guifg=#000000 gui=bold
 hi NonText guifg=#1E1E1E
 hi Question cterm=NONE guifg=#000000 guibg=#BBBBA0
 "hi MoreMsg cterm=NONE guifg=#000000 guibg=#BBBBA0
 hi SignColumn ctermbg=234 guibg=#1E1E1E
-hi Directory guifg=#6AB0B0
+hi Directory guifg=#6ABABA
 hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#264F78
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#5E6165
 hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
+hi search cterm=NONE guifg=#101010 guibg=#D97820
 
 " === separator ... ===
 hi CursorLine ctermfg=NONE ctermbg=23509ABA5 cterm=NONE guifg=NONE guibg=#232323
@@ -61,24 +62,24 @@ hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515
 hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#B07ACA
+hi PreProc ctermfg=176 guifg=#C08ADA
 hi Type ctermfg=75 cterm=NONE guifg=#5FAEEC
-hi Number ctermfg=208 guifg=#E07030
-hi Identifier ctermfg=75 cterm=NONE guifg=#5AA5C5 gui=NONE
-hi Constant ctermfg=208 guifg=#E07030
-hi Special ctermfg=208 guifg=#FE8D00
-hi Comment ctermfg=76 cterm=italic guifg=#468B20 gui=italic
-hi Statement ctermfg=220 guifg=#C5A030
-hi String ctermfg=215 guifg=#D09050
-hi Character ctermfg=215 guifg=#E09050
-hi Operator ctermfg=230 cterm=bold guifg=#BBBBBB
+hi Number ctermfg=208 guifg=#EE7D20
+hi Identifier ctermfg=75 cterm=NONE guifg=#60AACA gui=NONE
+hi Constant ctermfg=208 guifg=#EE7D20
+hi Special ctermfg=208 guifg=#EE7D20
+hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
+hi Statement ctermfg=220 guifg=#D5A925
+hi String ctermfg=215 guifg=#E0A060
+hi Character ctermfg=215 guifg=#E0A060
+hi Operator ctermfg=230 cterm=bold guifg=#BBCCBB
 
 " === BMBPSign.vim ===
 hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#D73130
 
 " === ale.vim ===
-hi ALEError        ctermfg=NONE ctermbg=234 guifg=NONE    guibg=#D73130
-hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#D73130 guibg=#1E1E1E
+hi ALEError        ctermfg=NONE ctermbg=234 guifg=#1E1E1E guibg=#DE3D3B
+hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#DE3D3B guibg=#1E1E1E
 hi link ALEWarning Normal
 hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#C5A030 guibg=#1E1E1E

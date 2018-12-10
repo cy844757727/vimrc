@@ -202,6 +202,7 @@ map! <C-f7> <Esc><C-f7>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 
+noremap <silent> \t :LeaderfBufTag<CR>
 " Terminal map
 tnoremap <silent> <S-PageUp> <C-w>N:call WindowSwitch('up')<CR>
 tnoremap <silent> <S-pageDown> <C-w>N:call WindowSwitch('down')<CR>
