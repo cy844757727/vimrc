@@ -29,8 +29,10 @@ function misc#VimExit()
     qall
 endfunction
 
-"	Compile c/cpp/verilog, Run script language ...
-function! misc#CompileRun(...)
+" Update NerdTree, refresh tags file ...
+" diffupdate in diffmode
+" Compile c/cpp/verilog, Run  & debug script language ...
+function! misc#F5FunctionKey(...)
     wall
     if &filetype == 'nerdtree'
         if a:0 > 0 && exists('t:RecordOfTree')
@@ -45,6 +47,8 @@ function! misc#CompileRun(...)
         Async ctags -R -f .tags
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
         call git#Refresh()
+    elseif &diff
+        diffupdate
     elseif &filetype == 'verilog'
         if isdirectory('work')
             AsyncRun vlog -work work %

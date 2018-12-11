@@ -181,8 +181,8 @@ map! <C-f10> <ESC><C-f10>
 map! <S-f10> <ESC><S-f10>
 map! <C-S-f10> <ESC><C-S-f10>
 " 编译执行
-noremap  <silent> <f5> <Esc>:call misc#CompileRun()<CR>
-noremap  <silent> <C-f5> <Esc>:call misc#CompileRun('r')<CR>
+noremap  <silent> <f5> <Esc>:call misc#F5FunctionKey()<CR>
+noremap  <silent> <C-f5> <Esc>:call misc#F5FunctionKey('r')<CR>
 map! <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
 " 断点 BMBPSign.vim: breakpoint

@@ -3,10 +3,10 @@
 " Description: Asynchronous task
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_A_Async') || v:version < 800
-  finish
-endif
-let g:loaded_A_Async = 1
+"if exists('g:loaded_A_Async') || v:version < 800
+"  finish
+"endif
+"let g:loaded_A_Async = 1
 
 hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
@@ -96,10 +96,92 @@ function async#DbgScript(...)
 endfunction
 
 
+
+
+" +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+" +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+function! async#DbgScriptEnhance(...)
+    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
+    let l:breakPoint = a:0 > 1 ? a:2 : []
+    
+    " Ui & var initialization
+    call s:DbgUIInitalize(l:file)
+    
+    " Analyze script type & set var: cmd, postCmd, prompt, re
+    call s:DbgScriptAnalyze(l:file, l:breakPoint)
+    if !has_key(t:dbg, 'cmd')
+        call s:DbgOnExit()
+        return -1
+    endif
+
+    call s:DbgMaping()
+
+    " Start debug
+    call win_gotoid(t:dbg.dbgWinId)
+    let l:option = copy(s:termOption)
+    let l:option['curwin'] = 1
+    let l:option['out_cb'] = function('s:DbgMsgHandle')
+    let l:option['exit_cb'] = function('s:DbgOnExit')
+    let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
+    let t:msg = ''
+
+    " Excuting postCmd
+    if has_key(t:dbg, 'postCmd')
+        call term_sendkeys(t:dbg.dbgBufnr, t:dbg.postCmd . "\n")
+    endif
+endfunction
+
+function! s:DbgUIInitalize(file)
+    exe 'tabedit ' . a:file
+    let t:tab_lable = ['', '-- Debug --']
+    let t:dbg = {}
+    let t:dbg.srcWinId = win_getid()
+    let t:dbg.srcBufnr = bufnr('%')
+    exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split'
+    let t:dbg.dbgWinId = win_getid()
+    exe 'topleft 40vnew Variables'
+    let t:dbg.varWinId = win_getid()
+    set buftype=nofile
+    setlocal statusline=\ Variables
+    if getbufvar(t:dbg.srcBufnr, '&filetype') != 'python'
+        exe 'belowright ' . (&lines*2/3) . 'new Watch'
+        let t:dbg.watchWinId = win_getid()
+        set buftype=nofile
+        setlocal statusline=\ Watch
+    endif
+    exe 'belowright 15new Call stack'
+    let t:dbg.btWinId = win_getid()
+    setlocal statusline=\ Call\ stack
+    let t:dbg.tempMsg = ''
+    let t:dbg.sign = {}
+endfunction
+
+
+"function! async#DbgVariableMonitor(...)
+"    if a:0 == 0
+"        call term_sendkeys(t:dbg.dbgBufnr, "display\n")
+"    elseif a:0 == 2
+"        if a:1 == 'add'
+"            let t:dbg.var += [a:2]
+"        else
+"            call remove(t:dbg.var, index(t:dbg.var, a:2))
+"        endif
+"    endif
+"endfunction
+
+" +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+" +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
 " Analyze script type & set val: cmd, postCmd, prompt, re
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug
 " Prompt: command prompt     " Re: Regular expressions used to match file and line number
-function s:DbgScriptAnalyze(file, breakPoint)
+function! s:DbgScriptAnalyze(file, breakPoint)
     if !filereadable(a:file)
         return
     elseif !bufexists(a:file)
@@ -140,69 +222,120 @@ function s:DbgScriptAnalyze(file, breakPoint)
 endfunction
 
 
-function s:DbgMaping(...)
-    if a:0 == 0
-        call win_gotoid(t:dbg.srcWinId)
+function! s:DbgMaping(...)
+    if exists('t:dbg.varWinId')
+        call win_gotoid(t:dbg.varWinId)
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
-        noremap <buffer> <silent> c :call <SID>DbgSendCmd('continue')<CR>
-        noremap <buffer> <silent> s :call <SID>DbgSendCmd('step')<CR>
-        noremap <buffer> <silent> n :call <SID>DbgSendCmd('next')<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
         noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
         noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
         noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
         noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
-        call win_gotoid(t:dbg.dbgWinId)
-    else
-        call win_gotoid(t:dbg.srcWinId)
-        unmap <buffer> <CR>
-        unmap <buffer> c
-        unmap <buffer> s
-        unmap <buffer> n
-        unmap <buffer> j
-        unmap <buffer> u
-        unmap <buffer> p
+        noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
+        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> 2 :2wincmd w<CR>
+        noremap <buffer> <silent> 3 :3wincmd w<CR>
+        noremap <buffer> <silent> 4 :4wincmd w<CR>
+        noremap <buffer> <silent> 5 :5wincmd w<CR>
+    endif
+
+    if exists('t:dbg.watchWinId')
+        noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
+        noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
+        noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
+        noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
+"        noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
+"        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> 1 :1wincmd w<CR>
+        noremap <buffer> <silent> 3 :3wincmd w<CR>
+        noremap <buffer> <silent> 4 :4wincmd w<CR>
+        noremap <buffer> <silent> 5 :5wincmd w<CR>
+    endif
+
+    if exists('t:dbg.stackWinId')
+        noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
+        noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
+        noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
+        noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
+"        noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
+"        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> 1 :1wincmd w<CR>
+        noremap <buffer> <silent> 2 :2wincmd w<CR>
+        noremap <buffer> <silent> 4 :4wincmd w<CR>
+        noremap <buffer> <silent> 5 :5wincmd w<CR>
     endif
 endfunction
 
-function <SID>DbgSendCmd(cmd)
+function! <SID>DbgSendCmd(cmd)
     if a:cmd == 'quit' && confirm('Quit debug ?', "&Yes\n&No", 2) == 2
         return
     elseif a:cmd == 'jump' || a:cmd == 'until'
         let l:cmd = a:cmd . ' ' . input('Enter line number: ')
     elseif a:cmd == 'p'
         let l:cmd = a:cmd . ' ' . input('Input Expression to print: ')
+    elseif a:cmd == 'display'
+        let l:var = input('Input var name or expression: ', '', 'tag')
+        let l:cmd = 'display ' . l:var . ";;print('%---%');;display"
+    elseif a:cmd == 'undisplay'
+        let l:var = matchstr(getline('.'), '^[^:]*')
+        let l:cmd = 'undisplay ' . l:var . ";;print('%---%');;display"
     else
         let l:cmd = a:cmd
     endif
 
     call term_sendkeys(t:dbg.dbgBufnr, l:cmd . "\n")
-    let t:dbg.keyAction = 1
 endfunction
 
 " 
-function s:DbgMsgHandle(job, msg)
+function! s:DbgMsgHandle(job, msg)
     " Use command prompt to determine a message block
-    if a:msg =~ t:dbg.prompt
-        let t:dbg.match = matchlist(t:dbg.tempMsg . a:msg, t:dbg.re)
-        let t:dbg.tempMsg = ''
+    if a:msg !~ t:dbg.prompt
+        let t:dbg.tempMsg .= a:msg
+        return
+    endif
 
-        " Jump line
-        if !empty(t:dbg.match) && filereadable(t:dbg.match[1])
-            call win_gotoid(t:dbg.srcWinId)
-            exe 'edit ' . t:dbg.match[1]
-            call cursor(t:dbg.match[2], 1)
-            call s:DbgSetSign(expand('%'), t:dbg.match[2])
+    let t:dbg.tempMsg = ''
+    let l:winId = win_getid()
 
-            " Whether from shortcut in source window
-            if !exists('t:dbg.keyAction')
-                call win_gotoid(t:dbg.dbgWinId)
-            else
-                unlet t:dbg.keyAction
+    for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n*%--*%\r*\n*")
+        let l:list = split(l:item, "\r*\n")
+
+        if l:list[0] =~ 'Currently displaying:'
+            " Update variables
+            if l:list[-1] =~ t:dbg.prompt
+                call remove(l:list, -1)
+            endif
+
+            call win_gotoid(t:dbg.varWinId)
+            silent edit!
+
+            if len(l:list) > 1
+                call setline(1, l:list[1:])
+            endif
+        else
+            " Jump line
+            let l:match = matchlist(l:list[0], t:dbg.re)
+
+            if !empty(l:match) && filereadable(l:match[1])
+                call win_gotoid(t:dbg.srcWinId)
+                silent exe 'edit ' . l:match[1]
+                call cursor(l:match[2], 1)
+                call s:DbgSetSign(expand('%'), l:match[2])
             endif
         endif
-    else
-        let t:dbg.tempMsg .= a:msg
-    endif
+    endfor
+
+    call win_gotoid(l:winId)
 endfunction
 
 
@@ -235,7 +368,6 @@ function s:DbgOnExit(...)
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
-            call s:DbgMaping('unmap')
             unlet t:dbg
         endtry
     endif

@@ -8,8 +8,8 @@ endif
 let g:loaded_A_BMBPSign = 1
 
 " sign highlight definition
-hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
-hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#D73130
+hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#FCD133
+hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#DE3D3B
 
 " Sign name rule: 'BMBPSign' . type
 sign define BMBPSignBook text=🚩 texthl=BMBPSignHl
