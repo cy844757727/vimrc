@@ -38,7 +38,7 @@ set matchtime=1    "匹配括号高亮的时间
 set viminfo=       "禁用viminfo
 set wildmenu       "命令行增强补全显示
 set autochdir
-set diffopt=vertical,filler,foldcolumn:0,context:3
+set diffopt=vertical,filler,foldcolumn:0,context:5
 set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围

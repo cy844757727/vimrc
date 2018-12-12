@@ -57,9 +57,14 @@ if exists('g:Async_TermIcon')
 endif
 
 " Debug a script file
-function async#DbgScript(...)
+function! async#DbgScript(...)
     let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
     let l:breakPoint = a:0 > 1 ? a:2 : []
+
+    if l:file =~ '\.py$'
+        call async#DbgScriptEnhance(l:file, l:breakPoint)
+        return
+    endif
     
     " Ui & var initialization
     exe 'tabedit ' . l:file
@@ -78,9 +83,6 @@ function async#DbgScript(...)
         call s:DbgOnExit()
         return -1
     endif
-
-    " Creat maping
-    call s:DbgMaping()
 
     " Start debug
     let l:option = copy(s:termOption)
@@ -123,12 +125,13 @@ function! async#DbgScriptEnhance(...)
     let l:option['out_cb'] = function('s:DbgMsgHandle')
     let l:option['exit_cb'] = function('s:DbgOnExit')
     let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
-    let t:msg = ''
 
     " Excuting postCmd
     if has_key(t:dbg, 'postCmd')
         call term_sendkeys(t:dbg.dbgBufnr, t:dbg.postCmd . "\n")
     endif
+
+    call win_gotoid(t:dbg.varWinId)
 endfunction
 
 function! s:DbgUIInitalize(file)
@@ -137,37 +140,32 @@ function! s:DbgUIInitalize(file)
     let t:dbg = {}
     let t:dbg.srcWinId = win_getid()
     let t:dbg.srcBufnr = bufnr('%')
+
     exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split'
     let t:dbg.dbgWinId = win_getid()
+
     exe 'topleft 40vnew Variables'
     let t:dbg.varWinId = win_getid()
     set buftype=nofile
-    setlocal statusline=\ Variables
+    setlocal statusline=\ Variables\ &\ Expressions
+
     if getbufvar(t:dbg.srcBufnr, '&filetype') != 'python'
         exe 'belowright ' . (&lines*2/3) . 'new Watch'
         let t:dbg.watchWinId = win_getid()
         set buftype=nofile
         setlocal statusline=\ Watch
     endif
-    exe 'belowright 15new Call stack'
-    let t:dbg.btWinId = win_getid()
-    setlocal statusline=\ Call\ stack
+
+    exe 'belowright 15new Call Stack'
+    let t:dbg.stackWinId = win_getid()
+    set buftype=nofile
+    set nowrap
+    setlocal statusline=\ Call\ Stack
+
     let t:dbg.tempMsg = ''
+    let t:dbg.var = {}
     let t:dbg.sign = {}
 endfunction
-
-
-"function! async#DbgVariableMonitor(...)
-"    if a:0 == 0
-"        call term_sendkeys(t:dbg.dbgBufnr, "display\n")
-"    elseif a:0 == 2
-"        if a:1 == 'add'
-"            let t:dbg.var += [a:2]
-"        else
-"            call remove(t:dbg.var, index(t:dbg.var, a:2))
-"        endif
-"    endif
-"endfunction
 
 " +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 " +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -198,20 +196,23 @@ function! s:DbgScriptAnalyze(file, breakPoint)
 
     if l:interpreter == 'bash' && executable('bashdb')
         " Bash script
+        let t:dbg.name = 'bash'
         let l:breakFile = tempname()
         call writefile(a:breakPoint, l:breakFile)
         let t:dbg.cmd = 'bashdb -x ' . l:breakFile . ' ' . a:file
         let t:dbg.prompt = 'bashdb<\d\+>'
         let t:dbg.re = '(\(/\S\+\):\(\d\+\))'
-    elseif l:interpreter =~ 'python' && (executable('ipdb') || executable('pdb'))
+        let t:dbg.stackCmd = "print bt start"
+    elseif l:interpreter =~ 'python' && executable('pdb')
         " Python script
-        let l:pdb = executable('ipdb') ? 'ipdb' : 'pdb'
-        let t:dbg.cmd = l:interpreter . ' -m ' . l:pdb . ' ' . a:file
+        let t:dbg.name = 'python'
+        let t:dbg.cmd = l:interpreter . ' -m pdb ' . a:file
         let t:dbg.postCmd = join(a:breakPoint, ';;')
-        let t:dbg.prompt = executable('ipdb') ? 'ipdb>' : '(Pdb)'
-        let t:dbg.re = executable('ipdb') ? '\(/[/a-zA-Z0-9_.]\+\).*(\(\d\+\))' : '> \(\S\+\)(\(\d\+\))'
+        let t:dbg.prompt = '(Pdb)'
+        let t:dbg.re = '> \(\S\+\)(\(\d\+\))'
     elseif l:interpreter =~ 'perl'
         " Perl script
+        let t:dbg.name = 'perl'
         let l:breakFile = tempname()
         call writefile(['= break b'] + a:breakPoint, l:breakFile)
         let t:dbg.cmd = l:interpreter . ' -d ' . a:file
@@ -226,15 +227,17 @@ function! s:DbgMaping(...)
     if exists('t:dbg.varWinId')
         call win_gotoid(t:dbg.varWinId)
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
-        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
         noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
         noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
         noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
         noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
         noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
         noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> <space> :call <SID>DbgVarDispaly()<CR>
+        noremap <buffer> <silent> <f5> :call <Sid>DbgSendCmd('refresh')<CR>
         noremap <buffer> <silent> 2 :2wincmd w<CR>
         noremap <buffer> <silent> 3 :3wincmd w<CR>
         noremap <buffer> <silent> 4 :4wincmd w<CR>
@@ -243,15 +246,13 @@ function! s:DbgMaping(...)
 
     if exists('t:dbg.watchWinId')
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
-        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
         noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
         noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
         noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
         noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
-"        noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
-"        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
         noremap <buffer> <silent> 1 :1wincmd w<CR>
         noremap <buffer> <silent> 3 :3wincmd w<CR>
         noremap <buffer> <silent> 4 :4wincmd w<CR>
@@ -260,15 +261,14 @@ function! s:DbgMaping(...)
 
     if exists('t:dbg.stackWinId')
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
-        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step;;print('%--%');;display")<CR>
-        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next;;print('%--%');;display")<CR>
+        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
+        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
+        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
         noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
         noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
         noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
         noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
-"        noremap <buffer> <silent> a :call <SID>DbgSendCmd('display')<CR>
-"        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> <f5> :call <Sid>DbgSendCmd('refresh')<CR>
         noremap <buffer> <silent> 1 :1wincmd w<CR>
         noremap <buffer> <silent> 2 :2wincmd w<CR>
         noremap <buffer> <silent> 4 :4wincmd w<CR>
@@ -285,12 +285,29 @@ function! <SID>DbgSendCmd(cmd)
         let l:cmd = a:cmd . ' ' . input('Input Expression to print: ')
     elseif a:cmd == 'display'
         let l:var = input('Input var name or expression: ', '', 'tag')
-        let l:cmd = 'display ' . l:var . ";;print('%---%');;display"
+        let l:cmd = 'display ' . l:var
     elseif a:cmd == 'undisplay'
         let l:var = matchstr(getline('.'), '^[^:]*')
-        let l:cmd = 'undisplay ' . l:var . ";;print('%---%');;display"
+        let l:cmd = 'undisplay ' . l:var . ";;print('display ')"
+        unlet t:dbg.var[l:var]
+    elseif a:cmd == 'refresh'
+        let l:winId = win_getid()
+
+        if l:winId == t:dbg.varWinId
+            let l:cmd = ''
+
+            for l:var in keys(t:dbg.var)
+                let l:cmd .= 'display ' . l:var . ';;'
+            endfor
+        elseif l:winId == t:dbg.stackWinId
+            let l:cmd = "print('bt start:);;bt;;print('bt end:')"
+        endif
     else
         let l:cmd = a:cmd
+    endif
+
+    if a:cmd =~ '^\(c\|n\|s\|continue\|next\|step\|jump\|until\)'
+        let l:cmd .= ";;print('bt start:');;bt;;print('bt end:')"
     endif
 
     call term_sendkeys(t:dbg.dbgBufnr, l:cmd . "\n")
@@ -300,33 +317,41 @@ endfunction
 function! s:DbgMsgHandle(job, msg)
     " Use command prompt to determine a message block
     if a:msg !~ t:dbg.prompt
-        let t:dbg.tempMsg .= a:msg
+        let t:dbg.tempMsg .= "\n" . a:msg
         return
     endif
 
     let t:dbg.tempMsg = ''
+    let t:dbg.stack = []
     let l:winId = win_getid()
 
-    for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n*%--*%\r*\n*")
-        let l:list = split(l:item, "\r*\n")
+    for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n")
+        if l:item =~ '^bt start:' " Python
+            let l:btMode = 1
+        elseif l:item =~ '^bt end:' " Python
+            unlet l:btMode
+        elseif exists('l:btMode') " Python
+            let l:item = substitute(l:item, getcwd().'/', '', '')
+            let t:dbg.stack += [l:item]
+        elseif l:item =~ '^\(->\|##\)\d\+ ' " Bash
+            let l:dbg.stack += [l:item]
+        elseif l:item =~ '^\s\+\d\+:\s*\S\+\s*=' " Bash
+            let l:var = matchlist(l:item, '\(\S\+\)\s\+=\(.*\)$')
 
-        if l:list[0] =~ 'Currently displaying:'
-            " Update variables
-            if l:list[-1] =~ t:dbg.prompt
-                call remove(l:list, -1)
+            if !empty(l:var)
+                let t:dbg.var[l:var[1]] = l:var[2]
             endif
+        elseif l:item =~ '^display' " Python
+            let l:var = matchlist(l:item, '^display \([^:]*\):\(.*\)$')
 
-            call win_gotoid(t:dbg.varWinId)
-            silent edit!
-
-            if len(l:list) > 1
-                call setline(1, l:list[1:])
+            if !empty(l:var)
+                let t:dbg.var[l:var[1]] = l:var[2]
             endif
         else
             " Jump line
-            let l:match = matchlist(l:list[0], t:dbg.re)
+            let l:match = matchlist(l:item, t:dbg.re)
 
-            if !empty(l:match) && filereadable(l:match[1])
+            if !empty(l:match) && filereadable(l:match[1]) && l:match[2] != line('.')
                 call win_gotoid(t:dbg.srcWinId)
                 silent exe 'edit ' . l:match[1]
                 call cursor(l:match[2], 1)
@@ -335,9 +360,28 @@ function! s:DbgMsgHandle(job, msg)
         endif
     endfor
 
+    " Update Var
+    if exists('l:var')
+        call win_gotoid(t:dbg.varWinId)
+        let l:list = []
+        silent edit!
+
+        for [l:var, l:val] in items(t:dbg.var)
+            let l:val = substitute(l:val, '\s*\[old: .*\]$', '', '')
+            let l:list += [l:var . ':' . l:val]
+        endfor
+
+        call setline(1, l:list)
+    endif
+
+    if !empty(t:dbg.stack)
+        call win_gotoid(t:dbg.stackWinId)
+        silent edit!
+        call setline(1, t:dbg.stack)
+    endif
+
     call win_gotoid(l:winId)
 endfunction
-
 
 " Indicates the current debugging line
 function s:DbgSetSign(file, line)
@@ -356,6 +400,11 @@ function s:DbgSetSign(file, line)
     let t:dbg.sign = {'id': s:newSignId, 'file': a:file}
 endfunction
 
+
+function! <SID>DbgVarDispaly()
+    let l:var = matchstr(getline('.'), '^[^:]*')
+    echo l:var . ':' . t:dbg.var[l:var]
+endfunction
 
 " 
 function s:DbgOnExit(...)
