@@ -82,7 +82,7 @@ hi NormalSign  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#D73130
 
 " === ale.vim ===
-hi ALEError        ctermfg=NONE ctermbg=234 guifg=#1E1E1E guibg=#E44442
+hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130
 hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#1E1E1E
 hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CEB107 guibg=#1E1E1E
 hi link ALEWarning Normal
