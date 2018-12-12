@@ -211,6 +211,7 @@ function! s:DbgMaping(...)
     endif
 
     if exists('t:dbg.watchWinId')
+        call win_gotoid(t:dbg.watchWinId)
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
         noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
         noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
@@ -227,6 +228,7 @@ function! s:DbgMaping(...)
     endif
 
     if exists('t:dbg.stackWinId')
+        call win_gotoid(t:dbg.stackWinId)
         noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd('')<CR>
         noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
         noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
