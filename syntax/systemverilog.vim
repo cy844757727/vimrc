@@ -168,7 +168,7 @@ if version >= 508 || !exists("did_systemverilog_syn_inits")
    HiLink systemverilogConstant	 Constant
    HiLink systemverilogLabel		 Label
    HiLink systemverilogNumber		 Number
-   HiLink systemverilogOperator	 Operator
+   HiLink systemverilogOperator	 Normal
    HiLink systemverilogStatement	 Statement
    HiLink systemverilogGlobal		 Define
    HiLink systemverilogDirective	 SpecialComment

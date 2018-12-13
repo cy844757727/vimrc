@@ -266,7 +266,7 @@ function s:SignSave(pre, types)
                 " Ignore invalid data
                 continue
             endtry
-            let l:content += [l:type . ' ' . l:sign.file . ':' . l:line . ' ' . l:sign.attr]
+            let l:content += [l:type . ' ' . l:sign.file . ':' . l:line . l:sign.attr]
         endfor
     endfor
 
@@ -316,7 +316,7 @@ function s:SignAddAttr(file, line)
     " Add attr to a sign
     for l:sign in get(s:signVec, l:type, [])
         if l:sign.id == l:id
-            let l:sign.attr = input('Input attr(' . l:type . '): ', l:sign.attr)
+            let l:sign.attr = ' '.input('Input attr(' . l:type . '): ', l:sign.attr)
             break
         endif
     endfor
@@ -859,7 +859,7 @@ function BMBPSign#SignRecord(...)
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
             if !empty(l:line)
-                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1] . ' ' . l:sign.attr]
+                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1] . l:sign.attr]
             endif
         endfor
     endfor

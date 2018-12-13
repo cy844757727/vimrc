@@ -107,7 +107,7 @@ hi def link verilogComment         Comment
 hi def link verilogConstant        Constant
 hi def link verilogLabel           Label
 hi def link verilogNumber          Number
-hi def link verilogOperator        Operator
+hi def link verilogOperator        Normal
 hi def link verilogStatement       Statement
 hi def link verilogGlobal          Define
 hi def link verilogDirective       SpecialComment

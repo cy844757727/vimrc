@@ -2,10 +2,10 @@
 " Author: CY <844757727@qq.com>
 " Description: Miscellaneous function
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-"if exists('g:loaded_A_Misc')
-"  finish
-"endif
-"let g:loaded_A_Misc = 1
+if exists('g:loaded_A_Misc')
+  finish
+endif
+let g:loaded_A_Misc = 1
 
 
 augroup MISC_autocmd
