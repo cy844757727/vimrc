@@ -11,7 +11,7 @@ let g:colors_name = "cydark"
 hi Normal ctermfg=230 guifg=#D5D5CA guibg=#1E1E1E
 
 " Msg & Tip
-hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#EEEED0 guibg=#D73130 gui=NONE
+hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#B53030
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FFFFFF guibg=#905510
 hi Question cterm=NONE guifg=#000000 guibg=#D5D5CA
@@ -34,7 +34,7 @@ hi NonText guifg=#CCCCB5
 hi EndOfBuffer guifg=#1E1E1E
 hi SignColumn ctermbg=234 guibg=#1E1E1E
 hi Directory guifg=#6ADADA
-hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#264F78
+hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#19456A
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#5E6165
 hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
 
@@ -65,15 +65,15 @@ hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515
 hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#E990F9
+hi PreProc ctermfg=176 guifg=#E990F0
 hi Type ctermfg=75 cterm=NONE guifg=#40BFFF
 hi Number ctermfg=208 guifg=#FA8020
 hi Identifier ctermfg=75 cterm=NONE guifg=#5ABAF9 gui=NONE
 hi Constant ctermfg=208 guifg=#F58440
 hi Special ctermfg=208 guifg=#F58440
-hi Comment ctermfg=76 cterm=italic guifg=#60B030 gui=italic
-hi Statement ctermfg=220 guifg=#F0C030
-hi String ctermfg=215 guifg=#F5BA6A
+hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
+hi Statement ctermfg=220 guifg=#F0BD30
+hi String ctermfg=215 guifg=#F1B666
 hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#D0F0D0
 
