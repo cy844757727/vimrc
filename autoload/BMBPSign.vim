@@ -137,11 +137,19 @@ function s:SignToggle(file, line, type, attr, skip)
         exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . l:def . ' file=' . a:file
         call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
         let s:signId[s:newSignId] = [a:type, a:file]
+
+        if exists('t:dbg') && a:type =~ 'break'
+            call t:dbg.sendCmd(a:type, a:file.':'.a:line)
+        endif
     elseif a:skip == 0
         " Unset sign
         exe 'sign unplace ' . l:id[1] . ' file=' . a:file
         call filter(l:vec, 'v:val.id != ' . l:id[1])
         unlet s:signId[l:id[1]]
+
+        if exists('t:dbg') && a:type =~ 'break'
+            call t:dbg.sendCmd('clear', a:file.':'.a:line)
+        endif
     endif
 endfunction
 
@@ -266,7 +274,11 @@ function s:SignSave(pre, types)
                 " Ignore invalid data
                 continue
             endtry
-            let l:content += [l:type . ' ' . l:sign.file . ':' . l:line . l:sign.attr]
+            let l:content += [l:type . ' ' . l:sign.file . ':' . l:line]
+
+            if l:sign.attr =~ '\S'
+                let l:content[-1] .= '  '.l:sign.attr
+            endif
         endfor
     endfor
 
@@ -316,12 +328,16 @@ function s:SignAddAttr(file, line)
     " Add attr to a sign
     for l:sign in get(s:signVec, l:type, [])
         if l:sign.id == l:id
-            let l:sign.attr = ' '.input('Input attr(' . l:type . '): ', l:sign.attr)
+            let l:sign.attr = matchstr(input('Input attr(' . l:type . '): ', l:sign.attr), '\S.*')
             break
         endif
     endfor
 
     call s:QfListUpdate([l:type])
+    
+    if exists('t:dbg') && l:type =~ 'break'
+        call t:dbg.sendCmd('condition', a:file.':'.a:line, l:sign.attr)
+    endif
 endfunction
 
 " Unset sign by ids
@@ -709,7 +725,7 @@ endfunction
 " Toggle sign of a type
 function BMBPSign#SignToggle(...)
     let l:type = a:0 > 0 ? a:1 : 'book'
-    let l:file = a:0 > 1 ? a:2 : expand('%')
+    let l:file = a:0 > 1 ? a:2 : expand('%:p')
     let l:lin = a:0 > 2 ? a:3 : line('.')
 
     if !filereadable(l:file)
@@ -730,6 +746,7 @@ function BMBPSign#SignToggle(...)
 
         call s:SignToggle(l:file, l:lin, l:type, '', 0)
         call s:QfListUpdate([l:type])
+
     endif
 endfunction
 
@@ -859,7 +876,11 @@ function BMBPSign#SignRecord(...)
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
             if !empty(l:line)
-                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1] . l:sign.attr]
+                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
+
+                if l:sign.attr =~ '\S'
+                    let l:signRecord[-1] .= ' '.l:sign.attr
+                endif
             endif
         endfor
     endfor

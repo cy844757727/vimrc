@@ -1,7 +1,8 @@
 misc/
-.*
+*.projectitem
+*.tags
 *.viminfo
 *.session
 *.signrecord
 *.pyc
-__pycache__/*
+
