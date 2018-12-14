@@ -214,6 +214,8 @@ tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc')<CR>
 tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 
+let $GTAGSLABEL = 'native-pygments'
+let $GTAGSCONF = '/usr/share/global/gtags/globash.rc'
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
 function! WindowSwitch(action)
@@ -419,7 +421,8 @@ function! Vimrc_Tagbar()
         let g:tagbar_vertical=0
         let g:tagbar_left=1
         TagbarOpen
-        let g:tagbar_vertical=19
+        let g:tagbar_vertical=19let $GTAGSLABEL = 'native-pygments'
+let $GTAGSCONF = '/path/to/share/gtags/gtags.conf'
         let g:tagbar_left=0
         wincmd W
     else

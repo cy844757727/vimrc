@@ -3,4 +3,5 @@ misc/
 *.viminfo
 *.session
 *.signrecord
-autoload/leaderf/python/leaderf/__pycache__/
+*.pyc
+__pycache__/*
