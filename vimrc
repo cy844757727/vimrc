@@ -128,12 +128,12 @@ vnoremap <silent> \q :call misc#ReverseComment()<CR>
 
 " 查找
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
-nmap <C-f> wbve<C-f>
-imap <C-f> <Esc>lwbve<C-f>
+noremap <C-f> :exe '/' . expand('<cword>')<CR>
+imap <C-f> <Esc><C-f>
 " 查找并替换
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
-nmap <C-h> wbve<C-h>
-imap <C-h> <Esc>lwbve<C-h>
+noremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
+imap <C-h> <Esc><C-h>
 
 noremap <silent> <C-l> <Esc>:redraw!<CR>
 noremap <silent> <C-a> <Esc>ggvG$
@@ -214,8 +214,6 @@ tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc')<CR>
 tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 
-let $GTAGSLABEL = 'native-pygments'
-let $GTAGSCONF = '/usr/share/global/gtags/globash.rc'
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
 function! WindowSwitch(action)
@@ -421,8 +419,7 @@ function! Vimrc_Tagbar()
         let g:tagbar_vertical=0
         let g:tagbar_left=1
         TagbarOpen
-        let g:tagbar_vertical=19let $GTAGSLABEL = 'native-pygments'
-let $GTAGSCONF = '/path/to/share/gtags/gtags.conf'
+        let g:tagbar_vertical=19
         let g:tagbar_left=0
         wincmd W
     else

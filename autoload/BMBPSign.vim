@@ -28,6 +28,8 @@ let s:signVec = {
             \ }
 
 let s:newSignId = 0
+" Type grouping for qflist 
+" Quickfix window autoupdating depends on it
 let s:typesGroup = {}
 " Sign id record
 " Content: 'id': ['type', 'file']
@@ -231,14 +233,14 @@ function s:SignLoad(pre, types)
                 continue
             endtry
 
-            let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
-
-            if filereadable(l:file)
-                if !bufexists(l:file)
-                    exe 'silent badd ' . l:file
-                endif
-                call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
+            if !filereadable(l:file)
+                continue
+            elseif !bufexists(l:file)
+                exe 'silent badd ' . l:file
             endif
+
+            let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
+            call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
         endfor
 
         if !empty(l:types)
@@ -259,6 +261,7 @@ function s:SignSave(pre, types)
     let l:def = '\(' . join(a:types, '\|') . '\)'
     for l:item in split(execute('sign place'), "\n")
         let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' . '  id=\(\d\+\)  \S\+=BMBPSign' . l:def)
+
         if !empty(l:match)
             let l:signs[l:match[2]] = l:match[1]
         endif
@@ -274,6 +277,7 @@ function s:SignSave(pre, types)
                 " Ignore invalid data
                 continue
             endtry
+
             let l:content += [l:type . ' ' . l:sign.file . ':' . l:line]
 
             if !empty(l:sign.attr)
@@ -292,8 +296,7 @@ endfunction
 
 " Add attr to a sign
 function s:SignAddAttr(types, file, lin)
-    let l:filter = !empty(a:file) ? 'file='.a:file : ''
-    let l:signPlace = execute('sign place '.l:filter)
+    let l:signPlace = execute('sign place '.(!empty(a:file) ? 'file='.a:file : ''))
 
     let l:items = {}
     for l:type in empty(a:types) ? keys(s:signVec) : a:types
@@ -306,30 +309,24 @@ function s:SignAddAttr(types, file, lin)
         endfor
     endfor
 
-    let l:str = ''
     if empty(l:items)
         return
-    elseif len(l:items) == 1
-        let [l:id, l:val] = items(l:items)[0]
-    else
-        let l:str = "  id      type      where\n"
+    endif
 
-        for [l:id, l:val] in items(l:items)
-            let l:str .= printf('  %-3d     %-6s    %s:%d',
-                        \ l:id, l:val.type, substitute(l:val.file, getcwd().'/', '', ''), l:val.lin)."\n"
-        endfor
+    let l:str = "  id      type      where\n"
+    for [l:id, l:val] in items(l:items)
+        let l:str .= printf('  %-3d     %-6s    %s:%d',
+                    \ l:id, l:val.type, substitute(l:val.file, getcwd().'/', '', ''), l:val.lin)."\n"
+    endfor
 
-        let l:val = {}
-        while empty(l:val)
-            let l:id = input(l:str."Select Id: ")
-            redraw!
+    if len(l:items) > 1
+        let l:id = input(l:str."Select Id: ")
+        let l:val = get(l:items, l:id, {})
+        let l:str = ''
+    endif
 
-            if l:id == 'q'
-                return
-            endif
-
-            let l:val = get(l:items, l:id, {})
-        endwhile
+    if empty(l:val)
+        return
     endif
 
     " Add attr to a sign
@@ -667,7 +664,8 @@ function s:QfListSet(title, types)
 
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.'  id='.l:sign.id.'  \S\+=BMBPSign')
+
             if !filereadable(l:sign.file) || empty(l:line)
                 continue
             elseif !bufexists(l:sign.file)
@@ -675,7 +673,7 @@ function s:QfListSet(title, types)
             endif
 
             let l:text = '[' . l:type . ':' . l:sign.id
-            let l:text .= l:sign.attr =~ '\S' ? ':' . l:sign.attr . '] ' : '] '
+            let l:text .= empty(l:sign.attr) ? '] ' : ':' . l:sign.attr . '] '
 
             let l:qf.items += [{
                         \ 'bufnr': bufnr(l:sign.file),
@@ -687,7 +685,7 @@ function s:QfListSet(title, types)
     endfor
 
     if !empty(a:title)
-        let l:qf['title'] = a:title
+        let l:qf.title = a:title
     endif
 
     call setqflist([], 'r', l:qf)
@@ -696,9 +694,8 @@ endfunction
 " Update quickfix when sign changes
 function s:QfListUpdate(types)
     let l:group = tolower(getqflist({'title': 1}).title)
-    let l:list = get(s:typesGroup, l:group, [])
 
-    for l:type in l:list
+    for l:type in get(s:typesGroup, l:group, [])
         if index(a:types, l:type) != -1
             call s:QfListSet('', l:list)
             break
@@ -885,15 +882,9 @@ endfunction
 function BMBPSign#SetQfList(...)
     if a:0 == 0
         return
-    else
-        let l:group = tolower(a:1)
-
-        if a:0 == 1 
-            let l:types = get(s:typesGroup, l:group, [])
-        else
-            let l:types = a:000[1:]
-        endif
     endif
+    let l:group = tolower(a:1)
+    let l:types = a:0 > 1 ? a:000[1:] : get(s:typesGroup, l:group, [])
 
     if !empty(l:types)
         call s:QfListSet(a:1, l:types)

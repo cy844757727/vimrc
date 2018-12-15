@@ -14,21 +14,6 @@ augroup MISC_autocmd
     autocmd BufEnter *[^0-9] call misc#BufHisInAWindow()
 augroup END
 
-command Qa :call misc#VimExit()
-
-function misc#VimExit()
-    " Hide all terminal window in current tabpage
-    while 1
-        let l:winnr = bufwinnr('^!')
-        if l:winnr != -1
-            exe l:winnr . 'hide'
-        else
-            break
-        endif
-    endwhile
-    qall
-endfunction
-
 " Update NerdTree, refresh tags file ...
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
@@ -159,6 +144,7 @@ endfunction
 "  Refresh NERTree
 function! misc#UpdateNERTreeView()
     let l:nerd = bufwinnr('NERD_tree')
+
     if l:nerd != -1
         let l:id = win_getid()
         exe l:nerd . 'wincmd w'
@@ -172,6 +158,7 @@ endfunction
 " 字符串查找替换
 function! misc#StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
+
     if l:subs != ''
         let l:pos = getpos('.')
         exe '%s/' . a:str . '/' . l:subs . '/Ig'
@@ -183,6 +170,7 @@ endfunction
 " File save
 function! misc#SaveFile()
     let l:file = expand('%')
+
     if !empty(&buftype)
         return
     elseif empty(l:file)
@@ -200,6 +188,7 @@ function! misc#SaveFile()
         else
             update
         endif
+
         let s:DoubleClick_500MSTimer = 1
         let l:id = timer_start(500, 'misc#TimerHandle500MS')
     endif
