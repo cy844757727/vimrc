@@ -8,7 +8,7 @@ set t_Co=256
 let g:colors_name = "cydark"
 
 " === Basic highlight ===
-hi Normal ctermfg=230 guifg=#D5D5CA guibg=#1E1E1E
+hi Normal ctermfg=230 guifg=#DADACF guibg=#1E1E1E
 
 " Msg & Tip
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
@@ -38,6 +38,8 @@ hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#19456A
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#5E6165
 hi QuickFixLine cterm=bold,italic guifg=NONE guibg=NONE
 
+hi link TagbarSignature Directory
+
 " === separator ... ===
 hi CursorLine ctermfg=NONE ctermbg=23509ABA5 cterm=NONE guifg=NONE guibg=#232323
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#5E6165 guibg=NONE
@@ -65,15 +67,15 @@ hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515
 hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#E990F0
+hi PreProc ctermfg=176 guifg=#EE95F5
 hi Type ctermfg=75 cterm=NONE guifg=#40BFFF
-hi Number ctermfg=208 guifg=#FA8020
-hi Identifier ctermfg=75 cterm=NONE guifg=#5ABAF9 gui=NONE
+hi Number ctermfg=208 guifg=#FA8525
+hi Identifier ctermfg=75 cterm=NONE guifg=#5DBDFC gui=NONE
 hi Constant ctermfg=208 guifg=#F58440
-hi Special ctermfg=208 guifg=#F58440
+hi link Special Constant
 hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
-hi Statement ctermfg=220 guifg=#F0BD30
-hi String ctermfg=215 guifg=#F1B666
+hi Statement ctermfg=220 guifg=#F2C732
+hi String ctermfg=215 guifg=#F6BB6B
 hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#D0F0D0
 
