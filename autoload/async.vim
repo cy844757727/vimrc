@@ -294,7 +294,9 @@ function! s:dbg.sendCmd(cmd, args, ...)
         endif
     endif
 
-    call term_sendkeys(self.dbgBufnr, a:cmd.' '.l:args."\n")
+    if has_key(self, 'dbgBufnr')
+        call term_sendkeys(self.dbgBufnr, a:cmd.' '.l:args."\n")
+    endif
 endfunction
 
 
@@ -404,7 +406,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.name = 'python'
         let l:dbg.tool = 'pdb'
         let l:dbg.cmd = l:interpreter . ' -m pdb ' . a:file
-        let l:dbg.postCmd = join(a:breakPoint + ['alias finish return'], ';;')
+        let l:breakPoint = map(a:breakPoint, "join(split(v:val,'\\(:\\d\\+\\)\\zs\\s\\+'),' ,')")
+        let l:dbg.postCmd = join(l:breakPoint + ['alias finish return'], ';;')
         let l:dbg.prompt = '(Pdb)'
         let l:dbg.fileNr = '^> \(\S\+\)(\(\d\+\))'
         let l:dbg.varVal = '^display \([^:]\+\): \(.*\)$'
@@ -493,6 +496,7 @@ function! s:DbgMaping(...)
         noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
         noremap <buffer> <silent> C :call <SID>DbgSendCmd("condition")<CR>
         noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
+        noremap <buffer> <silent> S :call <SID>DbgSendCmd("skip")<CR>
         noremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
         noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
         noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
@@ -541,6 +545,10 @@ function! <SID>DbgSendCmd(cmd)
         let l:var = matchstr(getline('.'), '^[^:]*')
         let l:cmd = 'undisplay ' . l:var
         unlet t:dbg.var[l:var]
+    elseif a:cmd == 'run' && t:dbg.name == 'python'
+        let l:cmd = join(['run'] + map(keys(t:dbg.var), "'display '.v:val"), ';;')
+    elseif a:cmd == 'skip' && t:dbg.name == 'bash'
+        let l:cmd = 'skip ' . input('Input counts: ')
     elseif a:cmd == '_send'
         let l:cmd = input('Input dbg cmd: ')
     elseif a:cmd == 'condition'
@@ -555,7 +563,9 @@ function! <SID>DbgSendCmd(cmd)
 
         let l:num = input(l:str."Select num: ")
         if has_key(t:dbg.break, l:num)
-            let l:cmd = 'condition ' . l:num .' '. input('Input condition: ')
+            let l:cmd = 'condition ' . l:num .' '. input('Input condition('.l:num.'): ')
+        else
+            return
         endif
     else
         let l:cmd = a:cmd

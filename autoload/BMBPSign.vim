@@ -276,7 +276,7 @@ function s:SignSave(pre, types)
             endtry
             let l:content += [l:type . ' ' . l:sign.file . ':' . l:line]
 
-            if l:sign.attr =~ '\S'
+            if !empty(l:sign.attr)
                 let l:content[-1] .= '  '.l:sign.attr
             endif
         endfor
@@ -291,44 +291,51 @@ function s:SignSave(pre, types)
 endfunction
 
 " Add attr to a sign
-function s:SignAddAttr(file, line)
-    try
-        let l:signPlace = split(execute('sign place file=' . a:file), "\n")[2:]
-    catch
-        " No sign set 
-        return
-    endtry
+function s:SignAddAttr(types, file, lin)
+    let l:filter = !empty(a:file) ? 'file='.a:file : ''
+    let l:signPlace = execute('sign place '.l:filter)
 
-    " Consider multiple signs set at same line
-    " Content: l:ind: ['id', 'type']
-    let l:signs = {}
-    let l:ind = 1
-    for l:sign in l:signPlace
-        let l:list = matchlist(l:sign, '    \S\+' . a:line . '  id=\(\d\+\)' . '  \S\+=BMBPSign\(\S\+\)')
-        if !empty(l:list)
-            let l:signs[l:ind] = [l:list[1], tolower(l:list[2])]
-            let l:ind += 1
-        endif
+    let l:items = {}
+    for l:type in empty(a:types) ? keys(s:signVec) : a:types
+        for l:item in s:signVec[l:type]
+            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:item.id.'  \S\+=BMBPSign')
+            
+            if !empty(l:list) && l:list[1] =~ a:lin
+                let l:items[l:item.id] = {'file': l:item.file, 'type': l:type, 'lin': l:list[1]}
+            endif
+        endfor
     endfor
 
-    if l:ind == 1
+    let l:str = ''
+    if empty(l:items)
         return
-    elseif l:ind == 2
-        let [l:id, l:type] = l:signs['1']
+    elseif len(l:items) == 1
+        let [l:id, l:val] = items(l:items)[0]
     else
-        " Multiple signs
-        let l:str = 'Select one(ind   type)!'
-        for [l:ind, l:sign] in items(l:signs)
-            let l:str .= printf("\n    %-3d   %s", l:ind, l:sign[1])
+        let l:str = "  id      type      where\n"
+
+        for [l:id, l:val] in items(l:items)
+            let l:str .= printf('  %-3d     %-6s    %s:%d',
+                        \ l:id, l:val.type, substitute(l:val.file, getcwd().'/', '', ''), l:val.lin)."\n"
         endfor
-        echo l:str
-        let [l:id, l:type] = get(l:signs, nr2char(getchar()), [-1, 'invalid'])
+
+        let l:val = {}
+        while empty(l:val)
+            let l:id = input(l:str."Select Id: ")
+            redraw!
+
+            if l:id == 'q'
+                return
+            endif
+
+            let l:val = get(l:items, l:id, {})
+        endwhile
     endif
 
     " Add attr to a sign
-    for l:sign in get(s:signVec, l:type, [])
+    for l:sign in s:signVec[l:val.type]
         if l:sign.id == l:id
-            let l:sign.attr = matchstr(input('Input attr(' . l:type . '): ', l:sign.attr), '\S.*')
+            let l:sign.attr = matchstr(input(l:str.'Input attr('.l:id.'): ', l:sign.attr), '\S.*')
             break
         endif
     endfor
@@ -336,7 +343,7 @@ function s:SignAddAttr(file, line)
     call s:QfListUpdate([l:type])
     
     if exists('t:dbg') && l:type =~ 'break'
-        call t:dbg.sendCmd('condition', a:file.':'.a:line, l:sign.attr)
+        call t:dbg.sendCmd('condition', l:val['file'].':'.l:val['lin'], l:sign.attr)
     endif
 endfunction
 
@@ -674,7 +681,7 @@ function s:QfListSet(title, types)
                         \ 'bufnr': bufnr(l:sign.file),
                         \ 'filename': l:sign.file,
                         \ 'lnum': l:line[1],
-                        \ 'text': l:text . getbufline(l:sign.file, l:line[1])[0]
+                        \ 'text': l:text . get(getbufline(l:sign.file, l:line[1]), 0, '')
                         \ }]
         endfor
     endfor
@@ -763,20 +770,32 @@ function BMBPSign#SignClear(...)
         return
     endif
 
-    let l:pre = matchstr(a:1, '^[^_.]*')
+    let [l:types, l:ids, l:pres] = [[], [], []]
 
-    if filereadable(l:pre . s:signFile)
-        for l:pre in a:000
-            call delete(matchstr(l:pre, '^[^.]*') . s:signFile)
-        endfor
-    elseif a:1
-        call s:SignUnsetById(a:000)
-        let l:types = uniq(map(a:000, "get(s:signId,v:val,['']).[0]"))
+    for l:arg in a:000
+        if has_key(s:signVec, l:arg)
+            let l:types += [l:arg]
+        elseif l:arg
+            let l:ids += [l:arg]
+        else
+            let l:pres += [l:arg]
+        endif
+    endfor
+
+    if !empty(l:types)
+        call s:SignClear(l:types)
         call s:QfListUpdate(l:types)
-    else
-        call s:SignClear(a:000)
-        call s:QfListUpdate(a:000)
     endif
+
+    if !empty(l:ids)
+        call s:SignUnsetById(l:ids)
+        let l:types = uniq(map(l:ids, "get(s:signId,v:val,[''])[0]"))
+        call s:QfListUpdate(l:types)
+    endif
+
+    for l:file in map(l:pres, "matchstr(v:val,'^[^_.]*').'".s:signFile."'")
+        call delete(l:file)
+    endfor
 endfunction
 
 " Save sign to file, Can specify types to save
@@ -801,9 +820,23 @@ function BMBPSign#SignLoad(...)
 endfunction
 
 function BMBPSign#SignAddAttr(...)
-    let l:file = a:0 > 0 ? a:1 : expand('%')
-    let l:lin = a:0 > 1 ? a:2 : line('.')
-    call s:SignAddAttr(l:file, l:lin)
+    let [l:types, l:file, l:lin] = [[], '', '']
+
+    for l:arg in a:000
+        if has_key(s:signVec, l:arg)
+            let l:types += [l:arg]
+        elseif l:arg
+            let l:lin = l:arg + 0
+        elseif l:arg == '.'
+            let l:lin = line('.')
+        elseif l:arg == '%'
+            let l:file = expand('%')
+        elseif filereadable(l:arg)
+            let l:file = l:arg
+        endif
+    endfor
+
+    call s:SignAddAttr(l:types, l:file, l:lin)
 endfunction
 
 function BMBPSign#WorkSpaceSave(...)

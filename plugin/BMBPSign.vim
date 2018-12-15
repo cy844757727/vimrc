@@ -36,7 +36,7 @@ com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSig
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump(<q-args>, 'next')
 com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump(<q-args>, 'previous')
-com! -nargs=0 ASignAttr :call BMBPSign#SignAddAttr()
+com! -nargs=* ASignAttr :call BMBPSign#SignAddAttr(<q-args>)
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
