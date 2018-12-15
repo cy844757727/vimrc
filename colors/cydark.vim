@@ -72,7 +72,7 @@ hi Type ctermfg=75 cterm=NONE guifg=#40BFFF
 hi Number ctermfg=208 guifg=#FA8525
 hi Identifier ctermfg=75 cterm=NONE guifg=#5DBDFC gui=NONE
 hi Constant ctermfg=208 guifg=#F58440
-hi link Special Constant
+hi Special ctermfg=208 guifg=#F58440
 hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
 hi Statement ctermfg=220 guifg=#F2C732
 hi String ctermfg=215 guifg=#F6BB6B
