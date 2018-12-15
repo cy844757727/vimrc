@@ -335,7 +335,7 @@ function s:SignAddAttr(types, file, lin)
     " Add attr to a sign
     for l:sign in s:signVec[l:val.type]
         if l:sign.id == l:id
-            let l:sign.attr = matchstr(input(l:str.'Input attr('.l:id.'): ', l:sign.attr), '\S.*')
+            let l:sign.attr = matchstr(input(l:str.'Input attr('.l:id.':'.l:val.type.'): ', l:sign.attr), '\S.*')
             break
         endif
     endfor
@@ -731,13 +731,21 @@ endfunction
 
 " Toggle sign of a type
 function BMBPSign#SignToggle(...)
-    let l:type = a:0 > 0 ? a:1 : 'book'
-    let l:file = a:0 > 1 ? a:2 : expand('%:p')
-    let l:lin = a:0 > 2 ? a:3 : line('.')
+    let [l:type, l:file, l:lin] = ['book', expand('%:p'), line('.')]
 
-    if !filereadable(l:file)
-        return
-    elseif !bufexists(l:file)
+    for l:arg in a:000
+        if has_key(s:signVec, l:arg)
+            let l:type = l:arg
+        elseif l:arg
+            let l:lin = l:arg
+        elseif filereadable(l:arg)
+            let l:file = l:arg
+        else
+            return
+        endif
+    endfor
+
+    if !bufexists(l:file)
         exe 'badd ' . l:file
     endif
 
@@ -753,23 +761,28 @@ function BMBPSign#SignToggle(...)
 
         call s:SignToggle(l:file, l:lin, l:type, '', 0)
         call s:QfListUpdate([l:type])
-
     endif
 endfunction
 
 function BMBPSign#SignJump(...)
-    let l:type = a:0 > 0 ? a:1 : 'book'
-    let l:action = a:0 > 1 ? a:2 : 'next'
+    let [l:type, l:action] = ['book', 'next']
+
+    for l:arg in a:000
+        if has_key(s:signVec, l:arg)
+            let l:type = l:arg
+        elseif index('next', 'previous'], l:arg) != -1
+            let l:action = l:arg
+        else
+            return
+        endif
+    endfor
+
     call s:Signjump(l:type , l:action)
 endfunction
 
 " Cancel sign of types | ids or delete sign file
 " Pre: file prefix: does not contain points and underscores
 function BMBPSign#SignClear(...)
-    if a:0 == 0
-        return
-    endif
-
     let [l:types, l:ids, l:pres] = [[], [], []]
 
     for l:arg in a:000

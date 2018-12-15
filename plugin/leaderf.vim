@@ -146,8 +146,8 @@ command! -bar -nargs=0 LeaderfLineCword call leaderf#Line#startExplPattern(g:Lf_
 command! -bar -nargs=1 LeaderfLineAllPattern call leaderf#Line#startExplPattern(g:Lf_WindowPosition, 1, <q-args>)
 command! -bar -nargs=0 LeaderfLineAllCword call leaderf#Line#startExplPattern(g:Lf_WindowPosition, 1, expand('<cword>'))
 
-command! -bar -nargs=0 LeaderfHistoryCmd call leaderf#History#startExpl(g:Lf_WindowPosition, "cmd")
-command! -bar -nargs=0 LeaderfHistorySearch call leaderf#History#startExpl(g:Lf_WindowPosition, "search") | silent! norm! n
+"command! -bar -nargs=0 LeaderfHistoryCmd call leaderf#History#startExpl(g:Lf_WindowPosition, "cmd")
+"command! -bar -nargs=0 LeaderfHistorySearch call leaderf#History#startExpl(g:Lf_WindowPosition, "search") | silent! norm! n
 
 command! -bar -nargs=0 LeaderfSelf call leaderf#Self#startExpl(g:Lf_WindowPosition)
 
