@@ -280,17 +280,29 @@ let s:dbg = {
 
 function! s:dbg.sendCmd(cmd, args, ...)
     let l:args = a:args
+    let g:temp =1
 
     if a:cmd == 'condition'
-        for [l:key, l:val] in items(get(t:dbg, 'break', {}))
-            if l:val =~ a:args
-                let l:id = l:key
+        let l:breakInfo = t:dbg.name == 'bash' ? 'info break' : 'break'
+        call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
+
+        let l:counts = 10
+        while get(t:dbg, 'breakFlag', 1) != 1 && l:counts > 0
+            sleep 100m
+            let l:counts -= 1
+        endwhile
+
+        for l:str in get(t:dbg, 'break', [])
+            if l:str =~ substitute(a:args, getcwd().'/', '', '')
+                let l:id = matchstr(l:str, '^\d\+')
                 break
             endif
         endfor
 
         if exists('l:id')
             let l:args = l:id . ' ' . (a:0 > 0 ? a:1 : '')
+        else
+            return
         endif
     endif
 
@@ -397,7 +409,7 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.prompt = 'bashdb<\d\+>'
         let l:dbg.fileNr = '^(\(\S\+\):\(\d\+\)):'
         let l:dbg.varVal = '^ \d\+: \(\S\+\) = \(.*\)$'
-        let l:dbg.breakNr = 'Breakpoint \(\d\+\) set in file \(\S\+\), line \(\d\+\).'
+        let l:dbg.breakLine = '^Num  *Type  *Disp  *Enb'
         let l:dbg.stackLine =  '^\(->\|##\)\d\+ '
         let l:dbg.watchLine = '^\(watchpoint \d\+: \|  old value: \|  new value: \)'
         let l:dbg.d = "\n"
@@ -413,9 +425,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.prompt = '(Pdb)'
         let l:dbg.fileNr = '^> \(\S\+\)(\(\d\+\))'
         let l:dbg.varVal = '^display \([^:]\+\): \(.*\)$'
-        let l:dbg.breakNr = '^Breakpoint \(\d\+\) at \(\S\+\):\(\d\+\)'
-        let l:dbg.stackLine = '-^'
-        let l:dbg.watchLine = '-^'
+        let l:dbg.breakLine = '^Num  *Type  *Disp  *Enb'
+        let l:dbg.stackLine =  '  \S\+/bdb.py(\d\+)'
         let l:dbg.d = ';;'
         let l:dbg.win = ['var', 'stack']
     elseif l:interpreter =~ 'perl'
@@ -433,11 +444,7 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.postCmd = 'source ' . l:breakFile
         let l:dbg.prompt = ' DB<\d\+> '
         let l:dbg.fileNr = '(\(\S\+\):\(\d\+\))'
-        let l:dbg.varVal = '-^'
-        let l:dbg.breakNr = '-^'
         let l:dbg.stackLine = '@ = '
-        let l:dbg.watchLine = '-^'
-        let l:dbg.d = "\n"
         let l:dbg.win = []
     endif
 
@@ -511,7 +518,7 @@ function! s:DbgMaping(...)
         noremap <buffer> <silent> v :call <SID>DbgSendCmd('display')<CR>
         noremap <buffer> <silent> w :call <SID>DbgSendCmd('watch')<CR>
         noremap <buffer> <silent> W :call <SID>DbgSendCmd('watche')<CR>
-        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('undisplay')<CR>
+        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('_undisplay')<CR>
         noremap <buffer> <silent> i :call <SID>DbgSendCmd('send')<CR>
         noremap <buffer> <silent> r :call <SID>DbgSendCmd('return')<CR>
         noremap <buffer> <silent> f :call <SID>DbgSendCmd('finish')<CR>
@@ -561,40 +568,47 @@ function! <SID>DbgSendCmd(cmd)
     if a:cmd == 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
         return
     elseif a:cmd == 'send'
-        let l:cmd = input(l:prompt)
+        let l:cmd = matchstr(input(l:prompt), '\S.*')
     elseif index(['jump', 'until', 'skip'], a:cmd) != -1
         let l:cmd = a:cmd . ' ' . input(l:prompt)
-    elseif index(['display', 'watch', 'watche', 'p'], a:cmd) != -1
+    elseif index(['display', 'undisplay', 'watch', 'watche', 'p'], a:cmd) != -1
         let l:cmd = a:cmd . ' ' . input(l:prompt, '', 'tag')
     elseif a:cmd == 'run' && t:dbg.name == 'python'
         let l:cmd = join(['run'] + map(keys(t:dbg.var), "'display '.v:val"), ';;')
     elseif a:cmd == 'break'
         let l:cmd = t:dbg.name == 'bash' ? 'info break' : 'break'
-    elseif a:cmd == 'undisplay'
+    elseif a:cmd == '_undisplay'
         let l:var = matchstr(getline('.'), '^[^:]*')
         let l:cmd = 'undisplay ' . l:var
         unlet t:dbg.var[l:var]
     elseif index(['condition', 'disable', 'enable', 'clear'], a:cmd) != -1
-        if empty(t:dbg.break)
+        let l:breakInfo = t:dbg.name == 'bash' ? 'info break' : 'break'
+        call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
+
+        let l:counts = 10
+        while get(t:dbg, 'breakFlag', 1) != 1 && l:counts > 0
+            sleep 100m
+            let l:counts -= 1
+        endwhile
+
+        if len(get(t:dbg, 'break', [])) < 2
             return
         endif
 
-        let l:str = "  num   where\n"
-        for [l:key, l:val] in items(t:dbg.break)
-            let l:str .= printf('  %-3d   %s', l:key, substitute(l:val, t:dbg.cwd.'/', '', ''))."\n"
-        endfor
+        let l:in = input('  '.join(t:dbg.breakL,"\n  ")."\n".l:prompt)
 
-        let l:cmd = a:cmd . ' ' . input(l:str.l:prompt)
+        if empty(l:in)
+            return
+        endif
+
+        let l:cmd = a:cmd . ' ' . l:in
     else
         let l:cmd = a:cmd
     endif
 
-    if index(['continue', 'next', 'step', 'jump', 'until', 'skip'], a:cmd) != -1
-        if t:dbg.name == 'python'
-            let l:cmd .= ";;print('bt start:');;bt"
-        elseif t:dbg.name == 'bash'
-            let l:cmd .= "\nbt"
-        endif
+    " Update stack infomation
+    if index(['continue', 'next', 'step', 'jump', 'until', 'skip'], a:cmd) != -1 && has_key(t:dbg, 'd')
+        let l:cmd = join([l:cmd, 'bt'], t:dbg.d)
     endif
 
     if !empty(l:cmd)
@@ -613,22 +627,25 @@ function! s:DbgMsgHandle(job, msg)
 
     let t:dbg.stack = []
     let t:dbg.watch = []
+    let t:dbg.break = []
+    let t:dbg.breakFlag = 0
     let l:winId = win_getid()
 
     " Message analysis
     for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n")
         if l:item =~ t:dbg.prompt
             continue
-        elseif l:item =~ '^bt start:'
+        elseif t:dbg.breakFlag == 1 || l:item =~ get(t:dbg, 'breakLine', '-^')
+            let t:dbg.break += [substitute(l:item, t:dbg.cwd.'/', '', '')]
+            let t:dbg.breakFlag = 1
+        elseif exists('l:btMode') || l:item =~ get(t:dbg, 'stackLine', '-^')
+            let t:dbg.stack += [substitute(l:item, t:dbg.cwd.'/', '', '')]
             let l:btMode = 1
-        elseif exists('l:btMode') || l:item =~ t:dbg.stackLine
-            let l:item = substitute(l:item, t:dbg.cwd.'/', '', '')
-            let t:dbg.stack += [l:item]
-        elseif l:item =~ t:dbg.watchLine
+        elseif l:item =~ get(t:dbg, 'watchLine', '-^')
             let t:dbg.watch += [l:item]
         else
             " Try varVal match: Monitoring Variable Change
-            let l:match = matchlist(l:item, t:dbg.varVal)
+            let l:match = matchlist(l:item, get(t:dbg, 'varVal', '-^'))
             if !empty(l:match) && l:match[2] != get(t:dbg.var, l:match[1], '')
                 let l:varFlag = 1
                 let t:dbg.var[l:match[1]] = l:match[2]
@@ -636,17 +653,10 @@ function! s:DbgMsgHandle(job, msg)
             endif
 
             " Try fileNr match: jump line
-            let l:match = matchlist(l:item, t:dbg.fileNr)
+            let l:match = matchlist(l:item, get(t:dbg, 'fileNr', '-^'))
             if !empty(l:match) && filereadable(l:match[1])
                 let l:fileNr = [l:match[1], l:match[2]]
                 continue
-            endif
-
-            " Record breakpoint info
-            let l:match = matchlist(l:item, t:dbg.breakNr)
-            if !empty(l:match)
-                let l:file = substitute(l:match[2], t:dbg.cwd.'/', '', '')
-                let t:dbg.break[l:match[1]] = l:file.':'.l:match[3]
             endif
         endif
     endfor

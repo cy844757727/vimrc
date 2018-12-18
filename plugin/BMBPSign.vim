@@ -30,7 +30,7 @@ augroup BMBPSign
 augroup END
 
 " sign command
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
 com! -nargs=+ -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSign#SignSave(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
