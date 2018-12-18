@@ -97,13 +97,7 @@ if exists('g:BMBPSignTypeExtend')
     for l:sign in g:BMBPSignTypeExtend
         try
             let l:type = l:sign.type
-            let l:name = get(l:sign, 'name', 'BMBPSign' . toupper(l:type[0]) . l:type[1:])
-
-            " Naming rule check
-            if l:name !~ 'BMBPSign' . l:type
-                let l:name = 'BMBPSign' . toupper(l:type[0]) . l:type[1:]
-            endif
-
+            let l:name = 'BMBPSign' . toupper(l:type[0]) . l:type[1:]
             let l:text = get(l:sign, 'text', '🎈')
             let l:texthl = get(l:sign, 'texthl', 'BMBPSignHl')
             let l:linehl = get(l:sign, 'linehl', 'Normal')
@@ -115,6 +109,7 @@ if exists('g:BMBPSignTypeExtend')
         endtry
     endfor
 endif
+
 
 " == Sign Def ========================================= {{{1
 " Toggle sign in the specified line of the specified file
@@ -155,6 +150,7 @@ function s:SignToggle(file, line, type, attr, skip)
     endif
 endfunction
 
+
 " BookMark jump
 " Action: next, previous
 function s:Signjump(type, action)
@@ -188,6 +184,7 @@ function s:Signjump(type, action)
     endif
 endfunction
 
+
 " clear sign of types specified
 " Types -> list
 function s:SignClear(types)
@@ -206,6 +203,7 @@ function s:SignClear(types)
         endif
     endfor
 endfunction
+
 
 " Load & set sign from a file
 " File Name: a:pre . s:signFile
@@ -248,6 +246,7 @@ function s:SignLoad(pre, types)
         endif
     endif
 endfunction
+
 
 " Save sign of types to a file
 " File Name: a:pre . s:signFile
@@ -359,11 +358,12 @@ function s:SignAddAttr(types, file, lin)
     else
         let l:id = input(l:str."Select Id: ")
         let l:val = get(l:items, l:id, {})
-        let l:str = ''
-    endif
 
-    if empty(l:val)
-        return
+        if empty(l:val)
+            return
+        endif
+
+        let l:str = ''
     endif
 
     " Add attr to a sign
@@ -380,6 +380,7 @@ function s:SignAddAttr(types, file, lin)
         call t:dbg.sendCmd('condition', l:val['file'].':'.l:val['lin'], l:sign.attr)
     endif
 endfunction
+
 
 " Unset sign by ids
 " Ids -> list
@@ -412,6 +413,7 @@ function s:SignUnsetById(ids)
         call s:QfListUpdate(uniq(l:types))
     endif
 endfunction
+
 
 " == Project def =============================================== {{{1
 " New project & save workspace or modify current project
@@ -452,6 +454,7 @@ function s:ProjectNew(name, type, path)
 
     echo substitute(l:item, ' ' . $HOME, ' ~', '')
 endfunction
+
 
 " Switch to path & load workspace
 function s:ProjectSwitch(sel)
@@ -498,6 +501,7 @@ function s:ProjectSwitch(sel)
     echo substitute(s:projectItem[0], ' ' . $HOME, ' ~', '')
 endfunction
 
+
 " Menu UI
 function s:ProjectUI(start, tip)
     " ten items per page
@@ -520,6 +524,7 @@ function s:ProjectUI(start, tip)
 
     return [l:ui, l:page]
 endfunction
+
 
 function s:ProjectMenu()
     let [l:tip, l:mode] = ['!?:', 's']
@@ -592,6 +597,7 @@ function s:ProjectMenu()
     endwhile
 endfunction
 
+
 function s:ProjectManager(argc, argv)
     if a:argc == 0
         call s:ProjectMenu()
@@ -605,6 +611,7 @@ function s:ProjectManager(argc, argv)
         call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2] =~ '^\~' ? $HOME . strpart(a:argv[2], 1) : a:argv[2])
     endif
 endfunction
+
 
 " Save current workspace to a file
 " Content: session, viminfo
@@ -662,6 +669,7 @@ function s:WorkSpaceSave(pre)
     endif
 endfunction
 
+
 " Restore workspace from a file
 " Context: session, viminfo
 " File Name: a:pre . s:sessionFile, a:pre . s:vimInfoFile
@@ -703,6 +711,7 @@ function s:WorkSpaceLoad(pre)
     endif
 endfunction
 
+
 " == misc def ============================================== {{{1
 " Return qfList used for seting quickfix
 " Types -> list
@@ -739,6 +748,7 @@ function s:QfListSet(title, types)
     call setqflist([], 'r', l:qf)
 endfunction
 
+
 " Update quickfix when sign changes
 function s:QfListUpdate(types)
     let l:group = tolower(getqflist({'title': 1}).title)
@@ -750,6 +760,7 @@ function s:QfListUpdate(types)
         endif
     endfor
 endfunction
+
 
 " comment char
 let s:commentChar = {
@@ -769,24 +780,26 @@ function s:TodoStatement(filetype)
     return get(s:commentChar, a:filetype, '') . ' TODO: '
 endfunction
 
+
 " == Global def =================================== {{{1
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)
 endfunction
 
+
 " Toggle sign of a type
 function BMBPSign#SignToggle(...)
     if exists('t:dbg')
-        let [l:type, l:file, l:lin] = ['break', t:dbg.sign.file, line('.')]
+        let [l:type, l:file, l:lins] = ['break', t:dbg.sign.file, []]
     else
-        let [l:type, l:file, l:lin] = ['book', expand('%:p'), line('.')]
+        let [l:type, l:file, l:lins] = ['book', expand('%:p'), []]
     endif
 
     for l:arg in a:000
         if has_key(s:signVec, l:arg)
             let l:type = l:arg
         elseif l:arg
-            let l:lin = l:arg
+            let l:lins += [l:arg]
         elseif filereadable(l:arg)
             let l:file = l:arg
         else
@@ -794,11 +807,21 @@ function BMBPSign#SignToggle(...)
         endif
     endfor
 
-    if !bufexists(l:file)
+    if !filereadable(l:file)
+        return
+    elseif !bufexists(l:file)
         exe 'badd ' . l:file
     endif
 
-    if empty(getbufvar(l:file, '&buftype'))
+    if !empty(getbufvar(l:file, '&buftype'))
+        return
+    endif
+
+    if empty(l:lins)
+        let l:lins = [line('.')]
+    endif
+
+    for l:lin in l:lins
         if l:type == 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
             exe 'buffer ' . l:file
             call cursor(l:lin, 1)
@@ -809,8 +832,9 @@ function BMBPSign#SignToggle(...)
         endif
 
         call s:SignToggle(l:file, l:lin, l:type, '', 0)
-        call s:QfListUpdate([l:type])
-    endif
+    endfor
+
+    call s:QfListUpdate([l:type])
 endfunction
 
 
@@ -871,6 +895,7 @@ function BMBPSign#SignClear(...)
     endfor
 endfunction
 
+
 " Save sign to file, Can specify types to save
 " Default saving none
 function BMBPSign#SignSave(...)
@@ -891,6 +916,7 @@ function BMBPSign#SignSave(...)
     call s:SignSave(l:pre, l:types)
 endfunction
 
+
 " Load sign from file, Can specify types to clear first
 " Default clearing none
 function BMBPSign#SignLoad(...)
@@ -910,6 +936,7 @@ function BMBPSign#SignLoad(...)
 
     call s:SignLoad(l:pre, l:types)
 endfunction
+
 
 " Append attribution to sign
 function BMBPSign#SignAddAttr(...)
@@ -932,11 +959,13 @@ function BMBPSign#SignAddAttr(...)
     call s:SignAddAttr(l:types, l:file, l:lin)
 endfunction
 
+
 function BMBPSign#WorkSpaceSave(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call s:WorkSpaceSave(l:pre)
     call s:SignSave(l:pre, keys(s:signVec))
 endfunction
+
 
 function BMBPSign#WorkSpaceLoad(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
@@ -950,6 +979,7 @@ function BMBPSign#WorkSpaceLoad(...)
     call s:SignLoad(l:pre, keys(s:signVec))
 endfunction
 
+
 function BMBPSign#WorkSpaceClear(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call delete(l:pre . s:sessionFile)
@@ -960,6 +990,7 @@ function BMBPSign#WorkSpaceClear(...)
         unlet g:BMBPSign_Projectized
     endif
 endfunction
+
 
 " Set QuickFix window with qfList
 function BMBPSign#SetQfList(...)
@@ -981,9 +1012,11 @@ function BMBPSign#SetQfList(...)
     endif
 endfunction
 
+
 function BMBPSign#SignTypeList()
     return keys(s:signVec)
 endfunction
+
 
 " Api: Get sign record info for other purpose
 " like breakpoint for debug (format similar to s:SignSave())
@@ -996,6 +1029,7 @@ function BMBPSign#SignRecord(...)
     for l:type in a:000
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
+
             if !empty(l:line)
                 let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
 
