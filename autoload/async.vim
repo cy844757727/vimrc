@@ -15,7 +15,6 @@ let g:loaded_A_Async = 1
 hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
 sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
 
-let s:newSignId = 1
 let s:displayIcon = {
             \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
             \ '4': ' ➍ ', '5': ' ➎ ', '6': ' ➏ ',
@@ -65,35 +64,29 @@ endif
 " PostCmd: executing cmd after terminal started
 function! async#TermToggle(...)
     " Ensure starting insert mode
-    if &buftype == 'terminal' && mode() == 'n'
+    if bufname('%') =~ '^!' && mode() == 'n'
         normal a
     endif
 
-    let l:action = a:0 > 0 && a:1 != '.' ? a:1 : 'toggle'
-    let l:type = a:0 > 1 && a:2 != '.' ? a:2 : ''
-    let l:postCmd = a:0 > 2 ? join(a:000[2:], ' ') : ''
+    let [l:action, l:type, l:name, l:postCmd] = ['toggle', s:shell, s:termPrefix, '']
 
-    if empty(l:type)
-        " Default terminal
-        let l:type = s:shell
-        let l:name = s:termPrefix
-    elseif l:type
-        " Default numbered terminal (1..9, -1..-9)
-        let l:type = l:type > 0 ? l:type + 0 : l:type + len(s:displayIcon) + 1
-        let l:name = s:termPrefix . get(s:displayIcon, l:type, ' ')
-        let l:type = s:shell . l:type
-    else
-        " Custom added terminal type
-        let l:name = s:termPrefix . get(s:displayIcon, l:type, ': ' . l:type . ' ')
-    endif
+    for l:i in range(len(a:000))
+        if index(['toggle', 'on', 'off'], a:000[l:i]) != -1
+            let l:action = a:000[l:i]
+        elseif index(keys(s:termType), a:000[l:i]) != -1
+            let l:type = a:000[l:i]
+            let l:name .= get(s:displayIcon, l:type, ': ' . l:type . ' ')
+        elseif a:000[l:i]
+            let l:type = a:000[l:i] > 0 ? a:000[l:i] + 0 : a:000[l:i] + 10
+            let l:name .= get(s:displayIcon, l:type, ' ')
+            let l:type = s:shell . l:type
+        else
+            let l:postCmd = matchstr(join(a:000[l:i:], ' '), '\w.*')
+            break
+        endif
+    endfor
 
-    try
-        let l:cmd = s:termType[l:type]
-    catch 'E716'
-        " Invalid type
-        return
-    endtry
-
+    let l:cmd = s:termType[l:type]
     let l:winnr = bufwinnr(l:name)
     let l:bufnr = bufnr(l:name)
 
@@ -137,7 +130,7 @@ function! async#TermToggle(...)
     endif
 
     " Ensure starting insert mode
-    if &buftype == 'terminal' && mode() == 'n'
+    if bufname('%') =~ '^!' && mode() == 'n'
         normal a
     endif
 
@@ -154,6 +147,10 @@ endfunction
 function! async#TermSwitch(...)
     if mode() == 'n'
         normal a
+    endif
+
+    if bufname('%') !~ s:termPrefix
+        return
     endif
 
     let l:action = a:0 > 0 ? a:1 : 'next'
@@ -270,6 +267,7 @@ endfunction
 " =====================================
 " ===== Script run/debug ==== {{{1
 " =====================================
+let s:newSignId = 1
 let s:dbg = {
             \ 'id': 0,
             \ 'tempMsg': '',
@@ -524,6 +522,7 @@ function! s:DbgMaping(...)
         noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
         noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
         noremap <buffer> <silent> v :call <SID>DbgSendCmd('display')<CR>
+        noremap <buffer> <silent> V :call <SID>DbgSendCmd('undisplay')<CR>
         noremap <buffer> <silent> w :call <SID>DbgSendCmd('watch')<CR>
         noremap <buffer> <silent> W :call <SID>DbgSendCmd('watche')<CR>
         noremap <buffer> <silent> \d :call <SID>DbgSendCmd('_undisplay')<CR>
@@ -562,6 +561,7 @@ let s:cmdPromptInfo = {
             \ 'tbreak': 'Set one-time breakpoint: ',
             \ 'skip': 'Enter the number of statements to skip: ',
             \ 'display': 'Monitor a variable or expression: ',
+            \ 'undisplay': 'Cancel a variable or expression monitoring: ',
             \ 'watch': 'watch a variable: ',
             \ 'watche': 'Watch a expression: ',
             \ 'condition': 'Input break number and condition: ',
@@ -574,7 +574,7 @@ let s:cmdPromptInfo = {
             \ }
 
 function! <SID>DbgSendCmd(cmd)
-    let l:prompt = get(s:cmdPromptInfo, a:cmd, '')
+    let l:prompt = get(s:cmdPromptInfo, a:cmd, '*****: ')
 
     if a:cmd == 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
         return

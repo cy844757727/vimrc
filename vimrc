@@ -249,7 +249,7 @@ let g:Lf_DefaultMode = 'NameOnly'
 
 " === async.vim === {{{1
 let g:Async_TerminalType = {
-            \ 'dc' : 'dc_shell',
+            \ 'dc_shell' : 'dc_shell',
             \ 'py2': 'python',
             \ 'py3': 'python3',
             \ 'ipy': 'ipython3'
