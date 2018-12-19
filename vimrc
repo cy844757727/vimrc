@@ -167,7 +167,7 @@ noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
 noremap <silent> <f12> :call async#TermToggle()<CR>
 noremap <silent> <C-f12> :call async#TermToggle('toggle', 'ipy')<CR>
 noremap <silent> <S-f12> :call async#TermToggle('toggle', 'py3')<CR>
-noremap <silent> <C-S-f12> :call async#TermToggle('toggle', 'dc')<CR>
+noremap <silent> <C-S-f12> :call async#TermToggle('toggle', 'dc_shell')<CR>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
@@ -210,7 +210,7 @@ tnoremap <silent> <S-pageDown> <C-w>N:call WindowSwitch('down')<CR>
 tnoremap <silent> <f12> <C-w>N:call async#TermToggle()<CR>
 tnoremap <silent> <C-f12> <C-w>N:call async#TermToggle('toggle', 'ipy')<CR>
 tnoremap <silent> <S-f12> <C-w>N:call async#TermToggle('toggle', 'py3')<CR>
-tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc')<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc_shell')<CR>
 tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 

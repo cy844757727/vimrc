@@ -1,6 +1,7 @@
 .*
 misc/
 autoload/leaderf/python/leaderf/__pycache__/
+*.log
 *.projectitem
 *.tags
 *.viminfo
