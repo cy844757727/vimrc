@@ -119,57 +119,73 @@ nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 
-vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
-nnoremap \h  :call misc#HEXCovent()<CR>
+vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>
 vnoremap <silent> \q :call misc#ReverseComment()<CR>
+nnoremap <silent> \h :call misc#HEXCovent()<CR>
+nnoremap <silent> \] :tag<CR>
+nnoremap <silent> \[ :pop<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
 
-" 查找
+" find / replace
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
-noremap <C-f> :exe '/' . expand('<cword>')<CR>
-imap <C-f> <Esc><C-f>
-" 查找并替换
+noremap  <C-f> :exe '/' . expand('<cword>')<CR>
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
-noremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
+noremap  <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
+imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
-noremap <silent> <C-l> <Esc>:redraw!<CR>
-noremap <silent> <C-a> <Esc>ggvG$
-noremap <silent> <C-w> <Esc>:close<CR>
-noremap <silent> <S-PageUp> <Esc>:call WindowSwitch('up')<CR>
-noremap <silent> <S-pageDown> <Esc>:call WindowSwitch('down')<CR>
-noremap <silent> <C-t> <Esc>:tabnew<CR>
-noremap <silent> <S-t> <Esc>:try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
-noremap <silent> <S-tab> <Esc>:tabnext<CR>
+noremap <silent> <C-l> :redraw!<CR>
+noremap <silent> <C-a> ggvG$
+noremap <silent> <C-w> :close<CR>
+noremap <silent> <S-PageUp> :call WindowSwitch('up')<CR>
+noremap <silent> <S-pageDown> :call WindowSwitch('down')<CR>
+noremap <silent> <S-t> :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
+noremap <silent> <S-tab> :tabnext<CR>
 map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
-map! <C-t> <Esc><C-t>
 map! <S-tab> <Esc><S-tab>
-" 保存快捷键
-noremap <silent> <f3> <Esc>:call misc#SaveFile()<CR>
-map! <f3> <Esc><f3>
+" Save & winresize & f5 function
+noremap <silent> <f3> :call misc#SaveFile()<CR>
 noremap <silent> <f4> :call misc#WinResize()<Cr>
+noremap <silent> <f5> :call misc#F5FunctionKey()<CR>
+noremap <silent> <C-f5> :call misc#F5FunctionKey('r')<CR>
+map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
-" 窗口切换
-noremap <silent> <f9> <Esc>:call git#Toggle()<CR>
-noremap <silent> <f8> <Esc>:call misc#ToggleSidebar()<CR>
-noremap <silent> <C-S-f8> <Esc>:call misc#ToggleSidebar('off')<CR>
-noremap <silent> <C-f8> <Esc>:call misc#ToggleTagbar()<CR>
-noremap <silent> <S-f8> <Esc>:call misc#ToggleNERDTree()<CR>
-noremap <silent> <f10> <ESC>:call misc#ToggleQuickFix()<CR>
-noremap <silent> <C-f10> <ESC>:call misc#ToggleQuickFix('book')<CR>
-noremap <silent> <S-f10> <ESC>:call misc#ToggleQuickFix('todo')<CR>
-noremap <silent> <C-S-f10> <ESC>:call misc#ToggleQuickFix('break')<CR>
+map! <f5> <Esc><f5>
+map! <C-f5> <Esc><C-f5>
+" BMBPSign.vim: bookmark, breakpoint
+noremap <silent> <f6> :call BMBPSign#SignToggle('break')<CR>
+noremap <silent> <C-f6> :call BMBPSign#SignToggle('tbreak')<CR>
+noremap <silent> <f7> :call BMBPSign#SignToggle('book')<CR>
+noremap <silent> <C-f7> :call BMBPSign#SignToggle('todo')<CR>
+noremap <silent> <C-Down> :call BMBPSign#SignJump('book', 'next')<CR>
+noremap <silent> <C-Up> :call BMBPSign#SignJump('book', 'previous')<CR>
+noremap <silent> \m :call BMBPSign#SignClear('book')<CR>
+noremap <silent> \b :call BMBPSign#SignClear('break', 'tbreak')<CR>
+map! <f6> <Esc><f6>
+map! <C-f6> <Esc><C-f6>
+map! <f7> <Esc><f7>
+map! <C-f7> <Esc><C-f7>
+map! <C-Down> <Esc><C-Down>
+map! <C-Up> <Esc><C-Up>
+" Window & tabpage switch
+noremap <silent> <f8> :call misc#ToggleSidebar()<CR>
+noremap <silent> <C-f8> :call misc#ToggleTagbar()<CR>
+noremap <silent> <S-f8> :call misc#ToggleNERDTree()<CR>
+noremap <silent> <C-S-f8> :call misc#ToggleSidebar('off')<CR>
+noremap <silent> <f9> :call git#Toggle()<CR>
+noremap <silent> <f10> :call misc#ToggleQuickFix()<CR>
+noremap <silent> <C-f10> :call misc#ToggleQuickFix('book')<CR>
+noremap <silent> <S-f10> :call misc#ToggleQuickFix('todo')<CR>
+noremap <silent> <C-S-f10> :call misc#ToggleQuickFix('break')<CR>
 noremap <silent> <f12> :call async#TermToggle()<CR>
 noremap <silent> <C-f12> :call async#TermToggle('toggle', 'ipy')<CR>
 noremap <silent> <S-f12> :call async#TermToggle('toggle', 'py3')<CR>
 noremap <silent> <C-S-f12> :call async#TermToggle('toggle', 'dc_shell')<CR>
-map! <f12> <Esc><f12>
-map! <C-f12> <Esc><C-f12>
 map! <f7> <Esc><f7>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
@@ -180,44 +196,28 @@ map! <f10> <ESC><f10>
 map! <C-f10> <ESC><C-f10>
 map! <S-f10> <ESC><S-f10>
 map! <C-S-f10> <ESC><C-S-f10>
-" 编译执行
-noremap  <silent> <f5> <Esc>:call misc#F5FunctionKey()<CR>
-noremap  <silent> <C-f5> <Esc>:call misc#F5FunctionKey('r')<CR>
-map! <f5> <Esc><f5>
-map! <C-f5> <Esc><C-f5>
-" 断点 BMBPSign.vim: breakpoint
-noremap  <silent> <f6> <Esc>:call BMBPSign#SignToggle('break')<CR>
-noremap  <silent> <C-f6> <Esc>:call BMBPSign#SignToggle('tbreak')<CR>
-noremap  <silent> \b <Esc>:call BMBPSign#SignClear('break', 'tbreak')<CR>
-map! <C-f6> <Esc><C-f6>
-map! <f6> <Esc><f6>
-" 书签 BMBPSign.vim: bookmark
-noremap <silent> <f7> <Esc>:call BMBPSign#SignToggle('book')<CR>
-noremap <silent> <C-f7> <Esc>:call BMBPSign#SignToggle('todo')<CR>
-noremap <silent> <C-Down> <Esc>:call BMBPSign#SignJump('book', 'next')<CR>
-noremap <silent> <C-Up> <Esc>:call BMBPSign#SignJump('book', 'previous')<CR>
-noremap <silent> \m <Esc>:call BMBPSign#SignClear('book')<CR>
-map! <f7> <Esc><f7>
-map! <C-f7> <Esc><C-f7>
-map! <C-Down> <Esc><C-Down>
-map! <C-Up> <Esc><C-Up>
-
+map! <f12> <Esc><f12>
+map! <C-f12> <Esc><C-f12>
+" Leaderf.vim maping
 noremap <silent> \t :LeaderfBufTag<CR>
 noremap <silent> \T :LeaderfTag<CR>
+noremap <silent> \l :LeaderfLine<CR>
+noremap <silent> \L :LeaderfLineAll<CR>
+noremap <silent> \F :LeaderfBuffer<CR>
 " Terminal map
+tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
+tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 tnoremap <silent> <S-PageUp> <C-w>N:call WindowSwitch('up')<CR>
 tnoremap <silent> <S-pageDown> <C-w>N:call WindowSwitch('down')<CR>
 tnoremap <silent> <f12> <C-w>N:call async#TermToggle()<CR>
 tnoremap <silent> <C-f12> <C-w>N:call async#TermToggle('toggle', 'ipy')<CR>
 tnoremap <silent> <S-f12> <C-w>N:call async#TermToggle('toggle', 'py3')<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc_shell')<CR>
-tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
-tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
 
 " === misc func def === {{{1
 " For starting insert mode when switching to terminal 
 function! WindowSwitch(action)
-    if &bt == 'terminal' && mode() == 'n'
+    if bufname('%') =~ '^!' && mode() == 'n'
         normal a
     endif
 
@@ -227,7 +227,7 @@ function! WindowSwitch(action)
         wincmd W
     endif
 
-    if &bt == 'terminal' && mode() == 'n'
+    if bufname('%') =~ '^!' && mode() == 'n'
         normal a
     endif
 endfunction
@@ -287,37 +287,6 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 "    endif
 " ===== change a:line to line below ===============================================
 " =================================================================================
-
-" Add "call NERDTreeAddKey_Menu_Def()" to ~/.vim/plugin/NERD_tree
-
-function! NERDTreeAddKey_Menu_Def()
-    call NERDTreeAddMenuItem({
-                \ 'text': 'Switch file (x) permission',
-                \ 'shortcut': 'x',
-                \ 'callback': 'SwitchXPermission'
-                \ })
-
-    call NERDTreeAddKeyMap({
-                \ 'key': 'dbg',
-                \ 'callback': 'DebugFile',
-                \ 'quickhelpText': 'Debug file by gdb tool',
-                \ 'scope': 'Node'
-                \ })
-endfunction
-
-function! SwitchXPermission()
-    let l:currentNode = g:NERDTreeFileNode.GetSelected()
-    if getfperm(l:currentNode.path.str())[2] == 'x'
-        call system("chmod -x '" . l:currentNode.path.str() . "'")
-    else
-        call system("chmod +x '" . l:currentNode.path.str() . "'")
-    endif
-    silent call nerdtree#ui_glue#invokeKeyMap('R')
-endfunction
-
-function! DebugFile(node)
-    call async#GdbStart(a:node.path.str, BMBPSign#SignRecord('break', 'tbreak'))
-endfunction
 
 " === TagBar Configure === {{{1
 let g:tagbar_width=31

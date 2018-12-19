@@ -693,3 +693,30 @@ function! misc#ToggleQuickFix(...)
 endfunction
 " ####################################################################
 
+function! SwitchXPermission()
+    let l:currentNode = g:NERDTreeFileNode.GetSelected()
+    if getfperm(l:currentNode.path.str())[2] == 'x'
+        call system("chmod -x '" . l:currentNode.path.str() . "'")
+    else
+        call system("chmod +x '" . l:currentNode.path.str() . "'")
+    endif
+    silent call nerdtree#ui_glue#invokeKeyMap('R')
+endfunction
+
+function! DebugFile(node)
+    call async#GdbStart(a:node.path.str, BMBPSign#SignRecord('break', 'tbreak'))
+endfunction
+
+call NERDTreeAddMenuItem({
+            \ 'text': 'Switch file (x) permission',
+            \ 'shortcut': 'x',
+            \ 'callback': 'SwitchXPermission'
+            \ })
+
+call NERDTreeAddKeyMap({
+            \ 'key': 'dbg',
+            \ 'callback': 'DebugFile',
+            \ 'quickhelpText': 'Debug file by gdb tool',
+            \ 'scope': 'Node'
+            \ })
+

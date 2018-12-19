@@ -1043,4 +1043,4 @@ function BMBPSign#SignRecord(...)
     return l:signRecord
 endfunction
 
-" set foldmethod=marker
+"vim:  set foldmethod=marker

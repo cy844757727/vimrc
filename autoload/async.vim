@@ -809,4 +809,4 @@ function! s:GdbOnExit()
     endif
 endfunction
 
-" set foldmethod=marker
+" vim: set foldmethod=marker

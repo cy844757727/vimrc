@@ -217,7 +217,6 @@ endfunction
 " SECTION: Post Source Actions {{{1
 call nerdtree#postSourceActions()
 
-call NERDTreeAddKey_Menu_Def()
 "reset &cpo back to users setting
 let &cpo = s:old_cpo
 
