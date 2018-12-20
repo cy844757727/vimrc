@@ -770,8 +770,9 @@ function! s:DbgOnExit(...)
     endif
 
     if exists('t:dbg')
+        call extend(s:dbgShared, {t:dbg.file: t:dbg.var})
+
         try
-            call extend(s:dbgShared, {t:dbg.file: t:dbg.var})
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
