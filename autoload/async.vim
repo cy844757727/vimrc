@@ -272,14 +272,10 @@ endfunction
 " ===== Script run/debug ==== {{{1
 " =====================================
 let s:newSignId = 1
+let s:dbgShared = {}
 let s:dbg = {
             \ 'id': 0,
-            \ 'tempMsg': '',
-            \ 'var': {},
-            \ 'break': {},
-            \ 'watch': [],
-            \ 'stack': [],
-            \ 'sign': {}
+            \ 'tempMsg': ''
             \ }
 
 function! s:dbg.sendCmd(cmd, args, ...)
@@ -339,10 +335,9 @@ function! async#RunScript(...)
 endfunction
 
 
-
 " Debug a script file
 function! async#DbgScript(...)
-    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
+    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%:p')
     let l:breakPoint = a:0 > 1 ? a:2 : []
     
     if !filereadable(l:file)
@@ -354,6 +349,7 @@ function! async#DbgScript(...)
     " Analyze script type & set var: cmd, postCmd, prompt, re...
     let l:dbg = s:DbgScriptAnalyze(l:file, l:breakPoint)
     if !has_key(l:dbg, 'cmd')
+        unlet s:dbgShared[l:file]
         return -1
     endif
 
@@ -399,7 +395,14 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:interpreter = getbufvar(a:file, '&filetype')
     endif
 
+    if !has_key(s:dbgShared, a:file)
+        let s:dbgShared[a:file] = {}
+    endif
+
     let l:dbg = copy(s:dbg)
+    let l:dbg.var = s:dbgShared[a:file]
+    let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
+    let l:dbg.sign = {}
     let l:dbg.file = a:file
     let l:dbg.cwd = getcwd()
 
@@ -408,7 +411,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.name = 'bash'
         let l:dbg.tool = 'bashdb'
         let l:breakFile = tempname()
-        call writefile(a:breakPoint + ['set args -q '.a:file], l:breakFile)
+        let l:var = map(keys(l:dbg.var), "'display '.v:val")
+        call writefile(l:var + a:breakPoint + ['set args -q '.a:file], l:breakFile)
         let l:dbg.cmd = 'bashdb -q -x ' . l:breakFile . ' ' . a:file
         let l:dbg.prompt = 'bashdb<\d\+>'
         let l:dbg.fileNr = '(\(\S\+\):\(\d\+\)):'
@@ -424,8 +428,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.tool = 'pdb'
         let l:dbg.cmd = l:interpreter . ' -m pdb ' . a:file
         let l:breakPoint = map(a:breakPoint, "join(split(v:val,'\\(:\\d\\+\\)\\zs\\s\\+'),' ,')")
-        let l:alias = ['alias finish return']
-        let l:dbg.postCmd = join(l:breakPoint + l:alias, ';;')
+        let l:var = map(keys(l:dbg.var), "'display '.v:val")
+        let l:dbg.postCmd = join(l:var + l:breakPoint, ';;')
         let l:dbg.prompt = '(Pdb)'
         let l:dbg.fileNr = '^> \(\S\+\)(\(\d\+\))'
         let l:dbg.varVal = '^display \([^:]\+\): \(.*\)$'
@@ -474,6 +478,7 @@ function! s:DbgUIInitalize(dbg)
     if index(t:dbg.win, 'var') != -1
         exe 'topleft 40vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
+        set nonumber
         set buftype=nofile
         set filetype=dbgvar
         setlocal statusline=\ Variables
@@ -694,12 +699,12 @@ function! s:DbgMsgHandle(job, msg)
         let l:list = []
         for [l:var, l:val] in items(t:dbg.var)
             let l:val = substitute(l:val, '\s*\[old: .*\]$', '', '')
-            let l:list += [l:var . ': ' . l:val]
+            let l:list += [l:var . ': ' . l:val, '']
         endfor
 
         call win_gotoid(t:dbg.varWinId)
         silent edit!
-        call setline(1, l:list)
+        call setline(1, l:list[0:-2])
         set filetype=dbgvar
         let t:dbg.varFlag = 0
     endif
@@ -756,7 +761,10 @@ endfunction
 
 function! <SID>DbgVarDispaly()
     let l:var = matchstr(getline('.'), '^[^:]*')
-    echo l:var . ': ' . t:dbg.var[l:var]
+
+    if l:var =~ '\S'
+        echo l:var . ': ' . t:dbg.var[l:var]
+    endif
 endfunction
 
 

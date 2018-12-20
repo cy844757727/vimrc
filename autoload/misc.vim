@@ -64,9 +64,9 @@ function! misc#F5FunctionKey(...)
         elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             " script language
             if l:runMode
-                call async#RunScript(expand('%'))
+                call async#RunScript(expand('%:p'))
             else
-                call async#DbgScript(expand('%'), l:breakPoint)
+                call async#DbgScript(expand('%:p'), l:breakPoint)
             endif
         elseif &filetype =~ 'c\|cpp'
             if l:runMode
