@@ -1003,7 +1003,7 @@ function BMBPSign#SetQfList(...)
 
     if !empty(l:types)
         call s:QfListSet(a:1, l:types)
-        copen
+        exe 'copen ' . get(g:, 'BottomWinHeight', 15)
         set nowrap
     endif
 

@@ -71,16 +71,18 @@ set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 set tabline=%!misc#TabLine()
 set foldtext=misc#FoldText()
 " Statusline set
-set statusline=\ %{misc#StatuslineIcon()}\ %f%m%r%h%w%<%=
-set statusline+=%{LinterStatus()}%3(\ %)
+set statusline=\ %{misc#StatuslineHead()}\ %f%m%r%h%w%<%=
+set statusline+=%{misc#StatuslineExtra()}%3(\ %)
 set statusline+=%{misc#GetWebIcon(expand('%'))}\ %Y
-set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}\ %3(\ %)
-set statusline+=%5(%l%):%-5(%c%V%)\ %4P%(\ %)
-
+set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}
+set statusline+=\ %3(\ %)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
+" Global
+let g:BottomWinHeight = 15
+let g:SideWinWidth = 31
 "自定义命令/自动命令=====================
 augroup UsrDefCmd
     autocmd!
-    autocmd QuickFixCmdPost * copen 10
+    autocmd QuickFixCmdPost * copen 15
     autocmd BufRead,BufNewFile *.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
@@ -100,8 +102,6 @@ command! Actags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
 
 "快捷键映射=====================
-noremap <silent> <C-left> :call misc#BufHisInAWindow('previous')<CR>
-noremap <silent> <C-right> :call misc#BufHisInAWindow('next')<CR>
 " 括号引号自动补全
 inoremap ( ()<Esc>i
 inoremap ) <c-r>=CyClosePair(')')<CR>
@@ -118,6 +118,12 @@ nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
+" Leaderf.vim maping
+nnoremap <silent> \t :LeaderfBufTag<CR>
+nnoremap <silent> \T :LeaderfTag<CR>
+nnoremap <silent> \l :LeaderfLine<CR>
+nnoremap <silent> \L :LeaderfLineAll<CR>
+nnoremap <silent> \F :LeaderfBuffer<CR>
 
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -130,23 +136,20 @@ nnoremap <silent> \[ :pop<CR>
 
 " find / replace
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
-noremap  <C-f> :exe '/' . expand('<cword>')<CR>
+nnoremap <C-f> :exe '/' . expand('<cword>')<CR>N
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
-noremap  <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
+nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
 noremap <silent> <C-l> :redraw!<CR>
 noremap <silent> <C-a> ggvG$
 noremap <silent> <C-w> :close<CR>
-noremap <silent> <S-PageUp> :call WindowSwitch('up')<CR>
-noremap <silent> <S-pageDown> :call WindowSwitch('down')<CR>
 noremap <silent> <S-t> :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 noremap <silent> <S-tab> :tabnext<CR>
+map! <C-l> <Esc><C-l>
 map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
-map! <S-PageUp> <Esc><S-PageUp>
-map! <S-PageDown> <Esc><S-PageDown>
 map! <S-tab> <Esc><S-tab>
 " Save & winresize & f5 function
 noremap <silent> <f3> :call misc#SaveFile()<CR>
@@ -172,21 +175,20 @@ map! <f7> <Esc><f7>
 map! <C-f7> <Esc><C-f7>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
-" Window & tabpage switch
-noremap <silent> <f8> :call misc#ToggleSidebar()<CR>
-noremap <silent> <C-f8> :call misc#ToggleTagbar()<CR>
-noremap <silent> <S-f8> :call misc#ToggleNERDTree()<CR>
-noremap <silent> <C-S-f8> :call misc#ToggleSidebar('off')<CR>
-noremap <silent> <f9> :call git#Toggle()<CR>
-noremap <silent> <f10> :call misc#ToggleQuickFix()<CR>
-noremap <silent> <C-f10> :call misc#ToggleQuickFix('book')<CR>
-noremap <silent> <S-f10> :call misc#ToggleQuickFix('todo')<CR>
-noremap <silent> <C-S-f10> :call misc#ToggleQuickFix('break')<CR>
-noremap <silent> <f12> :call async#TermToggle()<CR>
-noremap <silent> <C-f12> :call async#TermToggle('toggle', 'ipy')<CR>
-noremap <silent> <S-f12> :call async#TermToggle('toggle', 'py3')<CR>
-noremap <silent> <C-S-f12> :call async#TermToggle('toggle', 'dc_shell')<CR>
-map! <f7> <Esc><f7>
+" Window & tabpage toggle
+noremap <silent> <f8>      :call misc#ToggleSidebar()<CR>
+noremap <silent> <C-f8>    :call misc#ToggleSidebar('Tagbar')<CR>
+noremap <silent> <S-f8>    :call misc#ToggleSidebar('NERDTree')<CR>
+noremap <silent> <C-S-f8>  :call misc#ToggleSidebar('all')<CR>
+noremap <silent> <f9>      :call git#Toggle()<CR>
+noremap <silent> <f10>     :call misc#ToggleBottombar('quickfix')<CR>
+noremap <silent> <C-f10>   :call misc#ToggleBottombar('quickfix', 'book')<CR>
+noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
+noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
+noremap <silent> <f12>     :call misc#ToggleBottombar('terminal')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipy')<CR>
+noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'py3')<CR>
+noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
 map! <S-f8> <Esc><S-f8>
@@ -198,40 +200,34 @@ map! <S-f10> <ESC><S-f10>
 map! <C-S-f10> <ESC><C-S-f10>
 map! <f12> <Esc><f12>
 map! <C-f12> <Esc><C-f12>
-" Leaderf.vim maping
-noremap <silent> \t :LeaderfBufTag<CR>
-noremap <silent> \T :LeaderfTag<CR>
-noremap <silent> \l :LeaderfLine<CR>
-noremap <silent> \L :LeaderfLineAll<CR>
-noremap <silent> \F :LeaderfBuffer<CR>
+map! <S-f12> <Esc><S-f12>
+map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
-tnoremap <silent> <C-left> <C-w>N:call async#TermSwitch('previous')<CR>
-tnoremap <silent> <C-right> <C-w>N:call async#TermSwitch('next')<CR>
-tnoremap <silent> <S-PageUp> <C-w>N:call WindowSwitch('up')<CR>
-tnoremap <silent> <S-pageDown> <C-w>N:call WindowSwitch('down')<CR>
-tnoremap <silent> <f12> <C-w>N:call async#TermToggle()<CR>
-tnoremap <silent> <C-f12> <C-w>N:call async#TermToggle('toggle', 'ipy')<CR>
-tnoremap <silent> <S-f12> <C-w>N:call async#TermToggle('toggle', 'py3')<CR>
-tnoremap <silent> <C-S-f12> <C-w>N:call async#TermToggle('toggle', 'dc_shell')<CR>
+tnoremap <silent> <f10>     <C-w>N:call misc#ToggleBottombar('quickfix')<CR>
+tnoremap <silent> <C-f10>   <C-w>N:call misc#ToggleBottombar('quickfix', 'book')<CR>
+tnoremap <silent> <S-f10>   <C-w>N:call misc#ToggleBottombar('quickfix', 'todo')<CR>
+tnoremap <silent> <C-S-f10> <C-w>N:call misc#ToggleBottombar('quickfix', 'break')<CR>
+tnoremap <silent> <f12>     <C-w>N:call misc#ToggleBottombar('terminal')<CR>
+tnoremap <silent> <C-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'ipy')<CR>
+tnoremap <silent> <S-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'py3')<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 
+" Window switch
+tnoremap <silent> <S-PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
+tnoremap <silent> <S-pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
+noremap  <silent> <S-PageUp>   :call misc#WinSwitch('up')<CR>
+noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
+map! <S-PageUp> <Esc><S-PageUp>
+map! <S-PageDown> <Esc><S-PageDown>
+
+" Buffer switch
+tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>
+tnoremap <silent> <C-right> <C-w>N:call misc#BufSwitch('next')<CR>
+noremap  <silent> <C-left>  :call misc#BufSwitch('previous')<CR>
+noremap  <silent> <C-right> :call misc#BufSwitch('next')<CR>
+map! <C-left> <Esc><C-left>
+map! <C-right> <Esc><C-right>
 " === misc func def === {{{1
-" For starting insert mode when switching to terminal 
-function! WindowSwitch(action)
-    if bufname('%') =~ '^!' && mode() == 'n'
-        normal a
-    endif
-
-    if a:action == 'down'
-        wincmd w
-    else
-        wincmd W
-    endif
-
-    if bufname('%') =~ '^!' && mode() == 'n'
-        normal a
-    endif
-endfunction
-
 "  )]}自动补全相关
 function! CyClosePair(char)
     if getline('.')[col('.') - 1] == a:char
@@ -289,7 +285,7 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 " =================================================================================
 
 " === TagBar Configure === {{{1
-let g:tagbar_width=31
+let g:tagbar_width=get(g:, 'SideWinWidth', 31)
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
 let g:tagbar_left=0
@@ -358,24 +354,6 @@ let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 
-" ale statusline
-function! LinterStatus() abort
-    let l:counts = ale#statusline#Count(bufnr(''))
-    let l:all_errors = l:counts.error + l:counts.style_error
-    let l:all_non_errors = l:counts.total - l:all_errors
-    let l:error = l:all_errors ? printf(' %d', l:all_errors) : ''
-    let l:nonError = l:all_non_errors ? printf(' %d', l:all_non_errors) : ''
-    if empty(l:error) && !empty(l:nonError)
-        return l:nonError
-    elseif !empty(l:error) && empty(l:nonError)
-        return l:error
-    elseif !empty(l:error) && !empty(l:nonError)
-        return l:error . ' ' . l:nonError
-    else
-        return ''
-    endif
-endfunction
-
 " === BMBPSign configure === {{{1
 let g:BMBPSign_SpecialBuf = {
             \ 'NERD_tree': 'bw|NERDTree',
@@ -429,19 +407,6 @@ function! PreSaveWorkSpace_TabVar()
             let g:TABVAR_MAXMIZEWIN[l:nr] = l:var
         endif
 
-        " Record nerdtree status
-        for l:bufnr in tabpagebuflist(l:nr) + [0]
-            if getbufvar(l:bufnr, '&filetype', '') == 'nerdtree'
-                break
-            endif
-        endfor
-
-        let l:var = l:bufnr == 0 ? gettabvar(l:nr, 'RecordOfTree', {}) : misc#RecordOfNERDTree(l:bufnr)
-
-        if !empty(l:var)
-            let g:TABVAR_RECORDOFTREE[l:nr] = l:var
-        endif
-
         " Record buf history in every window
         let g:WINVAR_BUFHIS[l:nr] = {}
         for l:winnr in range(1, tabpagewinnr(l:nr, '$'))
@@ -460,10 +425,6 @@ function! PreSaveWorkSpace_TabVar()
         unlet g:TABVAR_MAXMIZEWIN
     endif
 
-    if empty(g:TABVAR_RECORDOFTREE)
-        unlet g:TABVAR_RECORDOFTREE
-    endif
-
     if empty(g:WINVAR_BUFHIS)
         unlet g:WINVAR_BUFHIS
     endif
@@ -475,13 +436,6 @@ function! PostLoadWorkSpace_TabVar()
             call settabvar(l:nr, 'MaxmizeWin', l:val)
         endfor
         unlet g:TABVAR_MAXMIZEWIN
-    endif
-
-    if exists('g:TABVAR_RECORDOFTREE')
-        for [l:nr, l:val] in items(g:TABVAR_RECORDOFTREE)
-            call settabvar(l:nr, 'RecordOfTree', l:val)
-        endfor
-        unlet g:TABVAR_RECORDOFTREE
     endif
 
     if exists('g:WINVAR_BUFHIS')

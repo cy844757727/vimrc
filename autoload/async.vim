@@ -25,7 +25,7 @@ let s:displayIcon = {
 " Default terminal option
 let s:termPrefix = '!Terminal'
 let s:termOption = {
-            \ 'term_rows': 15,
+            \ 'term_rows': get(g:, 'BottomWinHeight', 15),
             \ 'term_kill': 'kill',
             \ 'term_finish': 'close',
             \ 'stoponexit': 'exit',
@@ -122,11 +122,12 @@ function! async#TermToggle(...)
             silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:bufnr . 'buffer'
         endif
     elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
-        " Allow background execution
+        " Allow background execution when first starting
         let l:option = copy(s:termOption)
         let l:option['term_name'] = l:name
         let l:option['hidden'] = 1
         let l:bufnr = term_start(l:cmd, l:option)
+        call setbufvar(l:bufnr, '&buftype', 'terminal')
     endif
 
     " Ensure starting insert mode
@@ -263,6 +264,9 @@ function! async#JobList(...)
     return l:prompt . l:jobs
 endfunction
 
+function! async#JobRuning()
+    return len(s:asyncJob)
+endfunction
 
 " =====================================
 " ===== Script run/debug ==== {{{1
@@ -716,6 +720,11 @@ function! s:DbgMsgHandle(job, msg)
 
     " Update call stack window
     if !empty(t:dbg.stack)
+        if t:dbg.tool =~ 'pdb'
+            call remove(t:dbg.stack, 0, 2)
+            call filter(t:dbg.stack, "v:val !~ '^->'")
+        endif
+
         call win_gotoid(t:dbg.stackWinId)
         silent edit!
         call setline(1, t:dbg.stack)

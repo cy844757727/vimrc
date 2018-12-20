@@ -11,8 +11,21 @@ let g:loaded_A_Misc = 1
 augroup MISC_autocmd
     autocmd!
     " Auto record buf history for each window
-    autocmd BufEnter *[^0-9] call misc#BufHisInAWindow()
+    autocmd BufEnter *[^0-9] call s:BufHisRecord()
 augroup END
+
+"  Refresh NERTree
+function! s:UpdateNERTreeView()
+    let l:nerd = bufwinnr('NERD_tree')
+
+    if l:nerd != -1
+        let l:id = win_getid()
+        exe l:nerd . 'wincmd w'
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
+        call win_gotoid(l:id)
+    endif
+endfunction
 
 " Update NerdTree, refresh tags file ...
 " diffupdate in diffmode
@@ -20,14 +33,8 @@ augroup END
 function! misc#F5FunctionKey(...)
     wall
     if &filetype == 'nerdtree'
-        if a:0 > 0 && exists('t:RecordOfTree')
-            " Recovery status of last closed
-            call search('^/\S*/$')
-            silent normal oX
-            call misc#RecordOfNERDTree('.', t:RecordOfTree)
-        else
-            call g:NERDTreeKeyMap.Invoke('R')
-        endif
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
     elseif &filetype == 'tagbar'
         Async ctags -R -f .tags
     elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
@@ -54,7 +61,7 @@ function! misc#F5FunctionKey(...)
                     call async#GdbStart(l:binFile[0], l:BreakPoint)
                 endif
             endif
-        elseif &filetype =~ '^\(sh\|python\|perl\|tcl\|ruby\|awk\)$'
+        elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             " script language
             if l:runMode
                 call async#RunScript(expand('%'))
@@ -141,20 +148,6 @@ function! misc#ReverseComment() range
 endfunction
 
 
-"  Refresh NERTree
-function! misc#UpdateNERTreeView()
-    let l:nerd = bufwinnr('NERD_tree')
-
-    if l:nerd != -1
-        let l:id = win_getid()
-        exe l:nerd . 'wincmd w'
-        call b:NERDTree.root.refresh()
-        call b:NERDTree.render()
-        call win_gotoid(l:id)
-    endif
-endfunction
-
-
 " 字符串查找替换
 function! misc#StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
@@ -177,14 +170,14 @@ function! misc#SaveFile()
         exe 'file ' . input('Set file name: ')
         filetype detect
         write
-        call misc#UpdateNERTreeView()
+        call s:UpdateNERTreeView()
     elseif exists('s:DoubleClick_500MSTimer')
         wall
         echo 'Save all'
     else
         if !filereadable(l:file)
             write
-            call misc#UpdateNERTreeView()
+            call s:UpdateNERTreeView()
         else
             update
         endif
@@ -229,19 +222,6 @@ function! misc#GetWebIcon(...)
     endif
 
     return WebDevIconsGetFileTypeSymbol(l:tfile)
-endfunction
-
-
-function! misc#StatuslineIcon()
-    if bufname('%') =~ '^!'
-        return 'ﲵ'
-    elseif &buftype == 'help'
-        return ''
-    elseif exists('g:BMBPSign_Projectized')
-        return ''
-    endif
-
-    return ''
 endfunction
 
 
@@ -385,134 +365,58 @@ function! misc#FoldText()
 endfunction
 
 
-" Record statue of NERDTree
-" Can used for restoring
-function! misc#RecordOfNERDTree(...)
-    let l:bufnr = a:0 > 0 && a:1 != '.' ? a:1 : bufnr('%')
-    let l:record = a:0 > 1 ? a:2 : {}
-
-    if getbufvar(l:bufnr, '&filetype') != 'nerdtree'
-        return {}
-    endif
-
-    if empty(l:record)
-        let l:holeBuf = getbufline(l:bufnr, 1, '$')
-        let l:length = len(l:holeBuf)
-        let l:curLin = getbufinfo(l:bufnr)[0].lnum - 1
-
-        let l:record.list = []
-        let l:record.cur = matchstr(l:holeBuf[l:curLin], '[^]]*$')
-        " Opened path
-        let l:openIcon = get(g:, 'NERDTreeDirArrowCollapsible', '▾')
-
-        " Root path (index 0)
-        let l:i = 0
-        while l:i < l:length
-            if l:holeBuf[l:i] =~ '^/\S*/$'
-                let l:path = [l:holeBuf[l:i]]
-                break
-            endif
-
-            let l:i += 1
-        endwhile
-
-        let l:i += 1
-        while l:i < l:length
-            let l:indent = matchstr(l:holeBuf[l:i], '^\s*' . l:openIcon)
-
-            " Not opened directory
-            if empty(l:indent)
-                let l:i += 1
-                continue
-            endif
-
-            let l:indent = (strchars(l:indent) + 1)/2
-            let l:str = matchstr(l:holeBuf[l:i], '\S*$')
-
-            " Apend l:str to l:path
-            if l:indent >= len(l:path)
-                let l:path += [l:str]
-            else
-                let l:path[l:indent] = l:str
-            endif
-
-            " Expand l:str to multiple paths
-            " (like lib/cur/... to lib/, lib/cur/, lib/cur/...)
-            let l:list = [join(l:path[0:l:indent-1], '')]
-            for l:item in split(l:str, '/')
-                let l:list += [l:list[-1] . l:item . '/']
-            endfor
-
-            let l:i += 1
-            " Start from 1 to avoid duplicating parent directories
-            let l:record.list += l:list[1:]
-        endwhile
-
-        if empty(l:record.list)
-            return {}
-        else
-            return l:record
-        endif
-    else
-        " Recovery statue
-        for l:absPath in get(l:record, 'list', [])
-            let l:path = g:NERDTreePath.New(l:absPath)
-            let l:node = b:NERDTree.root.findNode(l:path)
-            call l:node.open()
-        endfor
-
-        call b:NERDTree.render()
-        call search(get(l:record, 'cur', 1), 'e')
-    endif
-endfunction
-
-
 " a:1 if exists define the action
 " otherwise record the history to w:bufHis
-function! misc#BufHisInAWindow(...)
+function! s:BufHisRecord()
     if !empty(&buftype) || empty(expand('%'))
         return
     endif
 
-    if a:0 == 0
-        let l:name = expand('%:p')
+    let l:name = expand('%:p')
 
-        if !exists('w:bufHis')
-            let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
-        elseif l:name != w:bufHis.list[-1]
-            " When existing, remove first
-            let l:ind = index(w:bufHis.list, l:name)
-            if l:ind != -1
-                call remove(w:bufHis.list, l:ind)
-            endif
-
-            " Put it to last position
-            let w:bufHis.list += [l:name]
-        endif
-    elseif exists('w:bufHis') && len(get(w:bufHis, 'list', [])) > 1
-        if a:1 == 'previous'
-            call insert(w:bufHis.list, remove(w:bufHis.list, -1))
-        elseif a:1 == 'next'
-            call add(w:bufHis.list, remove(w:bufHis.list, 0))
-        else
-            return
+    if !exists('w:bufHis')
+        let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
+    elseif l:name != w:bufHis.list[-1]
+        " When existing, remove first
+        let l:ind = index(w:bufHis.list, l:name)
+        if l:ind != -1
+            call remove(w:bufHis.list, l:ind)
         endif
 
-        if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
-            silent exe 'buffer ' . w:bufHis.list[-1]
-            call s:EchoBufHistory()
-        else
-            " Discard invalid item
-            if w:bufHis.list[-1] == w:bufHis.init
-                let w:bufHis.init = w:bufHis.list[0]
-            endif
-            call remove(w:bufHis.list, -1)
-            call misc#BufHisInAWindow(a:1)
-        endif
+        " Put it to last position
+        let w:bufHis.list += [l:name]
     endif
 endfunction
 
-function! s:EchoBufHistory()
+
+function! s:BufHisSwitch(action)
+    if !exists('w:bufHis') || len(get(w:bufHis, 'list', [])) < 2
+        return
+    endif
+
+    if a:action == 'previous'
+        call insert(w:bufHis.list, remove(w:bufHis.list, -1))
+    elseif a:action == 'next'
+        call add(w:bufHis.list, remove(w:bufHis.list, 0))
+    else
+        return
+    endif
+
+    if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
+        silent exe 'buffer ' . w:bufHis.list[-1]
+        call s:BufHisEcho()
+    else
+        " Discard invalid item
+        if w:bufHis.list[-1] == w:bufHis.init
+            let w:bufHis.init = w:bufHis.list[0]
+        endif
+        call remove(w:bufHis.list, -1)
+        call s:BufHisSwitch(a:action)
+    endif
+endfunction
+
+
+function! s:BufHisEcho()
     let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
     " Mark out the current item
     let l:bufList[-1] = '[' . l:bufList[-1][1:-2] . ']'
@@ -569,6 +473,73 @@ function! s:EchoBufHistory()
     echo l:str
 endfunction
 
+
+function! misc#StatuslineHead()
+    if bufname('%') =~ '^!'
+        return 'ﲵ'
+    elseif &buftype == 'help'
+        return ''
+    elseif exists('g:BMBPSign_Projectized')
+        return ''
+    endif
+
+    return ''
+endfunction
+
+
+" Return linter status & job status
+function! misc#StatuslineExtra() abort
+    let l:counts = ale#statusline#Count(bufnr(''))
+    let l:all_errors = l:counts.error + l:counts.style_error
+    let l:all_non_errors = l:counts.total - l:all_errors
+    let l:jobs = async#JobRuning()
+    let l:list = []
+
+    if l:all_errors > 0
+        let l:list +=  [printf(' %d', l:all_errors)]
+    endif
+
+    if l:all_non_errors > 0
+        let l:list += [printf(' %d', l:all_non_errors)]
+    endif
+
+    if l:jobs > 0
+        let l:list += [printf('& %d', l:jobs)]
+    endif
+
+    return join(l:list, ' ')
+endfunction
+
+
+function! misc#BufSwitch(...)
+    let l:action = a:0 > 0 ? a:1 : 'next'
+
+    if bufname('%') =~ '^!'
+        call async#TermSwitch(l:action)
+"    elseif &buftype == 'quickfix'
+"        echo 
+    elseif empty(&buftype)
+        call s:BufHisSwitch(l:action)
+    endif
+endfunction
+
+
+" For starting insert mode when switching to terminal 
+function! misc#WinSwitch(action)
+    if bufname('%') =~ '^!' && mode() == 'n'
+        normal a
+    endif
+
+    if a:action == 'down'
+        wincmd w
+    else
+        wincmd W
+    endif
+
+    if bufname('%') =~ '^!' && mode() == 'n'
+        normal a
+    endif
+endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()
@@ -591,30 +562,31 @@ function! misc#WinResize()
     exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
 endfunction
 
+
 " Combine nerdtree & tagbar
 " Switch between the two
 function! misc#ToggleSidebar(...)
+    let l:obj = a:0 > 0 ? a:1 : 'toggle'
     let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
     let l:tag = bufwinnr('Tagbar') == -1 ? 0 : 2
     let l:statue = l:nerd + l:tag
 
-    if a:0 > 0
-        if l:statue > 0
-            if l:nerd != -1
-                call misc#ToggleNERDTree()
-            endif
-
-            if l:tag != -1
-                TagbarClose
-            endif
-        else
-            call misc#ToggleNERDTree()
+    if l:obj == 'NERDTree'
+        call s:ToggleNERDTree()
+    elseif l:obj == 'Tagbar'
+        call s:ToggleTagbar()
+    elseif l:obj == 'all'
+        if l:statue == 0
+            NERDTreeToggle
             TagbarOpen
+        else
+            TagbarClose
+            NERDTreeClose
         endif
     elseif l:statue == 0
-        call misc#ToggleNERDTree()
+        NERDTreeToggle
     elseif l:statue == 1
-        call misc#ToggleNERDTree()
+        NERDTreeClose
         let g:tagbar_vertical=0
         let g:tagbar_left=1
         TagbarOpen
@@ -622,41 +594,29 @@ function! misc#ToggleSidebar(...)
         let g:tagbar_left=0
     elseif l:statue == 2
         TagbarClose
-        call misc#ToggleNERDTree()
+        NERDTreeToggle
     else
         TagbarClose
-    endif
+    endif 
 endfunction
 
+
 " Toggle NERDTree window
-function! misc#ToggleNERDTree()
+function! s:ToggleNERDTree()
     if bufwinnr('NERD_tree') != -1
-        exe bufwinnr('NERD_tree') . 'wincmd w'
-        let t:RecordOfTree = misc#RecordOfNERDTree()
         NERDTreeClose
     elseif bufwinnr('Tagbar') != -1
         TagbarClose
-        if !g:NERDTree.ExistsForTab() && exists('t:RecordOfTree')
-            NERDTree
-            call misc#RecordOfNERDTree('.', t:RecordOfTree)
-        else
-            NERDTreeToggle
-        endif
+        NERDTreeToggle
         TagbarOpen
-    elseif !g:NERDTree.ExistsForTab() && exists('t:RecordOfTree')
-        NERDTree
-        call misc#RecordOfNERDTree('.', t:RecordOfTree)
     else
         NERDTreeToggle
     endif
-
-    if exists('t:RecordOfTree') && empty(t:RecordOfTree)
-        unlet t:RecordOfTree
-    endif
 endfunction
 
+
 "  Toggle TagBar window
-function! misc#ToggleTagbar()
+function! s:ToggleTagbar()
     if bufwinnr('Tagbar') != -1
         TagbarClose
     elseif bufwinnr('NERD_tree') == -1
@@ -674,21 +634,30 @@ function! misc#ToggleTagbar()
 endfunction
 
 
-"  Toggle QuickFix window
-"  BMBPSign#SetQfList(type, title)
-function! misc#ToggleQuickFix(...)
-    let l:type = a:0 == 0 ? 'self' : a:1
+"  Toggle bottom window (quickfix, terminal)
+function! misc#ToggleBottombar(winType, ...)
+    let l:type = a:0 > 0 ? a:1 : ''
 
-    if l:type == 'book'
-        call BMBPSign#SetQfList('BookMark', 'book')
-    elseif l:type == 'break'
-        call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
-    elseif l:type == 'todo'
-        call BMBPSign#SetQfList('TodoList', 'todo')
-    elseif getqflist({'winid': 1}).winid != 0
-        cclose
-    else
-        copen 10
+    if a:winType == 'quickfix'
+        call async#TermToggle('off')
+
+        if l:type == 'book'
+            call BMBPSign#SetQfList('BookMark', 'book')
+        elseif l:type == 'break'
+            call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
+        elseif l:type == 'todo'
+            call BMBPSign#SetQfList('TodoList', 'todo')
+        elseif getqflist({'winid': 1}).winid != 0
+            cclose
+        else
+            exe 'copen ' . get(g:, 'BottomWinHeight', 15)
+        endif
+    elseif a:winType == 'terminal'
+        if getqflist({'winid': 1}).winid != 0
+            cclose
+        endif
+
+        call async#TermToggle('toggle', l:type)
     endif
 endfunction
 " ####################################################################
