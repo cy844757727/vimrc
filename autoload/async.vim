@@ -349,7 +349,6 @@ function! async#DbgScript(...)
     " Analyze script type & set var: cmd, postCmd, prompt, re...
     let l:dbg = s:DbgScriptAnalyze(l:file, l:breakPoint)
     if !has_key(l:dbg, 'cmd')
-        unlet s:dbgShared[l:file]
         return -1
     endif
 
@@ -395,12 +394,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:interpreter = getbufvar(a:file, '&filetype')
     endif
 
-    if !has_key(s:dbgShared, a:file)
-        let s:dbgShared[a:file] = {}
-    endif
-
     let l:dbg = copy(s:dbg)
-    let l:dbg.var = s:dbgShared[a:file]
+    let l:dbg.var = copy(get(s:dbgShared, a:file, {}))
     let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
     let l:dbg.sign = {}
     let l:dbg.file = a:file
@@ -776,6 +771,7 @@ function! s:DbgOnExit(...)
 
     if exists('t:dbg')
         try
+            call extend(s:dbgShared, {t:dbg.file: t:dbg.var})
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
