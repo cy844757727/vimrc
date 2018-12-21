@@ -44,9 +44,9 @@ hi link TagbarSignature Directory
 hi CursorLine ctermfg=NONE ctermbg=23509ABA5 cterm=NONE guifg=NONE guibg=#232323
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#5E6165 guibg=NONE
 hi VertSplit ctermfg=253 ctermbg=253 guifg=#333333 guibg=#333333
-hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006999
+hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006999 gui=NONE
 hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2
-hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#D5D5CF guibg=#333333
+hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#D5D5CF guibg=#333333 gui=bold
 "hi StatusLineTerm
 "hi StatusLineTermNC
 
@@ -74,7 +74,7 @@ hi Identifier ctermfg=75 cterm=NONE guifg=#5DBDFC gui=NONE
 hi Constant ctermfg=208 guifg=#F58440
 hi Special ctermfg=208 guifg=#F58440
 hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
-hi Statement ctermfg=220 guifg=#F2C732
+hi Statement ctermfg=220 guifg=#F2C732 gui=NONE
 hi String ctermfg=215 guifg=#F6BB6B
 hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#D0F0D0
