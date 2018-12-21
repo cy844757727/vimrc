@@ -193,14 +193,14 @@ function s:SignClear(types)
 
         " Unset sign
         for l:sign in l:vec
-            exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
-            unlet s:signId[l:sign.id]
+            if l:sign.attr !~ 'keep'
+                exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
+                unlet s:signId[l:sign.id]
+            endif
         endfor
 
         " Empty vec
-        if !empty(l:vec)
-            unlet l:vec[:]
-        endif
+        call filter(l:vec, "v:val.attr =~ 'keep'")
     endfor
 endfunction
 
@@ -295,7 +295,7 @@ endfunction
 
 
 " Filter sign by types & file & lin
-" Content: {'id': {'file': ..., 'lin': ..., 'type': ..., 'attr': ...}}
+" Content: {'id': {'sign': ..., 'lin': ..., 'type': ...,}}
 function s:SignFilter(types, file, lin)
     let l:signPlace = execute('sign place '.(!empty(a:file) ? 'file='.a:file : ''))
 
@@ -313,11 +313,7 @@ function s:SignFilter(types, file, lin)
             let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:item.id.'  \S\+=BMBPSign')
             
             if !empty(l:list) && l:list[1] =~ a:lin
-                let l:items[l:item.id] = {'file': l:item.file, 'type': l:type, 'lin': l:list[1]}
-
-                if !empty(l:item.attr)
-                    let l:items[l:item.id].attr = l:item.attr
-                endif
+                let l:items[l:item.id] = {'sign': l:item, 'type': l:type, 'lin': l:list[1]}
             endif
         endfor
     endfor
@@ -332,10 +328,10 @@ function s:SignDisplayStr(items)
 
     for [l:id, l:val] in items(a:items)
         let l:str .= printf('  %-3d     %-6s    %s:%d',
-                    \ l:id, l:val.type, substitute(l:val.file, getcwd().'/', '', ''), l:val.lin)."\n"
+                    \ l:id, l:val.type, substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)."\n"
 
-        if has_key(l:val, 'attr')
-            let l:str .= '          '.l:val.attr."\n"
+        if !empty(l:val.sign.attr)
+            let l:str .= '          '.l:val.sign.attr."\n"
         endif
     endfor
 
@@ -352,32 +348,18 @@ function s:SignAddAttr(types, file, lin)
     endif
 
     let l:str = s:SignDisplayStr(l:items)
+    let l:arg = split(input(l:str.'Input id and attr: '), '^\(\d\+\)\zs\s\+')
+    let l:val = get(l:items, get(l:arg, 0, ''), {})
 
-    if len(l:items) == 1
-        let [l:id, l:val] = items(l:items)[0]
-    else
-        let l:id = input(l:str."Select Id: ")
-        let l:val = get(l:items, l:id, {})
-
-        if empty(l:val)
-            return
-        endif
-
-        let l:str = ''
+    if empty(l:val)
+        return
     endif
 
-    " Add attr to a sign
-    for l:sign in s:signVec[l:val.type]
-        if l:sign.id == l:id
-            let l:sign.attr = matchstr(input(l:str.'Input attr('.l:id.':'.l:val.type.'): ', l:sign.attr), '\S.*')
-            break
-        endif
-    endfor
-
+    let l:val.sign.attr = get(l:arg, 1, '')
     call s:QfListUpdate([l:val.type])
     
     if exists('t:dbg') && l:val.type =~ 'break'
-        call t:dbg.sendCmd('condition', l:val['file'].':'.l:val['lin'], l:sign.attr)
+        call t:dbg.sendCmd('condition', l:val.sign['file'].':'.l:val['lin'], l:val.sign.attr)
     endif
 endfunction
 

@@ -544,6 +544,9 @@ function! s:DbgMaping(...)
     if exists('t:dbg.watchWinId')
         call win_gotoid(t:dbg.watchWinId)
         noremap <buffer> <silent> 1 :1wincmd w<CR>
+        noremap <buffer> <silent> 3 :3wincmd w<CR>
+        noremap <buffer> <silent> 4 :4wincmd w<CR>
+        noremap <buffer> <silent> 5 :5wincmd w<CR>
         noremap <buffer> <silent> <space> :echo getline('.')<CR>
     endif
 
@@ -553,6 +556,10 @@ function! s:DbgMaping(...)
         noremap <buffer> <silent> d :call <SID>DbgSendCmd('down')
         noremap <buffer> <silent> <space> :echo getline('.')<CR>
         noremap <buffer> <silent> 1 :1wincmd w<CR>
+        noremap <buffer> <silent> 2 :2wincmd w<CR>
+        noremap <buffer> <silent> 3 :3wincmd w<CR>
+        noremap <buffer> <silent> 4 :4wincmd w<CR>
+        noremap <buffer> <silent> 5 :5wincmd w<CR>
     endif
 endfunction
 
