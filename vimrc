@@ -118,11 +118,11 @@ nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
-" Leaderf.vim maping
+" Leaderf.vim maping & flygrep
 nnoremap <silent> \t :LeaderfBufTag<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
 nnoremap <silent> \l :LeaderfLine<CR>
-nnoremap <silent> \L :LeaderfLineAll<CR>
+nnoremap <silent> \L :FlyGrep<CR>
 nnoremap <silent> \F :LeaderfBuffer<CR>
 
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -152,23 +152,23 @@ map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
 map! <S-tab> <Esc><S-tab>
 " Save & winresize & f5 function
-noremap <silent> <f3> :call misc#SaveFile()<CR>
-noremap <silent> <f4> :call misc#WinResize()<Cr>
-noremap <silent> <f5> :call misc#F5FunctionKey()<CR>
+noremap <silent> <f3>   :call misc#SaveFile()<CR>
+noremap <silent> <f4>   :call misc#WinResize()<Cr>
+noremap <silent> <f5>   :call misc#F5FunctionKey()<CR>
 noremap <silent> <C-f5> :call misc#F5FunctionKey('r')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
 map! <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
 " BMBPSign.vim: bookmark, breakpoint
-noremap <silent> <f6> :call BMBPSign#SignToggle('break')<CR>
-noremap <silent> <C-f6> :call BMBPSign#SignToggle('tbreak')<CR>
-noremap <silent> <f7> :call BMBPSign#SignToggle('book')<CR>
-noremap <silent> <C-f7> :call BMBPSign#SignToggle('todo')<CR>
+noremap <silent> <f6>     :call BMBPSign#SignToggle('break')<CR>
+noremap <silent> <C-f6>   :call BMBPSign#SignToggle('tbreak')<CR>
+noremap <silent> <f7>     :call BMBPSign#SignToggle('book')<CR>
+noremap <silent> <C-f7>   :call BMBPSign#SignToggle('todo')<CR>
 noremap <silent> <C-Down> :call BMBPSign#SignJump('book', 'next')<CR>
-noremap <silent> <C-Up> :call BMBPSign#SignJump('book', 'previous')<CR>
-noremap <silent> \m :call BMBPSign#SignClear('book')<CR>
-noremap <silent> \b :call BMBPSign#SignClear('break', 'tbreak')<CR>
+noremap <silent> <C-Up>   :call BMBPSign#SignJump('book', 'previous')<CR>
+noremap <silent> \m       :call BMBPSign#SignClear('book')<CR>
+noremap <silent> \b       :call BMBPSign#SignClear('break', 'tbreak')<CR>
 map! <f6> <Esc><f6>
 map! <C-f6> <Esc><C-f6>
 map! <f7> <Esc><f7>
@@ -289,7 +289,7 @@ let g:tagbar_width=get(g:, 'SideWinWidth', 31)
 let g:tagbar_vertical=19
 let g:tagbar_silent=1
 let g:tagbar_left=0
-"let g:tagbar_iconchars = ['', '']
+"let g:tagbar_iconchars = ['●', '○']
 let g:tagbar_iconchars = ['▸', '▾']
 let g:tagbar_status_func = 'TagbarStatusFunc'
 
@@ -343,7 +343,7 @@ let g:ale_python_flake8_options = '--ignore=E225,E226,E227,E261,E262,E265,E266,E
 let g:ale_python_pylint_options = '--disable=C0103,C0303,C0111,C0112,W0603,W0511 --jobs=0'
 
 let g:ale_sign_error = '▄'
-let g:ale_sign_warning = '▍'
+let g:ale_sign_warning = '▎'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'

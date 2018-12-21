@@ -351,6 +351,11 @@ ALEWarningSign	ale.txt	/*ALEWarningSign*
 ExtractSnips()	snipMate.txt	/*ExtractSnips()*
 ExtractSnipsFile()	snipMate.txt	/*ExtractSnipsFile()*
 Filename()	snipMate.txt	/*Filename()*
+FlyGrep	FlyGrep.txt	/*FlyGrep*
+FlyGrep-config	FlyGrep.txt	/*FlyGrep-config*
+FlyGrep-contents	FlyGrep.txt	/*FlyGrep-contents*
+FlyGrep-intro	FlyGrep.txt	/*FlyGrep-intro*
+FlyGrep.txt	FlyGrep.txt	/*FlyGrep.txt*
 GenTags#CtagsLoaded	gen_tags.txt	/*GenTags#CtagsLoaded*
 GenTags#GtagsLoaded	gen_tags.txt	/*GenTags#GtagsLoaded*
 LeaderF	leaderf.txt	/*LeaderF*
@@ -994,6 +999,9 @@ b:ale_yaml_swaglint_use_global	ale-yaml.txt	/*b:ale_yaml_swaglint_use_global*
 b:ale_yaml_yamllint_executable	ale-yaml.txt	/*b:ale_yaml_yamllint_executable*
 b:ale_yaml_yamllint_options	ale-yaml.txt	/*b:ale_yaml_yamllint_options*
 filter-overrides	syntastic.txt	/*filter-overrides*
+g:FlyGrep_enable_statusline	FlyGrep.txt	/*g:FlyGrep_enable_statusline*
+g:FlyGrep_input_delay	FlyGrep.txt	/*g:FlyGrep_input_delay*
+g:FlyGrep_search_tools	FlyGrep.txt	/*g:FlyGrep_search_tools*
 g:Lf_AndDelimiter	leaderf.txt	/*g:Lf_AndDelimiter*
 g:Lf_CacheDirectory	leaderf.txt	/*g:Lf_CacheDirectory*
 g:Lf_CommandMap	leaderf.txt	/*g:Lf_CommandMap*

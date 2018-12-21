@@ -14,18 +14,32 @@ function! s:isNormalTag() abort dict
     return 1
 endfunction
 
+
+let s:typeIcon = {
+            \ 'class': '',
+            \ 'variable': '',
+            \ 'function': ''
+            \ }
 " s:strfmt() {{{1
 function! s:strfmt() abort dict
     let typeinfo = self.typeinfo
 
     let suffix = get(self.fields, 'signature', '')
     if has_key(self.fields, 'type')
-        let suffix .= ' : ' . self.fields.type
+        let l:type = self.fields.type
     elseif has_key(get(typeinfo, 'kind2scope', {}), self.fields.kind)
-        let suffix .= ' : ' . typeinfo.kind2scope[self.fields.kind]
+        let l:type = typeinfo.kind2scope[self.fields.kind]
     endif
 
-    return self._getPrefix() . self.name . suffix
+    let l:prefix = get(self.typeinfo, 'ftype', '') == 'python' ? ' ' : self._getPrefix()
+
+    if !exists('l:type')
+        return l:prefix . self.name . suffix
+    elseif has_key(s:typeIcon, l:type)
+        return s:typeIcon[l:type] . l:prefix . self.name . suffix
+    else
+        return l:prefix . self.name . suffix . ' : ' . l:type
+    endif
 endfunction
 
 " s:str() {{{1
