@@ -43,6 +43,7 @@ set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
+se fillchars=vert:│,fold:\ 
 set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
@@ -71,10 +72,10 @@ set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 set tabline=%!misc#TabLine()
 set foldtext=misc#FoldText()
 " Statusline set
-set statusline=\ %{misc#StatuslineHead()}\ %f%m%r%h%w%<%=
+set statusline=\ %{misc#GetWebIcon('head')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(\ %)
-set statusline+=%{misc#GetWebIcon(expand('%'))}\ %Y
-set statusline+=\ %{WebDevIconsGetFileFormatSymbol()}\ %{&fenc!=''?&fenc:&enc}
+set statusline+=%{misc#GetWebIcon('filetype')}\ %Y
+set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc!=''?&fenc:&enc}
 set statusline+=\ %3(\ %)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 " Global
 let g:BottomWinHeight = 15
@@ -87,6 +88,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.sv set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
+    autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
     autocmd InsertLeave * :hi statusline guibg=#006999
 augroup END

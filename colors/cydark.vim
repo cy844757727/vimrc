@@ -43,7 +43,7 @@ hi link TagbarSignature Directory
 " === separator ... ===
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#232323 gui=NONE
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#5E6165 guibg=NONE gui=NONE
-hi VertSplit ctermfg=253 ctermbg=253 guifg=#333333 guibg=#333333 gui=NONE
+hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#151515 guibg=#1E1E1E gui=NONE
 hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006999 gui=NONE
 hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2 gui=NONE
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#D5D5CF guibg=#333333 gui=bold

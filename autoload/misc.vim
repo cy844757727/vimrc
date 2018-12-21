@@ -204,27 +204,6 @@ function! misc#HEXCovent()
 endfunction
 
 
-" For Handling situations without suffixes
-" WebDevIcons plugin
-function! misc#GetWebIcon(...)
-    if a:0 == 0
-        let l:file = expand('%')
-        let l:tfile = expand('%:t')
-        let l:extend = expand('%:e')
-    else
-        let l:file = a:1
-        let l:tfile = fnamemodify(a:1, ':t')
-        let l:extend = fnamemodify(a:1, ':e')
-    endif
-
-    if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
-        let l:tfile .= '.' . getbufvar(l:file, '&filetype')
-    endif
-
-    return WebDevIconsGetFileTypeSymbol(l:tfile)
-endfunction
-
-
 let s:TabLineStart = 0
 let s:TabLineChars = 500
 " Customize tabline
@@ -340,7 +319,7 @@ function! misc#TabLabel(n, ...)
     let l:name = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
 
     " Append the glyph & modify name
-    let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon(l:name), l:name])
+    let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon('filetype', l:name), l:name])
 
     let l:lable = l:glyph . ' ' . l:name . ' ' . l:modFlag
 
@@ -474,16 +453,40 @@ function! s:BufHisEcho()
 endfunction
 
 
-function! misc#StatuslineHead()
-    if bufname('%') =~ '^!'
-        return 'ﲵ'
-    elseif &buftype == 'help'
-        return ''
-    elseif exists('g:BMBPSign_Projectized')
-        return ''
-    endif
+function! misc#GetWebIcon(type, ...)
+    if a:type == 'head'
+        if bufname('%') =~ '^!'
+            return 'ﲵ'
+        elseif &buftype == 'help'
+            return ''
+        elseif exists('g:BMBPSign_Projectized')
+            return ''
+        endif
 
-    return ''
+        return ''
+    elseif a:type == 'fileformat'
+        if getbufvar(bufnr('%'), '&binary', 0)
+            return ''
+        endif
+
+        return WebDevIconsGetFileFormatSymbol()
+    elseif a:type == 'filetype'
+        if a:0 == 0
+            let l:file = expand('%')
+            let l:tfile = expand('%:t')
+            let l:extend = expand('%:e')
+        else
+            let l:file = a:1
+            let l:tfile = fnamemodify(a:1, ':t')
+            let l:extend = fnamemodify(a:1, ':e')
+        endif
+
+        if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
+            let l:tfile .= '.' . getbufvar(l:file, '&filetype')
+        endif
+
+        return WebDevIconsGetFileTypeSymbol(l:tfile)
+    endif
 endfunction
 
 
