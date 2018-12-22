@@ -21,7 +21,7 @@ hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
 hi Todo cterm=bold guibg=#DDD000 guifg=#000000 gui=bold
 
 " === TabLine ===
-hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#DDDDCF guibg=#444444 gui=NONE
+hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#C5C5BF guibg=#444444 gui=NONE
 hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#D5D5CF guibg=#202020 gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
 hi TabLineSeparator guibg=#444444 guifg=#202020 gui=NONE
@@ -81,7 +81,7 @@ hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#C5E5F5 gui=bold
 
 " === BMBPSign.vim ===
-hi NormalSign  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CCCCB0 gui=NONE
+hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CCCCB0 gui=NONE
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#D73130 gui=NONE
 
 " === ale.vim ===

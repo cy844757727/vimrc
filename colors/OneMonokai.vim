@@ -82,11 +82,11 @@ hi Operator ctermfg=230 cterm=bold guifg=#e06c75 gui=bold
 hi Function guifg=#d19a66
 
 " === BMBPSign.vim ===
-hi NormalSign  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CCCCB0 gui=NONE
+hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CCCCB0 gui=NONE
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#D73130 gui=NONE
 
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
 hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#282c34 gui=NONE
-hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CEB107 guibg=#282c34 gui=NONE
+hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#DAA010 guibg=#282c34 gui=NONE
 hi link ALEWarning Normal
