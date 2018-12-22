@@ -43,7 +43,7 @@ set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
-se fillchars=vert:│,fold:\ 
+se fillchars=vert:▕,fold:\ 
 set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
@@ -90,7 +90,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
-    autocmd InsertLeave * :hi statusline guibg=#006999
+    autocmd InsertLeave * :hi statusline guibg=#105060
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
@@ -215,12 +215,12 @@ tnoremap <silent> <S-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'py3')<
 tnoremap <silent> <C-S-f12> <C-w>N:call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 
 " Window switch
-tnoremap <silent> <S-PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
-tnoremap <silent> <S-pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
-noremap  <silent> <S-PageUp>   :call misc#WinSwitch('up')<CR>
-noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
-map! <S-PageUp> <Esc><S-PageUp>
-map! <S-PageDown> <Esc><S-PageDown>
+tnoremap <silent> <PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
+tnoremap <silent> <pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
+noremap  <silent> <PageUp>   :call misc#WinSwitch('up')<CR>
+noremap  <silent> <pageDown> :call misc#WinSwitch('down')<CR>
+map! <PageUp> <Esc><PageUp>
+map! <PageDown> <Esc><PageDown>
 
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>

@@ -14,8 +14,8 @@ hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#DE3D3B
 " Sign name rule: 'BMBPSign' . type
 sign define BMBPSignBook text=🚩 texthl=BMBPSignHl
 sign define BMBPSignTodo text=🔖 texthl=BMBPSignHl
-sign define BMBPSignBreak text=💊 texthl=BreakPoint
-sign define BMBPSignTBreak text=💊 texthl=BreakPoint
+sign define BMBPSignBreak text= texthl=BreakPoint
+sign define BMBPSignTBreak text= texthl=BreakPoint
 
 " SignVec Record
 " Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
