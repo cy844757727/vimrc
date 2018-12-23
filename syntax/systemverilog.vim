@@ -98,7 +98,8 @@ syn match   systemverilogNumber "\<[0-9_]\+step\>"
 
 syn keyword systemverilogTodo contained TODO
 
-syn match   systemverilogOperator "[&|~><!)(*#%@+/=?:;}{,.\^\-\[\]]"
+"syn match   systemverilogOperator "[&|~><!)(*#%@+/=?:;}{,.\^\-\[\]]"
+syn match   verilogOperator "\( = \|<=\)"
 
 syn region  systemverilogComment start="/\*" end="\*/" contains=systemverilogTodo
 syn match   systemverilogComment "//.*" contains=systemverilogTodo
@@ -168,7 +169,7 @@ if version >= 508 || !exists("did_systemverilog_syn_inits")
    HiLink systemverilogConstant	 Constant
    HiLink systemverilogLabel		 Label
    HiLink systemverilogNumber		 Number
-   HiLink systemverilogOperator	 Normal
+   HiLink systemverilogOperator	 Operator
    HiLink systemverilogStatement	 Statement
    HiLink systemverilogGlobal		 Define
    HiLink systemverilogDirective	 SpecialComment

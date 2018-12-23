@@ -18,7 +18,7 @@ hi Question cterm=NONE guifg=#202020 guibg=#C0C0BA gui=NONE
 hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
 hi Search ctermfg=232 ctermbg=208 guifg=#202020 guibg=#D97820 gui=NONE
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
-hi Todo cterm=bold guibg=#DDD000 guifg=#000000 gui=bold
+hi Todo cterm=bold guibg=#CCC000 guifg=#000000 gui=bold
 
 " === TabLine ===
 hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#C5C5BF guibg=#444444 gui=NONE
@@ -43,7 +43,7 @@ hi link TagbarSignature Directory
 " === separator ... ===
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#252525 gui=NONE
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#4A4A4A guibg=NONE gui=NONE
-hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#1F1F1F guibg=#202020 gui=NONE
+hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#202020 guibg=#202020 gui=NONE
 hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#CCCCBF guibg=#105060 gui=NONE
 hi StatusLineNormal ctermfg=16 ctermbg=253 cterm=NONE guifg=#CCCCBF guibg=#104A5A gui=NONE
 hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2 gui=NONE
@@ -55,7 +55,7 @@ hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#C5C5BF guibg=#292929 gu
 hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#192920 gui=NONE
 hi DiffChange ctermfg=230 ctermbg=24 guifg=NONE guibg=#203045 gui=NONE
 hi DiffDelete ctermfg=230 ctermbg=95 guifg=#4F2525 guibg=#4F2525 gui=NONE
-hi DiffText ctermfg=230 ctermbg=2392 cterm=NONE guifg=NONE guibg=#1A1919 gui=NONE
+hi DiffText ctermfg=230 ctermbg=2392 cterm=NONE guifg=NONE guibg=#1D1C1C gui=NONE
 
 " === Popup menu ui ===
 hi PMenu ctermfg=253 ctermbg=237 guifg=#CCCCB5 guibg=#333333 gui=NONE
@@ -68,17 +68,24 @@ hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
 hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#E090F0 gui=NONE
+hi PreProc ctermfg=176 guifg=#c678dd gui=NONE
 hi Type ctermfg=75 cterm=NONE guifg=#40BFFF gui=NONE
 hi Number ctermfg=208 guifg=#FA8525 gui=NONE
-hi Identifier ctermfg=75 cterm=NONE guifg=#5DB0F0 gui=NONE
+hi Identifier ctermfg=75 cterm=NONE guifg=#56b6c2 gui=NONE
 hi Constant ctermfg=208 guifg=#F58440 gui=NONE
 hi Special ctermfg=208 guifg=#F58440 gui=NONE
 hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
-hi Statement ctermfg=220 guifg=#E0A02F gui=NONE
-hi String ctermfg=215 guifg=#F0B060 gui=NONE
+hi Statement ctermfg=220 guifg=#DDB740 gui=NONE
+hi String ctermfg=215 guifg=#E5C07B gui=NONE
 hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#C5E5F5 gui=bold
+hi Conditional ctermfg=220 guifg=#e06c75 gui=NONE
+hi link Repeat Conditional
+hi Function guifg=#d19a66
+hi Structure guifg=#56b6c2
+
+hi link PythonFunction Identifier
+hi link PythonBuildIN Function
 
 " === BMBPSign.vim ===
 hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CCCCB0 gui=NONE

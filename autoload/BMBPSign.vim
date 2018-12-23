@@ -8,18 +8,23 @@ endif
 let g:loaded_A_BMBPSign = 1
 
 " sign highlight definition
-hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#FCD133
-hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#DE3D3B
+hi default BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#FCD133
+hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#DE3D3B
 
 " Sign name rule: 'BMBPSign' . type
-sign define BMBPSignBook text=🚩 texthl=BMBPSignHl
-sign define BMBPSignTodo text=🔖 texthl=BMBPSignHl
-sign define BMBPSignBreak text= texthl=BreakPoint
-sign define BMBPSignTBreak text= texthl=BreakPoint
+sign define BMBPSignbook text=🚩 texthl=BMBPSignHl
+sign define BMBPSigntodo text=🔖 texthl=BMBPSignHl
+sign define BMBPSignbreak text= texthl=BreakPoint
+sign define BMBPSigntbreak text= texthl=BreakPoint
+sign define BMBPSignbookAttr text=🚩 texthl=BMBPSignHl
+sign define BMBPSigntodoAttr text=🔖 texthl=BMBPSignHl
+sign define BMBPSignbreakAttr text=. texthl=BreakPoint
+sign define BMBPSigntbreakAttr text=. texthl=BreakPoint
 
 " SignVec Record
 " Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
 " Content: 'type': [{'id': ..., 'file': ..., 'attr': ...}]
+let s:signDefHead = 'BMBPSign'
 let s:signVec = {
             \ 'book':   [],
             \ 'todo':   [],
@@ -34,15 +39,6 @@ let s:typesGroup = {}
 " Sign id record
 " Content: 'id': ['type', 'file']
 let s:signId = {}
-
-" Sign type binding
-" Content: 'type': 'signDef'
-let s:signDef = {
-            \ 'book':   'BMBPSignBook',
-            \ 'todo':   'BMBPSignTodo',
-            \ 'break':  'BMBPSignBreak',
-            \ 'tbreak': 'BMBPSignTBreak'
-            \ }
 
 " Default File name
 if has('unix') || has('mac')
@@ -97,13 +93,16 @@ if exists('g:BMBPSignTypeExtend')
     for l:sign in g:BMBPSignTypeExtend
         try
             let l:type = l:sign.type
-            let l:name = 'BMBPSign' . toupper(l:type[0]) . l:type[1:]
+            let l:name = s:signDefHead . l:type
             let l:text = get(l:sign, 'text', '🎈')
             let l:texthl = get(l:sign, 'texthl', 'BMBPSignHl')
             let l:linehl = get(l:sign, 'linehl', 'Normal')
-            exe 'sign define ' . l:name . ' text=' . l:text . ' texthl=' . l:texthl . ' linehl=' . l:linehl
+            let l:textAttr = get(l:sign, 'textAttr', l:text)
+            let l:texthlAttr = get(l:sign, 'texthl', l:texthlAttr)
+            let l:linehlAttr = get(l:sign, 'linehl', l:linehlAttr)
+            exe 'sign define '.l:name.' text='.l:text.' texthl='.l:texthl.' linehl='.l:linehl
+            exe 'sign define '.l:name.'Attr text='.l:textAttr.' texthl='.l:texthlAttr.' linehl='.l:linehlAttr
             let s:signVec[l:type] = []
-            let s:signDef[l:type] = l:name
         catch
             continue
         endtry
@@ -117,7 +116,7 @@ endif
 " Attr: Additional attribute
 " Skip: Whether to unset if sign existing (set 1 for merging: forbiden unset)
 function s:SignToggle(file, line, type, attr, skip)
-    let l:def = get(s:signDef, a:type, a:type)
+    let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
     let l:vec = get(s:signVec, a:type, [])
     let l:signPlace = execute('sign place file=' . a:file)
     let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
@@ -169,8 +168,10 @@ function s:Signjump(type, action)
             let l:winId = win_findbuf(l:bufnr)
 
             if !empty(l:winId)
-               exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
-           endif
+                exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
+            elseif index(get(get(w:,'bufHis',{}),'list',[]), l:vec[-1].file) == -1 && !empty(expand('%'))
+                tabnew
+            endif
        endif
 
         try
@@ -193,14 +194,14 @@ function s:SignClear(types)
 
         " Unset sign
         for l:sign in l:vec
-            if l:sign.attr !~ 'keep'
+            if l:sign.attr !~ '&keep'
                 exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
                 unlet s:signId[l:sign.id]
             endif
         endfor
 
         " Empty vec
-        call filter(l:vec, "v:val.attr =~ 'keep'")
+        call filter(l:vec, "v:val.attr =~ '&keep'")
     endfor
 endfunction
 
@@ -259,7 +260,7 @@ function s:SignSave(pre, types)
     let l:signs = {}
     let l:def = '\(' . join(a:types, '\|') . '\)'
     for l:item in split(execute('sign place'), "\n")
-        let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' . '  id=\(\d\+\)  \S\+=BMBPSign' . l:def)
+        let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' . '  id=\(\d\+\)  \S\+='.s:signDefHead . l:def)
 
         if !empty(l:match)
             let l:signs[l:match[2]] = l:match[1]
@@ -310,7 +311,7 @@ function s:SignFilter(types, file, lin)
     let l:items = {}
     for l:type in l:types
         for l:item in s:signVec[l:type]
-            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:item.id.'  \S\+=BMBPSign')
+            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:item.id.'  \S\+='.s:signDefHead)
             
             if !empty(l:list) && l:list[1] =~ a:lin
                 let l:items[l:item.id] = {'sign': l:item, 'type': l:type, 'lin': l:list[1]}
@@ -353,6 +354,14 @@ function s:SignAddAttr(types, file, lin)
 
     if empty(l:val)
         return
+    endif
+
+    if empty(l:val.sign.attr) && len(l:arg) > 1
+        exe 'sign unplace ' . l:val.sign.id . ' file=' . l:val.sign.file
+        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.' name='.s:signDefHead.l:val.type.'Attr file='.l:val.sign.file
+    elseif !empty(l:val.sign.attr) && len(l:arg) < 2
+        exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
+        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.' name='.s:signDefHead.l:val.type.' file='.l:val.sign.file
     endif
 
     let l:val.sign.attr = get(l:arg, 1, '')
@@ -703,7 +712,7 @@ function s:QfListSet(title, types)
 
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.'  id='.l:sign.id.'  \S\+=BMBPSign')
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.'  id='.l:sign.id.'  \S\+='.s:signDefHead)
 
             if !filereadable(l:sign.file) || empty(l:line)
                 continue
@@ -714,11 +723,17 @@ function s:QfListSet(title, types)
             let l:text = '[' . l:type . ':' . l:sign.id
             let l:text .= empty(l:sign.attr) ? '] ' : ':' . l:sign.attr . '] '
 
+            if executable('sed')
+                let l:text .= system("sed -n '".l:line[1]."p' ".l:sign.file)[:-2]
+            else
+                let l:text .= get(getbufline(l:sign.file, l:line[1]), 0, '')
+            endif
+
             let l:qf.items += [{
                         \ 'bufnr': bufnr(l:sign.file),
                         \ 'filename': l:sign.file,
                         \ 'lnum': l:line[1],
-                        \ 'text': l:text . get(getbufline(l:sign.file, l:line[1]), 0, '')
+                        \ 'text': l:text
                         \ }]
         endfor
     endfor
@@ -1010,7 +1025,7 @@ function BMBPSign#SignRecord(...)
     " Get row information & set l:signRecord
     for l:type in a:000
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+=BMBPSign')
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+='.s:signDefHead)
 
             if !empty(l:line)
                 let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]

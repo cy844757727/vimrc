@@ -45,7 +45,8 @@ syn keyword verilogRepeat      forever repeat while for
 
 syn keyword verilogTodo contained TODO FIXME
 
-syn match   verilogOperator "[&|~><!)(*#%@+/=?:;}{,.\^\-\[\]]"
+"syn match   verilogOperator "[&|~><!)(*#%@+/=?:;}{,.\^\-\[\]]"
+syn match   verilogOperator "\( = \|<=\)"
 
 syn region  verilogComment start="/\*" end="\*/" contains=verilogTodo,@Spell
 syn match   verilogComment "//.*" contains=verilogTodo,@Spell
@@ -107,7 +108,7 @@ hi def link verilogComment         Comment
 hi def link verilogConstant        Constant
 hi def link verilogLabel           Label
 hi def link verilogNumber          Number
-hi def link verilogOperator        Normal
+hi def link verilogOperator        Operator
 hi def link verilogStatement       Statement
 hi def link verilogGlobal          Define
 hi def link verilogDirective       SpecialComment

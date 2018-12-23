@@ -214,6 +214,10 @@ tnoremap <silent> <C-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'ipy')<
 tnoremap <silent> <S-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'py3')<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 
+noremap <S-PageDown> <PageDown>
+noremap <S-PageUp> <PageUp>
+map! <S-PageDown> <PageDown>
+map! <S-PageUp> <PageUp>
 " Window switch
 tnoremap <silent> <PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
 tnoremap <silent> <pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
@@ -343,6 +347,8 @@ let g:ale_python_flake8_options = '--ignore=E225,E226,E227,E261,E262,E265,E266,E
 " C0103: invalid-name          " C0112: empty-docstring     " C0303: trailing whitespace
 " C0111: missing-docstring     " W0603: global-statement    " W0511: todo ignore
 let g:ale_python_pylint_options = '--disable=C0103,C0303,C0111,C0112,W0603,W0511 --jobs=0'
+" Verilator option
+let g:ale_verilog_verilator_options = '-I..'
 
 let g:ale_sign_error = '▄'
 let g:ale_sign_warning = '▎'
