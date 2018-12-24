@@ -14,31 +14,28 @@ hi Normal cterm=NONE ctermfg=230 guifg=#abb2bf guibg=#282c34 gui=NONE
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
 hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#B53030 gui=NONE
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FFFFFF guibg=#905510 gui=NONE
-hi default link Question Normal
-hi Question Cterm=reverse
+hi Question cterm=NONE guifg=#282c34 guibg=#abb2bf
 hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
-hi Search ctermfg=232 ctermbg=208 guifg=#1E1E1E guibg=#D97820 gui=NONE
+hi Search ctermfg=232 ctermbg=208 guifg=NONE guibg=#314365 gui=NONE
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
-hi Todo cterm=bold guibg=#CCC000 guifg=#000000 gui=bold
+hi Todo cterm=italic guibg=#282c34 guifg=#e06c75 gui=italic
 
 " === TabLine ===
 hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#DDDDCF guibg=#21252B gui=NONE
 hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#D5D5CF guibg=#383E4A gui=bold
 hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
 hi TabLineSeparator guibg=#21252B guifg=#383E4A gui=NONE
-hi TabLineSeparatorPre guibg=#1E1E1E guifg=#444444 gui=NONE
 
 " === misc ===
-hi MatchParen cterm=NONE guifg=#CCCCB5 guibg=#007FAF gui=NONE
+hi MatchParen cterm=NONE guifg=#abb2bf guibg=#007FAF gui=NONE
 hi SpellBad cterm=underline ctermbg=NONE guibg=NONE
-hi NonText guifg=#CCCCB5 gui=NONE
+hi NonText guifg=#abb2bf gui=NONE
 hi EndOfBuffer guifg=#282c34 gui=NONE
 hi SignColumn ctermbg=234 guibg=#282c34 gui=NONE
 hi Directory guifg=#6ADADA gui=NONE
 hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#3E4451 gui=NONE
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#495162 gui=NONE
 hi QuickFixLine cterm=bold,italic gui=bold,italic
-
 hi link TagbarSignature Directory
 
 " === separator ... ===
@@ -68,18 +65,28 @@ hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
 hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#E090F0 gui=NONE
+hi PreProc ctermfg=176 guifg=#c678dd gui=NONE
 hi Type ctermfg=75 cterm=NONE guifg=#40BFFF gui=NONE
 hi Number ctermfg=208 guifg=#c678dd gui=NONE
 hi Identifier ctermfg=75 cterm=NONE guifg=#98c379 gui=NONE
 hi Constant ctermfg=208 guifg=#56b6c2 gui=NONE
 hi Special ctermfg=208 guifg=#F58440 gui=NONE
 hi Comment ctermfg=76 cterm=italic guifg=#676f7d gui=italic
-hi Statement ctermfg=220 guifg=#e06c75 gui=NONE
 hi String ctermfg=215 guifg=#e5c07b gui=NONE
 hi link Character String
-hi Operator ctermfg=230 cterm=bold guifg=#e06c75 gui=bold
+hi Operator ctermfg=230 cterm=NONE guifg=#e06c75 gui=NONE
+
+hi Statement guifg=#56b6c2
 hi Function guifg=#d19a66
+hi Conditional guifg=#e06c75
+hi link Repeat Conditional
+hi link Exception Conditional
+hi Keyword guifg=#56b6c2
+hi pythonBuiltin guifg=#d19a66
+"hi pythonBuiltin guifg=#56b6c2
+hi link pythonDecoratorName Identifier
+hi link Label Conditional
+
 
 " === BMBPSign.vim ===
 hi BookMark    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CC7832 gui=NONE

@@ -16,9 +16,9 @@ hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#B53030 gui=NONE
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FFFFFF guibg=#905510 gui=NONE
 hi Question cterm=NONE guifg=#202020 guibg=#C0C0BA gui=NONE
 hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
-hi Search ctermfg=232 ctermbg=208 guifg=#202020 guibg=#D97820 gui=NONE
+hi Search ctermfg=232 ctermbg=208 guifg=NONE guibg=#505050 gui=NONE
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
-hi Todo cterm=bold guibg=#CCC000 guifg=#000000 gui=bold
+hi Todo cterm=bold guibg=#202020 guifg=#B5D5B5 gui=bold
 
 " === TabLine ===
 hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#C5C5BF guibg=#444444 gui=NONE
@@ -81,11 +81,11 @@ hi link Character String
 hi Operator ctermfg=230 cterm=bold guifg=#C5E5F5 gui=bold
 hi Conditional ctermfg=220 guifg=#e06c75 gui=NONE
 hi link Repeat Conditional
-hi Function guifg=#d19a66
+hi Function guifg=#d18a66
 hi Structure guifg=#56b6c2
 
 hi link PythonFunction Identifier
-hi link PythonBuildIN Function
+hi link PythonBuiltIN Function
 
 " === BMBPSign.vim ===
 hi BookMark    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CC7832 gui=NONE
