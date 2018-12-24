@@ -32,6 +32,13 @@ let s:signVec = {
             \ 'tbreak': []
             \ }
 
+let s:signVec1 = {
+            \ 'book':   {},
+            \ 'todo':   {},
+            \ 'break':  {},
+            \ 'tbreak': {}
+            \ }
+
 let s:newSignId = 0
 " Type grouping for qflist 
 " Quickfix window autoupdating depends on it
@@ -152,37 +159,56 @@ endfunction
 
 " BookMark jump
 " Action: next, previous
-function s:Signjump(type, action)
-    let l:vec = get(s:signVec, a:type, [])
+function s:Signjump(types, action, id, attrs)
+    if !empty(a:id) && has_key(s:signId, a:id)
+        let l:id = a:id
+        let l:file = s:signId[a:id][1]
+    elseif !empty(a:attrs) || empty(a:types) || len(a:types) > 1
+        let l:items = s:SignFilter(a:types, '', '', a:attrs)
 
-    if !empty(l:vec)
-        if a:action == 'next'
-            call add(l:vec, remove(l:vec, 0))
+        if empty(l:items)
+            return
         else
-            call insert(l:vec, remove(l:vec, -1))
-        endif
-
-        " Try jumping to a tab containing this buf
-        let l:bufnr = bufnr(l:vec[-1].file)
-        if index(tabpagebuflist(), l:bufnr) == -1
-            let l:winId = win_findbuf(l:bufnr)
-
-            if !empty(l:winId)
-                exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
-            elseif index(get(get(w:,'bufHis',{}),'list',[]), l:vec[-1].file) == -1 && !empty(expand('%'))
-                tabnew
+            let l:str = input(s:SignDisplayStr(l:items).'Selete id: ') + 0
+            
+            if has_key(l:items, l:str)
+                let l:id = l:str
+                let l:file = l:items[l:id].sign.file
             endif
-       endif
+        endif
+    else
+        let l:action = !empty(a:action) ? a:action : 'next'
+        let l:vec = get(s:signVec, get(a:types, 0, 'book'), [])
 
-        try
-            exe 'sign jump ' . l:vec[-1].id . ' file=' . l:vec[-1].file
-        catch
-            " For invalid sign
-            unlet s:signId[l:vec[-1].id]
-            call remove(l:vec, -1)
-            call s:Signjump(a:type, a:action)
-        endtry
+        if !empty(l:vec)
+            if l:action == 'next'
+                call add(l:vec, remove(l:vec, 0))
+            else
+                call insert(l:vec, remove(l:vec, -1))
+            endif
+
+            let l:id = l:vec[-1].id
+            let l:file = l:vec[-1].file
+        endif
     endif
+
+    if !exists('l:id')
+        return
+    endif
+
+    " Try jumping to a tab containing this buf
+    let l:bufnr = bufnr(l:file)
+    if index(tabpagebuflist(), l:bufnr) == -1
+        let l:winId = win_findbuf(l:bufnr)
+
+        if !empty(l:winId)
+            exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
+        elseif index(get(get(w:,'bufHis',{}),'list',[]), l:file) == -1 && !empty(expand('%'))
+            tabnew
+        endif
+    endif
+
+    exe 'sign jump ' . l:id . ' file=' . l:file
 endfunction
 
 
@@ -294,10 +320,19 @@ function s:SignSave(pre, types)
     endif
 endfunction
 
+function s:strMatch(str, words)
+    for l:word in a:words
+        if a:str !~ l:word
+            return 0
+        endif
+    endfor
+
+    return 1
+endfunction
 
 " Filter sign by types & file & lin
 " Content: {'id': {'sign': ..., 'lin': ..., 'type': ...,}}
-function s:SignFilter(types, file, lin)
+function s:SignFilter(types, file, lin, attrs)
     let l:signPlace = execute('sign place '.(!empty(a:file) ? 'file='.a:file : ''))
 
     if !empty(a:types)
@@ -310,11 +345,11 @@ function s:SignFilter(types, file, lin)
 
     let l:items = {}
     for l:type in l:types
-        for l:item in s:signVec[l:type]
-            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:item.id.'  \S\+='.s:signDefHead)
+        for l:sign in s:signVec[l:type]
+            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:sign.id.'  \S\+='.s:signDefHead)
             
-            if !empty(l:list) && l:list[1] =~ a:lin
-                let l:items[l:item.id] = {'sign': l:item, 'type': l:type, 'lin': l:list[1]}
+            if !empty(l:list) && l:list[1] =~ a:lin && s:strMatch(l:sign.attr, a:attrs)
+                let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
             endif
         endfor
     endfor
@@ -329,11 +364,9 @@ function s:SignDisplayStr(items)
 
     for [l:id, l:val] in items(a:items)
         let l:str .= printf('  %-3d     %-6s    %s:%d',
-                    \ l:id, l:val.type, substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)."\n"
+                    \ l:id, l:val.type, substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)
 
-        if !empty(l:val.sign.attr)
-            let l:str .= '          '.l:val.sign.attr."\n"
-        endif
+        let l:str .= '   '.l:val.sign.attr."\n"
     endfor
 
     return l:str
@@ -341,8 +374,8 @@ endfunction
 
 
 " Add attr to a sign
-function s:SignAddAttr(types, file, lin)
-    let l:items = s:SignFilter(a:types, a:file, a:lin)
+function s:SignAddAttr(types, file, lin, attrs)
+    let l:items = s:SignFilter(a:types, a:file, a:lin, a:attrs)
 
     if empty(l:items)
         return
@@ -377,7 +410,7 @@ endfunction
 " Ids -> list
 function s:SignUnsetById(ids)
     if empty(a:ids)
-        let l:items = s:SignFilter([], '', '')
+        let l:items = s:SignFilter([], '', '', [])
         let l:str = s:SignDisplayStr(l:items)
         let l:ids = split(input(l:str.'Select ids to clear: '), '\s\+')
     else
@@ -795,6 +828,8 @@ function BMBPSign#SignToggle(...)
     for l:arg in a:000
         if has_key(s:signVec, l:arg)
             let l:type = l:arg
+        elseif l:arg == '.'
+            let l:cur = 1
         elseif l:arg
             let l:lins += [l:arg]
         elseif filereadable(l:arg)
@@ -814,8 +849,8 @@ function BMBPSign#SignToggle(...)
         return
     endif
 
-    if empty(l:lins)
-        let l:lins = [line('.')]
+    if empty(l:lins) || exists('l:cur')
+        let l:lins += [line('.')]
     endif
 
     for l:lin in l:lins
@@ -836,23 +871,22 @@ endfunction
 
 
 function BMBPSign#SignJump(...)
-    if exists('t:dbg')
-        let [l:type, l:action] = ['break', 'next']
-    else
-        let [l:type, l:action] = ['book', 'next']
-    endif
+    let [l:types, l:action, l:id, l:attrs] = [[], '', '', []]
 
-    for l:arg in a:000
-        if has_key(s:signVec, l:arg)
-            let l:type = l:arg
-        elseif index(['next', 'previous'], l:arg) != -1
-            let l:action = l:arg
+    for l:i in range(len(a:000))
+        if has_key(s:signVec, a:000[l:i])
+            let l:types += [a:000[l:i]]
+        elseif index(['next', 'previous'], a:000[l:i]) != -1
+            let l:action = a:000[l:i]
+        elseif a:000[l:i]
+            let l:id = a:000[l:i]
         else
-            return
+            let l:attrs = a:000[l:i:]
+            break
         endif
     endfor
 
-    call s:Signjump(l:type , l:action)
+    call s:Signjump(l:types, l:action, l:id, l:attrs)
 endfunction
 
 
@@ -878,18 +912,18 @@ function BMBPSign#SignClear(...)
 
     if !empty(l:types)
         call s:SignClear(l:types)
-        call s:QfListUpdate(l:types)
     endif
 
     if !empty(l:ids)
         call s:SignUnsetById(l:ids)
-        let l:types = uniq(map(l:ids, "get(s:signId,v:val,[''])[0]"))
-        call s:QfListUpdate(l:types)
+        let l:types += uniq(map(l:ids, "get(s:signId,v:val,[''])[0]"))
     endif
 
     for l:file in map(l:pres, "matchstr(v:val,'^[^_.]*').'".s:signFile."'")
         call delete(l:file)
     endfor
+
+    call s:QfListUpdate(l:types)
 endfunction
 
 
@@ -937,23 +971,26 @@ endfunction
 
 " Append attribution to sign
 function BMBPSign#SignAddAttr(...)
-    let [l:types, l:file, l:lin] = [[], '', '']
+    let [l:types, l:file, l:lin, l:attrs] = [[], '', '', []]
 
-    for l:arg in a:000
-        if has_key(s:signVec, l:arg)
-            let l:types += [l:arg]
-        elseif l:arg
-            let l:lin = l:arg + 0
-        elseif l:arg == '.'
+    for l:i in range(len(a:000))
+        if has_key(s:signVec, a:000[l:i])
+            let l:types += [a:000[l:i]]
+        elseif a:000[l:i]
+            let l:lin = a:000[l:i] + 0
+        elseif a:000[l:i] == '.'
             let l:lin = line('.')
-        elseif l:arg == '%'
+        elseif a:000[l:i] == '%'
             let l:file = expand('%')
-        elseif filereadable(l:arg)
-            let l:file = l:arg
+        elseif filereadable(a:000[l:i])
+            let l:file = a:000[l:i]
+        else
+            let l:attrs = a:000[l:i:]
+            break
         endif
     endfor
 
-    call s:SignAddAttr(l:types, l:file, l:lin)
+    call s:SignAddAttr(l:types, l:file, l:lin, l:attrs)
 endfunction
 
 
