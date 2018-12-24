@@ -67,7 +67,7 @@ function! git#Diff(...)
 endfunction
 
 function! git#FormatLog()
-    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:\"^%h^👦%an^📆%ar^%d💬%s\"")
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:\"^%h^  %an^ ﲊ %ar^%d  %s\"")
     let l:lenGraph = 0
     let l:lenAuthor = 0
     let l:lenTime = 0
@@ -88,6 +88,7 @@ function! git#FormatLog()
             let l:log[l:i] = join(l:list, ' ')
         endif
     endfor
+
     return l:log
 endfunction
 
@@ -140,6 +141,11 @@ function! git#FormatStatus()
         endif
         let l:i -= 1
     endwhile
+
+    if l:status[-1] !~ '\S'
+        call remove(l:status, -1)
+    endif
+
     return l:status
 endfunction
 

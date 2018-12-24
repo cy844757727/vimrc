@@ -2,10 +2,10 @@
 "
 "
 syn match GITHashKey /\w\{7}/
-syn match GITAuthor /👦[^📆]*/
-syn match GITTime /📆[^💬(]*/
-syn match GITMessage /💬.*$/
-syn match GITBranch /([^💬]*)/
+syn match GITAuthor /[^ﲊ]*/
+syn match GITTime /ﲊ[^(]*/
+syn match GITMessage /.*$/
+syn match GITBranch /([^]*)/
 
 hi def link GITHashKey type
 "hi def link GITAuthor  constant

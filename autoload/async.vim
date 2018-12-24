@@ -12,8 +12,8 @@ let g:loaded_A_Async = 1
 " ===========================================
 " ===== Embeded terminal configure ===== {{{1
 " ===========================================
-hi AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#1E1E1E guifg=#CCCCB0
-sign define DBGCurrent text=⏩ texthl=AsyncDbgHl
+hi default AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#202020 guifg=#8BEBFF
+sign define DBGCurrent text= texthl=AsyncDbgHl
 
 let s:displayIcon = {
             \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
@@ -271,7 +271,6 @@ endfunction
 " =====================================
 " ===== Script run/debug ==== {{{1
 " =====================================
-let s:newSignId = 1
 let s:dbgShared = {}
 let s:dbg = {
             \ 'id': 0,
@@ -357,6 +356,9 @@ function! async#DbgScript(...)
     while index(l:idList, l:dbg.id) != -1
         let l:dbg.id += 1
     endwhile
+
+    " Set sign id
+    let l:dbg.sign.id = (l:dbg.id + 1) * 10
 
     " Ui initialization & maping
     call s:DbgUIInitalize(l:dbg)
@@ -745,19 +747,18 @@ endfunction
 
 " Indicates the current debugging line
 function! s:DbgSetSign(file, line)
-    let l:signPlace = execute('sign place file=' . a:file)
-
-    if !empty(t:dbg.sign)
+    if has_key(t:dbg.sign, 'file')
         exe 'sign unplace ' . t:dbg.sign.id . ' file=' . t:dbg.sign.file
     endif
 
+    let l:signPlace = execute('sign place file=' . a:file)
     " Ensure id uniqueness
-    while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
-        let s:newSignId += 1
+    while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . t:dbg.sign.id . '  '))
+        let t:dbg.sign.id += 1
     endwhile
 
-    exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=DBGCurrent' . ' file=' . a:file
-    let t:dbg.sign = {'id': s:newSignId, 'file': a:file}
+    exe 'sign place ' . t:dbg.sign.id . ' line=' . a:line . ' name=DBGCurrent' . ' file=' . a:file
+    let t:dbg.sign.file = a:file
 endfunction
 
 
@@ -772,7 +773,7 @@ endfunction
 
 " 
 function! s:DbgOnExit(...)
-    if !empty(t:dbg.sign)
+    if has_key(t:dbg.sign, 'file')
         exe 'sign unplace ' . t:dbg.sign.id . ' file=' . t:dbg.sign.file
     endif
 

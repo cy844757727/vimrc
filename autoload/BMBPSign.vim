@@ -8,16 +8,17 @@ endif
 let g:loaded_A_BMBPSign = 1
 
 " sign highlight definition
-hi default BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#FCD133
+hi default BookMark    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CC7832
+hi default TodoList    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#619FC6
 hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#DE3D3B
 
 " Sign name rule: 'BMBPSign' . type
-sign define BMBPSignbook text=🚩 texthl=BMBPSignHl
-sign define BMBPSigntodo text=🔖 texthl=BMBPSignHl
+sign define BMBPSignbook text= texthl=BookMark
+sign define BMBPSigntodo text= texthl=TodoList
 sign define BMBPSignbreak text= texthl=BreakPoint
 sign define BMBPSigntbreak text= texthl=BreakPoint
-sign define BMBPSignbookAttr text=🚩 texthl=BMBPSignHl
-sign define BMBPSigntodoAttr text=🔖 texthl=BMBPSignHl
+sign define BMBPSignbookAttr text=. texthl=BookMark
+sign define BMBPSigntodoAttr text=. texthl=TodoList
 sign define BMBPSignbreakAttr text=. texthl=BreakPoint
 sign define BMBPSigntbreakAttr text=. texthl=BreakPoint
 
@@ -753,7 +754,7 @@ function s:QfListSet(title, types)
                 exe 'badd ' . l:sign.file
             endif
 
-            let l:text = '[' . l:type . ':' . l:sign.id
+            let l:text = '[' . l:sign.id . ':' . l:type
             let l:text .= empty(l:sign.attr) ? '] ' : ':' . l:sign.attr . '] '
 
             if executable('sed')

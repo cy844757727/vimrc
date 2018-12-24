@@ -88,8 +88,12 @@ hi link PythonFunction Identifier
 hi link PythonBuildIN Function
 
 " === BMBPSign.vim ===
-hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CCCCB0 gui=NONE
+hi BookMark    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CC7832 gui=NONE
+hi TodoList    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#619FC6 gui=NONE
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#D73130 gui=NONE
+
+" === async.vim ===
+hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#8BEBFF gui=NONE
 
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
