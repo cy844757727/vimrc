@@ -478,6 +478,7 @@ function! s:DbgUIInitalize(dbg)
         set nonumber
         set buftype=nofile
         set filetype=dbgvar
+        set nobuflisted
         setlocal statusline=\ Variables
     endif
 
@@ -485,8 +486,10 @@ function! s:DbgUIInitalize(dbg)
     if index(t:dbg.win, 'watch') != -1
         exe 'belowright 20new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
+        set nonumber
         set buftype=nofile
         set filetype=dbgwatch
+        set nobuflisted
         setlocal statusline=\ Watch%{get(t:dbg,'watchFlag',0)?'\ ':''}
     endif
 
@@ -498,6 +501,7 @@ function! s:DbgUIInitalize(dbg)
         set nonumber
         set buftype=nofile
         set filetype=dbgstack
+        set nobuflisted
         setlocal statusline=\ Call\ Stack
     endif
 endfunction
