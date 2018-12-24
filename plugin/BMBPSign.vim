@@ -31,12 +31,12 @@ augroup END
 
 " sign command
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
-com! -nargs=+ -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSign#SignSave(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump(<q-args>, 'next')
-com! -nargs=? -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump(<q-args>, 'previous')
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignType ASignAttr :call BMBPSign#SignAddAttr(<q-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump('next', <f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump('previous', <f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignType ASignAttr :call BMBPSign#SignAddAttr(<f-args>)
 
 " workspace command
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
