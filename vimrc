@@ -90,7 +90,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
     autocmd InsertEnter * :hi statusline guibg=#6D0EF2
-    autocmd InsertLeave * :hi statusline guibg=#105060
+    autocmd InsertLeave * :hi statusline guibg=#105070
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>

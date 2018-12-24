@@ -82,8 +82,12 @@ hi Operator ctermfg=230 cterm=bold guifg=#e06c75 gui=bold
 hi Function guifg=#d19a66
 
 " === BMBPSign.vim ===
-hi BMBPSignHl  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CCCCB0 gui=NONE
+hi BookMark    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CC7832 gui=NONE
+hi TodoList    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#619FC6 gui=NONE
 hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#D73130 gui=NONE
+
+" === async.vim ===
+hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#8BEBFF gui=NONE
 
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
