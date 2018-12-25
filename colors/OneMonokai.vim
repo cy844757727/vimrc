@@ -62,7 +62,7 @@ hi PMenuThumb ctermfg=NONE ctermbg=250 guifg=NONE guibg=#2C313A gui=NONE
 
 " === Code folding ===
 hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
-hi FoldColumn ctermfg=223 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
+hi FoldColumn ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#202020 gui=NONE
 
 " === Language highlight ===
 hi PreProc ctermfg=176 guifg=#c678dd gui=NONE

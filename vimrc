@@ -43,7 +43,7 @@ set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
-se fillchars=vert:▕,fold:\ 
+set fillchars=vert:▕,fold:\ 
 set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
@@ -56,9 +56,11 @@ set errorformat+=**\ Error:\ %f(%l.%c):\ %m
 set errorformat+=**\ at\ %f(%l):\ %m
 set errorformat+=**\ at\ %f(%l.%c):\ %m
 " code folding
-"set foldcolumn=1
 "set foldmethod=syntax
+set foldcolumn=0
+set foldminlines=10
 set foldlevel=99
+set foldnestmax=3
 " Use RGB color scheme in terminal
 set termguicolors
 colorscheme cydark
@@ -80,7 +82,7 @@ set statusline+=\ %3(\ %)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 " Global
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
-"自定义命令/自动命令=====================
+"自定义命令/自动命令===================== {{{1
 augroup UsrDefCmd
     autocmd!
     autocmd QuickFixCmdPost * copen 15
@@ -98,12 +100,12 @@ command! -range TN :<line1>tabnext
 command! -range TP :<line1>tabprevious
 command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
 command! -range RComment :<line1>,<line2>call misc#ReverseComment()
-command! -range=% DBlank :<line1>,<line2>s/\s\+$//ge|<line1>,<line2>s/\(\s*\n\+\)\{3,}/\="\n\n"/ge|silent! /@#$%^&*
+command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Actags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
 
-"快捷键映射=====================
+"快捷键映射===================== {{{1
 " 括号引号自动补全
 inoremap ( ()<Esc>i
 inoremap ) <c-r>=CyClosePair(')')<CR>
@@ -121,11 +123,18 @@ nnoremap \od :Async xdg-open .<CR>
 nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 " Leaderf.vim maping & flygrep
-nnoremap <silent> \t :LeaderfBufTag<CR>
-nnoremap <silent> \T :LeaderfTag<CR>
-nnoremap <silent> \l :LeaderfLine<CR>
-nnoremap <silent> \L :FlyGrep<CR>
-nnoremap <silent> \F :LeaderfBuffer<CR>
+nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
+nnoremap <silent> \T :call Vimrc_leader('LeaderfTag')<CR>
+nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
+nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
+nnoremap <silent> \f :call Vimrc_leader('LeaderfBuffer')<CR>
+nnoremap <silent> \F :call Vimrc_leader('LeaderfFile')<CR>
+
+function! Vimrc_leader(cmd)
+    let l:lin = line('.')
+    exe a:cmd
+    exe l:lin . "mark '"
+endfunction
 
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -137,6 +146,7 @@ nnoremap <silent> \[ :pop<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
 
 " find / replace
+nnoremap \| :call misc#StrSearch()<CR>
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
 nnoremap <C-f> :exe '/' . expand('<cword>')<CR>N
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
@@ -214,17 +224,13 @@ tnoremap <silent> <C-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'ipy')<
 tnoremap <silent> <S-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'py3')<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 
-noremap <S-PageDown> <PageDown>
-noremap <S-PageUp> <PageUp>
-map! <S-PageDown> <PageDown>
-map! <S-PageUp> <PageUp>
 " Window switch
-tnoremap <silent> <PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
-tnoremap <silent> <pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
-noremap  <silent> <PageUp>   :call misc#WinSwitch('up')<CR>
-noremap  <silent> <pageDown> :call misc#WinSwitch('down')<CR>
-map! <PageUp> <Esc><PageUp>
-map! <PageDown> <Esc><PageDown>
+tnoremap <silent> <S-PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
+tnoremap <silent> <S-pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
+noremap  <silent> <S-PageUp>   :call misc#WinSwitch('up')<CR>
+noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
+map! <S-PageUp> <Esc><S-PageUp>
+map! <S-PageDown> <Esc><S-PageDown>
 
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>
@@ -257,13 +263,13 @@ let g:Async_TerminalType = {
             \ 'ipy': 'ipython3'
             \ }
 
-" === Netrw-NERDTree 配置 === {{{1
-let g:netrw_winsize=-25
+" === Netrw-NERDTree === {{{1
 let g:netrw_dirhistmax=0
 let g:netrw_browse_split=4
 let g:netrw_altv=1
 let g:netrw_banner=0
 let g:netrw_liststyle=3
+let g:NERDTreeWinSize=get(g:, 'SideWinWidth', 31)
 let g:NERDTreeStatusline=' פּ NERDTree'
 let g:NERDTreeAutoDeleteBuffer=1
 let g:NERDTreeMouseMode=2
@@ -290,9 +296,9 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 " ===== change a:line to line below ===============================================
 " =================================================================================
 
-" === TagBar Configure === {{{1
+" === tagBar.vim === {{{1
 let g:tagbar_width=get(g:, 'SideWinWidth', 31)
-let g:tagbar_vertical=19
+let g:tagbar_vertical= &lines/2 - 2
 let g:tagbar_silent=1
 let g:tagbar_left=0
 "let g:tagbar_iconchars = ['●', '○']
@@ -325,7 +331,7 @@ let g:tagbar_type_markdown = {
             \ ]
             \ }
 
-" === Ale Configure === {{{1
+" === Ale.vim === {{{1
 " map key to jump
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
@@ -362,7 +368,7 @@ let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 
-" === BMBPSign configure === {{{1
+" === BMBPSign.vim === {{{1
 let g:BMBPSign_SpecialBuf = {
             \ 'NERD_tree': 'bw|NERDTree',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
@@ -504,4 +510,4 @@ let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
             \ }
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 " ===============================
-" set foldmethod=marker
+" vim:foldmethod=marker

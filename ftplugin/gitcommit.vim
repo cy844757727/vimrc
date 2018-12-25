@@ -37,19 +37,16 @@ if exists('*Git_MyCommitFoldInfo')
 endif
 
 function! Git_MyCommitFoldInfo()
-    let l:i = v:foldstart + 2
-    let l:str = getline(l:i)
-    if l:str !~ '^--- '
-        let l:str = getline(l:i + 1)
-        let l:strN = getline(l:i + 2)
-    else
-        let l:strN = getline(l:i + 1)
+    let l:file = matchstr(getline(v:foldstart), '\( a/\)\zs\S\+')
+    let l:line = getline(v:foldstart + 1)
+
+    if l:line =~ '^new file mode'
+        let l:file = 'New  '.l:file
+    elseif l:line =~ '^deleted file mode'
+        let l:file = 'Delete  '.l:file
     endif
-    let l:str = l:str == '--- /dev/null' ? 'New' : strpart(l:str, 6)
-    let l:strN = l:strN == '+++ /dev/null' ? 'Delete' : strpart(l:strN, 6)
-    let l:str .= l:str == l:strN ? '    ' : '  ' . l:strN . '    '
-    let l:num = printf('%-5d', v:foldend - v:foldstart + 1)
-    return '▶ Lines: ' . l:num . '  File: ' . l:str
+
+    return '▶ '.printf('%-5d', v:foldend - v:foldstart + 1).'  '.l:file.'  '
 endfunction
 
 function <SID>FileDiff()

@@ -148,6 +148,24 @@ function! misc#ReverseComment() range
 endfunction
 
 
+function! misc#StrSearch()
+        let l:str = input('|', '', 'tag')
+        let l:flag = 'sc'
+        let l:pre = 'j0'
+
+        if l:str =~ '^|'
+            let l:flag .= 'b'
+            let l:str = strcharpart(l:str, 1)
+            let l:pre = 'k0'
+        endif
+
+        if !empty(l:str)
+            exe 'normal '.l:pre
+            call search(l:str, l:flag)
+        endif
+endfunction
+
+
 " 字符串查找替换
 function! misc#StrSubstitute(str)
     let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
@@ -321,7 +339,7 @@ function! misc#TabLabel(n, ...)
     " Append the glyph & modify name
     let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon('filetype', l:name), l:name])
 
-    let l:lable = l:glyph . ' ' . l:name . ' ' . l:modFlag
+    let l:lable = l:glyph.' '.l:name.' '.l:modFlag
 
     " Cut out a section of lable
     if a:0 == 0
@@ -338,9 +356,7 @@ endfunction
 
 " Custom format instead of default
 function! misc#FoldText()
-    let l:str = getline(v:foldstart)
-    let l:num = printf('%5d', v:foldend - v:foldstart + 1)
-    return '▶' . l:num . ': ' . l:str . '  '
+    return ''.(v:foldend - v:foldstart + 1).' '.getline(v:foldstart).'  '
 endfunction
 
 
@@ -355,7 +371,7 @@ function! s:BufHisRecord()
 
     if !exists('w:bufHis')
         let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
-    elseif l:name != w:bufHis.list[-1]
+    elseif l:name != get(w:bufHis.list, -1, '')
         " When existing, remove first
         let l:ind = index(w:bufHis.list, l:name)
         if l:ind != -1
@@ -365,6 +381,17 @@ function! s:BufHisRecord()
         " Put it to last position
         let w:bufHis.list += [l:name]
     endif
+endfunction
+
+
+function! misc#BufHisDel(...)
+    if !exists('w:bufHis') || len(w:bufHis.list) < 2
+        return
+    endif
+
+    let l:cwd = getcwd().'/'
+    let l:filter = join(map(copy(a:000), "'".l:cwd."'.bufname(v:val+0)"), '\|')
+    call filter(w:bufHis.list, "v:val !~ '".l:filter."'")
 endfunction
 
 
@@ -626,7 +653,7 @@ function! s:ToggleTagbar()
         let g:tagbar_vertical=0
         let g:tagbar_left=1
         TagbarOpen
-        let g:tagbar_vertical=19
+        let g:tagbar_vertical= &lines/2 - 2
         let g:tagbar_left=0
     else
         let l:id = win_getid()

@@ -57,7 +57,7 @@ if exists('g:Async_displayIcon')
 endif
 
 
-" Switch embedded terminal
+" Switch embedded terminal {{{2
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
 " Type: specified by s:termType (default: s:shell)
@@ -144,7 +144,7 @@ function! async#TermToggle(...)
 endfunction
 
 
-" Switch terminal window between exists terminal
+" Switch terminal window between exists terminal {{{2
 function! async#TermSwitch(...)
     if mode() == 'n'
         normal a
@@ -835,4 +835,4 @@ function! s:GdbOnExit()
     endif
 endfunction
 
-" vim: set foldmethod=marker
+" vim:foldmethod=marker
