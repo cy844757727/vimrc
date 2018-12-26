@@ -40,17 +40,26 @@ endif
 function! Git_MyCommitFoldInfo()
     let l:line = getline(v:foldstart)
     let l:mode = getline(v:foldstart + 1)
+    let l:file = matchstr(l:line, '\(diff --\w* \(a/\)\?\)\zs\S*')
 
-    if l:mode =~'^index '
-        let l:file = '  '.matchstr(l:line, '\(diff --\w* \( a/\)\?\)\zs\S*')
-    if l:mode =~ '^new file mode'
-        let l:file = '  '.matchstr(l:line, '\( b/\)\S*')
-    elseif l:mode =~ '^deleted file mode'
-        let l:file = '  '.matchstr(l:line, '\( a/\)\S*')
-    elseif l:mode =~ 'similarity index'
-        let l:file = matchstr(l:line, '\( a/\)\S*').' -> '.matchstr(l:line, '\( b/\)\S*')
+    if l:mode =~ 'similarity index '
+        let l:mode = getline(v:foldstart + 2)
+    endif
+
+    if l:mode =~ '^index '
+        let l:file = (l:line =~ '--cc\|--combined' ? ' 練' : ' ● ').l:file
+    elseif l:mode =~ 'new file mode'
+        let l:file = '  '.l:file
+    elseif l:mode =~ 'deleted file mode'
+        let l:file = '  '.l:file
+    elseif l:mode =~ 'old mode '
+        let l:file = '  '.l:file
+    elseif l:mode =~ 'rename from'
+        let l:file = '  '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+    elseif l:mode =~ 'copy from '
+        let l:file = '  '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
     else
-        let l:file  = '  '.l:line
+        let l:file  = '   '.l:line
     endif
 
     return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '
@@ -67,8 +76,8 @@ endfunction
 
 function <SID>EditFile()
     let l:file = getline('.')
-    if l:file =~ '^diff --git '
-    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
+    if l:file =~ '^diff --\w* '
+    	let l:file = matchstr(l:file, '\(diff --\w* \(a/\)\?\)\zs\S\+')
         let l:winId = win_findbuf(bufnr(l:file))
         if l:winId != []
             call win_gotoid(l:winId[0])
