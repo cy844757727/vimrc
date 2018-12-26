@@ -14,7 +14,7 @@ setlocal foldcolumn=0
 setlocal foldlevel=0
 setlocal foldmethod=marker
 setlocal foldmarker={[(<{,}>)]}
-setlocal foldminlines=0
+setlocal foldminlines=1
 setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
@@ -42,24 +42,28 @@ function! Git_MyCommitFoldInfo()
     let l:mode = getline(v:foldstart + 1)
     let l:file = matchstr(l:line, '\(diff --\w* \(a/\)\?\)\zs\S*')
 
-    if l:mode =~ 'similarity index '
+    if l:mode =~ 'index '
         let l:mode = getline(v:foldstart + 2)
     endif
 
-    if l:mode =~ '^index '
-        let l:file = (l:line =~ '--cc\|--combined' ? ' 練' : ' ● ').l:file
+    let l:cc = l:line =~ ' --cc \| --combined ' ? ' .' : '  '
+
+    if l:mode =~ '^--- '
+        let l:file = l:cc.'● '.l:file
     elseif l:mode =~ 'new file mode'
-        let l:file = '  '.l:file
+        let l:file = l:cc.' '.l:file
     elseif l:mode =~ 'deleted file mode'
-        let l:file = '  '.l:file
+        let l:file = l:cc.' '.l:file
     elseif l:mode =~ 'old mode '
-        let l:file = '  '.l:file
+        let l:file = '   '.l:file
     elseif l:mode =~ 'rename from'
-        let l:file = '  '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+        let l:file = '   '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
     elseif l:mode =~ 'copy from '
-        let l:file = '  '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+        let l:file = '   '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+    elseif l:mode =~ 'Binary files '
+        let l:file = '   '.l:file
     else
-        let l:file  = '   '.l:line
+        let l:file  = '    '.l:line
     endif
 
     return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '

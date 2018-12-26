@@ -54,6 +54,7 @@ function s:RefreshCommit()
             call setline(1, git#FormatCommit(l:hash))
             set filetype=gitcommit
             set nobuflisted
+            setlocal foldminlines=1
             normal zj
             setlocal readonly nomodifiable
             wincmd W
