@@ -62,7 +62,7 @@ hi PMenuSbar ctermfg=NONE ctermbg=239 guifg=NONE guibg=#333333 gui=NONE
 hi PMenuThumb ctermfg=NONE ctermbg=250 guifg=NONE guibg=#AAAA95 gui=NONE
 
 " === Code folding ===
-hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#191818 gui=NONE
+hi Folded ctermfg=222 ctermbg=232 guifg=#BFA54F guibg=#191818 gui=NONE
 hi FoldColumn ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#202020 gui=NONE
 
 " === Language highlight ===
