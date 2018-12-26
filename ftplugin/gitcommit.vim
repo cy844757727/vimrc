@@ -14,6 +14,7 @@ setlocal foldcolumn=0
 setlocal foldlevel=0
 setlocal foldmethod=marker
 setlocal foldmarker={[(<{,}>)]}
+setlocal foldminlines=0
 setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
@@ -37,16 +38,18 @@ if exists('*Git_MyCommitFoldInfo')
 endif
 
 function! Git_MyCommitFoldInfo()
-    let l:file = matchstr(getline(v:foldstart), '\( a/\)\zs\S\+')
-    let l:line = getline(v:foldstart + 1)
+    let l:file = matchstr(getline(v:foldstart), '\(diff --\w* \(a/\)\?\)\zs\S\+')
+    let l:mode = getline(v:foldstart + 1)
 
-    if l:line =~ '^new file mode'
-        let l:file = 'New  '.l:file
-    elseif l:line =~ '^deleted file mode'
-        let l:file = 'Delete  '.l:file
+    if l:mode =~ '^new file mode'
+        let l:file = '  '.l:file
+    elseif l:mode =~ '^deleted file mode'
+        let l:file = '  '.l:file
+    else
+        let l:file  = '  '.l:file
     endif
 
-    return '▶ '.printf('%-5d', v:foldend - v:foldstart + 1).'  '.l:file.'  '
+    return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '
 endfunction
 
 function <SID>FileDiff()

@@ -124,11 +124,11 @@ nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 " Leaderf.vim maping & flygrep
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
-nnoremap <silent> \T :call Vimrc_leader('LeaderfTag')<CR>
+nnoremap <silent> \T :LeaderfTag<CR>
 nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
-nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
-nnoremap <silent> \f :call Vimrc_leader('LeaderfBuffer')<CR>
-nnoremap <silent> \F :call Vimrc_leader('LeaderfFile')<CR>
+nnoremap <silent> \L :LeaderfLineAll<CR>
+nnoremap <silent> \f :LeaderfBuffer<CR>
+nnoremap <silent> \F :LeaderfFile<CR>
 
 function! Vimrc_leader(cmd)
     let l:lin = line('.')
