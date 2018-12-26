@@ -38,15 +38,19 @@ if exists('*Git_MyCommitFoldInfo')
 endif
 
 function! Git_MyCommitFoldInfo()
-    let l:file = matchstr(getline(v:foldstart), '\(diff --\w* \(a/\)\?\)\zs\S\+')
+    let l:line = getline(v:foldstart)
     let l:mode = getline(v:foldstart + 1)
 
+    if l:mode =~'^index '
+        let l:file = '  '.matchstr(l:line, '\(diff --\w* \( a/\)\?\)\zs\S*')
     if l:mode =~ '^new file mode'
-        let l:file = '  '.l:file
+        let l:file = '  '.matchstr(l:line, '\( b/\)\S*')
     elseif l:mode =~ '^deleted file mode'
-        let l:file = '  '.l:file
+        let l:file = '  '.matchstr(l:line, '\( a/\)\S*')
+    elseif l:mode =~ 'similarity index'
+        let l:file = matchstr(l:line, '\( a/\)\S*').' -> '.matchstr(l:line, '\( b/\)\S*')
     else
-        let l:file  = '  '.l:file
+        let l:file  = '  '.l:line
     endif
 
     return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '
