@@ -5,7 +5,10 @@
 set background=dark
 "hi clear
 set t_Co=256
-let g:colors_name = "cydark"
+let g:colors_name = "OneMonokai"
+
+let g:colors_NormalMode = '#006080'
+let g:colors_InsertMode = '#6D0EF2'
 
 " === Basic highlight ===
 hi Normal cterm=NONE ctermfg=230 guifg=#abb2bf guibg=#282c34 gui=NONE
@@ -32,7 +35,7 @@ hi SpellBad cterm=underline ctermbg=NONE guibg=NONE
 hi NonText guifg=#abb2bf gui=NONE
 hi EndOfBuffer guifg=#282c34 gui=NONE
 hi SignColumn ctermbg=234 guibg=#282c34 gui=NONE
-hi Directory guifg=#6ADADA gui=NONE
+hi Directory guifg=#60C0D0 gui=NONE
 hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#3E4451 gui=NONE
 hi LineNr ctermfg=242 ctermbg=NONE guifg=#495162 gui=NONE
 hi QuickFixLine cterm=bold,italic gui=bold,italic
@@ -41,18 +44,17 @@ hi link TagbarSignature Directory
 " === separator ... ===
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#383E4A gui=NONE
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#495162 guibg=NONE gui=NONE
-hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#21252B guibg=#282c34 gui=NONE
+hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#282C34 guibg=#282c34 gui=NONE
 hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006080 gui=NONE
-hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2 gui=NONE
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#abb2bf guibg=#21252B gui=bold
 "hi StatusLineTerm
 "hi StatusLineTermNC
 
 " === Diff mode ===
-hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#192920 gui=NONE
-hi DiffChange ctermfg=230 ctermbg=24 guifg=NONE guibg=#203045 gui=NONE
-hi DiffDelete ctermfg=230 ctermbg=95 guifg=#4F2525 guibg=#4F2525 gui=NONE
-hi DiffText ctermfg=230 ctermbg=2392 cterm=NONE guifg=NONE guibg=#1A1919 gui=NONE
+hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#2D4C5A gui=NONE
+hi DiffChange ctermfg=230 ctermbg=24 guifg=NONE guibg=#2D4C5A gui=NONE
+hi DiffDelete ctermfg=230 ctermbg=95 guifg=#53232A guibg=#53232A gui=NONE
+hi DiffText ctermfg=230 ctermbg=2392 cterm=NONE guifg=NONE guibg=#20242A gui=NONE
 
 " === Popup menu ui ===
 hi PMenu ctermfg=253 ctermbg=237 guifg=#acb2bf guibg=#21252B gui=NONE
@@ -61,7 +63,7 @@ hi PMenuSbar ctermfg=NONE ctermbg=239 guifg=NONE guibg=#21252B gui=NONE
 hi PMenuThumb ctermfg=NONE ctermbg=250 guifg=NONE guibg=#2C313A gui=NONE
 
 " === Code folding ===
-hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#161515 gui=NONE
+hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#20242A gui=NONE
 hi FoldColumn ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#202020 gui=NONE
 
 " === Language highlight ===
@@ -82,7 +84,7 @@ hi Conditional guifg=#e06c75
 hi link Repeat Conditional
 hi link Exception Conditional
 hi Keyword guifg=#56b6c2
-hi pythonBuiltin guifg=#d19a66
+hi link pythonBuiltin Identifier
 "hi pythonBuiltin guifg=#56b6c2
 hi link pythonDecoratorName Identifier
 hi link Label Conditional

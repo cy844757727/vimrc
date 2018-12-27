@@ -91,8 +91,8 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
-    autocmd InsertEnter * :hi statusline guibg=#6D0EF2
-    autocmd InsertLeave * :hi statusline guibg=#105070
+    autocmd InsertEnter * :if !empty(get(g:,'colors_InsertMode',''))|exe 'hi statusline guibg='.g:colors_InsertMode|endif
+    autocmd InsertLeave * :if !empty(get(g:,'colors_InsertMode',''))|exe 'hi statusline guibg='.g:colors_NormalMode|endif
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>

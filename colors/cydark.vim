@@ -7,6 +7,9 @@ set background=dark
 set t_Co=256
 let g:colors_name = "cydark"
 
+let g:colors_NormalMode = '#105070'
+let g:colors_InsertMode = '#6D0EF2'
+
 " === Basic highlight ===
 hi Normal cterm=NONE ctermfg=230 guifg=#C0C0BA guibg=#202020 gui=NONE
 
@@ -18,7 +21,7 @@ hi Question cterm=NONE guifg=#202020 guibg=#C0C0BA gui=NONE
 hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
 hi Search ctermfg=232 ctermbg=208 guifg=NONE guibg=#303030 gui=NONE
 hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
-hi Todo cterm=bold guibg=#202020 guifg=#B5D5B5 gui=bold
+hi Todo cterm=italic guibg=#202020 guifg=#B5D5B5 gui=italic
 
 " === TabLine ===
 hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#C5C5BF guibg=#444444 gui=NONE
@@ -43,11 +46,7 @@ hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#252525 gui=N
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#4A4A4A guibg=NONE gui=NONE
 hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#202020 guibg=#202020 gui=NONE
 hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#CCCCBF guibg=#105070 gui=NONE
-hi StatusLineNormal ctermfg=16 ctermbg=253 cterm=NONE guifg=#CCCCBF guibg=#104A5A gui=NONE
-hi StatusLineInsert ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#6D0EF2 gui=NONE
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#C5C5BF guibg=#292929 gui=bold
-"hi StatusLineTerm
-"hi StatusLineTermNC
 
 " === Diff mode ===
 hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#192920 gui=NONE
@@ -75,7 +74,7 @@ hi Special ctermfg=208 guifg=#F58440 gui=NONE
 hi Comment ctermfg=76 cterm=italic guifg=#458520 gui=italic
 hi Statement ctermfg=220 guifg=#DDB740 gui=NONE
 hi String ctermfg=215 guifg=#E5C07B gui=NONE
-hi Operator ctermfg=230 cterm=bold guifg=#C5E5F5 gui=bold
+hi Operator ctermfg=230 cterm=NONE guifg=#C5E5F5 gui=NONE
 hi Conditional ctermfg=220 guifg=#e06c75 gui=NONE
 hi Function guifg=#d18a66
 hi Structure guifg=#56b6c2
@@ -90,6 +89,8 @@ hi link pythonOperator   Conditional
 
 hi link verilogOperator  Normal
 hi link systemverilogOperator Normal
+
+hi link shOperator String
 
 " === Tagbar.vim ===
 hi link TagbarSignature Directory
