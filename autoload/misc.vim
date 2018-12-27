@@ -510,6 +510,8 @@ function! misc#GetWebIcon(type, ...)
 
         if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
             let l:tfile .= '.' . getbufvar(l:file, '&filetype')
+        elseif getbufvar(l:file, '&buftype') == 'help'
+            return ''
         endif
 
         return WebDevIconsGetFileTypeSymbol(l:tfile)

@@ -1019,7 +1019,7 @@ function BMBPSign#WorkSpaceClear(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
-    call delete(l:pre . s:signFile)
+"    call delete(l:pre . s:signFile)
 
     if empty(l:pre) && exists('g:BMBPSign_Projectized')
         unlet g:BMBPSign_Projectized

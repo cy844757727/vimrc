@@ -126,14 +126,14 @@ nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
 nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
-nnoremap <silent> \L :LeaderfLineAll<CR>
+nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
 nnoremap <silent> \f :LeaderfBuffer<CR>
 nnoremap <silent> \F :LeaderfFile<CR>
 
 function! Vimrc_leader(cmd)
-    let l:lin = line('.')
+    let l:save_pos = getpos('.')
     exe a:cmd
-    exe l:lin . "mark '"
+    call setpos("''", l:save_pos)
 endfunction
 
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -145,6 +145,8 @@ nnoremap <silent> \] :tag<CR>
 nnoremap <silent> \[ :pop<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
 
+nnoremap <C-@> :Ydc<CR>
+nnoremap <C-t> :echo<CR>
 " find / replace
 nnoremap \| :call misc#StrSearch()<CR>
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n

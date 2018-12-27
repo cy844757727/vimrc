@@ -228,44 +228,42 @@ function! s:JobOnExit(job, status)
 endfunction
 
 
-function! async#JobStop(...)
-    if !empty(s:asyncJob)
-        let l:how = a:0 > 0 ? a:1 : 'term'
-        let l:prompt = async#JobList("Select one to stop ...")
-        
-        while 1
-            let l:jobId = input(l:prompt . "\nInput id: ")
-
-            if l:jobId == 'q'
-                return
-            endif
-
-            let l:job = get(s:asyncJob, l:jobId, {'job': ''}).job
-
-            if empty(l:job)
-                redraw
-            else
-                call job_stop(l:job, l:how)
-                break
-            endif
-        endwhile
+function! async#JobStop(how)
+    if empty(s:asyncJob)
+        return
     endif
-endfunction
 
+    let l:how = empty(a:how) ? 'term' : 'kill'
+    let l:prompt = "Select one to stop ..."
 
-function! async#JobList(...)
-    let l:prompt = a:0 > 0 ? a:1 : "Job List ..."
-
-    let l:jobs = ''
     for [l:id, l:job] in items(s:asyncJob)
-        let l:jobs .= printf("\n    %d:  %s", l:id, l:job.cmd)
+        let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
     endfor
 
-    return l:prompt . l:jobs
+    while 1
+        let l:jobId = input(l:prompt . "\nInput id: ")
+
+        if l:jobId !~ '\S'
+            return
+        endif
+
+        let l:job = get(s:asyncJob, l:jobId, {'job': ''}).job
+
+        if empty(l:job)
+            redraw
+        else
+            call job_stop(l:job, l:how)
+            break
+        endif
+    endwhile
 endfunction
 
 function! async#JobRuning()
     return len(s:asyncJob)
+endfunction
+
+function! async#JobIds()
+    return keys(s:asyncJob)
 endfunction
 
 " =====================================
