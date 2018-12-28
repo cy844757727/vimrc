@@ -1,17 +1,19 @@
 "syn match  pythonFunParamter '\h\w*' display contained
 "syn region pythonFunArgDef matchgroup=Normal start='(' end=')' contained contains=pythonFunParamter
 "syn match  pythonFunction '\h\w*' display contained nextgroup=pythonFunArgDef
-syn region pythonFuncall  matchgroup=Normal start='\w\zs(' end=')' contains=pythonString,pythonNumber,pythonDataSet
-syn region pythonDataIndex  matchgroup=Normal start='\(\w\|)\)\zs\[' end=']' contains=pythonString,pythonNumber,pythonDataIndex
+syn cluster pythonDS contains=pythonString,pythonRawString,pythonQuotes,pythonbuiltin,
+            \ pythonrepeat,pythonOperator,pythonConditional,pythonNumber,pythonEscape
+syn cluster pythonBC contains=pythonString,pythonNumber,pythonbuiltin
 
+syn region pythonFuncall  matchgroup=Normal start='\w\zs(' end=')'
+            \ contains=@pythonBC,pythonDataSet
+syn region pythonDataIndex  matchgroup=Normal start='\(\w\|)\)\zs\[' end=']'
+            \ contains=@pythonBC,pythonDataIndex
 " Python basic data set type: list tuple dict set
 syn region pythonDataSet  matchgroup=Constant start='[^0-9a-zA-Z_)]\zs\[' end=']'
-            \ contains=pythonDataSet,pythonString,pythonRawString,pythonQuotes,pythonbuiltin,pythonrepeat,pythonOperator,
-            \ pythonConditional,pythonNumber,pythonEscape,pythonDataIndex
+            \ contains=@pythonDS,pythonDataSet,pythonDataIndex
 syn region pythonDataSet  matchgroup=Constant start='{' end='}'
-            \ contains=pythonDataSet,pythonString,pythonRawString,pythonQuotes,pythonbuiltin,pythonrepeat,pythonOperator,
-            \ pythonConditional,pythonNumber,pythonEscape
+            \ contains=@pythonDS,pythonDataSet
 syn region pythonDataSet  matchgroup=Constant start='\W\zs(' end=')'
-            \ contains=pythonDataSet,pythonString,pythonRawString,pythonQuotes,ythonbuiltin,pythonrepeat,pythonOperator,
-            \ pythonConditional,pythonNumber,pythonEscape,pythonFunCall,
+            \ contains=@pythonDS,pythonDataSet,pythonFunCall,
 

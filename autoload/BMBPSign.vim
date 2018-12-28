@@ -821,22 +821,23 @@ endfunction
 " Toggle sign of a type
 function BMBPSign#SignToggle(...)
     if exists('t:dbg')
-        let [l:type, l:file, l:lins] = ['break', t:dbg.sign.file, []]
+        let [l:type, l:file, l:lins, l:attr] = ['break', t:dbg.sign.file, [], '']
     else
-        let [l:type, l:file, l:lins] = ['book', expand('%:p'), []]
+        let [l:type, l:file, l:lins, l:attr] = ['book', expand('%:p'), [], '']
     endif
 
-    for l:arg in a:000
-        if has_key(s:signVec, l:arg)
-            let l:type = l:arg
-        elseif l:arg == '.'
+    for l:i in range(len(a:000))
+        if has_key(s:signVec, a:000[l:i])
+            let l:type = a:000[l:i]
+        elseif a:000[l:i] == '.'
             let l:cur = 1
-        elseif l:arg
-            let l:lins += [l:arg]
-        elseif filereadable(l:arg)
-            let l:file = l:arg
+        elseif a:000[l:i]
+            let l:lins += [a:000[l:i]]
+        elseif filereadable(a:000[l:i])
+            let l:file = a:000[l:i]
         else
-            return
+            let l:attr = join(a:000[l:i:], ' ')
+            break
         endif
     endfor
 
@@ -864,7 +865,7 @@ function BMBPSign#SignToggle(...)
             let l:lin += 1
         endif
 
-        call s:SignToggle(l:file, l:lin, l:type, '', 0)
+        call s:SignToggle(l:file, l:lin, l:type, l:attr, 0)
     endfor
 
     call s:QfListUpdate([l:type])

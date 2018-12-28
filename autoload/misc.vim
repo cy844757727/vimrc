@@ -83,6 +83,7 @@ endfunction
 function! misc#CodeFormat() range
     " Determine range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
+    let l:saveMark = getpos("''")
     let l:pos = getpos('.')
     mark z
 
@@ -119,6 +120,7 @@ function! misc#CodeFormat() range
     endif
 
     call setpos('.', l:pos)
+    call setpos("''", l:saveMark)
     write
 endfunction
 
@@ -145,24 +147,6 @@ function! misc#ReverseComment() range
         silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
         silent exe a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
     endif
-endfunction
-
-
-function! misc#StrSearch()
-        let l:str = input('|', '', 'tag')
-        let l:flag = 'sc'
-        let l:pre = 'j0'
-
-        if l:str =~ '^|'
-            let l:flag .= 'b'
-            let l:str = strcharpart(l:str, 1)
-            let l:pre = 'k0'
-        endif
-
-        if !empty(l:str)
-            exe 'normal '.l:pre
-            call search(l:str, l:flag)
-        endif
 endfunction
 
 
@@ -409,6 +393,7 @@ function! s:BufHisSwitch(action)
     endif
 
     if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
+        update
         silent exe 'buffer ' . w:bufHis.list[-1]
         call s:BufHisEcho()
     else

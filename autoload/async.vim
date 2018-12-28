@@ -234,27 +234,27 @@ function! async#JobStop(how)
     endif
 
     let l:how = empty(a:how) ? 'term' : 'kill'
-    let l:prompt = "Select one to stop ..."
 
+    let l:prompt = 'Select jobs to stop ('.l:how.') ...'
     for [l:id, l:job] in items(s:asyncJob)
         let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
     endfor
 
     while 1
-        let l:jobId = input(l:prompt . "\nInput id: ")
+        let l:jobIds = input(l:prompt . "\nInput id: ", '', 'custom,async#JobIds_complete')
 
-        if l:jobId !~ '\S'
+        if l:jobIds !~ '\S'
             return
         endif
 
-        let l:job = get(s:asyncJob, l:jobId, {'job': ''}).job
+        for l:jobId in split(l:jobIds, '\s\+')
+            if has_key(s:asyncJob, l:jobId)
+                call job_stop(s:asyncJob[l:jobId].job, l:how)
+                break
+            endif
+        endfor
 
-        if empty(l:job)
-            redraw
-        else
-            call job_stop(l:job, l:how)
-            break
-        endif
+        redraw!
     endwhile
 endfunction
 
@@ -262,8 +262,8 @@ function! async#JobRuning()
     return len(s:asyncJob)
 endfunction
 
-function! async#JobIds()
-    return keys(s:asyncJob)
+function! async#JobIds_complete(L, C, P)
+    return join(keys(s:asyncJob), "\n")
 endfunction
 
 " =====================================

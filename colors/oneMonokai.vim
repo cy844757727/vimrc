@@ -7,15 +7,20 @@ set background=dark
 set t_Co=256
 let g:colors_name = "OneMonokai"
 
-let g:colors_NormalMode = '#006080'
-let g:colors_InsertMode = '#6D0EF2'
+let s:NormalMode = '#006080'
+let s:InsertMode = '#6D0EF2'
 
+augroup Color_cydark
+    autocmd!
+    autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
+    autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
+augroup END
 " === Basic highlight ===
 hi Normal cterm=NONE ctermfg=230 guifg=#abb2bf guibg=#282c34 gui=NONE
 
 " Msg & Tip
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
-hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#B53030 gui=NONE
+hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#C24038 gui=NONE
 hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FFFFFF guibg=#905510 gui=NONE
 hi Question cterm=NONE guifg=#282c34 guibg=#abb2bf
 hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
@@ -81,14 +86,27 @@ hi Operator ctermfg=230 cterm=NONE guifg=#e06c75 gui=NONE
 hi Statement guifg=#56b6c2
 hi Function guifg=#d19a66
 hi Conditional guifg=#e06c75
+hi Keyword guifg=#56b6c2
+
 hi link Repeat Conditional
 hi link Exception Conditional
-hi Keyword guifg=#56b6c2
-hi link pythonBuiltin Identifier
-"hi pythonBuiltin guifg=#56b6c2
-hi link pythonDecoratorName Identifier
 hi link Label Conditional
 
+hi link pythonDecoratorName Identifier
+hi link pythonBuiltin Identifier
+hi link Label Conditional
+
+hi link verilogOperator  Normal
+hi link systemverilogOperator Normal
+
+hi link shOperator Normal
+hi link shQuote String
+hi link shVariable Normal
+hi link shShellVariables Normal
+hi link shOption Normal
+hi link shStatement Identifier
+hi link shLoop Conditional
+hi link shEcho Normal
 
 " === BMBPSign.vim ===
 hi BookMark    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CC7832 gui=NONE

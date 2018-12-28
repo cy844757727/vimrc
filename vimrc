@@ -48,13 +48,13 @@ set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
 " verilog: modelsim
-set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m
-set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m
-set errorformat+=**\ Error:\ (suppressible):\ %f(%l.%c):\ %m
-set errorformat+=**\ Error:\ %f(%l):\ %m
-set errorformat+=**\ Error:\ %f(%l.%c):\ %m
-set errorformat+=**\ at\ %f(%l):\ %m
-set errorformat+=**\ at\ %f(%l.%c):\ %m
+"set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m
+"set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m
+"set errorformat+=**\ Error:\ (suppressible):\ %f(%l.%c):\ %m
+"set errorformat+=**\ Error:\ %f(%l):\ %m
+"set errorformat+=**\ Error:\ %f(%l.%c):\ %m
+"set errorformat+=**\ at\ %f(%l):\ %m
+"set errorformat+=**\ at\ %f(%l.%c):\ %m
 " code folding
 "set foldmethod=syntax
 set foldcolumn=0
@@ -86,13 +86,10 @@ let g:SideWinWidth = 31
 augroup UsrDefCmd
     autocmd!
     autocmd QuickFixCmdPost * copen 15
-    autocmd BufRead,BufNewFile *.vt,*.vo,*.vg set filetype=verilog
-    autocmd BufRead,BufNewFile *.sv set filetype=systemverilog
+    autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.sv,*.svi,*.svh,*.svp,*.sva,*.vt,*.vo,*.vg set filetype=verilog_systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
-    autocmd InsertEnter * :if !empty(get(g:,'colors_InsertMode',''))|exe 'hi statusline guibg='.g:colors_InsertMode|endif
-    autocmd InsertLeave * :if !empty(get(g:,'colors_InsertMode',''))|exe 'hi statusline guibg='.g:colors_NormalMode|endif
 augroup END
 
 command! -nargs=? -complete=file T :tabe <args>
@@ -148,7 +145,6 @@ nnoremap <silent> \[ :pop<CR>
 nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
-nnoremap \| :call misc#StrSearch()<CR>
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
 nnoremap <C-f> :exe '/' . expand('<cword>')<CR>N
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
@@ -156,10 +152,10 @@ nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
-noremap <silent> <C-l> :redraw!<CR>
-noremap <silent> <C-a> ggvG$
-noremap <silent> <C-w> :close<CR>
-noremap <silent> <S-t> :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
+noremap <silent> <C-l>   :redraw!<CR>
+noremap <silent> <C-a>   ggvG$
+noremap <silent> <C-w>   :close<CR>
+noremap <silent> <S-t>   :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 noremap <silent> <S-tab> :tabnext<CR>
 map! <C-l> <Esc><C-l>
 map! <C-a> <Esc><C-a>

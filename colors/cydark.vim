@@ -7,8 +7,14 @@ set background=dark
 set t_Co=256
 let g:colors_name = "cydark"
 
-let g:colors_NormalMode = '#105070'
-let g:colors_InsertMode = '#6D0EF2'
+let s:NormalMode = '#105070'
+let s:InsertMode = '#6D0EF2'
+
+augroup Color_cydark
+    autocmd!
+    autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
+    autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
+augroup END
 
 " === Basic highlight ===
 hi Normal cterm=NONE ctermfg=230 guifg=#C0C0BA guibg=#202020 gui=NONE
@@ -82,6 +88,7 @@ hi Structure guifg=#56b6c2
 hi link Character String
 hi link Repeat Conditional
 hi link Exception Conditional
+hi link Label Statement
 
 hi link pythonFunction   Identifier
 hi link pythonBuiltIN    Function
@@ -90,7 +97,14 @@ hi link pythonOperator   Conditional
 hi link verilogOperator  Normal
 hi link systemverilogOperator Normal
 
-hi link shOperator String
+hi link shQuote String
+hi link shOperator Normal
+hi link shVariable Normal
+hi link shShellVariables Normal
+hi link shOption Normal
+hi link shLoop Conditional
+hi link shEcho Normal
+hi link shStatement Statement
 
 " === Tagbar.vim ===
 hi link TagbarSignature Directory
