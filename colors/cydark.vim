@@ -10,7 +10,7 @@ let g:colors_name = "cydark"
 let s:NormalMode = '#105070'
 let s:InsertMode = '#6D0EF2'
 
-augroup Color_cydark
+augroup Color_statusline
     autocmd!
     autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
     autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
