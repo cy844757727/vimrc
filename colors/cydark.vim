@@ -51,7 +51,7 @@ hi QuickFixLine cterm=bold,italic gui=bold,italic
 hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#252525 gui=NONE
 hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#4A4A4A guibg=NONE gui=NONE
 hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#202020 guibg=#202020 gui=NONE
-hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#CCCCBF guibg=#105070 gui=NONE
+hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#DDDDCF guibg=#105070 gui=NONE
 hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#C5C5BF guibg=#292929 gui=bold
 
 " === Diff mode ===
