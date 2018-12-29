@@ -17,7 +17,7 @@ augroup Color_statusline
 augroup END
 
 " === Basic highlight ===
-hi Normal cterm=NONE ctermfg=230 guifg=#C0C0BA guibg=#202020 gui=NONE
+hi Normal cterm=NONE ctermfg=230 guifg=#C5C5BA guibg=#202020 gui=NONE
 
 " Msg & Tip
 hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
