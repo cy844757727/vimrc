@@ -3,7 +3,7 @@
 " Last Change:	2017-05-18
 
 set background=dark
-"hi clear
+hi clear
 set t_Co=256
 let g:colors_name = "cydark"
 
@@ -84,6 +84,7 @@ hi Operator ctermfg=230 cterm=NONE guifg=#C5E5F5 gui=NONE
 hi Conditional ctermfg=220 guifg=#e06c75 gui=NONE
 hi Function guifg=#d18a66
 hi Structure guifg=#56b6c2
+hi Title guifg=#e06c75
 
 hi link Character String
 hi link Repeat Conditional
@@ -120,5 +121,5 @@ hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#8BEBFF gui=NONE
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
 hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#202020 gui=NONE
-hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#DAA010 guibg=#202020 gui=NONE
+hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CA8010 guibg=#202020 gui=NONE
 hi link ALEWarning Normal

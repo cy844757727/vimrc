@@ -12,6 +12,8 @@ set tags+=./.tags
 set tags+=.tags
 set showcmd
 set mousetime=1000
+set title
+set titlestring=♦\ Vim
 "set splitbelow
 set splitright
 set confirm        "退出保存询问
@@ -43,7 +45,7 @@ set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
 set laststatus=2      "始终显示状态栏
-set fillchars=vert:▕,fold:\ 
+set fillchars=vert:│,fold:\ 
 set completeopt=menu,menuone,noinsert,preview,noselect
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
@@ -92,6 +94,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
 augroup END
 
+command! -nargs=? Vresize :vertical resize <args>
 command! -nargs=? -complete=file T :tabe <args>
 command! -range TN :<line1>tabnext
 command! -range TP :<line1>tabprevious

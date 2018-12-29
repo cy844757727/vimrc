@@ -93,6 +93,7 @@ function! misc#CodeFormat() range
         silent! exe l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
         silent! exe l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
         silent! /`!`!`!`!`@#$%^&
+        let l:formatCmd = 'normal =='
     elseif &filetype == 'make'
         silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
         silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
@@ -601,7 +602,11 @@ function! misc#ToggleSidebar(...)
             NERDTreeClose
         endif
     elseif l:statue == 0
-        NERDTreeToggle
+        let g:tagbar_vertical=0
+        let g:tagbar_left=1
+        TagbarOpen
+        let g:tagbar_vertical=19
+        let g:tagbar_left=0
     elseif l:statue == 1
         NERDTreeClose
         let g:tagbar_vertical=0

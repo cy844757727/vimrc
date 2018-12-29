@@ -269,6 +269,9 @@ endfunction
 " =====================================
 " ===== Script run/debug ==== {{{1
 " =====================================
+let s:dbgWinHeight = get(g:, 'BottomWinHeight', 15) * 2 / 3
+let s:dbgSideWidth = get(g:, 'SideWinWidth', 30) * 4 / 3
+
 let s:dbgShared = {}
 let s:dbg = {
             \ 'id': 0,
@@ -366,7 +369,7 @@ function! async#DbgScript(...)
     call win_gotoid(t:dbg.dbgWinId)
     let l:option = copy(s:termOption)
     let l:option['curwin'] = 1
-    let l:option['term_rows'] = 10
+    let l:option['term_rows'] = s:dbgWinHeight
     let l:option['out_cb'] = function('s:DbgMsgHandle')
     let l:option['exit_cb'] = function('s:DbgOnExit')
     let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
@@ -466,12 +469,12 @@ function! s:DbgUIInitalize(dbg)
     let t:dbg.srcWinId = win_getid()
 
     " Debug console window
-    belowright 10split
+    exe 'belowright '.s:dbgWinHeight.'split'
     let t:dbg.dbgWinId = win_getid()
 
     " Variables window
     if index(t:dbg.win, 'var') != -1
-        exe 'topleft 40vnew var_'.t:dbg.id.'.dbgvar'
+        exe 'topleft '.s:dbgSideWidth.'vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
         set nonumber
         set buftype=nofile
@@ -482,7 +485,8 @@ function! s:DbgUIInitalize(dbg)
 
     " Watch point window
     if index(t:dbg.win, 'watch') != -1
-        exe 'belowright 20new Watch_'.t:dbg.id.'.dbgwatch'
+        let l:height = (&lines - s:dbgWinHeight - 3)/2 + s:dbgWinHeight - 3
+        exe 'belowright '.l:height.'new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
         set nonumber
         set buftype=nofile
@@ -493,7 +497,7 @@ function! s:DbgUIInitalize(dbg)
 
     " Call stack window
     if index(t:dbg.win, 'stack') != -1
-        exe 'belowright 10new stack_'.t:dbg.id.'.dbgstack'
+        exe 'belowright '.s:dbgWinHeight.'new stack_'.t:dbg.id.'.dbgstack'
         let t:dbg.stackWinId = win_getid()
         set nowrap
         set nonumber

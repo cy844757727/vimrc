@@ -477,6 +477,7 @@ function s:ProjectNew(name, type, path)
         silent %bwipeout
     endif
 
+    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
     echo substitute(l:item, ' ' . $HOME, ' ~', '')
 endfunction
 
@@ -651,6 +652,7 @@ function s:WorkSpaceSave(pre)
     let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre . s:sessionFile
     let l:vimInfoFile = a:pre . s:vimInfoFile
+    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Save session
     let l:temp = &sessionoptions
@@ -724,6 +726,8 @@ function s:WorkSpaceLoad(pre)
         exe 'silent! rviminfo! ' . l:vimInfoFile
         exe 'set viminfo=' . l:temp
     endif
+
+    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Load session
     if filereadable(l:sessionFile)

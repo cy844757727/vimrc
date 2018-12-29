@@ -3,7 +3,7 @@
 " Last Change:	2017-05-18
 
 set background=dark
-"hi clear
+hi clear
 set t_Co=256
 let g:colors_name = "OneMonokai"
 
@@ -80,14 +80,16 @@ hi Constant ctermfg=208 guifg=#56b6c2 gui=NONE
 hi Special ctermfg=208 guifg=#F58440 gui=NONE
 hi Comment ctermfg=76 cterm=italic guifg=#676f7d gui=italic
 hi String ctermfg=215 guifg=#e5c07b gui=NONE
-hi link Character String
 hi Operator ctermfg=230 cterm=NONE guifg=#e06c75 gui=NONE
+hi Title guifg=#e06c75
 
 hi Statement guifg=#56b6c2
 hi Function guifg=#d19a66
 hi Conditional guifg=#e06c75
 hi Keyword guifg=#56b6c2
 
+hi link Character String
+hi link Title Condition
 hi link Repeat Conditional
 hi link Exception Conditional
 hi link Label Conditional
@@ -119,5 +121,5 @@ hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#8BEBFF gui=NONE
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
 hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#282c34 gui=NONE
-hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#DAA010 guibg=#282c34 gui=NONE
+hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CA9010 guibg=#282c34 gui=NONE
 hi link ALEWarning Normal

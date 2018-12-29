@@ -29,8 +29,6 @@ syn sync lines=1000
 "       SystemVerilog Syntax
 "##########################################################
 
-syn match verilogModuleName '\h\w*' contained
-syn keyword verilogStatement   module nextgroup=verilogModuleName skipwhite
 syn keyword verilogStatement   always and assign automatic buf
 syn keyword verilogStatement   bufif0 bufif1 cell cmos
 syn keyword verilogStatement   config deassign defparam design
@@ -126,9 +124,9 @@ syn match   verilogEscape      "\\\o\o\=\o\=" contained
 
 syn keyword verilogMethod      new
 if v:version >= 704
-    syn match   verilogMethod  "\(^\s\+\.\)\@30<!\<\w\+\ze("
+    syn match   verilogMethod  "\(^\s\+\.\)\@30<!\<\w\+\ze\(\s*\n*\s*#\?(\)"
 else
-    syn match   verilogMethod  "\(^\s\+\.\)\@<!\<\w\+\ze("
+    syn match   verilogMethod  "\(^\s\+\.\)\@<!\<\w\+\ze\(\s*\n*\s*#\?(\)"
 endif
 
 syn match   verilogLabel       "\<\k\+\>\ze\s*:\s*\<\(assert\|assume\|cover\(point\)\?\|cross\)\>"
@@ -379,8 +377,6 @@ if version >= 508 || !exists("did_verilog_syn_inits")
    HiLink verilogMethod          Function
    HiLink verilogTypeDef         TypeDef
    HiLink verilogObject          Type
-
-   HiLink verilogModuleName      Function
 
    delcommand HiLink
 endif
