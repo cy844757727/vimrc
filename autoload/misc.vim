@@ -402,6 +402,7 @@ function! s:BufHisSwitch(action)
         if w:bufHis.list[-1] == w:bufHis.init
             let w:bufHis.init = w:bufHis.list[0]
         endif
+
         call remove(w:bufHis.list, -1)
         call s:BufHisSwitch(a:action)
     endif
@@ -556,6 +557,60 @@ function! misc#WinSwitch(action)
 
     if bufname('%') =~ '^!' && mode() == 'n'
         normal a
+    endif
+endfunction
+
+
+function! misc#Information(...)
+    let l:info = ''
+    let l:cwd = getcwd()
+    let l:file = expand('%')
+    let l:nr = bufnr('%')
+    let l:lines = line('$')
+    let l:count = wordcount()
+
+    if a:0 == 0
+        if isdirectory('.git')
+            let l:info .= ' '.matchstr(system('git branch'), '\(\* \)\zs\w*').'    '
+        endif
+
+        let l:info .= ' '.l:cwd.'    '
+        let l:info .= ' '.l:nr.': '.l:lines.'L, '
+        let l:info .= l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
+        let l:time = strftime('%H:%M')
+        let l:info .= repeat(' ', &columns - strdisplaywidth(l:info) - len(l:time) - 1).l:time
+    else
+        let l:info .= '  '.strftime("%Y %b %d %T")."\n"
+
+        if isdirectory('.git')
+            let l:info .= '  '.substitute(matchstr(system('git branch'),'\w.*\w'), "\n", '  ', 'g')."\n"
+        endif
+
+        let l:info .= '  '.l:cwd."\n"
+        let l:info .= ' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.l:file."\n"
+        let l:info .= '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n"
+        let l:info .= '   '.matchstr(system('ls -lh '.l:file), '.*\d')
+    endif
+
+    return l:info
+endfunction
+
+
+function! misc#Jump_C_K_J(...)
+    let l:action = a:0 > 0 ? a:1 : 'next'
+
+    if &diff
+        if l:action == 'next'
+            normal ]c
+        else
+            normal [c
+        endif
+    elseif get(g:, 'ale_enabled', 0)
+        if l:action == 'next'
+            ALENextWrap
+        else
+            ALEPreviousWrap
+        endif
     endif
 endfunction
 " ############### 窗口相关 ######################################

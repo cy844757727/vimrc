@@ -94,6 +94,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
 augroup END
 
+command! Info :echo misc#Information('more')
 command! -nargs=? Vresize :vertical resize <args>
 command! -nargs=? -complete=file T :tabe <args>
 command! -range TN :<line1>tabnext
@@ -117,6 +118,8 @@ inoremap } <c-r>=CyClosePair('}')<CR>
 inoremap " ""<Esc>i
 
 inoremap <C-\> <Esc>o
+nnoremap <C-g> :echo misc#Information()<CR>
+map! <C-g> <Esc><C-g>
 " External open
 nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap \od :Async xdg-open .<CR>
@@ -135,6 +138,12 @@ function! Vimrc_leader(cmd)
     exe a:cmd
     call setpos("''", l:save_pos)
 endfunction
+
+" Jump key J|K ale|diff
+noremap  <silent> <C-j> :call misc#Jump_C_K_J('next')<CR>
+noremap  <silent> <C-k> :call misc#Jump_C_K_J('previous')<CR>
+map! <C-j> <Esc><C-j>
+map! <C-k> <Esc><C-k>
 
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
@@ -333,9 +342,6 @@ let g:tagbar_type_markdown = {
             \ }
 
 " === Ale.vim === {{{1
-" map key to jump
-nmap <silent> <C-k> <Plug>(ale_previous_wrap)
-nmap <silent> <C-j> <Plug>(ale_next_wrap)
 " ** Need to install **
 " Tool: flake8 pylint pyflakes(linter), yapf autopep8(fixer) : python
 " Tool: clang-format(fixer)     : c/c++/java/javascript
