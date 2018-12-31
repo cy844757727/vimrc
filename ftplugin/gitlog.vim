@@ -28,7 +28,6 @@ nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 augroup Git_log
 	autocmd!
 	autocmd CursorMoved <buffer> call s:RefreshCommit()
-    autocmd BufLeave <buffer> let b:curL = -1
 augroup END
 
 if exists('*<SID>Reset_Revert_Commit')
@@ -36,29 +35,19 @@ if exists('*<SID>Reset_Revert_Commit')
 endif
 
 function s:RefreshCommit()
-    if line('.') != b:curL
-        let l:end = line('$')
-        let l:op = b:curL - line('.') == 1 ? 'k' : 'j'
-        while line('.') != l:end && getline('.') !~ '\d'
-            exec 'normal ' . l:op
-            if line('.') == 1
-                let l:op = 'j'
-            endif
-        endwhile
-        let b:curL = line('.')
-        let l:hash = matchstr(getline('.'), '\w\{7}')
-        if l:hash != ''
-            wincmd w
-            setlocal noreadonly modifiable
-            silent edit!
-            call setline(1, git#FormatCommit(l:hash))
-            set filetype=gitcommit
-            set nobuflisted
-            setlocal foldminlines=1
-            normal zj
-            setlocal readonly nomodifiable
-            wincmd W
-        endif
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+
+    if l:hash != ''
+        wincmd w
+        setlocal noreadonly modifiable
+        silent edit!
+        call setline(1, git#FormatCommit(l:hash))
+        set filetype=gitcommit
+        set nobuflisted
+        setlocal foldminlines=1
+        normal zj
+        setlocal readonly nomodifiable
+        wincmd W
     endif
 endfunction
 
