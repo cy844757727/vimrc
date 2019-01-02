@@ -18,6 +18,12 @@ endif
 
 let g:colors_name='gruvbox'
 
+if &background == 'light'
+  hi TabLineSeparator guibg=#EBDBB2 guifg=#79740e gui=NONE
+else
+  hi TabLineSeparator guibg=#3C3836 guifg=#282828 gui=NONE
+endif
+
 if !(has('termguicolors') && &termguicolors) && !has('gui_running') && &t_Co != 256
   finish
 endif
@@ -310,7 +316,7 @@ if exists('g:gruvbox_number_column')
   let s:number_column = get(s:gb, g:gruvbox_number_column)
 endif
 
-let s:sign_column = s:bg1
+let s:sign_column = s:bg0
 
 if exists('g:gitgutter_override_sign_column_highlight') &&
       \ g:gitgutter_override_sign_column_highlight == 1
@@ -545,6 +551,8 @@ call s:HL('LineNr', s:bg4, s:number_column)
 
 " Column where signs are displayed
 call s:HL('SignColumn', s:none, s:sign_column)
+
+call s:HL('EndOfBuffer', s:bg0, s:sign_column)
 
 " Line used for closed folds
 call s:HL('Folded', s:gray, s:bg1, s:italic)

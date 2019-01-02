@@ -20,6 +20,7 @@ endif
 
 let g:colors_name = 'solarizedDark'
 
+hi TabLineSeparator guibg=#073642 guifg=#839489 gui=NONE
 " 256-color variant
 if !get(g:, 'solarized_use16', &t_Co < 256)
     let g:terminal_ansi_colors = ['#073642', '#dc322f', '#859900', '#b58900', '#268bd2', '#d33682', '#2aa198', '#eee8d5',
