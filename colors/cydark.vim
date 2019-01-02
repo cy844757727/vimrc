@@ -122,4 +122,5 @@ hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#8BEBFF gui=NONE
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
 hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#202020 gui=NONE
 hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CA8010 guibg=#202020 gui=NONE
+"hi ALEInfoSign     ctermfg=215  ctermbg=234 guifg=#076678 guibg=#202020 gui=NONE
 hi link ALEWarning Normal

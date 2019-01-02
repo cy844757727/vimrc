@@ -125,7 +125,7 @@ endif
 " Skip: Whether to unset if sign existing (set 1 for merging: forbiden unset)
 function s:SignToggle(file, line, type, attr, skip)
     let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
-    let l:vec = get(s:signVec, a:type, [])
+    let l:vec = s:signVec[a:type]
     let l:signPlace = execute('sign place file=' . a:file)
     let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
     let g:BMBPSign_SignSetFlag = 1
@@ -142,6 +142,7 @@ function s:SignToggle(file, line, type, attr, skip)
         call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
         let s:signId[s:newSignId] = [a:type, a:file]
 
+        " Support async.vim script debug
         if exists('t:dbg') && a:type =~ 'break'
             call t:dbg.sendCmd(a:type, a:file.':'.a:line)
         endif
@@ -151,6 +152,7 @@ function s:SignToggle(file, line, type, attr, skip)
         call filter(l:vec, 'v:val.id != ' . l:id[1])
         unlet s:signId[l:id[1]]
 
+        " Support async.vim script debug
         if exists('t:dbg') && a:type =~ 'break'
             call t:dbg.sendCmd('clear', a:file.':'.a:line)
         endif
@@ -160,16 +162,25 @@ endfunction
 
 " BookMark jump
 " Action: next, previous
-function s:Signjump(types, action, id, attrs)
-    if !empty(a:id) && has_key(s:signId, a:id)
+function s:SignJump(types, action, id, attrs, file)
+    if !empty(a:action)
+        let l:vec = s:signVec[a:types[0]]
+
+        if a:action == 'next'
+            call add(l:vec, remove(l:vec, 0))
+        else
+            call insert(l:vec, remove(l:vec, -1))
+        endif
+
+        let l:id = l:vec[-1].id
+        let l:file = l:vec[-1].file
+    elseif !empty(a:id) && has_key(s:signId, a:id)
         let l:id = a:id
         let l:file = s:signId[a:id][1]
-    elseif !empty(a:attrs) || empty(a:types) || len(a:types) > 1
-        let l:items = s:SignFilter(a:types, '', '', a:attrs)
+    else
+        let l:items = s:SignFilter(a:types, a:file, '', a:attrs)
 
-        if empty(l:items)
-            return
-        else
+        if !empty(l:items)
             let l:str = input(s:SignDisplayStr(l:items).'Selete id: ') + 0
             
             if has_key(l:items, l:str)
@@ -177,27 +188,13 @@ function s:Signjump(types, action, id, attrs)
                 let l:file = l:items[l:id].sign.file
             endif
         endif
-    else
-        let l:action = !empty(a:action) ? a:action : 'next'
-        let l:vec = get(s:signVec, get(a:types, 0, 'book'), [])
-
-        if !empty(l:vec)
-            if l:action == 'next'
-                call add(l:vec, remove(l:vec, 0))
-            else
-                call insert(l:vec, remove(l:vec, -1))
-            endif
-
-            let l:id = l:vec[-1].id
-            let l:file = l:vec[-1].file
-        endif
     endif
 
     if !exists('l:id')
         return
     endif
 
-    " Try jumping to a tab containing this buf
+    " Try jumping to a tab containing this buf or new tabpage
     let l:bufnr = bufnr(l:file)
     if index(tabpagebuflist(), l:bufnr) == -1
         let l:winId = win_findbuf(l:bufnr)
@@ -217,7 +214,7 @@ endfunction
 " Types -> list
 function s:SignClear(types)
     for l:type in a:types
-        let l:vec = get(s:signVec, l:type, [])
+        let l:vec = s:signVec[l:type]
 
         " Unset sign
         for l:sign in l:vec
@@ -238,40 +235,38 @@ endfunction
 " Types -> list: Specify the types to clear first
 " Signs that have not been cleared are merged
 " Pre: file prefix: does not contain points and underscores
-function s:SignLoad(pre, types)
-    let l:signFile = a:pre . s:signFile
+function s:SignLoad(signFile, types)
+    " Read sign file
+    let l:signList = readfile(a:signFile)
 
-    if filereadable(l:signFile)
-        " Read sign file
-        let l:signList = readfile(l:signFile)
-
-        " Clear sign of types
+    " Clear sign of types
+    if !empty(a:types)
         call s:SignClear(a:types)
+    endif
 
-        " Load sign
-        let l:types = []
-        for l:str in l:signList
-            try
-                let [l:type, l:file, l:line] = split(l:str, '[ :]\+')[0:2]
-                let l:types += [l:type]
-            catch
-                " Ignore damaged item
-                continue
-            endtry
+    " Load sign
+    let l:types = []
+    for l:str in l:signList
+        try
+            let [l:type, l:file, l:line] = split(l:str, '[ :]\+')[0:2]
+            let l:types += [l:type]
+        catch
+            " Ignore damaged item
+            continue
+        endtry
 
-            if !filereadable(l:file)
-                continue
-            elseif !bufexists(l:file)
-                exe 'silent badd ' . l:file
-            endif
-
-            let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
-            call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
-        endfor
-
-        if !empty(l:types)
-            call s:QfListUpdate(uniq(l:types))
+        if !filereadable(l:file)
+            continue
+        elseif !bufexists(l:file)
+            exe 'silent badd ' . l:file
         endif
+
+        let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
+        call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
+    endfor
+
+    if !empty(l:types)
+        call s:QfListUpdate(uniq(l:types))
     endif
 endfunction
 
@@ -279,9 +274,7 @@ endfunction
 " Save sign of types to a file
 " File Name: a:pre . s:signFile
 " Types -> list
-function s:SignSave(pre, types)
-    let l:signFile = a:pre . s:signFile
-
+function s:SignSave(signFile, types)
     " Get all valid BMBPSign of types
     " Content: 'id': lineNr
     let l:signs = {}
@@ -315,9 +308,9 @@ function s:SignSave(pre, types)
 
     " Udate signFile
     if !empty(l:content)
-        call writefile(l:content, l:signFile)
+        call writefile(l:content, a:signFile)
     else
-        call delete(l:signFile)
+        call delete(a:signFile)
     endif
 endfunction
 
@@ -334,18 +327,10 @@ endfunction
 " Filter sign by types & file & lin
 " Content: {'id': {'sign': ..., 'lin': ..., 'type': ...,}}
 function s:SignFilter(types, file, lin, attrs)
-    let l:signPlace = execute('sign place '.(!empty(a:file) ? 'file='.a:file : ''))
-
-    if !empty(a:types)
-        let l:types = a:types
-    elseif exists('t:dbg')
-        let l:types = ['break', 'tbreak']
-    else
-        let l:types = keys(s:signVec)
-    endif
+    let l:signPlace = execute('sign place '.(empty(a:file) ? '' : 'file='.a:file))
 
     let l:items = {}
-    for l:type in l:types
+    for l:type in a:types
         for l:sign in s:signVec[l:type]
             let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:sign.id.'  \S\+='.s:signDefHead)
             
@@ -401,6 +386,7 @@ function s:SignAddAttr(types, file, lin, attrs)
     let l:val.sign.attr = get(l:arg, 1, '')
     call s:QfListUpdate([l:val.type])
     
+    " Support async.vim script debug
     if exists('t:dbg') && l:val.type =~ 'break'
         call t:dbg.sendCmd('condition', l:val.sign['file'].':'.l:val['lin'], l:val.sign.attr)
     endif
@@ -410,16 +396,8 @@ endfunction
 " Unset sign by ids
 " Ids -> list
 function s:SignUnsetById(ids)
-    if empty(a:ids)
-        let l:items = s:SignFilter([], '', '', [])
-        let l:str = s:SignDisplayStr(l:items)
-        let l:ids = split(input(l:str.'Select ids to clear: '), '\s\+')
-    else
-        let l:ids = a:ids
-    endif
-
     let l:types = []
-    for l:id in l:ids
+    for l:id in a:ids
         let [l:type, l:file] = get(s:signId, l:id, ['invalid', ''])
 
         if bufexists(l:file)
@@ -429,6 +407,7 @@ function s:SignUnsetById(ids)
             let l:types += [l:type]
         endif
 
+        " Support async.vim script debug
         if exists('t:dbg') && exists('l:items') && l:items[l:id].type =~ 'break'
             call t:dbg.sendCmd('clear', l:file.':'.l:items[l:id].lin)
         endif
@@ -495,7 +474,7 @@ function s:ProjectSwitch(sel)
     if l:path != getcwd()
         " Save current workspace
         if exists('g:BMBPSign_SignSetFlag')
-            call s:SignSave('', keys(s:signVec))
+            call s:SignSave(s:signFile, keys(s:signVec))
         endif
 
         if exists('g:BMBPSign_Projectized')
@@ -504,7 +483,7 @@ function s:ProjectSwitch(sel)
 
         exe 'silent cd ' . l:path
 
-        " Empth workspace
+        " Empty workspace
         silent! %bwipeout
     endif
 
@@ -517,7 +496,9 @@ function s:ProjectSwitch(sel)
     endif
     
     " Load target sign & workspace
-    call s:SignLoad('', keys(s:signVec))
+    if filereadable(s:signFile)
+        call s:SignLoad(s:signFile, keys(s:signVec))
+    endif
     call s:WorkSpaceLoad('')
 
     " Put item first
@@ -709,9 +690,9 @@ function s:WorkSpaceLoad(pre)
     " Empty workspace
     if exists('g:BMBPSign_Projectized')
         silent wall
-        call s:SignSave('', keys(s:signVec))
+        call s:SignSave(s:signFile, keys(s:signVec))
         silent %bwipeout!
-        call s:SignLoad('', [])
+        call s:SignLoad(s:signFile, [])
     endif
 
     set noautochdir
@@ -845,14 +826,10 @@ function BMBPSign#SignToggle(...)
         endif
     endfor
 
-    if !filereadable(l:file)
+    if !filereadable(l:file) || !empty(getbufvar(l:file, '&buftype', ''))
         return
     elseif !bufexists(l:file)
         exe 'badd ' . l:file
-    endif
-
-    if !empty(getbufvar(l:file, '&buftype'))
-        return
     endif
 
     if empty(l:lins) || exists('l:cur')
@@ -877,7 +854,7 @@ endfunction
 
 
 function BMBPSign#SignJump(...)
-    let [l:types, l:action, l:id, l:attrs] = [[], '', '', []]
+    let [l:types, l:action, l:id, l:attrs, l:file] = [[], '', '', [], '']
 
     for l:i in range(len(a:000))
         if has_key(s:signVec, a:000[l:i])
@@ -886,25 +863,38 @@ function BMBPSign#SignJump(...)
             let l:action = a:000[l:i]
         elseif a:000[l:i]
             let l:id = a:000[l:i]
+        elseif filereadable(a:000[l:i])
+            let l:file = a:000[l:i]
+        elseif a:000[l:i] == '%'
+            let l:file = expand('%')
         else
             let l:attrs = a:000[l:i:]
             break
         endif
     endfor
 
-    call s:Signjump(l:types, l:action, l:id, l:attrs)
+    if empty(l:types)
+        if !empty(l:action)
+            let l:types = exists('t:dbg') ? ['break'] : ['book']
+        else
+            let l:types = exists('t:dbg') ? ['break', 'tbreak'] : keys(s:signVec)
+        endif
+    endif
+
+    call s:SignJump(l:types, l:action, l:id, l:attrs, l:file)
 endfunction
 
 
 " Cancel sign of types | ids or delete sign file
 " Pre: file prefix: does not contain points and underscores
 function BMBPSign#SignClear(...)
-    if a:0 == 0
-        call s:SignUnsetById([])
-        return
-    endif
-
     let [l:types, l:ids, l:pres] = [[], [], []]
+
+    if a:0 == 0
+        let l:items = s:SignFilter(keys(s:signVec), '', '', [])
+        let l:str = s:SignDisplayStr(l:items)
+        let l:ids = split(input(l:str.'Select ids to clear: '), '\s\+')
+    endif
 
     for l:arg in a:000
         if has_key(s:signVec, l:arg)
@@ -950,7 +940,7 @@ function BMBPSign#SignSave(...)
         let l:types = keys(s:signVec)
     endif
 
-    call s:SignSave(l:pre, l:types)
+    call s:SignSave(l:pre . s:signFile, l:types)
 endfunction
 
 
@@ -967,11 +957,13 @@ function BMBPSign#SignLoad(...)
         endif
     endfor
 
-    if !empty(l:pre)
-        call s:SignSave('', l:types)
-    endif
+    if filereadable(l:pre . s:signFile)
+        if !empty(l:pre)
+            call s:SignSave(s:signFile, l:types)
+        endif
 
-    call s:SignLoad(l:pre, l:types)
+        call s:SignLoad(l:pre . s:signFile, l:types)
+    endif
 endfunction
 
 
@@ -996,6 +988,10 @@ function BMBPSign#SignAddAttr(...)
         endif
     endfor
 
+    if empty(l:types)
+        let l:types = exists('t:dbg') ? ['break', 'tbreak'] : keys(s:signVec)
+    endif
+
     call s:SignAddAttr(l:types, l:file, l:lin, l:attrs)
 endfunction
 
@@ -1003,7 +999,7 @@ endfunction
 function BMBPSign#WorkSpaceSave(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call s:WorkSpaceSave(l:pre)
-    call s:SignSave(l:pre, keys(s:signVec))
+    call s:SignSave(l:pre . s:signFile, keys(s:signVec))
 endfunction
 
 
@@ -1012,11 +1008,11 @@ function BMBPSign#WorkSpaceLoad(...)
 
     if !empty(l:pre)
         call s:WorkSpaceSave('')
-        call s:SignSave('', keys(s:signVec))
+        call s:SignSave(s:signFile, keys(s:signVec))
     endif
 
     call s:WorkSpaceLoad(l:pre)
-    call s:SignLoad(l:pre, keys(s:signVec))
+    call s:SignLoad(l:pre . s:signFile, keys(s:signVec))
 endfunction
 
 
@@ -1083,4 +1079,4 @@ function BMBPSign#SignRecord(...)
     return l:signRecord
 endfunction
 
-"vim:  set foldmethod=marker
+" vim:  set foldmethod=marker
