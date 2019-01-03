@@ -8,6 +8,11 @@
 
 " Supporting code -------------------------------------------------------------
 " Initialisation: {{{
+if get(g:, 'colors_name', '') == 'gruvboxDark'
+  set background=light
+else
+  set background=dark
+endif
 
 if version > 580
   hi clear
@@ -16,18 +21,18 @@ if version > 580
   endif
 endif
 
-let g:colors_name='gruvbox'
-
 augroup Color_statusline
     autocmd!
 augroup END
 
 if &background == 'light'
+  let g:colors_name='gruvboxLight'
   hi TabLineSeparator guibg=#EBDBB2 guifg=#79740e gui=NONE
   hi default BookMark    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#CC7832
   hi default TodoList    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#619FC6
   hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#DE3D3B
 else
+  let g:colors_name='gruvboxDark'
   hi TabLineSeparator guibg=#3C3836 guifg=#282828 gui=NONE
   hi default BookMark    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#CC7832
   hi default TodoList    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#619FC6

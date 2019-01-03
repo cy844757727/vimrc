@@ -394,7 +394,7 @@ function! s:BufHisSwitch(action)
     endif
 
     if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
-        update
+        silent update
         silent exe 'buffer ' . w:bufHis.list[-1]
         call s:BufHisEcho()
     else
