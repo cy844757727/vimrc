@@ -8,9 +8,9 @@ endif
 let g:loaded_A_BMBPSign = 1
 
 " sign highlight definition
-hi default BookMark    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#CC7832
-hi default TodoList    ctermbg=253 ctermfg=16 guibg=#202020 guifg=#619FC6
-hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#202020 guifg=#DE3D3B
+hi default BookMark    ctermfg=16 guifg=#CC7832
+hi default TodoList    ctermfg=16 guifg=#619FC6
+hi default BreakPoint  ctermfg=16 guifg=#DE3D3B
 
 " Sign name rule: 'BMBPSign' . type
 sign define BMBPSignbook text= texthl=BookMark

@@ -12,7 +12,7 @@ let g:loaded_A_Async = 1
 " ===========================================
 " ===== Embeded terminal configure ===== {{{1
 " ===========================================
-hi default AsyncDbgHl ctermbg=253 ctermfg=16 guibg=#202020 guifg=#8BEBFF
+hi default AsyncDbgHl ctermfg=16 guifg=#8BEBFF
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
 let s:displayIcon = {

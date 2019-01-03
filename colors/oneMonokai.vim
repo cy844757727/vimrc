@@ -88,38 +88,38 @@ hi Function guifg=#d19a66
 hi Conditional guifg=#e06c75
 hi Keyword guifg=#56b6c2
 
-hi link Character String
-hi link Title Condition
-hi link Repeat Conditional
-hi link Exception Conditional
-hi link Label Conditional
+hi! link Character String
+hi! link Title Condition
+hi! link Repeat Conditional
+hi! link Exception Conditional
+hi! link Label Conditional
 
-hi link pythonDecoratorName Identifier
-hi link pythonBuiltin Identifier
-hi link Label Conditional
+hi! link pythonDecoratorName Identifier
+hi! link pythonBuiltin Identifier
+hi! link Label Conditional
 
-hi link verilogOperator  Normal
-hi link systemverilogOperator Normal
+hi! link verilogOperator  Normal
+hi! link systemverilogOperator Normal
 
-hi link shOperator Normal
-hi link shQuote String
-hi link shVariable Normal
-hi link shShellVariables Normal
-hi link shOption Normal
-hi link shStatement Identifier
-hi link shLoop Conditional
-hi link shEcho Normal
+hi! link shOperator Normal
+hi! link shQuote String
+hi! link shVariable Normal
+hi! link shShellVariables Normal
+hi! link shOption Normal
+hi! link shStatement Identifier
+hi! link shLoop Conditional
+hi! link shEcho Normal
 
-" === BMBPSign.vim ===
-hi BookMark    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#CC7832 gui=NONE
-hi TodoList    ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#619FC6 gui=NONE
-hi BreakPoint  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#D73130 gui=NONE
+hi! link NERDTreeDir Directory
+hi! link TagbarSignature Directory
 
-" === async.vim ===
-hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#282c34 guifg=#8BEBFF gui=NONE
 
+hi BookMark    ctermfg=16 guifg=#CC7832
+hi TodoList    ctermfg=16 guifg=#619FC6
+hi BreakPoint  ctermfg=16 guifg=#DE3D3B
+hi AsyncDbgHl  ctermfg=16 guifg=#8BEBFF
 " === ale.vim ===
 hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
-hi ALEErrorSign    ctermfg=9    ctermbg=234 guifg=#E44442 guibg=#282c34 gui=NONE
-hi ALEWarningSign  ctermfg=215  ctermbg=234 guifg=#CA9010 guibg=#282c34 gui=NONE
+hi ALEErrorSign    ctermfg=9    guifg=#E44442 
+hi ALEWarningSign  ctermfg=215  guifg=#CA9010 
 hi link ALEWarning Normal

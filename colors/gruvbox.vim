@@ -28,18 +28,15 @@ augroup END
 if &background == 'light'
   let g:colors_name='gruvboxLight'
   hi TabLineSeparator guibg=#EBDBB2 guifg=#79740e gui=NONE
-  hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#8BEBFF gui=NONE
-  hi default BookMark    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#CC7832
-  hi default TodoList    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#619FC6
-  hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#DE3D3B
 else
   let g:colors_name='gruvboxDark'
   hi TabLineSeparator guibg=#3C3836 guifg=#282828 gui=NONE
-  hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#282828 guifg=#8BEBFF gui=NONE
-  hi default BookMark    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#CC7832
-  hi default TodoList    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#619FC6
-  hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#282828 guifg=#DE3D3B
 endif
+
+hi BookMark    ctermfg=16 guifg=#CC7832
+hi TodoList    ctermfg=16 guifg=#619FC6
+hi BreakPoint  ctermfg=16 guifg=#DE3D3B
+hi AsyncDbgHl ctermfg=16 guifg=#8BEBFF
 
 if !(has('termguicolors') && &termguicolors) && !has('gui_running') && &t_Co != 256
   finish
