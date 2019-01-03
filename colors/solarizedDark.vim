@@ -23,6 +23,7 @@ let g:colors_name = 'solarizedDark'
 augroup Color_statusline
     autocmd!
 augroup END
+hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#8BEBFF gui=NONE
 hi default BookMark    ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#CC7832
 hi default TodoList    ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#619FC6
 hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#DE3D3B
