@@ -250,7 +250,7 @@ function! async#JobStop(how)
         for l:jobId in split(l:jobIds, '\s\+')
             if has_key(s:asyncJob, l:jobId)
                 call job_stop(s:asyncJob[l:jobId].job, l:how)
-                break
+                return
             endif
         endfor
 
