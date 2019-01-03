@@ -20,6 +20,12 @@ endif
 
 let g:colors_name = 'solarizedDark'
 
+augroup Color_statusline
+    autocmd!
+augroup END
+hi default BookMark    ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#CC7832
+hi default TodoList    ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#619FC6
+hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#002B36 guifg=#DE3D3B
 hi TabLineSeparator guibg=#073642 guifg=#839489 gui=NONE
 " 256-color variant
 if !get(g:, 'solarized_use16', &t_Co < 256)

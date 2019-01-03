@@ -166,6 +166,10 @@ function s:SignJump(types, action, id, attrs, file)
     if !empty(a:action)
         let l:vec = s:signVec[a:types[0]]
 
+        if empty(l:vec)
+            return
+        endif
+
         if a:action == 'next'
             call add(l:vec, remove(l:vec, 0))
         else

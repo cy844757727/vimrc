@@ -18,10 +18,20 @@ endif
 
 let g:colors_name='gruvbox'
 
+augroup Color_statusline
+    autocmd!
+augroup END
+
 if &background == 'light'
   hi TabLineSeparator guibg=#EBDBB2 guifg=#79740e gui=NONE
+  hi default BookMark    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#CC7832
+  hi default TodoList    ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#619FC6
+  hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#F2E5BC guifg=#DE3D3B
 else
   hi TabLineSeparator guibg=#3C3836 guifg=#282828 gui=NONE
+  hi default BookMark    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#CC7832
+  hi default TodoList    ctermbg=253 ctermfg=16 guibg=#282828 guifg=#619FC6
+  hi default BreakPoint  ctermbg=253 ctermfg=16 guibg=#282828 guifg=#DE3D3B
 endif
 
 if !(has('termguicolors') && &termguicolors) && !has('gui_running') && &t_Co != 256
