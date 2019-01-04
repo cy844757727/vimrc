@@ -99,11 +99,9 @@ command! -nargs=? Vresize :vertical resize <args>
 command! -nargs=? -complete=file T :tabe <args>
 command! -range TN :<line1>tabnext
 command! -range TP :<line1>tabprevious
-command! -range=% CFormat :<line1>,<line2>call misc#CodeFormat()
-command! -range RComment :<line1>,<line2>call misc#ReverseComment()
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
-command! Actags :Async ctags -R -f .tags
+command! UTags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
 
 "快捷键映射===================== {{{1
@@ -409,7 +407,8 @@ let g:BMBPSign_ProjectType = {
                 \ }
 
 let g:BMBPSign_PreSaveEventList = [
-            \ 'call PreSaveWorkSpace_TabVar()'
+            \ 'call PreSaveWorkSpace_TabVar()',
+            \ 'call misc#CleanBufferList()'
             \ ]
 
 let g:BMBPSign_PostLoadEventList = [

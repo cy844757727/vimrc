@@ -729,6 +729,7 @@ function! s:DbgMsgHandle(job, msg)
 
         if l:fileNr[1] != line('.')
             call cursor(l:fileNr[1], 1)
+            normal zz
             call s:DbgSetSign(l:fileNr[0], l:fileNr[1])
         endif
     endif

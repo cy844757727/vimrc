@@ -30,7 +30,7 @@ let s:gray  = ['#353535', 236]  " search visual
 " Highlighting Function
 " Arguments: group, fg, bg, gui/cterm, guisp
 function! s:HL(group, ...)
-  let l:fg = a:0 > 0 ? a:1 : s:fg
+  let l:fg = a:0 > 0 ? a:1 : s:none
   let l:bg = a:0 > 1 ? a:2 : s:none
   let l:em = a:0 > 2 ? a:3 : 'NONE'
 
@@ -60,54 +60,61 @@ augroup Color_statusline
 augroup END
 
 
-" === Basic highlight ===
+" === Normal ===
 call s:HL('Normal', s:fg, s:bg)
-call s:HL('LineNr', ['#4a4a4a', 239])
+
+" === Misc highlight ===
 call s:HL('NonText')
+call s:HL('SignColumn')
 call s:HL('EndOfBuffer', s:bg)
-call s:HL('SignColumn', s:none)
 call s:HL('VertSplit', s:bg)
-call s:HL('CursorLine', s:none, ['#252525', 235])
-call s:HL('StatusLine', s:white, ['#105070', 24])
-call s:HL('StatusLineNC', s:fg, s:bg1, 'bold')
-call s:HL('Error', s:white, ['#d73130', 160])
-call s:HL('ErrorMsg', s:white, ['#b53030', 124])
-call s:HL('WarningMsg', s:white, ['#8a5005', 130])
-call s:HL('WildMenu', s:black, ['#d8dd41'])
-call s:HL('Question', s:black, s:fg)
-call s:HL('MoreMsg', ['#60b030'])
-call s:HL('ModeMsg', s:none, s:none, 'bold')
+call s:HL('Visual', s:none, s:gray)
 call s:HL('Search', s:none, s:gray)
 call s:HL('InSearch', s:none, s:none, 'reverse')
-call s:HL('Todo', ['#b5d5b5'], s:bg, 'italic')
-call s:HL('MatchParen', s:fg, ['#007fa0'])
-call s:HL('SpellBad', s:none, s:none, 'underline')
+call s:HL('QuickFixLine', s:none, s:none, 'bold')
+call s:HL('CursorLine', s:none, ['#252525', 235])
+call s:HL('StatusLine', s:white, ['#105070', 24])
+call s:HL('StatusLineNC', s:none, s:bg1, 'bold')
+call s:HL('Error', s:white, ['#d73130', 160])
+call s:HL('LineNr', ['#4a4a4a', 239])
 call s:HL('Directory', ['#60c0d0'])
-call s:HL('Visual', s:none, s:gray)
-call s:HL('QuickFixLine', s:none, s:none, 'bold,italic')
+call s:HL('WildMenu', s:black, ['#d8dd41'])
+call s:HL('Todo', ['#b5d5b5'], s:none, 'italic')
+call s:HL('MatchParen', s:fg, ['#007fa0'])
+call s:HL('Folded', ['#bfa54f'], ['#1b1a1a'])
+call s:HL('FoldColumn', ['#bfa54f'])
 
 hi! link CursorLineNr LineNr
 " === TabLine ===
-call s:HL('TabLine', s:fg, ['#444444', 238])
-call s:HL('TabLinesel', s:fg, s:none, 'bold')
+call s:HL('TabLine', s:none, ['#444444', 238])
+call s:HL('TabLinesel', s:none, s:none, 'bold')
 call s:HL('TabLineFill', s:none)
 call s:HL('TabLineSeparator', s:bg, ['#444444', 238])
 
-" === Diff mode ===
+" === Diff ===
 call s:HL('DiffAdd', s:none, ['#192920'])
 call s:HL('DiffChange', s:none, ['#203045'])
 call s:HL('DiffDelete', ['#4f2525'], ['#4f2525'])
 call s:HL('DiffText', s:none)
 
+" === Msg ===
+call s:HL('Question', s:black, s:fg)
+call s:HL('ErrorMsg', s:white, ['#b53030', 124])
+call s:HL('WarningMsg', s:white, ['#8a5005', 130])
+call s:HL('ModeMsg', s:none, s:none, 'bold')
+call s:HL('MoreMsg', ['#60b030'])
+
+" === Spell ===
+call s:HL('SpellBad', s:none, s:none, 'underline')
+call s:HL('SpellCap', s:none, s:none, 'bold')
+call s:HL('SpellRare', s:none, s:none, 'italic')
+call s:HL('SpellLocal', s:none, s:none, 'undercurl')
+
 " === Popup menu ===
-call s:HL('PMenu', s:fg, s:bg1)
+call s:HL('PMenu', s:none, s:bg1)
 call s:HL('PMenuSel', s:black, s:fg)
 call s:HL('PMenuSbar', s:none, s:bg1)
 call s:HL('PMenuThumb', s:none, s:gray)
-
-" === Code folding ===
-call s:HL('Folded', ['#bfa54f'], ['#1b1a1a'])
-call s:HL('FoldColumn', ['#bfa54f'])
 
 " === Language highlight ===
 call s:HL('PreProc', ['#c678dd', 135])

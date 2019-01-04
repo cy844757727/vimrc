@@ -613,6 +613,29 @@ function! misc#Jump_C_K_J(...)
         endif
     endif
 endfunction
+
+
+function! misc#CleanBufferList()
+    let l:nrs = []
+
+    for l:tabnr in range(1, tabpagenr('$'))
+        for l:winnr in range(1, tabpagewinnr(l:tabnr, '$'))
+            let l:var = gettabwinvar(l:tabnr, l:winnr, 'bufHis', {})
+
+            if len(get(l:var, 'list', [])) > 0
+                let l:nrs += map(copy(l:var.list), "bufnr(v:val)")
+            endif
+        endfor
+    endfor
+
+    for l:str in split(execute('ls'), "\n")
+        let l:nr = matchstr(l:str, '^\(\s*\)\zs\d\+\ze\(\s\+"\)')
+
+        if !empty(l:nr) && index(l:nrs, l:nr + 0) == -1
+            exe 'silent bw '.l:nr
+        endif
+    endfor
+endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()

@@ -2,6 +2,10 @@
 " Maintainer:	Cy
 " Last Change:	2017-05-18
 
+if !has('gui_running') && (!has('termguicolors') || !&termguicolors)
+    finish
+endif
+
 if version > 580
   hi clear
   if exists("syntax_on")
@@ -25,7 +29,7 @@ let s:bg1   = ['#21252b']  " statuslinenc pmenu
 " Highlighting Function
 " Arguments: group, fg, bg, gui/cterm, guisp
 function! s:HL(group, ...)
-  let l:fg = a:0 > 0 ? a:1 : s:fg
+  let l:fg = a:0 > 0 ? a:1 : s:none
   let l:bg = a:0 > 1 ? a:2 : s:none
   let l:em = a:0 > 2 ? a:3 : 'NONE'
 
@@ -54,37 +58,36 @@ augroup Color_statusline
     autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
 augroup END
 
-" === Basic highlight ===
+
+" === Normal ===
 call s:HL('Normal', s:fg, s:bg)
-call s:HL('LineNr', ['#495162'])
+
+" === Misc highlight ===
 call s:HL('NonText')
+call s:HL('SignColumn')
 call s:HL('EndOfBuffer', s:bg)
-call s:HL('SignColumn', s:none)
 call s:HL('VertSplit', s:bg)
-call s:HL('CursorLine', s:none, ['#383e4a'])
-call s:HL('StatusLine', s:white, ['#006080'])
-call s:HL('StatusLineNC', s:fg, s:bg1, 'bold')
-call s:HL('Error', s:white, ['#d73130'])
-call s:HL('ErrorMsg', s:white, ['#c24038'])
-call s:HL('WarningMsg', s:white, ['#905510'])
-call s:HL('WildMenu', s:black, ['#e8ed51'])
-call s:HL('Question', s:bg, s:fg)
-call s:HL('MoreMsg', ['#60b030'])
-call s:HL('ModeMsg', s:none, s:none, 'bold')
+call s:HL('Visual', s:none, ['#3e4451'])
 call s:HL('Search', s:none, ['#314365'])
 call s:HL('InSearch', s:none, s:none, 'reverse')
-call s:HL('Todo', ['#e06c75'], s:bg, 'italic')
-call s:HL('MatchParen', s:fg, ['#007faf'])
-call s:HL('SpellBad', s:none, s:none, 'underline')
-call s:HL('Directory', ['#60c0d0'])
-call s:HL('Visual', s:none, ['#3e4451'])
 call s:HL('QuickFixLine', s:none, s:none, 'bold,italic')
+call s:HL('CursorLine', s:none, ['#383e4a'])
+call s:HL('StatusLine', s:white, ['#006080'])
+call s:HL('StatusLineNC', s:none, s:bg1, 'bold')
+call s:HL('Error', s:white, ['#d73130'])
+call s:HL('WildMenu', s:black, ['#e8ed51'])
+call s:HL('Todo', ['#e06c75'], s:none, 'italic')
+call s:HL('MatchParen', s:fg, ['#007faf'])
+call s:HL('LineNr', ['#495162'])
+call s:HL('Directory', ['#60c0d0'])
+call s:HL('Folded', ['#cfb55f'], ['#20242a'])
+call s:HL('FoldColumn', ['#cfb55f'])
 
 hi! link CursorLineNr LineNr
 " === TabLine ===
 call s:HL('TabLine', ['#ddddcf'], s:bg1)
 call s:HL('TabLinesel', ['#d5d5cf'], s:none, 'bold')
-call s:HL('TabLineFill', s:none)
+call s:HL('TabLineFill')
 call s:HL('TabLineSeparator', ['#383e4a'], s:bg1)
 
 " === Diff mode ===
@@ -93,15 +96,24 @@ call s:HL('DiffChange', s:none, ['#2d4c5a'])
 call s:HL('DiffDelete', ['#53232a'], ['#53232a'])
 call s:HL('DiffText', s:none)
 
+" === Msg ===
+call s:HL('Question', s:bg, s:fg)
+call s:HL('ErrorMsg', s:white, ['#c24038'])
+call s:HL('WarningMsg', s:white, ['#905510'])
+call s:HL('ModeMsg', s:none, s:none, 'bold')
+call s:HL('MoreMsg', ['#60b030'])
+
+" === Spell ===
+call s:HL('SpellBad', s:none, s:none, 'underline')
+call s:HL('SpellCap', s:none, s:none, 'bold')
+call s:HL('SpellRare', s:none, s:none, 'italic')
+call s:HL('SpellLocal', s:none, s:none, 'undercurl')
+
 " === Popup menu ui ===
-call s:HL('PMenu', s:fg, s:bg1)
+call s:HL('PMenu', s:none, s:bg1)
 call s:HL('PMenuSel', s:bg1, s:fg)
 call s:HL('PMenuSbar', s:none, s:bg1)
 call s:HL('PMenuThumb', s:none, ['#383e4a'])
-
-" === Code folding ===
-call s:HL('Folded', ['#cfb55f'], ['#20242a'])
-call s:HL('FoldColumn', ['#cfb55f'])
 
 " === Language highlight ===
 call s:HL('PreProc', ['#c678dd'])
@@ -135,10 +147,10 @@ call s:HL('BreakPoint', ['#de3d3b'])
 call s:HL('AsyncDbgHl', ['#8bebff'])
 
 " ale.vim
-call s:HL('ALEError', ['#eeeed0'], ['#d73130'])
 call s:HL('ALEErrorSign', ['#e44442'])
 call s:HL('ALEWarningSign', ['#ca9010'])
 
+hi! link ALEError Error
 hi! link ALEWarning Normal
 " tagbar.vim
 hi! link TagbarAccessPublic Comment
