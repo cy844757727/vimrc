@@ -2,10 +2,48 @@
 " Maintainer:	Cy
 " Last Change:	2017-05-18
 
+if version > 580
+  hi clear
+  if exists("syntax_on")
+    syntax reset
+  endif
+endif
+
 set background=dark
-hi clear
 set t_Co=256
-let g:colors_name = "OneMonokai"
+let g:colors_name = "oneMonokai"
+
+" palette
+let s:none  = ['NONE', 'NONE']
+let s:white = ['#ffffff']
+let s:black = ['#000000']
+let s:fg    = ['#abb2bf']
+let s:bg    = ['#282c34']
+let s:bg1   = ['#21252b']  " statuslinenc pmenu
+
+
+" Highlighting Function
+" Arguments: group, fg, bg, gui/cterm, guisp
+function! s:HL(group, ...)
+  let l:fg = a:0 > 0 ? a:1 : s:fg
+  let l:bg = a:0 > 1 ? a:2 : s:none
+  let l:em = a:0 > 2 ? a:3 : 'NONE'
+
+  let l:histring = [
+              \ 'hi', a:group,
+              \ 'guifg=' . fg[0], 'ctermfg=' . get(l:fg, 1, 'NONE'),
+              \ 'guibg=' . bg[0], 'ctermbg=' . get(l:bg, 1, 'NONE'),
+              \ 'gui=' . l:em, 'cterm=' . l:em
+              \ ]
+
+  " special
+  if a:0 > 3
+    call add(l:histring, 'guisp=' . a:4[0])
+  endif
+
+  execute join(l:histring, ' ')
+endfunction
+
 
 let s:NormalMode = '#006080'
 let s:InsertMode = '#6D0EF2'
@@ -15,78 +53,71 @@ augroup Color_statusline
     autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
     autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
 augroup END
+
 " === Basic highlight ===
-hi Normal cterm=NONE ctermfg=230 guifg=#abb2bf guibg=#282c34 gui=NONE
+call s:HL('Normal', s:fg, s:bg)
+call s:HL('LineNr', ['#495162'])
+call s:HL('NonText')
+call s:HL('EndOfBuffer', s:bg)
+call s:HL('SignColumn', s:none)
+call s:HL('VertSplit', s:bg)
+call s:HL('CursorLine', s:none, ['#383e4a'])
+call s:HL('StatusLine', s:white, ['#006080'])
+call s:HL('StatusLineNC', s:fg, s:bg1, 'bold')
+call s:HL('Error', s:white, ['#d73130'])
+call s:HL('ErrorMsg', s:white, ['#c24038'])
+call s:HL('WarningMsg', s:white, ['#905510'])
+call s:HL('WildMenu', s:black, ['#e8ed51'])
+call s:HL('Question', s:bg, s:fg)
+call s:HL('MoreMsg', ['#60b030'])
+call s:HL('ModeMsg', s:none, s:none, 'bold')
+call s:HL('Search', s:none, ['#314365'])
+call s:HL('InSearch', s:none, s:none, 'reverse')
+call s:HL('Todo', ['#e06c75'], s:bg, 'italic')
+call s:HL('MatchParen', s:fg, ['#007faf'])
+call s:HL('SpellBad', s:none, s:none, 'underline')
+call s:HL('Directory', ['#60c0d0'])
+call s:HL('Visual', s:none, ['#3e4451'])
+call s:HL('QuickFixLine', s:none, s:none, 'bold,italic')
 
-" Msg & Tip
-hi Error ctermfg=256 ctermbg=160 cterm=NONE guifg=#FFFFFF guibg=#D73130 gui=NONE
-hi ErrorMsg ctermfg=256 ctermbg=160 guifg=#FFFFFF guibg=#C24038 gui=NONE
-hi WarningMsg ctermfg=13 ctermbg=220 guifg=#FFFFFF guibg=#905510 gui=NONE
-hi Question cterm=NONE guifg=#282c34 guibg=#abb2bf
-hi MoreMsg cterm=NONE guifg=#60b030 gui=NONE
-hi Search ctermfg=232 ctermbg=208 guifg=NONE guibg=#314365 gui=NONE
-hi IncSearch ctermfg=232 ctermbg=208 guifg=#101010 guibg=#D96800 gui=NONE
-hi Todo cterm=italic guibg=#282c34 guifg=#e06c75 gui=italic
-
+hi! link CursorLineNr LineNr
 " === TabLine ===
-hi TabLine ctermfg=232 ctermbg=247 cterm=NONE guifg=#DDDDCF guibg=#21252B gui=NONE
-hi TabLinesel ctermfg=232 ctermbg=253 cterm=Bold guifg=#D5D5CF guibg=#383E4A gui=bold
-hi TabLineFill ctermfg=NONE ctermbg=NONE cterm=NONE guibg=NONE
-hi TabLineSeparator guibg=#21252B guifg=#383E4A gui=NONE
-
-" === misc ===
-hi MatchParen cterm=NONE guifg=#abb2bf guibg=#007FAF gui=NONE
-hi SpellBad cterm=underline ctermbg=NONE guibg=NONE
-hi NonText guifg=#abb2bf gui=NONE
-hi EndOfBuffer guifg=#282c34 gui=NONE
-hi SignColumn ctermbg=234 guibg=#282c34 gui=NONE
-hi Directory guifg=#60C0D0 gui=NONE
-hi Visual ctermfg=232 ctermbg=253 guifg=NONE guibg=#3E4451 gui=NONE
-hi LineNr ctermfg=242 ctermbg=NONE guifg=#495162 gui=NONE
-hi QuickFixLine cterm=bold,italic gui=bold,italic
-hi link TagbarSignature Directory
-
-" === separator ... ===
-hi CursorLine ctermfg=NONE ctermbg=235 cterm=NONE guifg=NONE guibg=#383E4A gui=NONE
-hi CursorLineNr ctermfg=242 ctermbg=NONE cterm=NONE guifg=#495162 guibg=NONE gui=NONE
-hi VertSplit ctermfg=253 ctermbg=253 cterm=NONE guifg=#282C34 guibg=#282c34 gui=NONE
-hi StatusLine ctermfg=16 ctermbg=253 cterm=NONE guifg=#FFFFFF guibg=#006080 gui=NONE
-hi StatusLineNC ctermfg=16 ctermbg=252 cterm=bold guifg=#abb2bf guibg=#21252B gui=bold
-"hi StatusLineTerm
-"hi StatusLineTermNC
+call s:HL('TabLine', ['#ddddcf'], s:bg1)
+call s:HL('TabLinesel', ['#d5d5cf'], s:none, 'bold')
+call s:HL('TabLineFill', s:none)
+call s:HL('TabLineSeparator', ['#383e4a'], s:bg1)
 
 " === Diff mode ===
-hi DiffAdd ctermfg=230 ctermbg=65 guifg=NONE guibg=#2D4C5A gui=NONE
-hi DiffChange ctermfg=230 ctermbg=24 guifg=NONE guibg=#2D4C5A gui=NONE
-hi DiffDelete ctermfg=230 ctermbg=95 guifg=#53232A guibg=#53232A gui=NONE
-hi DiffText ctermfg=230 ctermbg=2392 cterm=NONE guifg=NONE guibg=#20242A gui=NONE
+call s:HL('DiffAdd', s:none, ['#2d4c5a'])
+call s:HL('DiffChange', s:none, ['#2d4c5a'])
+call s:HL('DiffDelete', ['#53232a'], ['#53232a'])
+call s:HL('DiffText', s:none)
 
 " === Popup menu ui ===
-hi PMenu ctermfg=253 ctermbg=237 guifg=#acb2bf guibg=#21252B gui=NONE
-hi PMenuSel ctermfg=232 ctermbg=250 cterm=bold guifg=#acb2bf guibg=#2C313A gui=bold
-hi PMenuSbar ctermfg=NONE ctermbg=239 guifg=NONE guibg=#21252B gui=NONE
-hi PMenuThumb ctermfg=NONE ctermbg=250 guifg=NONE guibg=#2C313A gui=NONE
+call s:HL('PMenu', s:fg, s:bg1)
+call s:HL('PMenuSel', s:bg1, s:fg)
+call s:HL('PMenuSbar', s:none, s:bg1)
+call s:HL('PMenuThumb', s:none, ['#383e4a'])
 
 " === Code folding ===
-hi Folded ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#20242A gui=NONE
-hi FoldColumn ctermfg=222 ctermbg=232 guifg=#CFB55F guibg=#202020 gui=NONE
+call s:HL('Folded', ['#cfb55f'], ['#20242a'])
+call s:HL('FoldColumn', ['#cfb55f'])
 
 " === Language highlight ===
-hi PreProc ctermfg=176 guifg=#c678dd gui=NONE
-hi Type ctermfg=75 cterm=NONE guifg=#40BFFF gui=NONE
-hi Number ctermfg=208 guifg=#c678dd gui=NONE
-hi Identifier ctermfg=75 cterm=NONE guifg=#98c379 gui=NONE
-hi Constant ctermfg=208 guifg=#56b6c2 gui=NONE
-hi Special ctermfg=208 guifg=#F58440 gui=NONE
-hi Comment ctermfg=76 cterm=italic guifg=#676f7d gui=italic
-hi String ctermfg=215 guifg=#e5c07b gui=NONE
-hi Operator ctermfg=230 cterm=NONE guifg=#e06c75 gui=NONE
-hi Title guifg=#e06c75
-
-hi Statement guifg=#56b6c2
-hi Function guifg=#d19a66
-hi Conditional guifg=#e06c75
-hi Keyword guifg=#56b6c2
+call s:HL('PreProc', ['#c678dd'])
+call s:HL('Type', ['#40bfff'])
+call s:HL('Number', ['#c678dd'])
+call s:HL('Identifier', ['#98c379'])
+call s:HL('Constant', ['#56b6c2'])
+call s:HL('Comment', ['#676f7d'], s:none, 'italic')
+call s:HL('Statement', ['#56b6c2'])
+call s:HL('String', ['#e5c07b'])
+call s:HL('Operator', ['#e06c75'])
+call s:HL('Conditional', ['#e06c75'])
+call s:HL('Function', ['#d19a66'])
+call s:HL('Structure', ['#56b6c2'])
+call s:HL('Special', ['#f58440'])
+call s:HL('Keyword', ['#56b6c2'])
 
 hi! link Character String
 hi! link Title Condition
@@ -94,6 +125,31 @@ hi! link Repeat Conditional
 hi! link Exception Conditional
 hi! link Label Conditional
 
+" === Plugin highlight ===
+" BMBPSign.vim
+call s:HL('BookMark', ['#cc7832'])
+call s:HL('TodoList', ['#619fc6'])
+call s:HL('BreakPoint', ['#de3d3b'])
+
+" async.vim
+call s:HL('AsyncDbgHl', ['#8bebff'])
+
+" ale.vim
+call s:HL('ALEError', ['#eeeed0'], ['#d73130'])
+call s:HL('ALEErrorSign', ['#e44442'])
+call s:HL('ALEWarningSign', ['#ca9010'])
+
+hi! link ALEWarning Normal
+" tagbar.vim
+hi! link TagbarAccessPublic Comment
+hi! link TagbarAccessProtected Type
+hi! link TagbarAccessPrivate Conditional
+hi! link TagbarSignature Directory
+
+" NERDTree.vim
+hi! link NERDTreeDir Directory
+
+" === Link ===
 hi! link pythonDecoratorName Identifier
 hi! link pythonBuiltin Identifier
 hi! link Label Conditional
@@ -110,16 +166,3 @@ hi! link shStatement Identifier
 hi! link shLoop Conditional
 hi! link shEcho Normal
 
-hi! link NERDTreeDir Directory
-hi! link TagbarSignature Directory
-
-
-hi BookMark    ctermfg=16 guifg=#CC7832
-hi TodoList    ctermfg=16 guifg=#619FC6
-hi BreakPoint  ctermfg=16 guifg=#DE3D3B
-hi AsyncDbgHl  ctermfg=16 guifg=#8BEBFF
-" === ale.vim ===
-hi ALEError        ctermfg=NONE ctermbg=234 guifg=#EEEED0 guibg=#D73130 gui=NONE
-hi ALEErrorSign    ctermfg=9    guifg=#E44442 
-hi ALEWarningSign  ctermfg=215  guifg=#CA9010 
-hi link ALEWarning Normal
