@@ -3,7 +3,8 @@
 "syn match  pythonFunction '\h\w*' display contained nextgroup=pythonFunArgDef
 syn cluster pythonDS contains=pythonString,pythonRawString,pythonQuotes,pythonbuiltin,
             \ pythonrepeat,pythonOperator,pythonConditional,pythonNumber,pythonEscape
-syn cluster pythonBC contains=pythonString,pythonNumber,pythonbuiltin
+syn cluster pythonBC contains=pythonString,pythonRawString,pythonQuotes,pythonNumber,
+            \ pythonOperator,pythonbuiltin
 
 syn region pythonFuncall  matchgroup=Normal start='\w\zs(' end=')'
             \ contains=@pythonBC,pythonDataSet

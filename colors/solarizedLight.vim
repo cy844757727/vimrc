@@ -21,9 +21,6 @@ endif
 let g:colors_name = 'solarizedLight'
 
 
-augroup Color_statusline
-    autocmd!
-augroup END
 hi AsyncDbgHl  ctermbg=253 ctermfg=16 guibg=#FDF6E3 guifg=#8BEBFF gui=NONE
 hi default BookMark    ctermbg=253 ctermfg=16 guibg=#FDF6E3 guifg=#CC7832
 hi default TodoList    ctermbg=253 ctermfg=16 guibg=#FDF6E3 guifg=#619FC6

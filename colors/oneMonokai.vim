@@ -13,8 +13,8 @@ if version > 580
     endif
 endif
 
-set background=dark
 set t_Co=256
+set background=dark
 let g:colors_name = "oneMonokai"
 
 " palette
@@ -24,6 +24,27 @@ let s:black = ['#000000']
 let s:fg    = ['#abb2bf']
 let s:bg    = ['#282c34']
 let s:bg1   = ['#21252b']  " statuslinenc pmenu
+let s:red   = ['#e44442']  " error errorsign
+
+
+" Different highlight for statusline between insertion mode and others
+augroup Color_statusline_oneMonokai
+    autocmd!
+    autocmd InsertEnter * :hi statusline guibg=#6d0ef2
+    autocmd InsertLeave * :hi statusline guibg=#006080
+    autocmd ColorScheme * :call s:ClearAutocmd()
+augroup END
+
+" Clear autocmd & augroup when switching to other colorscheme
+function! s:ClearAutocmd()
+    if g:colors_name != 'oneMonokai'
+        augroup Color_statusline_oneMonokai
+            autocmd!
+        augroup END
+
+        augroup! Color_statusline_oneMonokai
+    endif
+endfunction
 
 
 " Highlighting Function
@@ -49,32 +70,22 @@ function! s:HL(group, ...)
 endfunction
 
 
-let s:NormalMode = '#006080'
-let s:InsertMode = '#6D0EF2'
-
-augroup Color_statusline
-    autocmd!
-    autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
-    autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
-augroup END
-
-
-" === Normal ===
+" === Normal text ===
 call s:HL('Normal', s:fg, s:bg)
 
 " === Misc highlight ===
 call s:HL('NonText')
 call s:HL('SignColumn')
-call s:HL('EndOfBuffer', s:bg)
 call s:HL('VertSplit', s:bg)
+call s:HL('EndOfBuffer', s:bg)
+call s:HL('Error', s:white, s:red)
 call s:HL('Visual', s:none, ['#3e4451'])
 call s:HL('Search', s:none, ['#314365'])
 call s:HL('InSearch', s:none, s:none, 'reverse')
-call s:HL('QuickFixLine', s:none, s:none, 'bold,italic')
+call s:HL('QuickFixLine', s:none, s:none, 'bold')
 call s:HL('CursorLine', s:none, ['#383e4a'])
 call s:HL('StatusLine', s:white, ['#006080'])
 call s:HL('StatusLineNC', s:none, s:bg1, 'bold')
-call s:HL('Error', s:white, ['#d73130'])
 call s:HL('WildMenu', s:black, ['#e8ed51'])
 call s:HL('Todo', ['#e06c75'], s:none, 'italic')
 call s:HL('MatchParen', s:fg, ['#007faf'])
@@ -147,7 +158,7 @@ call s:HL('BreakPoint', ['#de3d3b'])
 call s:HL('AsyncDbgHl', ['#8bebff'])
 
 " ale.vim
-call s:HL('ALEErrorSign', ['#e44442'])
+call s:HL('ALEErrorSign', s:red)
 call s:HL('ALEWarningSign', ['#ca9010'])
 
 hi! link ALEError Error

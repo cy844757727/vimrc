@@ -155,8 +155,8 @@ nnoremap <silent> \[ :pop<CR>
 nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
-vnoremap <C-f> yk:exe '/' . getreg('0')<CR><BS>n
-nnoremap <C-f> :exe '/' . expand('<cword>')<CR>N
+vnoremap <C-f> yk:exe '/' . getreg('0')<CR>
+nnoremap <C-f> yiwk:exe '/' . getreg('0')<CR>
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>

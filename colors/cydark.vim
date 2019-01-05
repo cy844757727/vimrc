@@ -1,6 +1,6 @@
 " Vim color file
 " Maintainer:	Cy
-" Last Change:	2019年 01月 03日 星期四 20:36:09 CST2017-05-18
+" Last Change: 2019年01月05日 星期六 17时40分06秒
 
 if !has('gui_running') && (!has('termguicolors') || !&termguicolors)
     finish
@@ -13,8 +13,8 @@ if version > 580
     endif
 endif
 
-set background=dark
 set t_Co=256
+set background=dark
 let g:colors_name = "cydark"
 
 " palette
@@ -25,6 +25,27 @@ let s:fg    = ['#c5c5bf', 251]
 let s:bg    = ['#202020', 234]
 let s:bg1   = ['#292929', 236]  " Statuslinunc pmenu
 let s:gray  = ['#353535', 236]  " search visual
+let s:red   = ['#e44442']       " error errorsign
+
+
+" Different highlight for statusline between insertion mode and others
+augroup Color_statusline_cydark
+    autocmd!
+    autocmd InsertEnter * :hi statusline guibg=#6D0EF2
+    autocmd InsertLeave * :hi statusline guibg=#105070
+    autocmd ColorScheme * :call s:ClearAutocmd()
+augroup END
+
+" Clear autocmd & augroup when switching to other colorscheme
+function! s:ClearAutocmd()
+    if g:colors_name != 'cydark'
+        augroup Color_statusline_cydark
+            autocmd!
+        augroup END
+
+        silent augroup! Color_statusline_cydark
+    endif
+endfunction
 
 
 " Highlighting Function
@@ -46,28 +67,19 @@ function! s:HL(group, ...)
         call add(l:hiString, 'guisp=' . a:4[0])
     endif
 
-    execute join(l:hiString, ' ')
+    exe join(l:hiString, ' ')
 endfunction
 
 
-let s:NormalMode = '#105070'
-let s:InsertMode = '#6D0EF2'
-
-augroup Color_statusline
-    autocmd!
-    autocmd InsertEnter * exe 'hi statusline guibg='.s:InsertMode
-    autocmd InsertLeave * exe 'hi statusline guibg='.s:NormalMode
-augroup END
-
-
-" === Normal ===
+" === Normal text ===
 call s:HL('Normal', s:fg, s:bg)
 
 " === Misc highlight ===
 call s:HL('NonText')
 call s:HL('SignColumn')
-call s:HL('EndOfBuffer', s:bg)
 call s:HL('VertSplit', s:bg)
+call s:HL('EndOfBuffer', s:bg)
+call s:HL('Error', s:white, s:red)
 call s:HL('Visual', s:none, s:gray)
 call s:HL('Search', s:none, s:gray)
 call s:HL('InSearch', s:none, s:none, 'reverse')
@@ -75,7 +87,6 @@ call s:HL('QuickFixLine', s:none, s:none, 'bold')
 call s:HL('CursorLine', s:none, ['#252525', 235])
 call s:HL('StatusLine', s:white, ['#105070', 24])
 call s:HL('StatusLineNC', s:none, s:bg1, 'bold')
-call s:HL('Error', s:white, ['#d73130', 160])
 call s:HL('LineNr', ['#4a4a4a', 239])
 call s:HL('Directory', ['#60c0d0'])
 call s:HL('WildMenu', s:black, ['#d8dd41'])
@@ -146,7 +157,7 @@ call s:HL('BreakPoint', ['#de3d3b'])
 call s:HL('AsyncDbgHl', ['#8bebff'])
 
 " ale.vim
-call s:HL('ALEErrorSign', ['#e44442'])
+call s:HL('ALEErrorSign', s:red)
 call s:HL('ALEWarningSign', ['#ca8010'])
 
 hi! link ALEError Error

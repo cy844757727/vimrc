@@ -21,10 +21,6 @@ if version > 580
   endif
 endif
 
-augroup Color_statusline
-    autocmd!
-augroup END
-
 if &background == 'light'
   let g:colors_name='gruvboxLight'
   hi TabLineSeparator guibg=#EBDBB2 guifg=#79740e gui=NONE
@@ -33,10 +29,10 @@ else
   hi TabLineSeparator guibg=#3C3836 guifg=#282828 gui=NONE
 endif
 
-hi BookMark    ctermfg=16 guifg=#CC7832
-hi TodoList    ctermfg=16 guifg=#619FC6
-hi BreakPoint  ctermfg=16 guifg=#DE3D3B
-hi AsyncDbgHl ctermfg=16 guifg=#8BEBFF
+hi BookMark    ctermfg=16 guifG=#cc7832
+hi TodoList    ctermfg=16 guifG=#619fc6
+hi BreakPoint  ctermfg=16 guifG=#de3d3b
+hi AsyncDbgHl ctermfg=16 guifg=#8bebff
 
 if !(has('termguicolors') && &termguicolors) && !has('gui_running') && &t_Co != 256
   finish
