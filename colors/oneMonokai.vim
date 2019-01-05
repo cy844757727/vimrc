@@ -7,10 +7,10 @@ if !has('gui_running') && (!has('termguicolors') || !&termguicolors)
 endif
 
 if version > 580
-  hi clear
-  if exists("syntax_on")
-    syntax reset
-  endif
+    hi clear
+    if exists("syntax_on")
+        syntax reset
+    endif
 endif
 
 set background=dark
@@ -29,23 +29,23 @@ let s:bg1   = ['#21252b']  " statuslinenc pmenu
 " Highlighting Function
 " Arguments: group, fg, bg, gui/cterm, guisp
 function! s:HL(group, ...)
-  let l:fg = a:0 > 0 ? a:1 : s:none
-  let l:bg = a:0 > 1 ? a:2 : s:none
-  let l:em = a:0 > 2 ? a:3 : 'NONE'
+    let l:fg = a:0 > 0 ? a:1 : s:none
+    let l:bg = a:0 > 1 ? a:2 : s:none
+    let l:em = a:0 > 2 ? a:3 : 'NONE'
 
-  let l:histring = [
-              \ 'hi', a:group,
-              \ 'guifg=' . fg[0], 'ctermfg=' . get(l:fg, 1, 'NONE'),
-              \ 'guibg=' . bg[0], 'ctermbg=' . get(l:bg, 1, 'NONE'),
-              \ 'gui=' . l:em, 'cterm=' . l:em
-              \ ]
+    let l:hiString = [
+                \ 'hi', a:group,
+                \ 'guifg=' . fg[0], 'ctermfg=' . get(l:fg, 1, 'NONE'),
+                \ 'guibg=' . bg[0], 'ctermbg=' . get(l:bg, 1, 'NONE'),
+                \ 'gui=' . l:em, 'cterm=' . l:em
+                \ ]
 
-  " special
-  if a:0 > 3
-    call add(l:histring, 'guisp=' . a:4[0])
-  endif
+    " special
+    if a:0 > 3
+        call add(l:hiString, 'guisp=' . a:4[0])
+    endif
 
-  execute join(l:histring, ' ')
+    execute join(l:hiString, ' ')
 endfunction
 
 
