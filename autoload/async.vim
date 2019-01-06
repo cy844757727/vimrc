@@ -1,7 +1,10 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Author: CY <844757727@qq.com>
-" Description: Asynchronous task
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""
+" File: async.vim
+" Author: Cy <844757727@qq.com>
+" Description: Asynchronous job & embedded terminal manager
+"              run or debug script language
+" Last Modified: 2019年01月06日 星期日 16时59分49秒
+""""""""""""""""""""""""""""""""""""""""""""""
 
 if exists('g:loaded_A_Async') || v:version < 800
   finish
@@ -9,9 +12,7 @@ endif
 let g:loaded_A_Async = 1
 
 
-" ===========================================
-" ===== Embeded terminal configure ===== {{{1
-" ===========================================
+" === Embeded terminal === {{{1
 hi default AsyncDbgHl ctermfg=16 guifg=#8BEBFF
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
@@ -64,7 +65,7 @@ endif
 " PostCmd: executing cmd after terminal started
 function! async#TermToggle(...)
     " Ensure starting insert mode
-    if bufname('%') =~ '^!' && mode() == 'n'
+    if bufname('%') =~# '\v^!' && mode() ==# 'n'
         normal a
     endif
 
@@ -91,12 +92,12 @@ function! async#TermToggle(...)
     let l:bufnr = bufnr(l:name)
 
     if l:winnr != -1
-        if l:action == 'on'
+        if l:action ==# 'on'
             exe l:winnr . 'wincmd w'
-        elseif l:action =~ 'off\|toggle'
+        elseif l:action =~# '\voff|toggle'
             exe l:winnr . 'hide'
         endif
-    elseif l:action =~ 'on\|toggle'
+    elseif l:action =~# '\von|toggle'
         " Hide other terminal
         let l:other = bufwinnr(s:termPrefix)
         if l:other != -1
@@ -121,7 +122,7 @@ function! async#TermToggle(...)
             " Display terminal
             silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:bufnr . 'buffer'
         endif
-    elseif l:action == 'off' && !empty(l:postCmd) && l:bufnr == -1
+    elseif l:action ==# 'off' && !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first starting
         let l:option = copy(s:termOption)
         let l:option['term_name'] = l:name
@@ -131,7 +132,7 @@ function! async#TermToggle(...)
     endif
 
     " Ensure starting insert mode
-    if bufname('%') =~ '^!' && mode() == 'n'
+    if bufname('%') =~# '\v^!' && mode() == 'n'
         normal a
     endif
 
@@ -146,11 +147,11 @@ endfunction
 
 " Switch terminal window between exists terminal {{{2
 function! async#TermSwitch(...)
-    if mode() == 'n'
+    if mode() ==# 'n'
         normal a
     endif
 
-    if bufname('%') !~ s:termPrefix
+    if bufname('%') !~# s:termPrefix
         return
     endif
 
@@ -161,7 +162,7 @@ function! async#TermSwitch(...)
         call map(l:termList, "split(v:val)[0] + 0")
         let l:ind = index(l:termList, bufnr('%'))
 
-        if l:action == 'next'
+        if l:action ==# 'next'
             let l:ind = (l:ind + 1) % len(l:termList)
         else
             let l:ind -= 1
@@ -174,22 +175,19 @@ function! async#TermSwitch(...)
         echo strpart(join(l:buf), 0, &columns)
     endif
 
-    if mode() == 'n'
+    if mode() ==# 'n'
         normal a
     endif
 endfunction
 
-" =====================================
-" ===== Asynchronous task/job ==== {{{1
-" =====================================
-
+" === Asynchronous task/job === {{{1
 " {'jobId': cmd}
 let s:asyncJob = {}
 let s:maxJob = 20
 
 
 " Cmd: list or string
-function! async#JobRun(cmd, ...)
+function! async#JobRun(cmd, bang)
     if len(s:asyncJob) > s:maxJob
         return
     endif
@@ -202,12 +200,12 @@ function! async#JobRun(cmd, ...)
                 \ })
 
     " Record a job
-    if job_status(l:job) == 'run'
+    if job_status(l:job) ==# 'run'
         let l:id = matchstr(l:job, '\d\+')
         let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}
         
-        if a:0 > 0
-            let s:asyncJob.op = a:1
+        if !empty(a:bang)
+            let s:asyncJob[l:id].quiet = 1
         endif
     endif
 endfunction
@@ -216,11 +214,9 @@ endfunction
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
 
-    if get(s:asyncJob[l:id], 'op', '') == 'q'
-        echo
-    elseif a:status != 0
+    if a:status != 0
         echo 'Failed: ' . s:asyncJob[l:id].cmd
-    else
+    elseif !has_key(s:asyncJob[l:id], 'quiet')
         echo 'Done: ' . s:asyncJob[l:id].cmd
     endif
 
@@ -243,11 +239,11 @@ function! async#JobStop(how)
     while 1
         let l:jobIds = input(l:prompt . "\nInput id: ", '', 'custom,async#JobIds_complete')
 
-        if l:jobIds !~ '\S'
+        if l:jobIds !~# '\v\S'
             return
         endif
 
-        for l:jobId in split(l:jobIds, '\s\+')
+        for l:jobId in split(l:jobIds, '\v\s+')
             if has_key(s:asyncJob, l:jobId)
                 call job_stop(s:asyncJob[l:jobId].job, l:how)
                 return
@@ -266,9 +262,7 @@ function! async#JobIds_complete(L, C, P)
     return join(keys(s:asyncJob), "\n")
 endfunction
 
-" =====================================
-" ===== Script run/debug ==== {{{1
-" =====================================
+" === Script run/debug === {{{1
 let s:dbgWinHeight = get(g:, 'BottomWinHeight', 15) * 2 / 3
 let s:dbgSideWidth = get(g:, 'SideWinWidth', 30) * 4 / 3
 
@@ -282,8 +276,8 @@ function! s:dbg.sendCmd(cmd, args, ...)
     let l:args = a:args
     let g:temp =1
 
-    if a:cmd == 'condition'
-        let l:breakInfo = t:dbg.name == 'bash' ? 'info break' : 'break'
+    if a:cmd ==# 'condition'
+        let l:breakInfo = t:dbg.name ==# 'bash' ? 'info break' : 'break'
         call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
 
         let l:counts = 10
@@ -293,7 +287,7 @@ function! s:dbg.sendCmd(cmd, args, ...)
         endwhile
 
         for l:str in get(t:dbg, 'break', [])
-            if l:str =~ substitute(a:args, getcwd().'/', '', '')
+            if l:str =~# substitute(a:args, getcwd().'/', '', '')
                 let l:id = matchstr(l:str, '^\d\+')
                 break
             endif
@@ -313,7 +307,7 @@ endfunction
 
 
 function! async#RunScript(...)
-    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%')
+    let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%')
 
     if !filereadable(l:file)
         return
@@ -322,7 +316,7 @@ function! async#RunScript(...)
     endif
 
     let l:lineOne = getbufline(l:file, 1)[0]
-    let l:interpreter = matchstr(l:lineOne, '^\(#!.*/\(env\s*\)\?\)\zs.*$')
+    let l:interpreter = matchstr(l:lineOne, '\v^(#!.*/(env\s+)?)\zs.*$')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
@@ -337,7 +331,7 @@ endfunction
 
 " Debug a script file
 function! async#DbgScript(...)
-    let l:file = a:0 > 0 && a:1 != '%' ? a:1 : expand('%:p')
+    let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%:p')
     let l:breakPoint = a:0 > 1 ? a:2 : []
     
     if !filereadable(l:file)
@@ -385,9 +379,9 @@ function! async#DbgScript(...)
 endfunction
 
 
-" Analyze script type & set val: cmd, postCmd, prompt, re
+" Analyze script type & set val: cmd, postCmd, prompt
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug
-" Prompt: command prompt     " Re: Regular expressions used to match msg
+" Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
     let l:lineOne = getbufline(a:file, 1)[0]
     let l:interpreter = matchstr(l:lineOne, '^\(#!.*/\(env\s*\)\?\)\zs\w\+')
@@ -404,7 +398,7 @@ function! s:DbgScriptAnalyze(file, breakPoint)
     let l:dbg.file = a:file
     let l:dbg.cwd = getcwd()
 
-    if l:interpreter == 'bash' && executable('bashdb')
+    if l:interpreter ==# 'bash' && executable('bashdb')
         " Bash script
         let l:dbg.name = 'bash'
         let l:dbg.tool = 'bashdb'
@@ -412,30 +406,30 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         call writefile(l:var + a:breakPoint + ['set args -q '.a:file], l:breakFile)
         let l:dbg.cmd = 'bashdb -q -x ' . l:breakFile . ' ' . a:file
-        let l:dbg.prompt = 'bashdb<\d\+>'
-        let l:dbg.fileNr = '(\(\S\+\):\(\d\+\)):'
-        let l:dbg.varVal = '^ \d\+: \(\S\+\) = \(.*\)$'
-        let l:dbg.breakLine = 'Num  *Type  *Disp  *Enb'
-        let l:dbg.stackLine =  '^\(->\|##\)\d\+ '
-        let l:dbg.watchLine = '^\(watchpoint \d\+: \|  old value: \|  new value: \)'
+        let l:dbg.prompt = '\mbashdb<\d\+>'
+        let l:dbg.fileNr = '\v\((\S+):(\d+)\):'
+        let l:dbg.varVal = '\v^ \d+: (\S+) = (.*)$'
+        let l:dbg.breakLine = '\vNum  *Type  *Disp  *Enb'
+        let l:dbg.stackLine =  '\v^(->|##)\d+ '
+        let l:dbg.watchLine = '\v^(watchpoint \d+: |  old value: |  new value: )'
         let l:dbg.d = "\n"
         let l:dbg.win = ['var', 'watch', 'stack']
-    elseif l:interpreter =~ 'python' && executable('pdb')
+    elseif l:interpreter =~# 'python' && executable('pdb')
         " Python script
         let l:dbg.name = 'python'
         let l:dbg.tool = 'pdb'
         let l:dbg.cmd = l:interpreter . ' -m pdb ' . a:file
-        let l:breakPoint = map(a:breakPoint, "join(split(v:val,'\\(:\\d\\+\\)\\zs\\s\\+'),' ,')")
+        let l:breakPoint = map(a:breakPoint, "join(split(v:val,'\\v(:\\d+)\\zs\\s+'),' ,')")
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         let l:dbg.postCmd = join(l:var + l:breakPoint, ';;')
-        let l:dbg.prompt = '(Pdb)'
-        let l:dbg.fileNr = '^> \(\S\+\)(\(\d\+\))'
-        let l:dbg.varVal = '^display \([^:]\+\): \(.*\)$'
-        let l:dbg.breakLine = '^Num  *Type  *Disp  *Enb'
-        let l:dbg.stackLine =  '  \S\+/bdb.py(\d\+)'
+        let l:dbg.prompt = '\v\(Pdb\)'
+        let l:dbg.fileNr = '\v^\> (\S+)\((\d+)\)'
+        let l:dbg.varVal = '\v^display ([^:]+): (.*)$'
+        let l:dbg.breakLine = '\v^Num  *Type  *Disp  *Enb'
+        let l:dbg.stackLine =  '\v  \S+/bdb.py\(\d+\)'
         let l:dbg.d = ';;'
         let l:dbg.win = ['var', 'stack']
-    elseif l:interpreter =~ 'perl'
+    elseif l:interpreter =~# 'perl'
         " Perl script
         let l:dbg.name = 'perl'
         let l:dbg.tool = 'perl'
@@ -448,9 +442,9 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         call writefile(l:alias + a:breakPoint, l:breakFile)
         let l:dbg.cmd = l:interpreter . ' -d ' . a:file
         let l:dbg.postCmd = 'source ' . l:breakFile
-        let l:dbg.prompt = ' DB<\d\+> '
-        let l:dbg.fileNr = '(\(\S\+\):\(\d\+\))'
-        let l:dbg.stackLine = '@ = '
+        let l:dbg.prompt = '\m DB<\d\+> '
+        let l:dbg.fileNr = '\v\((\S+):(\d+)\)'
+        let l:dbg.stackLine = '\m@ = '
         let l:dbg.win = []
     endif
 
@@ -513,46 +507,46 @@ endfunction
 function! s:DbgMaping(...)
     if exists('t:dbg.varWinId')
         call win_gotoid(t:dbg.varWinId)
-        noremap <buffer> <silent> <CR> :call <SID>DbgSendCmd(' ')<CR>
-        noremap <buffer> <silent> b :call <SID>DbgSendCmd("break")<CR>
+        nnoremap <buffer> <silent> <CR> :call <SID>DbgSendCmd(' ')<CR>
+        nnoremap <buffer> <silent> b :call <SID>DbgSendCmd("break")<CR>
 
         if t:dbg.tool == 'bashdb'
-            noremap <buffer> <silent> B :call <SID>DbgSendCmd("delete")<CR>
+            nnoremap <buffer> <silent> B :call <SID>DbgSendCmd("delete")<CR>
         else
-            noremap <buffer> <silent> B :call <SID>DbgSendCmd("clear")<CR>
+            nnoremap <buffer> <silent> B :call <SID>DbgSendCmd("clear")<CR>
         endif
 
-        noremap <buffer> <silent> C :call <SID>DbgSendCmd("condition")<CR>
-        noremap <buffer> <silent> D :call <SID>DbgSendCmd("disable")<CR>
-        noremap <buffer> <silent> E :call <SID>DbgSendCmd("enable")<CR>
-        noremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
-        noremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
-        noremap <buffer> <silent> S :call <SID>DbgSendCmd("skip")<CR>
-        noremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
-        noremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
-        noremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
-        noremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
-        noremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
-        noremap <buffer> <silent> v :call <SID>DbgSendCmd('display')<CR>
-        noremap <buffer> <silent> V :call <SID>DbgSendCmd('undisplay')<CR>
-        noremap <buffer> <silent> w :call <SID>DbgSendCmd('watch')<CR>
-        noremap <buffer> <silent> W :call <SID>DbgSendCmd('watche')<CR>
-        noremap <buffer> <silent> \d :call <SID>DbgSendCmd('_undisplay')<CR>
-        noremap <buffer> <silent> i :call <SID>DbgSendCmd('send')<CR>
-        noremap <buffer> <silent> r :call <SID>DbgSendCmd('return')<CR>
-        noremap <buffer> <silent> f :call <SID>DbgSendCmd('finish')<CR>
-        noremap <buffer> <silent> R :call <SID>DbgSendCmd('run')<CR>
-        noremap <buffer> <silent> <space> :call <SID>DbgVarDispaly()<CR>
-        noremap <buffer> <silent> 2 :2wincmd w<CR>
-        noremap <buffer> <silent> 3 :3wincmd w<CR>
-        noremap <buffer> <silent> 4 :4wincmd w<CR>
-        noremap <buffer> <silent> 5 :5wincmd w<CR>
+        nnoremap <buffer> <silent> C :call <SID>DbgSendCmd("condition")<CR>
+        nnoremap <buffer> <silent> D :call <SID>DbgSendCmd("disable")<CR>
+        nnoremap <buffer> <silent> E :call <SID>DbgSendCmd("enable")<CR>
+        nnoremap <buffer> <silent> c :call <SID>DbgSendCmd("continue")<CR>
+        nnoremap <buffer> <silent> s :call <SID>DbgSendCmd("step")<CR>
+        nnoremap <buffer> <silent> S :call <SID>DbgSendCmd("skip")<CR>
+        nnoremap <buffer> <silent> n :call <SID>DbgSendCmd("next")<CR>
+        nnoremap <buffer> <silent> j :call <SID>DbgSendCmd('jump')<CR>
+        nnoremap <buffer> <silent> u :call <SID>DbgSendCmd('until')<CR>
+        nnoremap <buffer> <silent> q :call <SID>DbgSendCmd('quit')<CR>
+        nnoremap <buffer> <silent> p :call <SID>DbgSendCmd('p')<CR>
+        nnoremap <buffer> <silent> v :call <SID>DbgSendCmd('display')<CR>
+        nnoremap <buffer> <silent> V :call <SID>DbgSendCmd('undisplay')<CR>
+        nnoremap <buffer> <silent> w :call <SID>DbgSendCmd('watch')<CR>
+        nnoremap <buffer> <silent> W :call <SID>DbgSendCmd('watche')<CR>
+        nnoremap <buffer> <silent> \d :call <SID>DbgSendCmd('_undisplay')<CR>
+        nnoremap <buffer> <silent> i :call <SID>DbgSendCmd('send')<CR>
+        nnoremap <buffer> <silent> r :call <SID>DbgSendCmd('return')<CR>
+        nnoremap <buffer> <silent> f :call <SID>DbgSendCmd('finish')<CR>
+        nnoremap <buffer> <silent> R :call <SID>DbgSendCmd('run')<CR>
+        nnoremap <buffer> <silent> <space> :call <SID>DbgVarDispaly()<CR>
+        nnoremap <buffer> <silent> 2 :2wincmd w<CR>
+        nnoremap <buffer> <silent> 3 :3wincmd w<CR>
+        nnoremap <buffer> <silent> 4 :4wincmd w<CR>
+        nnoremap <buffer> <silent> 5 :5wincmd w<CR>
     endif
 
     if exists('t:dbg.watchWinId')
         call win_gotoid(t:dbg.watchWinId)
-        noremap <buffer> <silent> 1 :1wincmd w<CR>
-        noremap <buffer> <silent> 3 :3wincmd w<CR>
+        nnoremap <buffer> <silent> 1 :1wincmd w<CR>
+        nnoremap <buffer> <silent> 3 :3wincmd w<CR>
         noremap <buffer> <silent> 4 :4wincmd w<CR>
         noremap <buffer> <silent> 5 :5wincmd w<CR>
         noremap <buffer> <silent> <space> :echo getline('.')<CR>
@@ -560,14 +554,14 @@ function! s:DbgMaping(...)
 
     if exists('t:dbg.stackWinId')
         call win_gotoid(t:dbg.stackWinId)
-        noremap <buffer> <silent> u :call <SID>DbgSendCmd('up')
-        noremap <buffer> <silent> d :call <SID>DbgSendCmd('down')
-        noremap <buffer> <silent> <space> :echo getline('.')<CR>
-        noremap <buffer> <silent> 1 :1wincmd w<CR>
-        noremap <buffer> <silent> 2 :2wincmd w<CR>
-        noremap <buffer> <silent> 3 :3wincmd w<CR>
-        noremap <buffer> <silent> 4 :4wincmd w<CR>
-        noremap <buffer> <silent> 5 :5wincmd w<CR>
+        nnoremap <buffer> <silent> u :call <SID>DbgSendCmd('up')<CR>
+        nnoremap <buffer> <silent> d :call <SID>DbgSendCmd('down')<CR>
+        nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
+        nnoremap <buffer> <silent> 1 :1wincmd w<CR>
+        nnoremap <buffer> <silent> 2 :2wincmd w<CR>
+        nnoremap <buffer> <silent> 3 :3wincmd w<CR>
+        nnoremap <buffer> <silent> 4 :4wincmd w<CR>
+        nnoremap <buffer> <silent> 5 :5wincmd w<CR>
     endif
 endfunction
 
@@ -595,24 +589,24 @@ let s:cmdPromptInfo = {
 function! <SID>DbgSendCmd(cmd)
     let l:prompt = get(s:cmdPromptInfo, a:cmd, '*****: ')
 
-    if a:cmd == 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
+    if a:cmd ==# 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
         return
-    elseif a:cmd == 'send'
-        let l:cmd = matchstr(input(l:prompt), '\S.*')
+    elseif a:cmd ==# 'send'
+        let l:cmd = matchstr(input(l:prompt), '\v\S.*')
     elseif index(['jump', 'until', 'skip', 'break', 'tbreak'], a:cmd) != -1
         let l:cmd = a:cmd . ' ' . input(l:prompt)
     elseif index(['display', 'undisplay', 'watch', 'watche', 'p'], a:cmd) != -1
         let l:cmd = a:cmd . ' ' . input(l:prompt, '', 'tag')
-    elseif a:cmd == 'run' && t:dbg.name == 'python'
+    elseif a:cmd ==# 'run' && t:dbg.name ==# 'python'
         let l:cmd = join(['run'] + map(keys(t:dbg.var), "'display '.v:val"), ';;')
-    elseif a:cmd == '_undisplay'
-        let l:var = matchstr(getline('.'), '^[^:]*')
+    elseif a:cmd ==# '_undisplay'
+        let l:var = matchstr(getline('.'), '\v^[^:]*')
         let l:cmd = 'undisplay ' . l:var
         unlet t:dbg.var[l:var]
         let t:dbg.varFlag = 1
     elseif index(['condition', 'disable', 'enable', 'clear', 'delete'], a:cmd) != -1
         if !get(t:dbg, 'breakFlag', 0)
-            let l:breakInfo = t:dbg.name == 'bash' ? 'info break' : 'break'
+            let l:breakInfo = t:dbg.name ==# 'bash' ? 'info break' : 'break'
             call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
 
             let l:counts = 10
@@ -666,15 +660,15 @@ function! s:DbgMsgHandle(job, msg)
 
     " Message analysis
     for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n")
-        if l:item =~ t:dbg.prompt
+        if l:item =~# t:dbg.prompt
             continue
-        elseif t:dbg.breakFlag == 1 || l:item =~ get(t:dbg, 'breakLine', '-^')
+        elseif t:dbg.breakFlag == 1 || l:item =~# get(t:dbg, 'breakLine', '-^')
             let t:dbg.break += [substitute(l:item, t:dbg.cwd.'/', '', '')]
             let t:dbg.breakFlag = 1
-        elseif t:dbg.stackFlag == 1 || l:item =~ get(t:dbg, 'stackLine', '-^')
+        elseif t:dbg.stackFlag == 1 || l:item =~# get(t:dbg, 'stackLine', '-^')
             let t:dbg.stack += [substitute(l:item, t:dbg.cwd.'/', '', '')]
             let t:dbg.stackFlag = 1
-        elseif l:item =~ get(t:dbg, 'watchLine', '-^')
+        elseif l:item =~# get(t:dbg, 'watchLine', '-^')
             let t:dbg.watch += [l:item]
         else
             " Try varVal match: Monitoring Variable Change
@@ -723,7 +717,7 @@ function! s:DbgMsgHandle(job, msg)
     if exists('l:fileNr')
         call win_gotoid(t:dbg.srcWinId)
 
-        if expand('%') !~ l:fileNr[0]
+        if expand('%') !~# l:fileNr[0]
             silent! exe 'edit ' . l:fileNr[0]
         endif
 
@@ -736,7 +730,7 @@ function! s:DbgMsgHandle(job, msg)
 
     " Update call stack window
     if !empty(t:dbg.stack)
-        if t:dbg.tool =~ 'pdb'
+        if t:dbg.tool =~# 'pdb'
             call remove(t:dbg.stack, 0, 2)
             call filter(t:dbg.stack, "v:val !~ '^->'")
         endif

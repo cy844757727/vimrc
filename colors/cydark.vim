@@ -1,6 +1,9 @@
-" Vim color file
-" Maintainer:	Cy
-" Last Change: 2019年01月05日 星期六 17时40分06秒
+" =================================================
+" File: cydark.vim
+" Author: Cy <844757727@qq.com>
+" Description: dark colorscheme
+" Last Modified: 2019年01月06日 星期日 17时02分45秒
+" =================================================
 
 if !has('gui_running') && (!has('termguicolors') || !&termguicolors)
     finish
@@ -38,7 +41,7 @@ augroup END
 
 " Clear autocmd & augroup when switching to other colorscheme
 function! s:ClearAutocmd()
-    if g:colors_name != 'cydark'
+    if g:colors_name !=# 'cydark'
         augroup Color_statusline_cydark
             autocmd!
         augroup END
@@ -49,96 +52,94 @@ endfunction
 
 
 " Highlighting Function
-" Arguments: group, fg, bg, gui/cterm, guisp
-function! s:HL(group, ...)
+" Args: group, fg, bg, gui/cterm, guisp
+function! s:HI(group, ...)
     let l:fg = a:0 > 0 ? a:1 : s:none
     let l:bg = a:0 > 1 ? a:2 : s:none
     let l:em = a:0 > 2 ? a:3 : 'NONE'
 
-    let l:hiString = [
-                \ 'hi', a:group,
-                \ 'guifg=' . fg[0], 'ctermfg=' . get(l:fg, 1, 'NONE'),
-                \ 'guibg=' . bg[0], 'ctermbg=' . get(l:bg, 1, 'NONE'),
-                \ 'gui=' . l:em, 'cterm=' . l:em
-                \ ]
+    let l:hiStr = 'hi ' . a:group .
+                \ ' guifg=' . fg[0] . ' ctermfg=' . get(l:fg, 1, 'NONE') .
+                \ ' guibg=' . bg[0] . ' ctermbg=' . get(l:bg, 1, 'NONE') .
+                \ ' gui=' . l:em . ' cterm=' . l:em
 
     " special
     if a:0 > 3
-        call add(l:hiString, 'guisp=' . a:4[0])
+        let l:hiStr .= ' guisp=' . a:4[0]
     endif
 
-    exe join(l:hiString, ' ')
+    exe l:hiStr
 endfunction
 
 
 " === Normal text ===
-call s:HL('Normal', s:fg, s:bg)
+call s:HI('Normal', s:fg, s:bg)
 
 " === Misc highlight ===
-call s:HL('NonText')
-call s:HL('SignColumn')
-call s:HL('VertSplit', s:bg)
-call s:HL('EndOfBuffer', s:bg)
-call s:HL('Error', s:white, s:red)
-call s:HL('Visual', s:none, s:gray)
-call s:HL('Search', s:none, s:gray)
-call s:HL('InSearch', s:none, s:none, 'reverse')
-call s:HL('QuickFixLine', s:none, s:none, 'bold')
-call s:HL('CursorLine', s:none, ['#252525', 235])
-call s:HL('StatusLine', s:white, ['#105070', 24])
-call s:HL('StatusLineNC', s:none, s:bg1, 'bold')
-call s:HL('LineNr', ['#4a4a4a', 239])
-call s:HL('Directory', ['#60c0d0'])
-call s:HL('WildMenu', s:black, ['#d8dd41'])
-call s:HL('Todo', ['#b5d5b5'], s:none, 'italic')
-call s:HL('MatchParen', s:fg, ['#007fa0'])
-call s:HL('Folded', ['#bfa54f'], ['#1b1a1a'])
-call s:HL('FoldColumn', ['#bfa54f'])
+call s:HI('NonText')
+call s:HI('SignColumn')
+call s:HI('VertSplit', s:bg)
+call s:HI('EndOfBuffer', s:bg)
+call s:HI('Error', s:white, s:red)
+call s:HI('Visual', s:none, s:gray)
+call s:HI('Search', s:none, s:gray)
+call s:HI('InSearch', s:none, s:none, 'reverse')
+call s:HI('QuickFixLine', s:none, s:none, 'bold')
+call s:HI('CursorLine', s:none, ['#252525', 235])
+call s:HI('StatusLine', s:white, ['#105070', 24])
+call s:HI('StatusLineNC', s:none, s:bg1, 'bold')
+call s:HI('LineNr', ['#4a4a4a', 239])
+call s:HI('Directory', ['#60c0d0'])
+call s:HI('WildMenu', s:black, ['#d8dd41'])
+call s:HI('Todo', ['#b5d5b5'], s:none, 'italic')
+call s:HI('MatchParen', s:fg, ['#007fa0'])
+call s:HI('Folded', ['#bfa54f'], ['#1b1a1a'])
+call s:HI('FoldColumn', ['#bfa54f'])
 
 hi! link CursorLineNr LineNr
 " === TabLine ===
-call s:HL('TabLine', s:none, ['#444444', 238])
-call s:HL('TabLinesel', s:none, s:none, 'bold')
-call s:HL('TabLineFill', s:none)
-call s:HL('TabLineSeparator', s:bg, ['#444444', 238])
+call s:HI('TabLine', s:none, ['#444444', 238])
+call s:HI('TabLinesel', s:none, s:none, 'bold')
+call s:HI('TabLineFill', s:none)
+call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 
 " === Diff ===
-call s:HL('DiffAdd', s:none, ['#192920'])
-call s:HL('DiffChange', s:none, ['#203045'])
-call s:HL('DiffDelete', ['#4f2525'], ['#4f2525'])
-call s:HL('DiffText', s:none)
+call s:HI('DiffAdd', s:none, ['#192920'])
+call s:HI('DiffChange', s:none, ['#203045'])
+call s:HI('DiffDelete', ['#4f2525'], ['#4f2525'])
+call s:HI('DiffText', s:none)
 
 " === Msg ===
-call s:HL('Question', s:black, s:fg)
-call s:HL('ErrorMsg', s:white, ['#b53030', 124])
-call s:HL('WarningMsg', s:white, ['#8a5005', 130])
-call s:HL('ModeMsg', s:none, s:none, 'bold')
-call s:HL('MoreMsg', ['#60b030'])
+call s:HI('Question', s:black, s:fg)
+call s:HI('ErrorMsg', s:white, ['#b53030', 124])
+call s:HI('WarningMsg', s:white, ['#8a5005', 130])
+call s:HI('ModeMsg', s:none, s:none, 'bold')
+call s:HI('MoreMsg', ['#60b030'])
 
 " === Spell ===
-call s:HL('SpellBad', s:none, s:none, 'underline')
-call s:HL('SpellCap', s:none, s:none, 'bold')
-call s:HL('SpellRare', s:none, s:none, 'italic')
-call s:HL('SpellLocal', s:none, s:none, 'undercurl')
+call s:HI('SpellBad', s:none, s:none, 'underline')
+call s:HI('SpellCap', s:none, s:none, 'bold')
+call s:HI('SpellRare', s:none, s:none, 'italic')
+call s:HI('SpellLocal', s:none, s:none, 'undercurl')
 
 " === Popup menu ===
-call s:HL('PMenu', s:none, s:bg1)
-call s:HL('PMenuSel', s:black, s:fg)
-call s:HL('PMenuSbar', s:none, s:bg1)
-call s:HL('PMenuThumb', s:none, s:gray)
+call s:HI('PMenu', s:none, s:bg1)
+call s:HI('PMenuSel', s:black, s:fg)
+call s:HI('PMenuSbar', s:none, s:bg1)
+call s:HI('PMenuThumb', s:none, s:gray)
 
 " === Language highlight ===
-call s:HL('PreProc', ['#c678dd', 135])
-call s:HL('Type', ['#40bfff', 75])
-call s:HL('Number', ['#fa8525', 208])
-call s:HL('Identifier', ['#56b6c2', 75])
-call s:HL('Constant', ['#f58440', 208])
-call s:HL('Comment', ['#458520', 76], s:none, 'italic')
-call s:HL('Statement', ['#ddb740', 220])
-call s:HL('String', ['#e5c07b', 215])
-call s:HL('Operator', ['#c5e5f5', 230])
-call s:HL('Conditional', ['#e06c75', 220])
-call s:HL('Function', ['#d18a66'])
+call s:HI('PreProc', ['#c678dd', 135])
+call s:HI('Type', ['#40bfff', 75])
+call s:HI('Number', ['#fa8525', 208])
+call s:HI('Identifier', ['#56b6c2', 75])
+call s:HI('Constant', ['#f58440', 208])
+call s:HI('Comment', ['#458520', 76], s:none, 'italic')
+call s:HI('Statement', ['#ddb740', 220])
+call s:HI('String', ['#e5c07b', 215])
+call s:HI('Operator', ['#c5e5f5', 230])
+call s:HI('Conditional', ['#e06c75', 220])
+call s:HI('Function', ['#d18a66'])
 
 hi! link Special Constant
 hi! link Character String
@@ -149,16 +150,16 @@ hi! link Title Conditional
 
 " === Plugin highlight ===
 " BMBPSign.vim
-call s:HL('BookMark', ['#cc7832'])
-call s:HL('TodoList', ['#619fc6'])
-call s:HL('BreakPoint', ['#de3d3b'])
+call s:HI('BookMark', ['#cc7832'])
+call s:HI('TodoList', ['#619fc6'])
+call s:HI('BreakPoint', ['#de3d3b'])
 
 " async.vim
-call s:HL('AsyncDbgHl', ['#8bebff'])
+call s:HI('AsyncDbgHl', ['#8bebff'])
 
 " ale.vim
-call s:HL('ALEErrorSign', s:red)
-call s:HL('ALEWarningSign', ['#ca8010'])
+call s:HI('ALEErrorSign', s:red)
+call s:HI('ALEWarningSign', ['#ca8010'])
 
 hi! link ALEError Error
 hi! link ALEWarning Normal
@@ -172,11 +173,11 @@ hi! link TagbarSignature Directory
 hi! link NERDTreeDir Directory
 
 " === Specific language ===
-hi! link pythonFunction   Identifier
-hi! link pythonBuiltIN    Function
-hi! link pythonOperator   Conditional
+hi! link pythonFunction Identifier
+hi! link pythonBuiltIN Function
+hi! link pythonOperator Conditional
 
-hi! link verilogOperator  Normal
+hi! link verilogOperator Normal
 hi! link systemverilogOperator Normal
 
 hi! link shQuote String

@@ -154,7 +154,6 @@ function! s:TabPage()
     let l:lin = float2nr(0.4 * &lines)
     silent $tabnew .Git_log
     setlocal noreadonly modifiable
-    let t:tab_lable = ['', 'Git-Manager']
     call setline(1, git#FormatLog())
     setlocal readonly nomodifiable
     exe 'silent belowright ' . l:col . 'vnew .Git_status'
@@ -174,10 +173,12 @@ function! s:TabPage()
     setlocal readonly nomodifiable
     normal zj
     3wincmd w
+    let t:tab_lable = ['', 'Git-Manager']
+    let t:git_tabpageManager = 1
 endfunction
 
 function! git#Toggle()
-    if expand('%') =~ '^.Git_\(log\|commit\|status\|branch\)$'
+    if exists('t:git_tabpageManager')
         let l:gitTab = tabpagenr()
         try
             exe s:TabPrevious . 'tabnext'
@@ -198,16 +199,9 @@ function! git#Toggle()
     endif
 endfunction
 
-function! git#Refresh(...)
+function! git#Refresh()
     if bufwinnr('.Git_log') != -1
         let l:winnr = winnr()
-        if a:0 > 0
-            let l:col = float2nr(0.4 * &columns)
-            let l:lin = float2nr(0.4 * &lines)
-            exe '2resize ' . l:lin
-            exe 'vert 3resize ' . l:col
-            exe '4resize ' . l:lin
-        endif
         4wincmd w
         setlocal noreadonly modifiable
         let l:pos = getpos('.')
@@ -230,6 +224,8 @@ function! git#Refresh(...)
         call setpos('.', l:pos)
         setlocal readonly nomodifiable
         exe l:winnr . 'wincmd w'
+        let t:tab_lable = ['', 'Git-Manager']
+        let t:git_tabpageManager = 1
     endif
 endfunction
 

@@ -2,7 +2,7 @@
 if exists("b:did_ftplugin_")
     finish
 endif
-let b:did_ftplugin = 1
+let b:did_ftplugin_ = 1
 setlocal cindent
 let b:ale_fixers = ['clang-format']
 

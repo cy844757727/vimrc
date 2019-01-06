@@ -8,7 +8,7 @@ endif
 let g:loaded_A_Misc = 1
 
 
-augroup MISC_autocmd
+augroup misc_autocmd
     autocmd!
     " Auto record buf history for each window
     autocmd BufEnter *[^0-9] call s:BufHisRecord()
@@ -30,18 +30,26 @@ endfunction
 " Update NerdTree, refresh tags file ...
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
-function! misc#F5FunctionKey(...)
+function! misc#F5FunctionKey(...) abort
     wall
-    if &filetype == 'nerdtree'
-        call b:NERDTree.root.refresh()
-        call b:NERDTree.render()
-    elseif &filetype == 'tagbar'
-        Async ctags -R -f .tags
-    elseif &filetype =~ '^git\(log\|commit\|status\|branch\)$'
-        call git#Refresh()
+    if expand('%') =~# '\v^!'
+        normal a
+        wincmd W
+        if a:0 == 0
+            call misc#F5FunctionKey()
+        else
+            call misc#F5FunctionKey('reverse')
+        endif
     elseif &diff
         diffupdate
-    elseif &filetype == 'verilog'
+    elseif exists('t:git_tabpageManager')
+        call git#Refresh()
+    elseif &filetype ==# 'nerdtree'
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
+    elseif &filetype ==# 'tagbar'
+        Async ctags -R -f .tags
+    elseif &filetype ==# 'verilog'
         if isdirectory('work')
             AsyncRun vlog -work work %
         else
@@ -76,6 +84,29 @@ function! misc#F5FunctionKey(...)
             endif
         endif
     endif
+endfunction
+
+
+function misc#SwitchToEmptyBuftype(orient)
+    if empty(&buftype)
+        return 1
+    elseif winnr('$') == 1
+        return 0
+    endif
+
+    let l:cur = winnr()
+    let l:ex = a:orient ==# 'b' ? 'wincmd W' : 'wincmd w'
+
+    exe l:ex
+    while !empty(&buftype) && winnr() != l:cur
+        exe l:ex
+    endwhile
+
+    if winnr() == l:cur
+        return 0
+    endif
+
+    return 1
 endfunction
 
 

@@ -95,13 +95,15 @@ augroup UsrDefCmd
 augroup END
 
 command! Info :echo misc#Information('more')
+command! Date :normal a<C-r>=strftime('%c')<Esc>
+command! UTags :Async! ctags -R -f .tags
+command! -nargs=+ -complete=file Open :Async xdg-open <args>
 command! -nargs=? Vresize :vertical resize <args>
 command! -nargs=? -complete=file T :tabe <args>
 command! -range TN :<line1>tabnext
 command! -range TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
-command! UTags :Async ctags -R -f .tags
 command! Avdel :Async vdel -lib work -all
 
 "快捷键映射===================== {{{1
@@ -240,6 +242,8 @@ noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 
+tnoremap <silent> <f5>      <C-w>N:call misc#F5FunctionKey()<CR>
+tnoremap <silent> <C-f5>    <C-w>N:call misc#F5FunctionKey('reverse')<CR>
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call misc#BufSwitch('next')<CR>
@@ -304,6 +308,8 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 " ===== change a:line to line below ===============================================
 " =================================================================================
 
+" snippets.vim
+let g:snips_author = 'Cy <844757727@qq.com>'
 " === tagBar.vim === {{{1
 let g:tagbar_width=get(g:, 'SideWinWidth', 31)
 let g:tagbar_vertical= &lines/2 - 2
@@ -407,15 +413,16 @@ let g:BMBPSign_ProjectType = {
                 \ }
 
 let g:BMBPSign_PreSaveEventList = [
-            \ 'call PreSaveWorkSpace_TabVar()',
+            \ 'call PreSaveWorkSpace_Var()',
             \ 'call misc#CleanBufferList()'
             \ ]
 
 let g:BMBPSign_PostLoadEventList = [
-            \ 'call PostLoadWorkSpace_TabVar()'
+            \ 'call PostLoadWorkSpace_Var()',
+            \ 'Async! ctags -R -f .tags'
             \ ]
 
-function! PreSaveWorkSpace_TabVar()
+function! PreSaveWorkSpace_Var()
     let g:TABVAR_MAXMIZEWIN = {}
     let g:TABVAR_RECORDOFTREE = {}
     let g:WINVAR_BUFHIS = {}
@@ -450,7 +457,7 @@ function! PreSaveWorkSpace_TabVar()
     endif
 endfunction
 
-function! PostLoadWorkSpace_TabVar()
+function! PostLoadWorkSpace_Var()
     if exists('g:TABVAR_MAXMIZEWIN')
         for [l:nr, l:val] in items(g:TABVAR_MAXMIZEWIN)
             call settabvar(l:nr, 'MaxmizeWin', l:val)

@@ -1,11 +1,14 @@
-"syn match  pythonFunParamter '\h\w*' display contained
-"syn region pythonFunArgDef matchgroup=Normal start='(' end=')' contained contains=pythonFunParamter
-"syn match  pythonFunction '\h\w*' display contained nextgroup=pythonFunArgDef
+" File: python.vim
+" Author: cy
+" Description: extend python syntax
+" Last Modified: 2019年01月06日 星期日 16时42分26秒
+
 syn cluster pythonDS contains=pythonString,pythonRawString,pythonQuotes,pythonbuiltin,
             \ pythonrepeat,pythonOperator,pythonConditional,pythonNumber,pythonEscape
 syn cluster pythonBC contains=pythonString,pythonRawString,pythonQuotes,pythonNumber,
             \ pythonOperator,pythonbuiltin
 
+syn match pythonSystemVariable '\<__\w\+__\>'
 syn region pythonFuncall  matchgroup=Normal start='\w\zs(' end=')'
             \ contains=@pythonBC,pythonDataSet
 syn region pythonDataIndex  matchgroup=Normal start='\(\w\|)\)\zs\[' end=']'
@@ -19,4 +22,5 @@ syn region pythonDataSet  matchgroup=pythonDataBoundary start='\W\zs(' end=')'
             \ contains=@pythonDS,pythonDataSet,pythonFunCall,
 
 hi default link pythonDataBoundary Constant
+hi default link pythonSystemVariable pythonBuiltIN
 

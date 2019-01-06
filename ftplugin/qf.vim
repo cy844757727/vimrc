@@ -2,10 +2,10 @@
 "
 "
 
-if exists("b:did_ftplugin")
+if exists("b:did_ftplugin_")
     finish
 endif
-let b:did_ftplugin = 1
+let b:did_ftplugin_ = 1
 
 nnoremap <buffer> t :call <SID>Open('tabedit')<CR>
 nnoremap <buffer> T :call <SID>Open('-tabedit')<CR>

@@ -1,7 +1,10 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Author: CY <844757727@qq.com>
+""""""""""""""""""""""""""""""""""""""""""""""
+" File: BMBPSign.vim
+" Author: Cy <844757727@qq.com>
 " Description: BookMark_TodoList_BreakPoint_ProjectManager
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Last Modified: 2019年01月06日 星期日 16时57分28秒
+""""""""""""""""""""""""""""""""""""""""""""""
+
 if exists('g:loaded_A_BMBPSign') || !has('signs')
   finish
 endif
@@ -143,7 +146,7 @@ function s:SignToggle(file, line, type, attr, skip)
         let s:signId[s:newSignId] = [a:type, a:file]
 
         " Support async.vim script debug
-        if exists('t:dbg') && a:type =~ 'break'
+        if exists('t:dbg') && a:type =~# 'break'
             call t:dbg.sendCmd(a:type, a:file.':'.a:line)
         endif
     elseif a:skip == 0
@@ -153,7 +156,7 @@ function s:SignToggle(file, line, type, attr, skip)
         unlet s:signId[l:id[1]]
 
         " Support async.vim script debug
-        if exists('t:dbg') && a:type =~ 'break'
+        if exists('t:dbg') && a:type =~# 'break'
             call t:dbg.sendCmd('clear', a:file.':'.a:line)
         endif
     endif
@@ -170,7 +173,7 @@ function s:SignJump(types, action, id, attrs, file)
             return
         endif
 
-        if a:action == 'next'
+        if a:action ==# 'next'
             call add(l:vec, remove(l:vec, 0))
         else
             call insert(l:vec, remove(l:vec, -1))
@@ -222,14 +225,14 @@ function s:SignClear(types)
 
         " Unset sign
         for l:sign in l:vec
-            if l:sign.attr !~ '&keep'
+            if l:sign.attr !~# '\v&keep'
                 exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
                 unlet s:signId[l:sign.id]
             endif
         endfor
 
         " Empty vec
-        call filter(l:vec, "v:val.attr =~ '&keep'")
+        call filter(l:vec, "v:val.attr =~# '\v&keep'")
     endfor
 endfunction
 
@@ -252,7 +255,7 @@ function s:SignLoad(signFile, types)
     let l:types = []
     for l:str in l:signList
         try
-            let [l:type, l:file, l:line] = split(l:str, '[ :]\+')[0:2]
+            let [l:type, l:file, l:line] = split(l:str, '\v[ :]+')[0:2]
             let l:types += [l:type]
         catch
             " Ignore damaged item
@@ -265,7 +268,7 @@ function s:SignLoad(signFile, types)
             exe 'silent badd ' . l:file
         endif
 
-        let l:attr = matchstr(l:str, '\(:\d\+\s\+\)\zs.*$')
+        let l:attr = matchstr(l:str, '\v(:\d+\s+)\zs.*$')
         call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
     endfor
 
@@ -320,7 +323,7 @@ endfunction
 
 function s:strMatch(str, words)
     for l:word in a:words
-        if a:str !~ l:word
+        if a:str !~? l:word
             return 0
         endif
     endfor
@@ -338,7 +341,7 @@ function s:SignFilter(types, file, lin, attrs)
         for l:sign in s:signVec[l:type]
             let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:sign.id.'  \S\+='.s:signDefHead)
             
-            if !empty(l:list) && l:list[1] =~ a:lin && s:strMatch(l:sign.attr, a:attrs)
+            if !empty(l:list) && l:list[1] =~? a:lin && s:strMatch(l:sign.attr, a:attrs)
                 let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
             endif
         endfor
@@ -372,7 +375,7 @@ function s:SignAddAttr(types, file, lin, attrs)
     endif
 
     let l:str = s:SignDisplayStr(l:items)
-    let l:arg = split(input(l:str.'Input id and attr: '), '^\(\d\+\)\zs\s\+')
+    let l:arg = split(input(l:str.'Input id and attr: '), '\v^(\d+)\zs\s+')
     let l:val = get(l:items, get(l:arg, 0, ''), {})
 
     if empty(l:val)
@@ -391,7 +394,7 @@ function s:SignAddAttr(types, file, lin, attrs)
     call s:QfListUpdate([l:val.type])
     
     " Support async.vim script debug
-    if exists('t:dbg') && l:val.type =~ 'break'
+    if exists('t:dbg') && l:val.type =~# 'break'
         call t:dbg.sendCmd('condition', l:val.sign['file'].':'.l:val['lin'], l:val.sign.attr)
     endif
 endfunction
@@ -412,7 +415,7 @@ function s:SignUnsetById(ids)
         endif
 
         " Support async.vim script debug
-        if exists('t:dbg') && exists('l:items') && l:items[l:id].type =~ 'break'
+        if exists('t:dbg') && exists('l:items') && l:items[l:id].type =~# 'break'
             call t:dbg.sendCmd('clear', l:file.':'.l:items[l:id].lin)
         endif
     endfor
@@ -430,19 +433,19 @@ function s:ProjectNew(name, type, path)
     let g:BMBPSign_Projectized = 1
 
     " path -> absolute path | Default
-    let l:type = a:type == '.' ? 'undef' : a:type
-    let l:path = a:path == '.' ? getcwd() : a:path
+    let l:type = a:type ==# '.' ? 'undef' : a:type
+    let l:path = a:path ==# '.' ? getcwd() : a:path
 
     " Whether it already exists
     for l:i in range(len(s:projectItem))
-        if l:path == split(s:projectItem[l:i])[-1]
+        if l:path ==# split(s:projectItem[l:i])[-1]
             let l:item = remove(s:projectItem, l:i)
             break
         endif
     endfor
 
     " For new item or modifing item(already exists)
-    if a:path == '.' || !exists('l:item')
+    if a:path ==# '.' || !exists('l:item')
         let l:item = printf('%-20s  Type: %-12s  Path: %s', a:name, l:type, l:path)
     endif
 
@@ -451,7 +454,7 @@ function s:ProjectNew(name, type, path)
     call writefile(s:projectItem, s:projectFile)
 
     " cd path
-    if l:path != getcwd()
+    if l:path !=# getcwd()
         if !isdirectory(l:path)
             call mkdir(l:path, 'p')
         endif
@@ -471,11 +474,11 @@ function s:ProjectSwitch(sel)
     let l:path = split(s:projectItem[a:sel])[-1]
 
     " Do not load twice
-    if l:path == getcwd() && exists('g:BMBPSign_Projectized')
+    if l:path ==# getcwd() && exists('g:BMBPSign_Projectized')
         return
     endif
 
-    if l:path != getcwd()
+    if l:path !=# getcwd()
         " Save current workspace
         if exists('g:BMBPSign_SignSetFlag')
             call s:SignSave(s:signFile, keys(s:signVec))
@@ -553,11 +556,11 @@ function s:ProjectMenu()
             call add(l:start, remove(l:start, 0))
         elseif l:char ==# 'P' && l:start != []
             call insert(l:start, remove(l:start, -1))
-        elseif l:char == 's'
+        elseif l:char ==# 's'
             let [l:tip, l:mode] = ['!?:', 's']
-        elseif l:char =~ 'd'
+        elseif l:char =~# 'd'
             let [l:tip, l:mode] = ['Del:', 'd']
-        elseif l:char == 'm'
+        elseif l:char ==# 'm'
             let [l:tip, l:mode] = ['Mod:', 'm']
         elseif l:char ==# 'q' || l:char == "\<Esc>"
             return
@@ -565,17 +568,17 @@ function s:ProjectMenu()
             qall
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
-        elseif l:char =~ '\d\|\s' && l:char < len(s:projectItem)
+        elseif l:char =~# '\d\|\s' && l:char < len(s:projectItem)
             " Specific operation
-            if l:mode == 's' && !(getcwd() == split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSign_Projectized'))
+            if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSign_Projectized'))
                 " select
                 call s:ProjectSwitch(l:char + 10 * (l:page - 1))
                 break
-            elseif l:mode == 'd'
+            elseif l:mode ==# 'd'
                 " delete
                 call remove(s:projectItem, l:char)
                 call writefile(s:projectItem, s:projectFile)
-            elseif l:mode == 'm'
+            elseif l:mode ==# 'm'
                 " modify
                 let l:path = split(s:projectItem[l:char])[-1]
                 echo s:ProjectUI(l:start[0], '▼ Modelify item ' . str2nr(l:char))
@@ -589,7 +592,7 @@ function s:ProjectMenu()
                     let l:tip = 'Wrong Argument, Reselect. Mod:'
                 endif
             endif
-        elseif l:char =~ '[an]'
+        elseif l:char =~# '\v[an]'
             " new
             echo s:ProjectUI(l:start[0], '▼ New Project')
             let l:argv = split(input('<name> <type> [path]: ', '', 'file'))
@@ -818,7 +821,7 @@ function BMBPSign#SignToggle(...)
     for l:i in range(len(a:000))
         if has_key(s:signVec, a:000[l:i])
             let l:type = a:000[l:i]
-        elseif a:000[l:i] == '.'
+        elseif a:000[l:i] ==# '.'
             let l:cur = 1
         elseif a:000[l:i]
             let l:lins += [a:000[l:i]]
@@ -841,7 +844,7 @@ function BMBPSign#SignToggle(...)
     endif
 
     for l:lin in l:lins
-        if l:type == 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
+        if l:type ==# 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
             exe 'buffer ' . l:file
             call cursor(l:lin, 1)
             call append('.', s:TodoStatement(getbufvar(l:file, '&filetype')))
@@ -869,7 +872,7 @@ function BMBPSign#SignJump(...)
             let l:id = a:000[l:i]
         elseif filereadable(a:000[l:i])
             let l:file = a:000[l:i]
-        elseif a:000[l:i] == '%'
+        elseif a:000[l:i] ==# '%'
             let l:file = expand('%')
         else
             let l:attrs = a:000[l:i:]
@@ -1073,7 +1076,7 @@ function BMBPSign#SignRecord(...)
             if !empty(l:line)
                 let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
 
-                if l:sign.attr =~ '\S'
+                if l:sign.attr =~# '\S'
                     let l:signRecord[-1] .= ' '.l:sign.attr
                 endif
             endif
