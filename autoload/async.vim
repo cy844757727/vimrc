@@ -7,7 +7,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""
 
 if exists('g:loaded_A_Async') || v:version < 800
-  finish
+    finish
 endif
 let g:loaded_A_Async = 1
 
@@ -203,7 +203,7 @@ function! async#JobRun(cmd, bang)
     if job_status(l:job) ==# 'run'
         let l:id = matchstr(l:job, '\d\+')
         let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}
-        
+
         if !empty(a:bang)
             let s:asyncJob[l:id].quiet = 1
         endif
@@ -253,6 +253,7 @@ function! async#JobStop(how)
         redraw!
     endwhile
 endfunction
+
 
 function! async#JobRuning()
     return len(s:asyncJob)
@@ -333,7 +334,7 @@ endfunction
 function! async#DbgScript(...)
     let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%:p')
     let l:breakPoint = a:0 > 1 ? a:2 : []
-    
+
     if !filereadable(l:file)
         return
     elseif !bufexists(l:file)
@@ -455,10 +456,15 @@ endfunction
 " Configure new tabpage for debug
 " and set t:dbg variable
 function! s:DbgUIInitalize(dbg)
+    if exists('t:dbg')
+        1wincmd w
+    endif
+
     " Source view window
     exe 'tabedit ' . a:dbg.file
     let l:suffix = get(s:displayIcon, a:dbg.id, ' ')
     let t:tab_lable = ['', '-- Debug'.l:suffix.'--']
+    let t:task = "call t:dbg.sendCmd('q', '')"
     let t:dbg = a:dbg
     let t:dbg.srcWinId = win_getid()
 
@@ -786,6 +792,7 @@ function! s:DbgOnExit(...)
         catch
             call win_gotoid(t:dbg.srcWinId)
             unlet t:dbg
+            unlet t:task
             unlet t:tab_lable
         endtry
     endif

@@ -88,7 +88,8 @@ let g:SideWinWidth = 31
 augroup UsrDefCmd
     autocmd!
     autocmd QuickFixCmdPost * copen 15
-    autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.sv,*.svi,*.svh,*.svp,*.sva,*.vt,*.vo,*.vg set filetype=verilog_systemverilog
+    autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.vt,*.vo,*.vg set filetype=verilog
+    autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
@@ -97,6 +98,7 @@ augroup END
 command! Info :echo misc#Information('more')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! UTags :Async! ctags -R -f .tags
+command! -nargs=1 Task :exe get(<args>:, 'task', 'echo')
 command! -nargs=+ -complete=file Open :Async xdg-open <args>
 command! -nargs=? Vresize :vertical resize <args>
 command! -nargs=? -complete=file T :tabe <args>
@@ -109,13 +111,22 @@ command! Avdel :Async vdel -lib work -all
 "快捷键映射===================== {{{1
 " 括号引号自动补全
 inoremap ( ()<Esc>i
-inoremap ) <c-r>=CyClosePair(')')<CR>
+inoremap ) <c-r>=Vimrc_ClosePair(')')<CR>
 inoremap [ []<Esc>i
-inoremap ] <c-r>=CyClosePair(']')<CR>
+inoremap ] <c-r>=Vimrc_ClosePair(']')<CR>
 inoremap { {}<Esc>i
-inoremap } <c-r>=CyClosePair('}')<CR>
+inoremap } <c-r>=Vimrc_ClosePair('}')<CR>
 "inoremap ' ''<Esc>i
 inoremap " ""<Esc>i
+
+function! Vimrc_ClosePair(char)
+    if getline('.')[col('.') - 1] == a:char
+        return "\<Right>"
+    else
+        return a:char
+    endif
+endfunction
+
 
 inoremap <C-\> <Esc>o
 nnoremap <C-g> :echo misc#Information()<CR>
@@ -139,12 +150,6 @@ function! Vimrc_leader(cmd)
     call setpos("''", l:save_pos)
 endfunction
 
-" Jump key J|K ale|diff
-noremap  <silent> <C-j> :call misc#Jump_C_K_J('next')<CR>
-noremap  <silent> <C-k> :call misc#Jump_C_K_J('previous')<CR>
-map! <C-j> <Esc><C-j>
-map! <C-k> <Esc><C-k>
-
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>
@@ -158,7 +163,7 @@ nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
 vnoremap <C-f> yk:exe '/' . getreg('0')<CR>
-nnoremap <C-f> yiwk:exe '/' . getreg('0')<CR>
+nnoremap <C-f> yiwk:exe '/' . getreg('0')<CR>kn
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
@@ -176,12 +181,14 @@ map! <S-tab> <Esc><S-tab>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<Cr>
-noremap <silent> <f5>   :call misc#F5FunctionKey()<CR>
-noremap <silent> <C-f5> :call misc#F5FunctionKey('r')<CR>
+noremap <silent> <f5>   :call misc#F5FunctionKey('origin')<CR>
+noremap <silent> <C-f5> :call misc#F5FunctionKey('reverse')<CR>
+noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
 map! <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
+map! <C-S-f5> <Esc><S-f5>
 " BMBPSign.vim: bookmark, breakpoint
 noremap <silent> <f6>     :call BMBPSign#SignToggle('break')<CR>
 noremap <silent> <C-f6>   :call BMBPSign#SignToggle('tbreak')<CR>
@@ -242,8 +249,9 @@ noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 
-tnoremap <silent> <f5>      <C-w>N:call misc#F5FunctionKey()<CR>
+tnoremap <silent> <f5>      <C-w>N:call misc#F5FunctionKey('origin')<CR>
 tnoremap <silent> <C-f5>    <C-w>N:call misc#F5FunctionKey('reverse')<CR>
+tnoremap <silent> <S-f5>    <C-w>N:call misc#F5FunctionKey('task')<CR>
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>
 tnoremap <silent> <C-right> <C-w>N:call misc#BufSwitch('next')<CR>
@@ -251,15 +259,6 @@ noremap  <silent> <C-left>  :call misc#BufSwitch('previous')<CR>
 noremap  <silent> <C-right> :call misc#BufSwitch('next')<CR>
 map! <C-left> <Esc><C-left>
 map! <C-right> <Esc><C-right>
-" === misc func def === {{{1
-"  )]}自动补全相关
-function! CyClosePair(char)
-    if getline('.')[col('.') - 1] == a:char
-        return "\<Right>"
-    else
-        return a:char
-    endif
-endfunction
 
 " Termdebug
 let g:termdebug_wide = 1
@@ -352,9 +351,6 @@ let g:tagbar_type_markdown = {
 " Tool: shellcheck(linter)      : sh
 " Tool: perltidy(fixer)         : perl
 " *********************
-" Config tool parameter
-let g:ale_c_clangformat_executable = 'clang-format-7'
-let g:ale_c_clangformat_options = "-style='{IndentWidth: 4}'"
 " flake8 msg id
 " E22_, E231, E241, E242: missing whitespace
 " E26_: comment start          " E501: line too long

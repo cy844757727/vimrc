@@ -3,58 +3,9 @@
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 if exists('g:loaded_A_GIT_Manager') || !executable('git')
-  finish
+    finish
 endif
 let g:loaded_A_GIT_Manager = 1
-
-function! git#Add_Rm_Mv(arg, flag)
-    let l:op = a:flag == 0 ? 'add ' :
-                \ a:flag == 1 ? 'rm ' : 'mv '
-    let l:arg = a:arg == '' ? '.' :
-                \ a:arg == '%' ? expand('%') : a:arg
-    let l:msg = system('git ' . l:op . l:arg)[:-2]
-    if l:msg =~ '^error:\|^fatal:' && bufwinnr('.Git_status') != -1
-        3wincmd w
-        silent edit!
-        call setline(1, git#FormatStatus())
-    endif
-    echo l:msg
-endfunction
-
-function! git#Branch_Remote_Tag(arg, flag)
-    let l:op = a:flag == 0 ? 'branch ' :
-                \ a:flag == 1 ? 'remote ' : 'tag '
-    let l:msg = system('git ' . l:op . a:arg)[:-2]
-    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_branch') != -1
-        4wincmd w
-        silent edit!
-        call setline(1, git#FormatBranch())
-    endif
-    echo l:msg
-endfunction
-
-function! git#Commit_Reset_Revert_CheckOut_Merge(arg, flag)
-    let l:op = a:flag == 0 ? 'commit ' :
-                \ a:flag == 1 ? 'reset ' :
-                \ a:flag == 2 ? 'revert ' :
-                \ a:flag == 3 ? 'checkout ' : 'merge '
-    let l:msg = system('git ' . l:op . a:arg)[:-2]
-    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
-        call git#Refresh()
-    endif
-    echo l:msg
-endfunction
-
-function! git#Push_Pull_Fetch(arg, flag)
-    let l:op = a:flag == 0 ? 'push ' :
-                \ a:flag == 1 ? 'pull ' : 'fetch '
-    echo '    Waiting...'
-    let l:msg = system('git ' . l:op . a:arg)[:-2]
-    if l:msg !~ 'error:\|fatal:' && bufwinnr('.Git_log') != -1
-        call git#Refresh()
-    endif
-    echo l:msg
-endfunction
 
 function! git#Diff(...)
     if a:0 == 0
@@ -109,7 +60,7 @@ function! git#FormatBranch()
     endif
     if !empty(l:stash)
         call map(l:stash, "'    ' . v:val")
-        let l:stash = ['', 'Stash:', '' ] + l:stash
+        let l:stash = ['', 'Stash:', ''] + l:stash
     endif
     return l:local + l:remote + l:stash + l:tag
 endfunction
@@ -230,7 +181,7 @@ function! git#Refresh()
 endfunction
 
 function! git#MainMenu()
-    echo 
+    echo
                 \ "** Git Menu:\n" .
                 \ "==================================================\n" .
                 \ "    (i)nitialize      <git init>\n" .
@@ -311,27 +262,25 @@ function! s:SubMenu()
                 \ "    (t)ag HEAD             <git tag>\n" .
                 \ "    (c)heckout new branch  <git checkout -q -b>\n" .
                 \ "    (m)erge branch         <git merge>\n" .
+                \ "    (g)c                   <git gc>\n".
                 \ "    (r)ebase branch        <git rebash>\n"
                 \ "!?:"
     let l:msg = ''
     let l:char = nr2char(getchar())
     redraw!
     if l:char == 'a'
-        echo "** Add remote repository (Use own option, remain URL empty)\n" .
+        echo "** Add remote repository\n" .
                     \ '============================================================'
-        let l:name = input('Name (Default origin)： ', 'origin')
-        if l:name != ''
-            let l:addr = input('URL: ')
-            let l:msg = system('git remote add ' . l:name . ' ' . l:addr)
+        let l:str = input('[option] Name & URL：', 'origin ')
+        if l:str != ''
+            let l:msg = system('git remote add ' . l:str)
         endif
     elseif l:char == 't'
-        echo "** Attach a tag (Use own option, remain Note empty)\n" .
+        echo "** Attach a tag\n" .
                     \ '======================================================='
-        let l:tag = input('Tag: ')
-        if l:tag != ''
-            let l:note = input('Note: ')
-            let l:tag = l:note == '' ? l:tag : '-a ' . l:tag . " -m '" . l:note . "'"
-            let l:msg = system('git tag ' . l:tag)
+        let l:str = input('[-a -m Note] Tag: ')
+        if l:str != ''
+            let l:msg = system('git tag ' . l:str)
         endif
     elseif l:char == 'c'
         echo "** Create and switch a new branch\n" .
@@ -347,6 +296,8 @@ function! s:SubMenu()
         if l:branch != ''
             let l:msg = system('git merge ' . l:branch)
         endif
+    elseif l:char ==# 'g'
+        let l:msg = system('git gc')
     elseif l:char == 'r'
         echo "** rebase the specified branch to current\n" .
                     \ '============================================'

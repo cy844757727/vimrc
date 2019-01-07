@@ -6,7 +6,7 @@
 """"""""""""""""""""""""""""""""""""""""""""""
 
 if exists('g:loaded_A_BMBPSign') || !has('signs')
-  finish
+    finish
 endif
 let g:loaded_A_BMBPSign = 1
 
@@ -189,7 +189,7 @@ function s:SignJump(types, action, id, attrs, file)
 
         if !empty(l:items)
             let l:str = input(s:SignDisplayStr(l:items).'Selete id: ') + 0
-            
+
             if has_key(l:items, l:str)
                 let l:id = l:str
                 let l:file = l:items[l:id].sign.file
@@ -340,7 +340,7 @@ function s:SignFilter(types, file, lin, attrs)
     for l:type in a:types
         for l:sign in s:signVec[l:type]
             let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:sign.id.'  \S\+='.s:signDefHead)
-            
+
             if !empty(l:list) && l:list[1] =~? a:lin && s:strMatch(l:sign.attr, a:attrs)
                 let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
             endif
@@ -392,7 +392,7 @@ function s:SignAddAttr(types, file, lin, attrs)
 
     let l:val.sign.attr = get(l:arg, 1, '')
     call s:QfListUpdate([l:val.type])
-    
+
     " Support async.vim script debug
     if exists('t:dbg') && l:val.type =~# 'break'
         call t:dbg.sendCmd('condition', l:val.sign['file'].':'.l:val['lin'], l:val.sign.attr)
@@ -501,7 +501,7 @@ function s:ProjectSwitch(sel)
     if exists('g:BMBPSign_Projectized')
         unlet g:BMBPSign_Projectized
     endif
-    
+
     " Load target sign & workspace
     if filereadable(s:signFile)
         call s:SignLoad(s:signFile, keys(s:signVec))
@@ -1027,7 +1027,6 @@ function BMBPSign#WorkSpaceClear(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
-"    call delete(l:pre . s:signFile)
 
     if empty(l:pre) && exists('g:BMBPSign_Projectized')
         unlet g:BMBPSign_Projectized

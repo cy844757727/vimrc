@@ -1,9 +1,12 @@
-""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Author: CY <844757727@qq.com>
+" ==================================================
+" File: misc.vim
+" Author: Cy <844757727@qq.com>
 " Description: Miscellaneous function
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Last Modified: 2019年01月07日 星期一 21时03分39秒
+" ==================================================
+
 if exists('g:loaded_A_Misc')
-  finish
+    finish
 endif
 let g:loaded_A_Misc = 1
 
@@ -27,29 +30,40 @@ function! s:UpdateNERTreeView()
     endif
 endfunction
 
-" Update NerdTree, refresh tags file ...
+
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
 function! misc#F5FunctionKey(...) abort
-    wall
-    if expand('%') =~# '\v^!'
-        normal a
-        wincmd W
-        if a:0 == 0
-            call misc#F5FunctionKey()
-        else
-            call misc#F5FunctionKey('reverse')
+    let l:type = a:0 > 0 ? a:1 : 'origin'
+
+    if l:type ==# 'task'
+        if exists('b:task')
+            exe b:task
+        elseif exists('w:task')
+            exe w:task
+        elseif exists('t:task')
+            exe t:task
+        elseif exists('g:task')
+            exe g:task
+        elseif exists('g:TASK')
+            exe g:TASK
         endif
+
+        if expand('%') =~# '^!' && mode() =~? 'n'
+            normal a
+        endif
+
+        return
+    endif
+
+    if exists('t:git_tabpageManager')
+        call git#Refresh()
     elseif &diff
         diffupdate
-    elseif exists('t:git_tabpageManager')
-        call git#Refresh()
-    elseif &filetype ==# 'nerdtree'
-        call b:NERDTree.root.refresh()
-        call b:NERDTree.render()
-    elseif &filetype ==# 'tagbar'
-        Async ctags -R -f .tags
-    elseif &filetype ==# 'verilog'
+    elseif !s:SwitchToEmptyBuftype()
+        return
+    elseif &filetype =~# 'verilog'
+        update
         if isdirectory('work')
             AsyncRun vlog -work work %
         else
@@ -57,10 +71,20 @@ function! misc#F5FunctionKey(...) abort
         endif
     else
         " Compile, Run, Debug
+        update
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
-        let l:runMode = (empty(l:breakPoint) && a:0 == 0) || (!empty(l:breakPoint) && a:0 > 0)
+        let l:runMode = (!empty(l:breakPoint) && l:type ==# 'reverse')
+                    \ || (empty(l:breakPoint) && l:type !=# 'reverse')
 
-        if &ft == 'make' || ((filereadable('makefile') || filereadable('Makefile')) && &ft =~ 'c\|cpp')
+        if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+            " script language
+            if l:runMode
+                cclose
+                call async#RunScript(expand('%:p'))
+            else
+                call async#DbgScript(expand('%:p'), l:breakPoint)
+            endif
+        elseif filereadable('makefile') || filereadable('Makefile')
             if l:runMode
                 AsyncRun make
             else
@@ -69,14 +93,7 @@ function! misc#F5FunctionKey(...) abort
                     call async#GdbStart(l:binFile[0], l:BreakPoint)
                 endif
             endif
-        elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
-            " script language
-            if l:runMode
-                call async#RunScript(expand('%:p'))
-            else
-                call async#DbgScript(expand('%:p'), l:breakPoint)
-            endif
-        elseif &filetype =~ 'c\|cpp'
+        elseif index(['c', 'cpp'], &ft) != -1
             if l:runMode
                 AsyncRun g++ -Wall -O0 -g3 % -o binFile
             else
@@ -87,26 +104,38 @@ function! misc#F5FunctionKey(...) abort
 endfunction
 
 
-function misc#SwitchToEmptyBuftype(orient)
+" Switch to buffer with empty buftype
+function s:SwitchToEmptyBuftype()
     if empty(&buftype)
         return 1
     elseif winnr('$') == 1
         return 0
     endif
 
+    if expand('%') =~# '\v^!'
+        if mode() =~? 'n'
+            normal a
+        endif
+
+        let l:ex = 'wincmd W'
+    elseif &filetype ==# 'qf'
+        let l:ex = 'wincmd W'
+    else
+        let l:ex = 'wincmd w'
+    endif
+
     let l:cur = winnr()
-    let l:ex = a:orient ==# 'b' ? 'wincmd W' : 'wincmd w'
 
     exe l:ex
-    while !empty(&buftype) && winnr() != l:cur
+    while winnr() != l:cur
+        if empty(&buftype)
+            return 1
+        endif
+
         exe l:ex
     endwhile
 
-    if winnr() == l:cur
-        return 0
-    endif
-
-    return 1
+    return 0
 endfunction
 
 
@@ -116,44 +145,50 @@ function! misc#CodeFormat() range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
     let l:saveMark = getpos("''")
     let l:pos = getpos('.')
+    let l:cmdList = []
     mark z
 
     " Custom formatting
-    if &filetype =~ '^verilog\|systemverilog$'
+    if &filetype =~ 'verilog'
         silent! exe l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge'
         silent! exe l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
         silent! exe l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
-        silent! /`!`!`!`!`@#$%^&
         let l:formatCmd = 'normal =='
+        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
     elseif &filetype == 'make'
         silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
         silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
-        silent! /`!`!`!`!`@#$%^&
         let l:formatCmd = 'normal =='
+        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
     endif
 
-    " Use external tools & Config cmd 
+    " Use external tools & Config cmd
     " Tools: clang-format, autopep8, perltidy, shfmt
-    if &filetype =~ '^\(c\|cpp\|java\|javascript\)$' && executable('clang-format-7')
+    if index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format-7')
         let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
-    elseif &filetype == 'python' && executable('yapf') && executable('yapf3')
-        let l:formatCmd = getline(1) =~ 'python3' ? '!yapf3' : '!yapf'
-    elseif &filetype == 'perl' && executable('perltidy')
+    elseif &filetype ==# 'python' && executable('yapf') && executable('yapf3')
+        let l:formatCmd = getline(1) =~# 'python3' ? '!yapf3' : '!yapf'
+    elseif &filetype ==# 'perl' && executable('perltidy')
         let l:formatCmd = '!perltidy'
-    elseif &filetype == 'sh' && executable('shfmt')
+    elseif &filetype ==# 'sh' && executable('shfmt')
         let l:formatCmd = '!shfmt -s -i 4'
-    elseif &filetype != ''
+    elseif !empty(&ft)
         let l:formatCmd = 'normal =='
+        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
     endif
 
     " Format code
     if exists('l:formatCmd')
         exe l:range . l:formatCmd
-    endif
 
-    call setpos('.', l:pos)
-    call setpos("''", l:saveMark)
-    write
+        for l:cmd in l:cmdList
+            exe l:cmd
+        endfor
+
+        write
+        call setpos('.', l:pos)
+        call setpos("''", l:saveMark)
+    endif
 endfunction
 
 
@@ -176,17 +211,18 @@ function! misc#ReverseComment() range
 
     " Processing
     if !empty(l:char)
-        silent exe a:firstline . ',' . a:lastline . 's+^+' . l:char . '+e'
-        silent exe a:firstline . ',' . a:lastline . 's+^' . l:char . l:char . '++e'
+        let l:range = a:firstline . ',' . a:lastline
+        silent exe l:range . 's+^+' . l:char . '+e'
+        silent exe l:range . 's+^' . l:char . l:char . '++e'
     endif
 endfunction
 
 
 " 字符串查找替换
 function! misc#StrSubstitute(str)
-    let l:subs=input('Replace ' . "\"" . a:str . "\"" . ' with: ')
+    let l:subs = input('Replace ' . "\"" . a:str . "\"" . ' with: ')
 
-    if l:subs != ''
+    if !empty(l:subs)
         let l:pos = getpos('.')
         exe '%s/' . a:str . '/' . l:subs . '/Ig'
         call setpos('.', l:pos)
@@ -566,15 +602,13 @@ function! misc#BufSwitch(...)
 
     if bufname('%') =~ '^!'
         call async#TermSwitch(l:action)
-"    elseif &buftype == 'quickfix'
-"        echo 
     elseif empty(&buftype)
         call s:BufHisSwitch(l:action)
     endif
 endfunction
 
 
-" For starting insert mode when switching to terminal 
+" For starting insert mode when switching to terminal
 function! misc#WinSwitch(action)
     if bufname('%') =~ '^!' && mode() == 'n'
         normal a
@@ -624,25 +658,6 @@ function! misc#Information(...)
     endif
 
     return l:info
-endfunction
-
-
-function! misc#Jump_C_K_J(...)
-    let l:action = a:0 > 0 ? a:1 : 'next'
-
-    if &diff
-        if l:action == 'next'
-            normal ]c
-        else
-            normal [c
-        endif
-    elseif get(g:, 'ale_enabled', 0)
-        if l:action == 'next'
-            ALENextWrap
-        else
-            ALEPreviousWrap
-        endif
-    endif
 endfunction
 
 
@@ -728,7 +743,7 @@ function! misc#ToggleSidebar(...)
         NERDTreeToggle
     else
         TagbarClose
-    endif 
+    endif
 endfunction
 
 
@@ -784,10 +799,7 @@ function! misc#ToggleBottombar(winType, ...)
             exe 'copen ' . get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
-        if getqflist({'winid': 1}).winid != 0
-            cclose
-        endif
-
+        cclose
         call async#TermToggle('toggle', l:type)
     endif
 endfunction
@@ -820,3 +832,4 @@ call NERDTreeAddKeyMap({
             \ 'scope': 'Node'
             \ })
 
+" vim: foldmethod=marker
