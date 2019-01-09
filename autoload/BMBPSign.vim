@@ -130,18 +130,18 @@ function s:SignToggle(file, line, type, attr, skip)
     let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
     let l:vec = s:signVec[a:type]
     let l:signPlace = execute('sign place file=' . a:file)
-    let l:id = matchlist(l:signPlace, '    \S\+=' . a:line . '  id=\(\d\+\)' . '  \S\+=' . l:def)
+    let l:id = matchlist(l:signPlace, '    \S\+='.a:line.'  id=\(\d\+\)'.'  \S\+='.l:def)
     let g:BMBPSign_SignSetFlag = 1
 
     if empty(l:id)
         " Ensure id uniqueness
         let s:newSignId += 1
-        while !empty(matchlist(l:signPlace, '    \S\+=\d\+' . '  id=' . s:newSignId . '  '))
+        while !empty(matchlist(l:signPlace, '    \S\+=\d\+'.'  id='.s:newSignId.'  '))
             let s:newSignId += 1
         endwhile
 
         " Set sign
-        exe 'sign place ' . s:newSignId . ' line=' . a:line . ' name=' . l:def . ' file=' . a:file
+        exe 'sign place '.s:newSignId.' line='.a:line.' name='.l:def.' file='.a:file
         call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
         let s:signId[s:newSignId] = [a:type, a:file]
 
@@ -225,14 +225,14 @@ function s:SignClear(types)
 
         " Unset sign
         for l:sign in l:vec
-            if l:sign.attr !~# '\v&keep'
+            if l:sign.attr !~? '\v&keep'
                 exe 'sign unplace ' . l:sign.id . ' file=' . l:sign.file
                 unlet s:signId[l:sign.id]
             endif
         endfor
 
         " Empty vec
-        call filter(l:vec, "v:val.attr =~# '\v&keep'")
+        call filter(l:vec, "v:val.attr =~? '\\v&keep'")
     endfor
 endfunction
 
@@ -287,7 +287,8 @@ function s:SignSave(signFile, types)
     let l:signs = {}
     let l:def = '\(' . join(a:types, '\|') . '\)'
     for l:item in split(execute('sign place'), "\n")
-        let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' . '  id=\(\d\+\)  \S\+='.s:signDefHead . l:def)
+        let l:match = matchlist(l:item, '    \S\+=\(\d\+\)' .
+                    \ '  id=\(\d\+\)  \S\+='.s:signDefHead . l:def)
 
         if !empty(l:match)
             let l:signs[l:match[2]] = l:match[1]
@@ -339,7 +340,8 @@ function s:SignFilter(types, file, lin, attrs)
     let l:items = {}
     for l:type in a:types
         for l:sign in s:signVec[l:type]
-            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.l:sign.id.'  \S\+='.s:signDefHead)
+            let l:list = matchlist(l:signPlace, '    \S\+=\(\d\+\)  id='.
+                        \ l:sign.id.'  \S\+='.s:signDefHead)
 
             if !empty(l:list) && l:list[1] =~? a:lin && s:strMatch(l:sign.attr, a:attrs)
                 let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
@@ -356,8 +358,8 @@ function s:SignDisplayStr(items)
     let l:str = "  id      type      where\n"
 
     for [l:id, l:val] in items(a:items)
-        let l:str .= printf('  %-3d     %-6s    %s:%d',
-                    \ l:id, l:val.type, substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)
+        let l:str .= printf('  %-3d     %-6s    %s:%d', l:id, l:val.type,
+                    \ substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)
 
         let l:str .= '   '.l:val.sign.attr."\n"
     endfor
@@ -384,10 +386,12 @@ function s:SignAddAttr(types, file, lin, attrs)
 
     if empty(l:val.sign.attr) && len(l:arg) > 1
         exe 'sign unplace ' . l:val.sign.id . ' file=' . l:val.sign.file
-        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.' name='.s:signDefHead.l:val.type.'Attr file='.l:val.sign.file
+        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
+                    \ ' name='.s:signDefHead.l:val.type.'Attr file='.l:val.sign.file
     elseif !empty(l:val.sign.attr) && len(l:arg) < 2
         exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
-        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.' name='.s:signDefHead.l:val.type.' file='.l:val.sign.file
+        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
+                    \ ' name='.s:signDefHead.l:val.type.' file='.l:val.sign.file
     endif
 
     let l:val.sign.attr = get(l:arg, 1, '')
@@ -622,7 +626,8 @@ function s:ProjectManager(argc, argv)
         let l:path = s:projectType[l:type] . '/' . a:argv[0]
         call s:ProjectNew(a:argv[0], l:type, l:path)
     elseif a:argc == 3
-        call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2] =~ '^\~' ? $HOME . strpart(a:argv[2], 1) : a:argv[2])
+        call s:ProjectNew(a:argv[0], a:argv[1],
+                    \ a:argv[2] =~ '^\~' ? $HOME . strpart(a:argv[2], 1) : a:argv[2])
     endif
 endfunction
 
@@ -657,7 +662,7 @@ function s:WorkSpaceSave(pre)
     " For special buf situation(modify session file)
     if exists('g:BMBPSign_SpecialBuf') && executable('sed')
         for l:item in items(g:BMBPSign_SpecialBuf)
-            call system("sed -i 's/^file " . l:item[0] . ".*$/" . l:item[1] . "/' " . l:sessionFile)
+            call system("sed -i 's/^file ".l:item[0].".*$/".l:item[1]."/' ".l:sessionFile)
         endfor
     endif
 
@@ -738,7 +743,8 @@ function s:QfListSet(title, types)
 
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.'  id='.l:sign.id.'  \S\+='.s:signDefHead)
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.
+                        \ '  id='.l:sign.id.'  \S\+='.s:signDefHead)
 
             if !filereadable(l:sign.file) || empty(l:line)
                 continue
@@ -1070,10 +1076,11 @@ function BMBPSign#SignRecord(...)
     " Get row information & set l:signRecord
     for l:type in a:000
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)' . '  id=' . l:sign.id . '  \S\+='.s:signDefHead)
+            let l:line = matchlist(l:signPlace, '    \S\+=\(\d\+\)'.
+                        \ '  id='.l:sign.id.'  \S\+='.s:signDefHead)
 
             if !empty(l:line)
-                let l:signRecord += [l:type . ' ' . l:sign.file . ':' . l:line[1]]
+                let l:signRecord += [l:type.' '.l:sign.file.':'.l:line[1]]
 
                 if l:sign.attr =~# '\S'
                     let l:signRecord[-1] .= ' '.l:sign.attr

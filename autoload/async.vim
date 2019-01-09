@@ -169,7 +169,7 @@ function! async#TermSwitch(...)
         endif
 
         hide
-        silent exe 'belowright ' . get(s:termOption, 'term_rows', 15) . 'split +' . l:termList[l:ind] . 'buffer'
+        silent exe 'belowright '.get(s:termOption, 'term_rows', 15).'split +'.l:termList[l:ind].'buffer'
         let l:buf = map(l:termList, "' '.bufname(v:val)")
         let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
         echo strpart(join(l:buf), 0, &columns)
