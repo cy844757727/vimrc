@@ -141,54 +141,49 @@ endfunction
 
 " Specified range code formatting
 function! misc#CodeFormat() range
+    if !empty(&buftype) || empty(&filetype)
+        return
+    endif
+
+    let l:pos = getpos('.')
+    mark z
+
     " Determine range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
-    let l:saveMark = getpos("''")
-    let l:pos = getpos('.')
-    let l:cmdList = []
-    mark z
+
+    " Default format operator list
+    let l:formatCmd = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /-^']
 
     " Custom formatting
     if &filetype =~ 'verilog'
-        silent! exe l:range . 's/\(\w\|)\|\]\)\s*\([-+=*/%><|&!?~^][=><|&~]\?\)\s*/\1 \2 /ge'
-        silent! exe l:range . 's/\((\)\s*\|\s*\()\)/\1\2/ge'
-        silent! exe l:range . 's/\(,\|;\)\s*\(\w\)/\1 \2/ge'
-        let l:formatCmd = 'normal =='
-        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
+        let l:formatCmd = [
+                    \ l:range.'s/\v[0-9a-zA-Z_)\]]\zs\s*([-+=*/%><|&!?~:^][=><|&~]?)\s*\ze[a-zA-Z_(]/ \1 /ge',
+                    \ l:range.'s/\v\(\zs\s*|\s*\ze\)//ge',
+                    \ l:range.'s/\v(,|;)\zs\s*\ze\w/ /ge'
+                    \ ] + l:formatCmd[1:]
     elseif &filetype == 'make'
-        silent! exe l:range . 's/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge'
-        silent! exe l:range . 's/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
-        let l:formatCmd = 'normal =='
-        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
+        let l:formatCmd = [
+                    \ l:range.'s/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge',
+                    \ l:range.'s/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
+                    \ ] + l:formatCmd
     endif
 
     " Use external tools & Config cmd
     " Tools: clang-format, autopep8, perltidy, shfmt
     if index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format-7')
-        let l:formatCmd = "!clang-format-7 -style='{IndentWidth: 4}'"
+        let l:formatCmd = l:range."!clang-format-7 -style='{IndentWidth: 4}'"
     elseif &filetype ==# 'python' && executable('yapf') && executable('yapf3')
-        let l:formatCmd = getline(1) =~# 'python3' ? '!yapf3' : '!yapf'
+        let l:formatCmd = l:range.(getline(1) =~# 'python3' ? '!yapf3' : '!yapf')
     elseif &filetype ==# 'perl' && executable('perltidy')
-        let l:formatCmd = '!perltidy'
+        let l:formatCmd = l:range.'!perltidy'
     elseif &filetype ==# 'sh' && executable('shfmt')
-        let l:formatCmd = '!shfmt -s -i 4'
-    elseif !empty(&ft)
-        let l:formatCmd = 'normal =='
-        let l:cmdList += [l:range . 's/\s*$//', 'silent! /-^']
+        let l:formatCmd = l:range.'!shfmt -s -i 4'
     endif
 
     " Format code
-    if exists('l:formatCmd')
-        exe l:range . l:formatCmd
-
-        for l:cmd in l:cmdList
-            exe l:cmd
-        endfor
-
-        write
-        call setpos('.', l:pos)
-        call setpos("''", l:saveMark)
-    endif
+    call execute(l:formatCmd)
+    call setpos('.', l:pos)
+    write
 endfunction
 
 
@@ -207,13 +202,13 @@ let s:commentChar = {
 
 "  Toggle comment
 function! misc#ReverseComment() range
-    let l:char = get(s:commentChar, &filetype, '')
-
-    " Processing
-    if !empty(l:char)
+    if has_key(s:commentChar, &ft)
+        let l:pos = getpos('.')
+        let l:char = s:commentChar[&ft]
         let l:range = a:firstline . ',' . a:lastline
         silent exe l:range . 's+^+' . l:char . '+e'
         silent exe l:range . 's+^' . l:char . l:char . '++e'
+        call setpos('.', l:pos)
     endif
 endfunction
 
@@ -628,7 +623,7 @@ endfunction
 
 function! misc#Information(...)
     let l:info = ''
-    let l:cwd = getcwd()
+    let l:cwd = substitute(getcwd(), $HOME, '~', '')
     let l:file = expand('%')
     let l:nr = bufnr('%')
     let l:lines = line('$')

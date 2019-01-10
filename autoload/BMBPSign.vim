@@ -105,10 +105,10 @@ if exists('g:BMBPSignTypeExtend')
         try
             let l:type = l:sign.type
             let l:name = s:signDefHead . l:type
-            let l:text = get(l:sign, 'text', '🎈')
+            let l:text = get(l:sign, 'text', '')
             let l:texthl = get(l:sign, 'texthl', 'BMBPSignHl')
             let l:linehl = get(l:sign, 'linehl', 'Normal')
-            let l:textAttr = get(l:sign, 'textAttr', l:text)
+            let l:textAttr = get(l:sign, 'textAttr', strpart(l:text.'.'), 0, 2)
             let l:texthlAttr = get(l:sign, 'texthl', l:texthlAttr)
             let l:linehlAttr = get(l:sign, 'linehl', l:linehlAttr)
             exe 'sign define '.l:name.' text='.l:text.' texthl='.l:texthl.' linehl='.l:linehl

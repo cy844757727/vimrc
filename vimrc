@@ -129,13 +129,13 @@ endfunction
 
 
 inoremap <C-\> <Esc>o
-nnoremap <C-g> :echo misc#Information()<CR>
+nnoremap <silent> <C-g> :echo misc#Information()<CR>
 map! <C-g> <Esc><C-g>
 " External open
-nnoremap \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
-nnoremap \od :Async xdg-open .<CR>
-nnoremap \of :exe 'Async xdg-open ' . expand('%')<CR>
-nnoremap \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
+nnoremap <silent> \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
+nnoremap <silent> \od :Async xdg-open .<CR>
+nnoremap <silent> \of :exe 'Async xdg-open ' . expand('%')<CR>
+nnoremap <silent> \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
 " Leaderf.vim maping & flygrep
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
