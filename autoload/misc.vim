@@ -152,7 +152,7 @@ function! misc#CodeFormat() range
     let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
 
     " Default format operator list
-    let l:formatCmd = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /-^']
+    let l:formatCmd = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /\v-^']
 
     " Custom formatting
     if &filetype =~ 'verilog'
@@ -163,8 +163,8 @@ function! misc#CodeFormat() range
                     \ ] + l:formatCmd[1:]
     elseif &filetype == 'make'
         let l:formatCmd = [
-                    \ l:range.'s/\(\w\)\s*\(+=\|=\|:=\)\s*/\1 \2 /ge',
-                    \ l:range.'s/\(:\)\s*\(\w\|\$\)/\1 \2/ge'
+                    \ l:range.'s/\v\w\zs\s*(+=|=|:=)\s*/ \1 /ge',
+                    \ l:range.'s/\v:\zs\s*\ze(\w|\$)/ /ge'
                     \ ] + l:formatCmd
     endif
 
@@ -438,7 +438,7 @@ function! misc#BufHisDel(...)
 
     let l:cwd = getcwd().'/'
     let l:filter = join(map(copy(a:000), "'".l:cwd."'.bufname(v:val+0)"), '\|')
-    call filter(w:bufHis.list, "v:val !~ '".l:filter."'")
+    call filter(w:bufHis.list, "v:val !~# '".l:filter."'")
 endfunction
 
 
@@ -558,7 +558,7 @@ function! misc#GetWebIcon(type, ...)
         endif
 
         if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
-            let l:tfile .= '.' . getbufvar(l:file, '&filetype')
+            let l:tfile .= '.'.getbufvar(l:file, '&filetype')
         elseif getbufvar(l:file, '&buftype') == 'help'
             return ''
         endif
@@ -670,9 +670,10 @@ function! misc#CleanBufferList()
     endfor
 
     for l:str in split(execute('ls'), "\n")
-        let l:nr = matchstr(l:str, '^\(\s*\)\zs\d\+\ze\(\s\+"\)')
+        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+")')
 
-        if !empty(l:nr) && index(l:nrs, l:nr + 0) == -1
+        if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) &&
+                    \ empty(matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
             exe 'silent bw '.l:nr
         endif
     endfor

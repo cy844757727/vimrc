@@ -668,17 +668,17 @@ function! s:DbgMsgHandle(job, msg)
     for l:item in split(t:dbg.tempMsg . a:msg, "\r*\n")
         if l:item =~# t:dbg.prompt
             continue
-        elseif t:dbg.breakFlag == 1 || l:item =~# get(t:dbg, 'breakLine', '-^')
+        elseif t:dbg.breakFlag == 1 || l:item =~# get(t:dbg, 'breakLine', '\v-^')
             let t:dbg.break += [substitute(l:item, t:dbg.cwd.'/', '', '')]
             let t:dbg.breakFlag = 1
-        elseif t:dbg.stackFlag == 1 || l:item =~# get(t:dbg, 'stackLine', '-^')
+        elseif t:dbg.stackFlag == 1 || l:item =~# get(t:dbg, 'stackLine', '\v-^')
             let t:dbg.stack += [substitute(l:item, t:dbg.cwd.'/', '', '')]
             let t:dbg.stackFlag = 1
-        elseif l:item =~# get(t:dbg, 'watchLine', '-^')
+        elseif l:item =~# get(t:dbg, 'watchLine', '\v-^')
             let t:dbg.watch += [l:item]
         else
             " Try varVal match: Monitoring Variable Change
-            let l:match = matchlist(l:item, get(t:dbg, 'varVal', '-^'))
+            let l:match = matchlist(l:item, get(t:dbg, 'varVal', '\v-^'))
             if !empty(l:match) && l:match[2] != get(t:dbg.var, l:match[1], '')
                 let t:dbg.varFlag = 1
                 let t:dbg.var[l:match[1]] = l:match[2]
@@ -686,7 +686,7 @@ function! s:DbgMsgHandle(job, msg)
             endif
 
             " Try fileNr match: jump line
-            let l:match = matchlist(l:item, get(t:dbg, 'fileNr', '-^'))
+            let l:match = matchlist(l:item, get(t:dbg, 'fileNr', '\v-^'))
             if !empty(l:match) && filereadable(l:match[1])
                 let l:fileNr = [l:match[1], l:match[2]]
                 let t:dbg.watchFlag = 0
@@ -729,7 +729,6 @@ function! s:DbgMsgHandle(job, msg)
 
         if l:fileNr[1] != line('.')
             call cursor(l:fileNr[1], 1)
-            normal zz
             call s:DbgSetSign(l:fileNr[0], l:fileNr[1])
         endif
     endif
