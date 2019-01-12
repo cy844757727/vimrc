@@ -18,7 +18,7 @@ endif
 
 set t_Co=256
 set background=dark
-let g:colors_name = "cydark"
+let g:colors_name = 'cydark'
 
 " palette
 let s:none  = ['NONE', 'NONE']
@@ -117,9 +117,9 @@ call s:HI('ModeMsg', s:none, s:none, 'bold')
 call s:HI('MoreMsg', ['#60b030'])
 
 " === Spell ===
-call s:HI('SpellBad', s:none, s:none, 'underline')
+call s:HI('SpellBad', s:none, s:none, 'italic')
 call s:HI('SpellCap', s:none, s:none, 'bold')
-call s:HI('SpellRare', s:none, s:none, 'italic')
+call s:HI('SpellRare', s:none, s:none, 'underline')
 call s:HI('SpellLocal', s:none, s:none, 'undercurl')
 
 " === Popup menu ===

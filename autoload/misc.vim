@@ -621,6 +621,33 @@ function! misc#WinSwitch(action)
 endfunction
 
 
+function! misc#NextItem(...)
+    let l:action = a:0 > 0 ? a:1 : 'next'
+
+    if empty(&buftype)
+        let l:ex = l:action ==# 'next' ? 'ALENextWrap' : 'ALEPreviousWrap'
+    else
+        let l:flag = l:action ==# 'next' ? 'w' : 'wb'
+
+        if &buftype ==# 'quickfix'
+            let l:re = '^[^|]'
+        elseif &filetype ==# 'tagbar'
+            let l:re = "^[^ \"]"
+        elseif &filetype ==# 'nerdtree'
+            let l:re = '/$'
+        endif
+
+        if exists('l:re')
+            let l:ex = "call search('".l:re."', '".l:flag."')"
+        endif
+    endif
+
+    if exists('l:ex')
+        exe l:ex
+    endif
+endfunction
+
+
 function! misc#Information(...)
     let l:info = ''
     let l:cwd = substitute(getcwd(), $HOME, '~', '')

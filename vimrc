@@ -23,6 +23,7 @@ set nocompatible   "关闭兼容模式
 set autoread       "设置当文件被改动时自动载入
 set nobackup       "禁用备份
 set noswapfile
+set nowrap
 set cursorline     "高亮当前行
 set autoindent     "自动缩进
 "set cindent        "C系列缩进
@@ -40,7 +41,7 @@ set matchtime=1    "匹配括号高亮的时间
 set viminfo=       "禁用viminfo
 set wildmenu       "命令行增强补全显示
 set autochdir
-set diffopt=vertical,filler,foldcolumn:0,context:5
+set diffopt=vertical,filler,foldcolumn:0,context:5,iwhite
 set bsdir=buffer
 set ffs=unix,dos,mac  "换行格式集
 set mouse=a           "设置鼠标范围
@@ -92,7 +93,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
-    autocmd BufRead,BufNewFile * if &fenc=='latin1'|edit ++bin|endif
+    autocmd BufRead,BufNewFile ?* if &fenc=='latin1'|edit ++bin|endif
 augroup END
 
 command! Info :echo misc#Information('more')
@@ -127,6 +128,11 @@ function! Vimrc_ClosePair(char)
     endif
 endfunction
 
+
+noremap <silent> <C-j> :call misc#NextItem('next')<CR>
+noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
+map! <C-j> <Esc><C-j>
+map! <C-k> <Esc><C-k>
 
 inoremap <C-\> <Esc>o
 nnoremap <silent> <C-g> :echo misc#Information()<CR>
@@ -262,7 +268,7 @@ map! <C-right> <Esc><C-right>
 
 " Termdebug
 let g:termdebug_wide = 1
-" Plugin Configure======================
+" Plugin Configure ======================
 " === leaderf.vim === {{{1
 let g:Lf_DefaultMode = 'NameOnly'
 

@@ -18,10 +18,11 @@ function! git#Diff(...)
 endfunction
 
 function! git#FormatLog()
-    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:\"^%h^  %an^ ﲊ %ar^%d  %s\"")
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s'")
     let l:lenGraph = 0
     let l:lenAuthor = 0
     let l:lenTime = 0
+
     for l:str in l:log
         let l:list = split(l:str, '\^')
         if len(l:list) > 1
@@ -30,6 +31,7 @@ function! git#FormatLog()
             let l:lenTime = max([strwidth(l:list[3]), l:lenTime])
         endif
     endfor
+
     for l:i in range(len(l:log))
         let l:list = split(l:log[l:i], '\^')
         if len(l:list) > 1

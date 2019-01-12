@@ -15,9 +15,6 @@ nnoremap <buffer> v :call <SID>Open('vsplit')<CR>
 nnoremap <buffer> V :call <SID>Open('aboveleft vsplit')<CR>
 nnoremap <buffer> e :call <SID>Open('edit')<CR>
 
-" | need backslash here in case for command splitting
-nnoremap <buffer> <C-j> :call search('^[^\|]')<CR>
-nnoremap <buffer> <C-k> :call search('^[^\|]', 'b')<CR>
 
 function! <SID>Open(way)
     let l:match = split(matchstr(getline('.'), '^[^|]\+|[^|]*|'), '[ |]\+')
