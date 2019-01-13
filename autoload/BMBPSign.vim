@@ -43,7 +43,7 @@ let s:signVec1 = {
             \ 'tbreak': {}
             \ }
 
-let s:newSignId = 1
+let s:newSignId = 0
 " Type grouping for qflist
 " Quickfix window autoupdating depends on it
 let s:typesGroup = {}
@@ -118,7 +118,8 @@ function s:SignToggle(file, line, type, attr, skip)
     let g:BMBPSign_SignSetFlag = 1
 
     if empty(l:id)
-        " Ensure id uniqueness
+        " Plus first, ensure id global uniqueness
+        let s:newSignId += 1
         while !empty(matchlist(l:signPlace, '\v    \S+\=\d+'.'  id\='.s:newSignId.'  '))
             let s:newSignId += 1
         endwhile

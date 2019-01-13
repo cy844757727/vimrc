@@ -463,7 +463,7 @@ function! s:DbgUIInitalize(dbg)
     " Source view window
     exe 'tabedit ' . a:dbg.file
     let l:suffix = get(s:displayIcon, a:dbg.id, ' ')
-    let t:tab_lable = ['', '-- Debug'.l:suffix.'--']
+    let t:tab_lable = ' -- Debug'.l:suffix.'--'
     let t:task = "call t:dbg.sendCmd('q', '')"
     let t:dbg = a:dbg
     let t:dbg.srcWinId = win_getid()
@@ -471,15 +471,18 @@ function! s:DbgUIInitalize(dbg)
     " Debug console window
     exe 'belowright '.s:dbgWinHeight.'split'
     let t:dbg.dbgWinId = win_getid()
+    set winfixheight
 
     " Variables window
     if index(t:dbg.win, 'var') != -1
         exe 'topleft '.s:dbgSideWidth.'vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
+        set wrap
         set nonumber
         set buftype=nofile
         set filetype=dbgvar
         set nobuflisted
+        set winfixwidth
         setlocal statusline=\ Variables
     endif
 
@@ -488,10 +491,12 @@ function! s:DbgUIInitalize(dbg)
         let l:height = (&lines - s:dbgWinHeight - 3)/2 + s:dbgWinHeight - 3
         exe 'belowright '.l:height.'new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
+        set wrap
         set nonumber
         set buftype=nofile
         set filetype=dbgwatch
         set nobuflisted
+        set winfixheight
         setlocal statusline=\ Watch%{get(t:dbg,'watchFlag',0)?'\ ':''}
     endif
 
@@ -504,6 +509,7 @@ function! s:DbgUIInitalize(dbg)
         set buftype=nofile
         set filetype=dbgstack
         set nobuflisted
+        set winfixheight
         setlocal statusline=\ Call\ Stack
     endif
 endfunction
@@ -516,11 +522,9 @@ function! s:DbgMaping(...)
         nnoremap <buffer> <silent> <CR> :call <SID>DbgSendCmd(' ')<CR>
         nnoremap <buffer> <silent> b :call <SID>DbgSendCmd("break")<CR>
 
-        if t:dbg.tool == 'bashdb'
-            nnoremap <buffer> <silent> B :call <SID>DbgSendCmd("delete")<CR>
-        else
-            nnoremap <buffer> <silent> B :call <SID>DbgSendCmd("clear")<CR>
-        endif
+        exe "nnoremap <buffer> <silent> B :call <SID>DbgSendCmd('".(
+                    \ t:dbg.tool == 'bashdb' ? 'delete' : 'clear'
+                    \ )."')<CR>"
 
         nnoremap <buffer> <silent> C :call <SID>DbgSendCmd("condition")<CR>
         nnoremap <buffer> <silent> D :call <SID>DbgSendCmd("disable")<CR>
@@ -553,9 +557,9 @@ function! s:DbgMaping(...)
         call win_gotoid(t:dbg.watchWinId)
         nnoremap <buffer> <silent> 1 :1wincmd w<CR>
         nnoremap <buffer> <silent> 3 :3wincmd w<CR>
-        noremap <buffer> <silent> 4 :4wincmd w<CR>
-        noremap <buffer> <silent> 5 :5wincmd w<CR>
-        noremap <buffer> <silent> <space> :echo getline('.')<CR>
+        nnoremap <buffer> <silent> 4 :4wincmd w<CR>
+        nnoremap <buffer> <silent> 5 :5wincmd w<CR>
+        nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
     endif
 
     if exists('t:dbg.stackWinId')
@@ -814,7 +818,7 @@ function! async#GdbStart(...)
 
     " New tab to debug
     tabnew
-    let t:tab_lable = ['', '-- Debug --']
+    let t:tab_lable = ' -- Debug --'
 
     if empty(l:breakPoint)
         exe 'Termdebug ' . l:binFile

@@ -1,53 +1,25 @@
 " Basic configure ======================
-" Required external tools 
-" Tools: ctags, git pylint, pyflakes, yapf, [ipdb]
-" Tools: perltidy, clang-format, bashdb, shfmt
 " """"""""""""""""""""""""""""""""""""""""""""
-set number         "显示行号
-syntax on          "语法高亮
-filetype on        "检查文件类型
-filetype plugin on
-filetype indent on
-set tags+=./.tags
-set tags+=.tags
-set showcmd
+" set default options
+set nocompatible number noshowcmd splitright confirm ruler
+set autoread autoindent autochdir nobackup noswapfile cursorline
+set ignorecase incsearch hlsearch wildmenu smartindent smarttab
+set expandtab tabstop=4 shiftwidth=4 softtabstop=4
+set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
+set foldtext=misc#FoldText()
+"set eadirection=
+set termguicolors
+set tags+=./.tags,.tags
 set mousetime=1000
-set title
-set titlestring=♦\ Vim
-"set splitbelow
-set splitright
-set confirm        "退出保存询问
-set ruler          "打开标尺
-set completeopt=menu,noinsert,preview
-set nocompatible   "关闭兼容模式
-set autoread       "设置当文件被改动时自动载入
-set nobackup       "禁用备份
-set noswapfile
-set nowrap
-set cursorline     "高亮当前行
-set autoindent     "自动缩进
-"set cindent        "C系列缩进
 set signcolumn=auto
-set tabstop=4      "tab键长度
-set expandtab      "tab扩展为空格
-set shiftwidth=4   "缩进长度
-set softtabstop=4  "缩进长度
-set smarttab       "智能缩进
-set ignorecase     "搜索忽略大小写
-set incsearch      "搜索加强
-set hlsearch       "搜索高亮
-set showmatch      "自动匹配
-set matchtime=1    "匹配括号高亮的时间
-set viminfo=       "禁用viminfo
-set wildmenu       "命令行增强补全显示
-set autochdir
-set diffopt=vertical,filler,foldcolumn:0,context:5,iwhite
+set viminfo=
 set bsdir=buffer
-set ffs=unix,dos,mac  "换行格式集
-set mouse=a           "设置鼠标范围
-set laststatus=2      "始终显示状态栏
-set fillchars=vert:│,fold:\ 
+set mouse=a
+set title titlestring=♦\ Vim
+set winminheight=0 winminwidth=0
+set fillchars=fold:\ ,diff:\ ,vert:│
 set completeopt=menu,menuone,noinsert,preview,noselect
+set diffopt=vertical,filler,foldcolumn:0,context:5,iwhite
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
 " verilog: modelsim
@@ -58,34 +30,28 @@ set errorformat=%f:%l:%c:\ %m
 "set errorformat+=**\ Error:\ %f(%l.%c):\ %m
 "set errorformat+=**\ at\ %f(%l):\ %m
 "set errorformat+=**\ at\ %f(%l.%c):\ %m
-" code folding
-"set foldmethod=syntax
-set foldcolumn=0
-set foldminlines=10
-set foldlevel=99
-set foldnestmax=3
-" Use RGB color scheme in terminal
-set termguicolors
-colorscheme cydark
 " Language & encode set
-set helplang=cn
-set langmenu=zh_CN.UTF-8
-set enc=utf-8
-set fencs=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
+set encoding=utf-8
+set fileformats=unix,dos,mac
+set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " TabLine: using t:tab_lable (['glyph', 'name']) variable in tabpage can set custom label
 " if Non-existent, using default configure
 set tabline=%!misc#TabLine()
-set foldtext=misc#FoldText()
 " Statusline set
+set laststatus=2
 set statusline=\ %{misc#GetWebIcon('head')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(\ %)
 set statusline+=%{misc#GetWebIcon('filetype')}\ %Y
 set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc!=''?&fenc:&enc}
 set statusline+=\ %3(\ %)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
-" Global
+
+syntax on
+colorscheme cydark
+filetype plugin indent on
+" Global variables
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
-"自定义命令/自动命令===================== {{{1
+" Autocmd & command ===================== {{{1
 augroup UsrDefCmd
     autocmd!
     autocmd QuickFixCmdPost * copen 15
@@ -93,7 +59,7 @@ augroup UsrDefCmd
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
-    autocmd BufRead,BufNewFile ?* if &fenc=='latin1'|edit ++bin|endif
+    autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
 augroup END
 
 command! Info :echo misc#Information('more')
@@ -112,12 +78,11 @@ command! Avdel :Async vdel -lib work -all
 "快捷键映射===================== {{{1
 " 括号引号自动补全
 inoremap ( ()<Esc>i
-inoremap ) <c-r>=Vimrc_ClosePair(')')<CR>
+inoremap ) <C-r>=Vimrc_ClosePair(')')<CR>
 inoremap [ []<Esc>i
-inoremap ] <c-r>=Vimrc_ClosePair(']')<CR>
+inoremap ] <C-r>=Vimrc_ClosePair(']')<CR>
 inoremap { {}<Esc>i
-inoremap } <c-r>=Vimrc_ClosePair('}')<CR>
-"inoremap ' ''<Esc>i
+inoremap } <C-r>=Vimrc_ClosePair('}')<CR>
 inoremap " ""<Esc>i
 
 function! Vimrc_ClosePair(char)
@@ -142,7 +107,7 @@ nnoremap <silent> \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
 nnoremap <silent> \od :Async xdg-open .<CR>
 nnoremap <silent> \of :exe 'Async xdg-open ' . expand('%')<CR>
 nnoremap <silent> \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
-" Leaderf.vim maping & flygrep
+" Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
 nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
@@ -179,14 +144,12 @@ noremap <silent> <C-l>   :redraw!<CR>
 noremap <silent> <C-a>   ggvG$
 noremap <silent> <C-w>   :close<CR>
 noremap <silent> <S-t>   :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
-noremap <silent> <S-tab> :tabnext<CR>
 map! <C-l> <Esc><C-l>
 map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
-map! <S-tab> <Esc><S-tab>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
-noremap <silent> <f4>   :call misc#WinResize()<Cr>
+noremap <silent> <f4>   :call misc#WinResize()<CR>
 noremap <silent> <f5>   :call misc#F5FunctionKey('origin')<CR>
 noremap <silent> <C-f5> :call misc#F5FunctionKey('reverse')<CR>
 noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>

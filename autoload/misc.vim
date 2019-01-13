@@ -88,7 +88,7 @@ function! misc#F5FunctionKey(...) abort
             if l:runMode
                 AsyncRun make
             else
-                let l:binFile = filter(glob('*', '', 1), "!isdirectory(v:val) && getfperm(v:val) =~ 'x'")
+                let l:binFile = filter(glob('*', '', 1), "!isdirectory(v:val) && getfperm(v:val) =~# 'x'")
                 if len(l:binFile) == 1
                     call async#GdbStart(l:binFile[0], l:BreakPoint)
                 endif
@@ -259,7 +259,7 @@ endfunction
 
 " 切换16进制显示
 function! misc#HEXCovent()
-    if empty(matchstr(getline(1), '^00000000: \S'))
+    if empty(matchstr(getline(1), '\v^0{8}: \S'))
         :%!xxd
         let b:ale_enabled = 0
     else
@@ -384,9 +384,8 @@ function! misc#TabLabel(n, ...)
     let l:name = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
 
     " Append the glyph & modify name
-    let [l:glyph, l:name] = gettabvar(a:n, 'tab_lable', [misc#GetWebIcon('filetype', l:name), l:name])
-
-    let l:lable = l:glyph.' '.l:name.' '.l:modFlag
+    let l:lable = gettabvar(a:n, 'tab_lable',
+                \ misc#GetWebIcon('filetype', l:name).' '.l:name.' '.l:modFlag)
 
     " Cut out a section of lable
     if a:0 == 0

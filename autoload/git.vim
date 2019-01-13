@@ -110,11 +110,13 @@ function! s:TabPage()
     call setline(1, git#FormatLog())
     setlocal readonly nomodifiable
     exe 'silent belowright ' . l:col . 'vnew .Git_status'
+    setlocal winfixwidth
     setlocal noreadonly modifiable
     call setline(1, git#FormatStatus())
     call search('^\(\s\+\)\zs\S')
     setlocal readonly nomodifiable
     exe 'silent belowright ' . l:lin . 'new .Git_branch'
+    setlocal winfixheight
     setlocal noreadonly modifiable
     call setline(1, git#FormatBranch())
     call search('^\([ *]\+\)\zs\w')
@@ -123,10 +125,11 @@ function! s:TabPage()
     exe 'silent belowright ' . l:lin . 'new .Git_commit'
     setlocal noreadonly modifiable
     call setline(1, git#FormatCommit('HEAD'))
+    setlocal winfixheight
     setlocal readonly nomodifiable
     normal zj
     3wincmd w
-    let t:tab_lable = ['', 'Git-Manager']
+    let t:tab_lable = ' Git-Manager'
     let t:git_tabpageManager = 1
 endfunction
 
