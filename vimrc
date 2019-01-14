@@ -4,11 +4,11 @@
 set nocompatible number noshowcmd splitright confirm ruler wrap
 set autoread autoindent autochdir nobackup noswapfile cursorline
 set ignorecase incsearch hlsearch wildmenu smartindent smarttab
+set nospell termguicolors
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
 set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
 set foldtext=misc#FoldText()
 "set eadirection=
-set termguicolors
 set tags+=./.tags,.tags
 set mousetime=1000
 set signcolumn=auto
