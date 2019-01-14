@@ -191,7 +191,7 @@ function! git#Refresh()
         call setpos('.', l:pos)
         setlocal readonly nomodifiable
         exe l:winnr . 'wincmd w'
-        let t:tab_lable = ['', 'Git-Manager']
+        let t:tab_lable = ' Git-Manager'
         let t:git_tabpageManager = 1
     endif
 endfunction
