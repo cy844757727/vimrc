@@ -1,7 +1,7 @@
 " Basic configure ======================
 " """"""""""""""""""""""""""""""""""""""""""""
 " set default options
-set nocompatible number noshowcmd splitright confirm ruler
+set nocompatible number noshowcmd splitright confirm ruler wrap
 set autoread autoindent autochdir nobackup noswapfile cursorline
 set ignorecase incsearch hlsearch wildmenu smartindent smarttab
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
@@ -88,9 +88,9 @@ inoremap " ""<Esc>i
 function! Vimrc_ClosePair(char)
     if getline('.')[col('.') - 1] == a:char
         return "\<Right>"
-    else
-        return a:char
     endif
+
+    return a:char
 endfunction
 
 
@@ -201,31 +201,36 @@ map! <C-f12> <Esc><C-f12>
 map! <S-f12> <Esc><S-f12>
 map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
-tnoremap <silent> <f10>     <C-w>N:call misc#ToggleBottombar('quickfix')<CR>
-tnoremap <silent> <C-f10>   <C-w>N:call misc#ToggleBottombar('quickfix', 'book')<CR>
-tnoremap <silent> <S-f10>   <C-w>N:call misc#ToggleBottombar('quickfix', 'todo')<CR>
-tnoremap <silent> <C-S-f10> <C-w>N:call misc#ToggleBottombar('quickfix', 'break')<CR>
-tnoremap <silent> <f12>     <C-w>N:call misc#ToggleBottombar('terminal')<CR>
-tnoremap <silent> <C-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'ipy')<CR>
-tnoremap <silent> <S-f12>   <C-w>N:call misc#ToggleBottombar('terminal', 'py3')<CR>
-tnoremap <silent> <C-S-f12> <C-w>N:call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
+tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix')"])<CR>
+tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'book')"])<CR>
+tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'todo')"])<CR>
+tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'break')"])<CR>
+tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal')"])<CR>
+tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', 'ipy')"])<CR>
+tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', 'py3')"])<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
 
-" Window switch
-tnoremap <silent> <S-PageUp>   <C-w>N:call misc#WinSwitch('up')<CR>
-tnoremap <silent> <S-pageDown> <C-w>N:call misc#WinSwitch('down')<CR>
-noremap  <silent> <S-PageUp>   :call misc#WinSwitch('up')<CR>
-noremap  <silent> <S-pageDown> :call misc#WinSwitch('down')<CR>
+" Window & tab switch
+tnoremap <silent> <C-PageUp>   <C-w>N:call execute(['normal a', 'tabnext'])<CR>
+tnoremap <silent> <C-PageDown> <C-w>N:call execute(['normal a', 'tabprevious'])<CR>
+tnoremap <silent> <S-PageUp>   <C-w>N:call execute(['normal a', 'wincmd W'])<CR>
+tnoremap <silent> <S-PageDown> <C-w>N:call execute(['normal a', 'wincmd w'])<CR>
+noremap  <silent> <S-PageUp>   :wincmd W<CR>
+noremap  <silent> <S-pageDown> :wincmd w<CR>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 
-tnoremap <silent> <f5>      <C-w>N:call misc#F5FunctionKey('origin')<CR>
-tnoremap <silent> <C-f5>    <C-w>N:call misc#F5FunctionKey('reverse')<CR>
-tnoremap <silent> <S-f5>    <C-w>N:call misc#F5FunctionKey('task')<CR>
+tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('origin')"])<CR>
+tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('reverse')"])<CR>
+tnoremap <silent> <S-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('task')"])<CR>
+
+tnoremap <silent> <PageDown> <C-w>N<PageDown>
+tnoremap <silent> <PageUp> <C-w>N<PageUp>
 " Buffer switch
-tnoremap <silent> <C-left>  <C-w>N:call misc#BufSwitch('previous')<CR>
-tnoremap <silent> <C-right> <C-w>N:call misc#BufSwitch('next')<CR>
-noremap  <silent> <C-left>  :call misc#BufSwitch('previous')<CR>
-noremap  <silent> <C-right> :call misc#BufSwitch('next')<CR>
+tnoremap <silent> <C-left>  <C-w>N:call execute(['normal a', "call async#TermSwitch('previous')"], '')<CR>
+tnoremap <silent> <C-right> <C-w>N:call execute(['normal a', "call async#TermSwitch('next')", ''])<CR>
+noremap  <silent> <C-left>  :call misc#BufHisSwitch('previous')<CR>
+noremap  <silent> <C-right> :call misc#BufHisSwitch('next')<CR>
 map! <C-left> <Esc><C-left>
 map! <C-right> <Esc><C-right>
 

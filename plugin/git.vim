@@ -19,6 +19,10 @@ augroup Git_manager
 augroup END
 
 function! GIT_Complete(L, C, P)
+    if !isdirectory('.git')
+        return split(glob(a:L.'*'))
+    endif
+
     let l:cmd = split(strpart(a:C, 0, a:P))
     if a:L =~ '^-' && len(l:cmd) < 4
         let l:op = l:cmd[1] =~ '^-' ? 'git' : l:cmd[1]

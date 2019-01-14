@@ -341,10 +341,10 @@ function s:SignDisplayStr(items)
     let l:str = "  id      type      where\n"
 
     for [l:id, l:val] in items(a:items)
-        let l:str .= printf('  %-3d     %-6s    %s:%d', l:id, l:val.type,
-                    \ substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin)
-
-        let l:str .= '   '.l:val.sign.attr."\n"
+        let l:str .= printf(
+                    \ '  %-3d     %-6s    %s:%d', l:id, l:val.type,
+                    \ substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin
+                    \ ).'   '.l:val.sign.attr."\n"
     endfor
 
     return l:str

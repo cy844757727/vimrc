@@ -49,10 +49,6 @@ function! misc#F5FunctionKey(...) abort
             exe g:TASK
         endif
 
-        if expand('%') =~# '^!' && mode() =~? 'n'
-            normal a
-        endif
-
         return
     endif
 
@@ -112,19 +108,9 @@ function s:SwitchToEmptyBuftype()
         return 0
     endif
 
-    if expand('%') =~# '\v^!'
-        if mode() =~? 'n'
-            normal a
-        endif
-
-        let l:ex = 'wincmd W'
-    elseif &filetype ==# 'qf'
-        let l:ex = 'wincmd W'
-    else
-        let l:ex = 'wincmd w'
-    endif
-
     let l:cur = winnr()
+    let l:ex = (&filetype ==# 'qf' || bufname('%') =~# '\v^!Terminal') ?
+                \ 'wincmd W' : 'wincmd w'
 
     exe l:ex
     while winnr() != l:cur
@@ -441,7 +427,7 @@ function! misc#BufHisDel(...)
 endfunction
 
 
-function! s:BufHisSwitch(action)
+function! misc#BufHisSwitch(action)
     if !exists('w:bufHis') || len(get(w:bufHis, 'list', [])) < 2
         return
     endif
@@ -465,7 +451,7 @@ function! s:BufHisSwitch(action)
         endif
 
         call remove(w:bufHis.list, -1)
-        call s:BufHisSwitch(a:action)
+        call misc#BufHisSwitch(a:action)
     endif
 endfunction
 
@@ -576,47 +562,18 @@ function! misc#StatuslineExtra() abort
     let l:list = []
 
     if l:all_errors > 0
-        let l:list +=  [printf(' %d', l:all_errors)]
+        let l:list +=  [' '.l:all_errors]
     endif
 
     if l:all_non_errors > 0
-        let l:list += [printf(' %d', l:all_non_errors)]
+        let l:list += [' '.l:all_non_errors]
     endif
 
     if l:jobs > 0
-        let l:list += [printf('& %d', l:jobs)]
+        let l:list += ['& '.l:jobs]
     endif
 
     return join(l:list, ' ')
-endfunction
-
-
-function! misc#BufSwitch(...)
-    let l:action = a:0 > 0 ? a:1 : 'next'
-
-    if bufname('%') =~ '^!'
-        call async#TermSwitch(l:action)
-    elseif empty(&buftype)
-        call s:BufHisSwitch(l:action)
-    endif
-endfunction
-
-
-" For starting insert mode when switching to terminal
-function! misc#WinSwitch(action)
-    if bufname('%') =~ '^!' && mode() == 'n'
-        normal a
-    endif
-
-    if a:action == 'down'
-        wincmd w
-    else
-        wincmd W
-    endif
-
-    if bufname('%') =~ '^!' && mode() == 'n'
-        normal a
-    endif
 endfunction
 
 
@@ -627,17 +584,10 @@ function! misc#NextItem(...)
         let l:ex = l:action ==# 'next' ? 'ALENextWrap' : 'ALEPreviousWrap'
     else
         let l:flag = l:action ==# 'next' ? 'w' : 'wb'
+        let l:re = {'qf': '^[^|]', 'tagbar': "^[^ \"]", 'nerdtree': '/$'}
 
-        if &buftype ==# 'quickfix'
-            let l:re = '^[^|]'
-        elseif &filetype ==# 'tagbar'
-            let l:re = "^[^ \"]"
-        elseif &filetype ==# 'nerdtree'
-            let l:re = '/$'
-        endif
-
-        if exists('l:re')
-            let l:ex = "call search('".l:re."', '".l:flag."')"
+        if has_key(l:re, &ft)
+            let l:ex = "call search('".l:re[&ft]."', '".l:flag."')"
         endif
     endif
 

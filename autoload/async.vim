@@ -94,10 +94,10 @@ function! async#TermToggle(...)
     if l:winnr != -1
         if l:action ==# 'on'
             exe l:winnr . 'wincmd w'
-        elseif l:action =~# '\voff|toggle'
+        elseif index(['toggle', 'off'], l:action) != -1
             exe l:winnr . 'hide'
         endif
-    elseif l:action =~# '\von|toggle'
+    elseif index(['toggle', 'on'], l:action) != -1
         " Hide other terminal
         let l:other = bufwinnr(s:termPrefix)
         if l:other != -1
@@ -131,11 +131,6 @@ function! async#TermToggle(...)
         call setbufvar(l:bufnr, '&buftype', 'terminal')
     endif
 
-    " Ensure starting insert mode
-    if bufname('%') =~# '\v^!' && mode() == 'n'
-        normal a
-    endif
-
     " Excuting postCmd after establishing a terminal
     if !empty(l:postCmd) && l:bufnr != -1
         call term_sendkeys(l:bufnr, l:postCmd . "\n")
@@ -147,10 +142,6 @@ endfunction
 
 " Switch terminal window between exists terminal {{{2
 function! async#TermSwitch(...)
-    if mode() ==# 'n'
-        normal a
-    endif
-
     if bufname('%') !~# s:termPrefix
         return
     endif
@@ -173,10 +164,6 @@ function! async#TermSwitch(...)
         let l:buf = map(l:termList, "' '.bufname(v:val)")
         let l:buf[l:ind] = '[' . l:buf[l:ind][1:-2] . ']'
         echo strpart(join(l:buf), 0, &columns)
-    endif
-
-    if mode() ==# 'n'
-        normal a
     endif
 endfunction
 

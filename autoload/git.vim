@@ -7,15 +7,23 @@ if exists('g:loaded_A_GIT_Manager') || !executable('git')
 endif
 let g:loaded_A_GIT_Manager = 1
 
+
 function! git#Diff(...)
-    if a:0 == 0
-        exe '!git difftool -y HEAD -- ' . expand('%')
-    elseif a:0 == 1
-        exe '!git difftool -y HEAD -- ' . a:1
-    else
-        exe '!git difftool -y ' . join(a:000, ' ')
+    if isdirectory('.git')
+        let l:ex = '!git difftool -y '
+
+        if a:0 == 0
+            exe l:ex.'HEAD -- '.expand('%')
+        elseif a:0 == 1
+            exe l:ex.'HEAD -- '.a:1
+        else
+            exe l:ex.join(a:000, ' ')
+        endif
+    elseif a:0 > 0
+        exe '!vim -d '.a:1.' '.get(a:000, 1, expand('%'))
     endif
 endfunction
+
 
 function! git#FormatLog()
     let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s'")
@@ -45,6 +53,7 @@ function! git#FormatLog()
     return l:log
 endfunction
 
+
 function! git#FormatBranch()
     let l:local = systemlist('git branch -v')
     let l:remote = systemlist('git remote -v')
@@ -67,6 +76,7 @@ function! git#FormatBranch()
     return l:local + l:remote + l:stash + l:tag
 endfunction
 
+
 function! git#FormatCommit(hash)
     return systemlist(
                 \ "git show --pretty='" .
@@ -82,18 +92,16 @@ function! git#FormatCommit(hash)
                 \ )
 endfunction
 
+
 function! git#FormatStatus()
-    let l:status = systemlist('git status')
-    let l:i = len(l:status) - 1
-    while l:i >= 0
-        if l:status[l:i] =~ '^\s*[（(]'
-            call remove(l:status, l:i)
-        elseif l:status[l:i] =~ '^\s\+'
+    let l:status = filter(systemlist('git status'), "v:val !~ '^\\s*[（(]'")
+
+    for l:i in range(len(l:status))
+        if l:status[l:i] =~ '\v^\s+'
             let l:list = split(l:status[l:i])
-            let l:status[l:i] = '    ' . l:list[0] . repeat(' ', 10 - strwidth(l:list[0])) . ' ' . join(l:list[1:])
+            let l:status[l:i] = printf('    %-10S  %s', l:list[0], join(l:list[1:]))
         endif
-        let l:i -= 1
-    endwhile
+    endfor
 
     if l:status[-1] !~ '\S'
         call remove(l:status, -1)
@@ -101,6 +109,7 @@ function! git#FormatStatus()
 
     return l:status
 endfunction
+
 
 function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)
@@ -133,6 +142,7 @@ function! s:TabPage()
     let t:git_tabpageManager = 1
 endfunction
 
+
 function! git#Toggle()
     if exists('t:git_tabpageManager')
         let l:gitTab = tabpagenr()
@@ -154,6 +164,7 @@ function! git#Toggle()
         endtry
     endif
 endfunction
+
 
 function! git#Refresh()
     if bufwinnr('.Git_log') != -1
@@ -184,6 +195,7 @@ function! git#Refresh()
         let t:git_tabpageManager = 1
     endif
 endfunction
+
 
 function! git#MainMenu()
     echo
@@ -242,6 +254,7 @@ function! git#MainMenu()
     echo l:msg
 endfunction
 
+
 function! s:ToolMenu()
     echo 
                 \ "** Git tool menu\n" .
@@ -258,6 +271,7 @@ function! s:ToolMenu()
     endif
     return l:msg
 endfunction
+
 
 function! s:SubMenu()
     echo
@@ -313,6 +327,7 @@ function! s:SubMenu()
     endif
     return l:msg
 endfunction
+
 
 function! git#CompleteBranch(L, C, P)
     if a:L =~ '^-'
