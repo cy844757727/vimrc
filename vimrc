@@ -10,6 +10,7 @@ set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
 set foldtext=misc#FoldText()
 "set eadirection=
 set tags+=./.tags,.tags
+set shortmess=aoOtTcF
 set mousetime=1000
 set signcolumn=auto
 set viminfo=
@@ -65,6 +66,7 @@ augroup END
 command! Info :echo misc#Information('more')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! UTags :Async! ctags -R -f .tags
+command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=1 Task :exe get(<args>:, 'task', 'echo')
 command! -nargs=+ -complete=file Open :Async xdg-open <args>
 command! -nargs=? Vresize :vertical resize <args>
@@ -141,11 +143,9 @@ imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
 noremap <silent> <C-l>   :redraw!<CR>
-noremap <silent> <C-a>   ggvG$
 noremap <silent> <C-w>   :close<CR>
 noremap <silent> <S-t>   :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 map! <C-l> <Esc><C-l>
-map! <C-a> <Esc><C-a>
 map! <C-w> <Esc><C-w>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>

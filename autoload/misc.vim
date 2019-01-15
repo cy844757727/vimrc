@@ -141,13 +141,13 @@ function! misc#CodeFormat() range
     let l:formatCmd = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /\v-^']
 
     " Custom formatting
-    if &filetype =~ 'verilog'
+    if &filetype =~# 'verilog'
         let l:formatCmd = [
                     \ l:range.'s/\v[0-9a-zA-Z_)\]]\zs\s*([-+=*/%><|&!?~:^][=><|&~]?)\s*\ze[a-zA-Z_(]/ \1 /ge',
                     \ l:range.'s/\v\(\zs\s*|\s*\ze\)//ge',
                     \ l:range.'s/\v(,|;)\zs\s*\ze\w/ /ge'
                     \ ] + l:formatCmd[1:]
-    elseif &filetype == 'make'
+    elseif &filetype ==# 'make'
         let l:formatCmd = [
                     \ l:range.'s/\v\w\zs\s*(+=|=|:=)\s*/ \1 /ge',
                     \ l:range.'s/\v:\zs\s*\ze(\w|\$)/ /ge'
@@ -329,12 +329,12 @@ function! misc#TabLine()
         endif
 
         " select the highlighting & tab page number (for mouse clicks)
-        let l:s .= l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#'
-        let l:s .= '%' . (l:i + 1) . 'T' . l:lable
+        let l:s .= (l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#').
+                    \ '%' . (l:i + 1) . 'T' . l:lable
 
         " Separator symbols
         if !exists('l:last') && l:i != l:num - 1
-            let l:s .= l:i != l:cur && l:i + 1 != l:cur ? '%#TabLineSeparator#│' : ' '
+            let l:s .= (l:i != l:cur && l:i + 1 != l:cur) ? '%#TabLineSeparator#│' : ' '
         else
             break
         endif
@@ -388,7 +388,7 @@ endfunction
 
 " Custom format instead of default
 function! misc#FoldText()
-    return ''.(v:foldend - v:foldstart + 1).' '.getline(v:foldstart).'  '
+    return ''.(v:foldend - v:foldstart + 1).' '.getline(v:foldstart)
 endfunction
 
 
@@ -432,12 +432,10 @@ function! misc#BufHisSwitch(action)
         return
     endif
 
-    if a:action == 'previous'
-        call insert(w:bufHis.list, remove(w:bufHis.list, -1))
-    elseif a:action == 'next'
+    if a:action == 'next'
         call add(w:bufHis.list, remove(w:bufHis.list, 0))
     else
-        return
+        call insert(w:bufHis.list, remove(w:bufHis.list, -1))
     endif
 
     if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
@@ -458,6 +456,7 @@ endfunction
 
 function! s:BufHisEcho()
     let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
+
     " Mark out the current item
     let l:bufList[-1] = '[' . l:bufList[-1][1:-2] . ']'
 
@@ -599,7 +598,7 @@ endfunction
 
 function! misc#Information(...)
     let l:info = ''
-    let l:cwd = substitute(getcwd(), $HOME, '~', '')
+    let l:cwd = fnamemodify(getcwd(), ':~')
     let l:file = expand('%')
     let l:nr = bufnr('%')
     let l:lines = line('$')
@@ -610,11 +609,10 @@ function! misc#Information(...)
             let l:info .= ' '.matchstr(system('git branch'), '\(\* \)\zs\w*').'    '
         endif
 
-        let l:info .= ' '.l:cwd.'    '
-        let l:info .= ' '.l:nr.': '.l:lines.'L, '
-        let l:info .= l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
         let l:time = strftime('%H:%M')
-        let l:info .= repeat(' ', &columns - strdisplaywidth(l:info) - len(l:time) - 1).l:time
+        let l:info .= ' '.l:cwd.'    '.' '.l:nr.': '.l:lines.'L, '.
+                    \ l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
+        let l:info .= repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
     else
         let l:info .= '  '.strftime("%Y %b %d %T")."\n"
 
@@ -622,10 +620,9 @@ function! misc#Information(...)
             let l:info .= '  '.substitute(matchstr(system('git branch'),'\w.*\w'), "\n", '  ', 'g')."\n"
         endif
 
-        let l:info .= '  '.l:cwd."\n"
-        let l:info .= ' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.l:file."\n"
-        let l:info .= '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n"
-        let l:info .= '   '.matchstr(system('ls -lh '.l:file), '.*\d')
+        let l:info .= '  '.l:cwd."\n".' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.l:file."\n".
+                    \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
+                    \ '   '.matchstr(system('ls -lh '.l:file), '\v.*\d+:\d+')
     endif
 
     return l:info
@@ -653,6 +650,24 @@ function! misc#CleanBufferList()
             exe 'silent bw '.l:nr
         endif
     endfor
+endfunction
+
+
+" Filter :messages output
+function! misc#MsgFilter(...)
+    let [l:num, l:filter] = [0, '\v^\a+:']
+
+    for l:i in range(len(a:000))
+        if a:000[l:i]
+            let l:num = abs(a:000[l:i])
+        elseif a:000[l:i] !=# '0'
+            let l:filter = join(a:000[l:i:], ' ')
+            break
+        endif
+    endfor
+
+    let l:msg = filter(split(execute('messages'), "\n"), "v:val =~? '".l:filter."'")
+    echo join(l:num >= len(l:msg) ? l:msg : l:msg[-l:num:], "\n")
 endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
@@ -779,11 +794,8 @@ endfunction
 
 function! SwitchXPermission()
     let l:currentNode = g:NERDTreeFileNode.GetSelected()
-    if getfperm(l:currentNode.path.str())[2] == 'x'
-        call system("chmod -x '" . l:currentNode.path.str() . "'")
-    else
-        call system("chmod +x '" . l:currentNode.path.str() . "'")
-    endif
+    let l:flag = getfperm(l:currentNode.path.str())[2] ==# 'x' ? '-x ' : '+x '
+    call system('chmod '.l:falg."'".l:currentNode.path.str()."'")
     silent call nerdtree#ui_glue#invokeKeyMap('R')
 endfunction
 

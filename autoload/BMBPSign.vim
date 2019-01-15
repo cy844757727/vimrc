@@ -2,7 +2,7 @@
 " File: BMBPSign.vim
 " Author: Cy <844757727@qq.com>
 " Description: BookMark_TodoList_BreakPoint_ProjectManager
-" Last Modified: 2019年01月06日 星期日 16时57分28秒
+" Last Modified: 2019年01月15日 星期二 12时46分27秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
 if exists('g:loaded_A_BMBPSign') || !has('signs')
@@ -15,7 +15,7 @@ hi default BookMark    ctermfg=16 guifg=#CC7832
 hi default TodoList    ctermfg=16 guifg=#619FC6
 hi default BreakPoint  ctermfg=16 guifg=#DE3D3B
 
-" Sign name rule: 'BMBPSign' . type
+" Sign name rule: 'BMBPSign' . type [. 'Attr']
 sign define BMBPSignbook text= texthl=BookMark
 sign define BMBPSigntodo text= texthl=TodoList
 sign define BMBPSignbreak text= texthl=BreakPoint
@@ -83,7 +83,7 @@ let s:sessionOptions = get(g:, 'BMBPSign_SessionOption',
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
 
 " For $HOME path substitute
-call map(s:projectType, "v:val =~ '^\\~' ? $HOME . strpart(v:val, 1) : v:val")
+call map(s:projectType, "fnamemodify(v:val, ':p')")
 
 " Sign type extendsion: customized
 for l:sign in get(g:, 'BMBPSignTypeExtend', [])
@@ -499,7 +499,7 @@ function s:ProjectSwitch(sel)
     call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
 
-    echo substitute(s:projectItem[0], ' ' . $HOME, ' ~', '')
+    echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
 endfunction
 
 
@@ -509,7 +509,7 @@ function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
 
     " ui: head
-    let l:ui = "** Project option  (cwd: ".substitute(getcwd(), $HOME, '~', '').
+    let l:ui = "** Project option  (cwd: ".fnamemodify(getcwd(), ':~').
                 \ '     num: '.len(s:projectItem)."     page: ".l:page.")\n".
                 \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  ".
                 \ "Q:vimleave  a/n:new  0-9:item\n".
@@ -608,8 +608,7 @@ function s:ProjectManager(argc, argv)
         let l:path = s:projectType[l:type] . '/' . a:argv[0]
         call s:ProjectNew(a:argv[0], l:type, l:path)
     elseif a:argc == 3
-        call s:ProjectNew(a:argv[0], a:argv[1],
-                    \ a:argv[2] =~ '^\~' ? $HOME . strpart(a:argv[2], 1) : a:argv[2])
+        call s:ProjectNew(a:argv[0], a:argv[1], fnamemodify(a:argv[2], ':p'))
     endif
 endfunction
 

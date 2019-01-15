@@ -13,9 +13,9 @@ function! git#Diff(...)
         let l:ex = '!git difftool -y '
 
         if a:0 == 0
-            exe l:ex.'HEAD -- '.expand('%')
+            exe l:ex.expand('%')
         elseif a:0 == 1
-            exe l:ex.'HEAD -- '.a:1
+            exe l:ex.a:1
         else
             exe l:ex.join(a:000, ' ')
         endif

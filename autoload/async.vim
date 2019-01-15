@@ -200,12 +200,13 @@ endfunction
 
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
+    let l:ex = ["echom 'async: ".s:asyncJob[l:id].cmd.' '.(a:status == 0 ? '[Done]' : '[Failed]')."'"]
 
-    if a:status != 0
-        echo 'Failed: ' . s:asyncJob[l:id].cmd
-    elseif !has_key(s:asyncJob[l:id], 'quiet')
-        echo 'Done: ' . s:asyncJob[l:id].cmd
+    if has_key(s:asyncJob[l:id], 'quiet')
+        let l:ex += ["echo ' '"]
     endif
+
+    call execute(l:ex, '')
 
     unlet s:asyncJob[l:id]
 endfunction
