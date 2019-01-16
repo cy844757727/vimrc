@@ -114,13 +114,13 @@ function s:SignToggle(file, line, type, attr, skip)
     let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
     let l:vec = s:signVec[a:type]
     let l:signPlace = execute('sign place file=' . a:file)
-    let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)'.'  \S+\='.l:def)
+    let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)  \S+\='.l:def)
     let g:BMBPSign_SignSetFlag = 1
 
     if empty(l:id)
         " Plus first, ensure id global uniqueness
         let s:newSignId += 1
-        while !empty(matchlist(l:signPlace, '\v    \S+\=\d+'.'  id\='.s:newSignId.'  '))
+        while !empty(matchlist(l:signPlace, '\v    \S+\=\d+  id\='.s:newSignId.'  '))
             let s:newSignId += 1
         endwhile
 
@@ -191,8 +191,8 @@ function s:SignJump(types, action, id, attrs, file)
         let l:winId = win_findbuf(l:bufnr)
 
         if !empty(l:winId)
-            exe win_id2tabwin(l:winId[0])[0] . 'tabnext'
-        elseif index(get(get(w:,'bufHis',{}),'list',[]), l:file) == -1 && !empty(expand('%'))
+            exe win_id2tabwin(l:winId[0])[0].'tabnext'
+        elseif index(get(get(w:, 'bufHis', {}), 'list', []), l:file) == -1 && !empty(expand('%'))
             tabnew
         endif
     endif
@@ -271,7 +271,7 @@ function s:SignSave(signFile, types)
     let l:signs = {}
     let l:def = s:signDefHead.'('.join(a:types, '|').')'
     for l:item in split(execute('sign place'), "\n")
-        let l:match = matchlist(l:item, '\v    \S+\=(\d+)'.'  id\=(\d+)  \S+\='.l:def)
+        let l:match = matchlist(l:item, '\v    \S+\=(\d+)  id\=(\d+)  \S+\='.l:def)
 
         if !empty(l:match)
             let l:signs[l:match[2]] = l:match[1]

@@ -645,8 +645,8 @@ function! misc#CleanBufferList()
     for l:str in split(execute('ls'), "\n")
         let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+")')
 
-        if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) &&
-                    \ empty(matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
+        if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) && empty(
+                    \ matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
             exe 'silent bw '.l:nr
         endif
     endfor

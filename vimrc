@@ -70,9 +70,9 @@ command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=1 Task :exe get(<args>:, 'task', 'echo')
 command! -nargs=+ -complete=file Open :Async xdg-open <args>
 command! -nargs=? Vresize :vertical resize <args>
-command! -nargs=? -complete=file T :tabe <args>
-command! -range TN :<line1>tabnext
-command! -range TP :<line1>tabprevious
+command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabe <args>
+command! -range -addr=tabs TN :<line1>tabnext
+command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Avdel :Async vdel -lib work -all
@@ -142,9 +142,9 @@ nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
-noremap <silent> <C-l>   :redraw!<CR>
-noremap <silent> <C-w>   :close<CR>
-noremap <silent> <S-t>   :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
+noremap <silent> <C-l>  :redraw!<CR>
+noremap <silent> <C-w>  :close<CR>
+noremap <silent> <S-t>  :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 map! <C-l> <Esc><C-l>
 map! <C-w> <Esc><C-w>
 " Save & winresize & f5 function
@@ -448,49 +448,24 @@ endfunction
 " === webdevicons.vim === {{{1
 " Extended icon
 let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
-            \ 'v'        : '',
-            \ 'vhdl'     : '',
-            \ 'vhd'      : '',
-            \ 'verilog'  : '',
-            \ 'systemverilog'  : '',
-            \ 'help'     : '',
-            \ 'sv'       : '',
-            \ 'vt'       : '',
-            \ 'vo'       : '',
-            \ 'vg'       : '',
-            \ 'mp3'      : '',
-            \ 'aac'      : '',
-            \ 'flac'     : '',
-            \ 'ape'      : '',
-            \ 'ogg'      : '',
-            \ 'jar'      : '',
-            \ 'zip'      : '',
-            \ 'rar'      : '',
-            \ 'gzip'     : '',
-            \ 'gz'       : '',
-            \ '7z'       : '',
-            \ 'tar'      : '',
-            \ 'iso'      : '',
-            \ 'mp4'      : '',
-            \ 'avi'      : '',
-            \ 'mkv'      : '',
-            \ 'xls'      : '',
-            \ 'xlsx'     : '',
-            \ 'doc'      : '',
-            \ 'docx'     : '',
-            \ 'ppt'      : '',
-            \ 'pptx'     : '',
-            \ 'text'     : '',
-            \ 'git'      : '',
-            \ 'pdf'      : '',
-            \ 'tags'     : '',
-            \ 'tag'      : ''
+            \ 'v'     : '', 'vh'    : '', 'vp'    : '', 'vt'    : '',
+            \ 'vg'    : '', 'vo'    : '', 'vhdl'  : '', 'vhd'   : '',
+            \ 'sv'    : '', 'svi'   : '', 'svh'   : '', 'svp'   : '',
+            \ 'sva'   : '',
+            \ 'mp3'   : '', 'aac'   : '', 'flac'  : '', 'ape'   : '',
+            \ 'ogg'   : '', 'mp4'   : '', 'avi'   : '', 'mkv'   : '',
+            \ 'jar'   : '', 'zip'   : '', 'rar'   : '', 'gzip'  : '',
+            \ 'gz'    : '', '7z'    : '', 'tar'   : '',
+            \ 'xls'   : '', 'xlsx'  : '', 'doc'   : '', 'docx'  : '',
+            \ 'ppt'   : '', 'pptx'  : '', 'text'  : '', 'pdf'   : '',
+            \ 'iso'   : '', 'git'   : '', 'help'  : '',
+            \ 'tags'  : '', 'tag'   : ''
             \ }
 
 let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
-            \ '.tags'     : '',
-            \ '.tag'      : ''
+            \ '.tags' : '', '.tag'  : ''
             \ }
+
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
-" ===============================
+
 " vim:foldmethod=marker

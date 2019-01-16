@@ -199,18 +199,18 @@ endfunction
 
 function! git#MainMenu()
     echo
-                \ "** Git Menu:\n" .
-                \ "==================================================\n" .
-                \ "    (i)nitialize      <git init>\n" .
-                \ "    (a)dd all files   <git add .>\n" .
-                \ "    (r)eset all files <git reset -q HEAD>\n" .
-                \ "    (c)ommit          <git commit -m>\n" .
-                \ "    a(m)end           <git commit --amend -m>\n" .
-                \ "    (p)ush            <git push>\n" .
-                \ "    (f)etch           <git fetch>\n" .
-                \ "    (P)ull            <git pull>\n" .
-                \ "    (t)ool operation\n" .
-                \ "    (o)ther operation\n" .
+                \ "** Git Menu:\n".
+                \ "==================================================\n".
+                \ "    (i)nitialize      <git init>\n".
+                \ "    (a)dd all files   <git add.>\n".
+                \ "    (r)eset all files <git reset -q HEAD>\n".
+                \ "    (c)ommit          <git commit -m>\n".
+                \ "    a(m)end           <git commit --amend -m>\n".
+                \ "    (p)ush            <git push>\n".
+                \ "    (f)etch           <git fetch>\n".
+                \ "    (P)ull            <git pull>\n".
+                \ "    (t)ool operation\n".
+                \ "    (o)ther operation\n".
                 \ "!?:"
     let l:msg = ''
     let l:char = nr2char(getchar())
