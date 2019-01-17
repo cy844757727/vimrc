@@ -114,26 +114,35 @@ endfunction
 function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)
     let l:lin = float2nr(0.4 * &lines)
+
     silent $tabnew .Git_log
     setlocal noreadonly modifiable
     call setline(1, git#FormatLog())
     setlocal readonly nomodifiable
+    setlocal nonu nospell nowrap foldcolumn=0
+
     exe 'silent belowright ' . l:col . 'vnew .Git_status'
     setlocal noreadonly modifiable
     call setline(1, git#FormatStatus())
     call search('^\(\s\+\)\zs\S')
     setlocal readonly nomodifiable
+    setlocal winfixwidth nospell nonu foldcolumn=0
+
     exe 'silent belowright ' . l:lin . 'new .Git_branch'
     setlocal noreadonly modifiable
     call setline(1, git#FormatBranch())
     call search('^\([ *]\+\)\zs\w')
     setlocal readonly nomodifiable
+    setlocal winfixheight nospell nonu nowrap foldcolumn=0
+
     1wincmd w
     exe 'silent belowright ' . l:lin . 'new .Git_commit'
     setlocal noreadonly modifiable
     call setline(1, git#FormatCommit('HEAD'))
     setlocal readonly nomodifiable
+    setlocal winfixheight nospell nonu foldcolumn=0
     normal zj
+
     3wincmd w
     let t:tab_lable = ' Git-Manager'
     let t:git_tabpageManager = 1
@@ -166,6 +175,7 @@ endfunction
 function! git#Refresh()
     if bufwinnr('.Git_log') != -1
         let l:winnr = winnr()
+
         4wincmd w
         setlocal noreadonly modifiable
         let l:pos = getpos('.')
@@ -173,6 +183,7 @@ function! git#Refresh()
         call setline(1, git#FormatBranch())
         call setpos('.', l:pos)
         setlocal readonly nomodifiable
+
         wincmd W
         setlocal noreadonly modifiable
         let l:pos = getpos('.')
@@ -180,6 +191,7 @@ function! git#Refresh()
         call setline(1, git#FormatStatus())
         call setpos('.', l:pos)
         setlocal readonly nomodifiable
+
         1wincmd w
         setlocal noreadonly modifiable
         let l:pos = getpos('.')
@@ -187,6 +199,7 @@ function! git#Refresh()
         call setline(1, git#FormatLog())
         call setpos('.', l:pos)
         setlocal readonly nomodifiable
+
         exe l:winnr . 'wincmd w'
         let t:tab_lable = ' Git-Manager'
         let t:git_tabpageManager = 1

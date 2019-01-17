@@ -8,9 +8,6 @@ endif
 let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
-setlocal nonu
-setlocal nospell
-setlocal winfixheight
 setlocal buftype=nofile
 setlocal foldcolumn=0
 setlocal foldlevel=0

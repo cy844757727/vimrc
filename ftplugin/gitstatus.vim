@@ -9,12 +9,8 @@ let b:did_ftplugin = 1
 let b:curL = -1
 let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
-setlocal nonu
-setlocal nospell
-setlocal winfixwidth
 setlocal buftype=nofile
-setlocal foldcolumn=0
-setlocal statusline=%2(\ %)ﰧ\ Status\ \ %{b:currentDir}%=%2(\ %)
+setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>

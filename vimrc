@@ -295,9 +295,9 @@ let g:tagbar_status_func = 'TagbarStatusFunc'
 function! TagbarStatusFunc(current, sort, fname, flags, ...) abort
     let l:flagstr = join(a:flags, '')
     if l:flagstr != ''
-        let l:flagstr = '[' . l:flagstr . '] '
+        let l:flagstr = '['.l:flagstr.'] '
     endif
-    return '  Tagbar: ' . l:flagstr . a:fname
+    return '  Tagbar: '.l:flagstr.a:fname
 endfunction
 
 "  TagBar 其他语言支持
@@ -365,7 +365,7 @@ function! Vimrc_Tagbar()
         let g:tagbar_left=0
         wincmd W
     else
-        exe bufwinnr('NERD_tree') . 'wincmd w'
+        exe bufwinnr('NERD_tree').'wincmd w'
         TagbarOpen
         wincmd w
     endif
@@ -407,8 +407,8 @@ function! PreSaveWorkSpace_Var()
         " Record buf history in every window
         let g:WINVAR_BUFHIS[l:nr] = {}
         for l:winnr in range(1, tabpagewinnr(l:nr, '$'))
-            let l:var = gettabwinvar(l:nr, l:winnr, 'bufHis', {})
-            if len(get(l:var, 'list', [])) > 1
+            let l:var = gettabwinvar(l:nr, l:winnr, 'bufHis', {'list': []})
+            if len(l:var.list) > 1
                 let g:WINVAR_BUFHIS[l:nr][l:winnr] = l:var
             endif
         endfor
