@@ -421,7 +421,7 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.name = 'python'
         let l:dbg.tool = 'pdb'
         let l:dbg.cmd = l:interpreter.' -m pdb '.a:file
-        let l:breakPoint = map(a:breakPoint, "substitute(v:val,'\\v(:\\d+)\\zs\\s+', ' ,', '')")
+        let l:breakPoint = map(a:breakPoint, "substitute(v:val,'\\v(:\\d+)\\zs\\s+,?', ' ,', '')")
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         let l:dbg.postCmd = join(l:var + l:breakPoint, ';;')
         let l:dbg.prompt = '\v\(Pdb\)'

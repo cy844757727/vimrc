@@ -556,7 +556,8 @@ function s:ProjectMenu()
             let l:tip = matchstr(l:tip, '\S*$')
         elseif l:char =~# '\d\|\s' && l:char < len(s:projectItem)
             " Specific operation
-            if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSign_Projectized'))
+            if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1]
+                        \ && exists('g:BMBPSign_Projectized'))
                 " select
                 call s:ProjectSwitch(l:char + 10 * (l:page - 1))
                 break
