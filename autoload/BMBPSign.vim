@@ -56,7 +56,7 @@ else
 endif
 
 
-" TODO: event handle"
+" TODO: event handle
 let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
 let s:projectType = get(g:, 'BMBPSign_ProjectType', {})
@@ -182,22 +182,8 @@ function s:SignJump(types, action, id, attrs, file)
     endif
 
     " Try jumping to a tab containing this buf or new tabpage
-    if exists('*misc#BufHisDel')
-        let l:file = fnamemodify(l:file, ':p')
-
-        for l:tab in range(1, tabpagenr('$'))
-            for l:win in range(1, tabpagewinnr(l:tab, '$'))
-                let l:var = gettabwinvar(l:tab, l:win, 'bufHis', {'list': []})
-
-                if index(l:var.list, l:file) != -1
-                    exe l:tab.'tabnext'
-                    exe l:win.'wincmd w'
-                    exe 'buffer '.l:file
-                    exe 'sign jump '.l:id.' file='.l:file
-                    return
-                endif
-            endfor
-        endfor
+    if exists('*misc#EditFile')
+        call misc#EditFile(l:file, 'tabedit')
     else
         let l:bufnr = bufnr(l:file)
         if index(tabpagebuflist(), l:bufnr) == -1
@@ -523,9 +509,9 @@ function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
 
     " ui: head
-    let l:ui = "** Project option  (cwd: ".fnamemodify(getcwd(), ':~').
-                \ '     num: '.len(s:projectItem)."     page: ".l:page.")\n".
-                \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  ".
+    let l:ui = '** Project option  (cwd: '.fnamemodify(getcwd(), ':~').
+                \ '     num: '.len(s:projectItem).'     page: '.l:page.")\n".
+                \ '   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  '.
                 \ "Q:vimleave  a/n:new  0-9:item\n".
                 \ "   !?:selection mode    Del:deletion mode    Mod:modification mode\n".
                 \ repeat('=', min([&columns - 10, 90]))."\n"
@@ -568,7 +554,7 @@ function s:ProjectMenu()
             qall
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
-        elseif l:char =~# '\d\|\s' && l:char < len(s:projectItem)
+        elseif l:char =~# '\v\d|\s' && l:char < len(s:projectItem)
             " Specific operation
             if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1] && exists('g:BMBPSign_Projectized'))
                 " select

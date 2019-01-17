@@ -80,12 +80,16 @@ endfunction
 function <SID>EditFile()
     let l:file = getline('.')
     if l:file =~ '^diff --\w* '
-    	let l:file = matchstr(l:file, '\(diff --\w* \(a/\)\?\)\zs\S\+')
-        let l:winId = win_findbuf(bufnr(l:file))
-        if l:winId != []
-            call win_gotoid(l:winId[0])
-        elseif filereadable(l:file)
-            exec '-tabedit ' . l:file
+    	let l:file = matchstr(l:file, '\v(diff --\w* (a/)?)\zs\S+')
+        if exists('*misc#EditFile')
+            call misc#EditFile(l:file, '-tabedit')
+        else
+            let l:winId = win_findbuf(bufnr(l:file))
+            if l:winId != []
+                call win_gotoid(l:winId[0])
+            elseif filereadable(l:file)
+                exec '-tabedit ' . l:file
+            endif
         endif
     endif
 endfunction
@@ -93,7 +97,7 @@ endfunction
 function <SID>CheckOutFile()
     let l:file = getline('.')
     if l:file =~ '^diff --git ' && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
-    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
+    	let l:file = matchstr(l:file, '\v( a/)\zs\S+')
         let l:hash = split(getline(1))[1]
         let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
         if l:msg =~ 'error:\|fatal:'
