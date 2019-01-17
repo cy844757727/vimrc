@@ -10,6 +10,7 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
+setlocal nospell
 setlocal buftype=nofile
 setlocal foldcolumn=0
 setlocal statusline=%2(\ %)\ Log%=%2(\ %)

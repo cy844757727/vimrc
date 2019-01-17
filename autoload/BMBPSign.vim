@@ -36,13 +36,6 @@ let s:signVec = {
             \ 'tbreak': []
             \ }
 
-let s:signVec1 = {
-            \ 'book':   {},
-            \ 'todo':   {},
-            \ 'break':  {},
-            \ 'tbreak': {}
-            \ }
-
 let s:newSignId = 0
 " Type grouping for qflist
 " Quickfix window autoupdating depends on it
@@ -62,6 +55,9 @@ else
     let s:vimInfoFile = '_viminfo'
 endif
 
+
+" TODO: event handle"
+let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
 let s:projectType = get(g:, 'BMBPSign_ProjectType', {})
 call extend(s:projectType, {'default': $HOME.'/Documents'}, 'keep')
@@ -111,9 +107,9 @@ endfor
 " Attr: Additional attribute
 " Skip: Whether to unset if sign existing (set 1 for merging: forbiden unset)
 function s:SignToggle(file, line, type, attr, skip)
-    let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
+    let l:def = s:signDefHead.a:type.(empty(a:attr) ? '' : 'Attr')
     let l:vec = s:signVec[a:type]
-    let l:signPlace = execute('sign place file=' . a:file)
+    let l:signPlace = execute('sign place file='.a:file)
     let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)  \S+\='.l:def)
     let g:BMBPSign_SignSetFlag = 1
 
@@ -724,17 +720,19 @@ function s:QfListSet(title, types)
 
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '\v    \S+\=(\d+)'.
-                        \ '  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+            let l:line = matchlist(l:signPlace,
+                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:signDefHead)
 
-            if empty(l:line)
+            if empty(l:line) || !filereadable(l:sign.file)
                 continue
+            elseif !executable('sed') && !bufloaded(l:sign.file)
+                exe '0vsplit +hide '.l:sign.file
             endif
 
             let l:text = '['.l:sign.id.':'.l:type.(empty(l:sign.attr) ? '' : ':'.l:sign.attr).'] '.(
                         \ executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
-                        \ get(getbufline(l:sign.file, l:line[1]), 0, '')
+                        \ getbufline(l:sign.file, l:line[1])[0]
                         \ )
 
             let l:qf.items += [{
@@ -813,7 +811,7 @@ function BMBPSign#SignToggle(...)
         endif
     endfor
 
-    if !filereadable(l:file) || !empty(getbufvar(l:file, '&buftype', ''))
+    if !filereadable(l:file)
         return
     elseif !bufexists(l:file)
         exe 'badd ' . l:file
@@ -824,15 +822,6 @@ function BMBPSign#SignToggle(...)
     endif
 
     for l:lin in uniq(sort(l:lins))
-        if l:type ==# 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
-            exe 'buffer ' . l:file
-            call cursor(l:lin, 1)
-            call append('.', s:TodoStatement(getbufvar(l:file, '&filetype')))
-            normal j==
-            silent write
-            let l:lin += 1
-        endif
-
         call s:SignToggle(l:file, l:lin, l:type, l:attr, 0)
     endfor
 

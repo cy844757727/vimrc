@@ -643,7 +643,7 @@ function! misc#CleanBufferList()
     endfor
 
     for l:str in split(execute('ls'), "\n")
-        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+")')
+        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+h?\s+")')
 
         if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) && empty(
                     \ matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
@@ -669,6 +669,34 @@ function! misc#MsgFilter(...)
     let l:msg = filter(split(execute('messages'), "\n"), "v:val =~? '".l:filter."'")
     echo join(l:num >= len(l:msg) ? l:msg : l:msg[-l:num:], "\n")
 endfunction
+
+
+function! misc#EditFile(file, ...)
+    if !filereadable(a:file)
+        return
+    elseif !bufexists(a:file)
+        exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+        return
+    endif
+
+    let l:file = fnamemodify(a:file, ':p')
+
+    for l:tab in range(1, tabpagenr('$'))
+        for l:win in range(1, tabpagewinnr(l:tab, '$'))
+            let l:var = gettabwinvar(l:tab, l:win, 'bufHis', {'list': []})
+
+            if index(l:var.list, l:file) != -1
+                exe l:tab.'tabnext'
+                exe l:win.'wincmd w'
+                exe 'edit '.l:file
+                return
+            endif
+        endfor
+    endfor
+
+    exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+endfunction
+
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()

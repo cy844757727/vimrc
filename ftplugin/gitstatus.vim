@@ -10,6 +10,8 @@ let b:curL = -1
 let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal nonu
+setlocal nospell
+setlocal winfixwidth
 setlocal buftype=nofile
 setlocal foldcolumn=0
 setlocal statusline=%2(\ %)ﰧ\ Status\ \ %{b:currentDir}%=%2(\ %)
@@ -66,12 +68,23 @@ function <SID>EditFile()
     else
         return
     endif
-    let l:winId = win_findbuf(bufnr(l:file))
-    if l:winId != []
-        call win_gotoid(l:winId[0])
-    elseif filereadable(l:file)
-        exec '-tabedit ' . l:file
-    endif
+
+    let l:file = fnamemodify(l:file, ':p')
+
+    for l:tab in range(1, tabpagenr('$'))
+        for l:win in range(1, tabpagewinnr(l:tab, '$'))
+            let l:var = gettabwinvar(l:tab, l:win, 'bufHis', {'list': []})
+
+            if index(l:var.list, l:file) != -1
+                exe l:tab.'tabnext'
+                exe l:win.'wincmd w'
+                exe 'edit '.l:file
+                return
+            endif
+        endfor
+    endfor
+
+    exe '-tabedit '.l:file
 endfunction
 
 function <SID>FileDiff()

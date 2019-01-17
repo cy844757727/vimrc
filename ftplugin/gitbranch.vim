@@ -10,6 +10,8 @@ let b:curL = -1
 
 setlocal nonu
 setlocal nowrap
+setlocal nospell
+setlocal winfixheight
 setlocal buftype=nofile
 setlocal tabstop=1
 setlocal foldcolumn=0
