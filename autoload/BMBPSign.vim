@@ -36,13 +36,6 @@ let s:signVec = {
             \ 'tbreak': []
             \ }
 
-let s:signVec1 = {
-            \ 'book':   {},
-            \ 'todo':   {},
-            \ 'break':  {},
-            \ 'tbreak': {}
-            \ }
-
 let s:newSignId = 0
 " Type grouping for qflist
 " Quickfix window autoupdating depends on it
@@ -62,6 +55,9 @@ else
     let s:vimInfoFile = '_viminfo'
 endif
 
+
+" TODO: event handle
+let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
 let s:projectType = get(g:, 'BMBPSign_ProjectType', {})
 call extend(s:projectType, {'default': $HOME.'/Documents'}, 'keep')
@@ -89,7 +85,7 @@ call map(s:projectType, "fnamemodify(v:val, ':p')")
 for l:sign in get(g:, 'BMBPSignTypeExtend', [])
     try
         let l:type = l:sign.type
-        let l:name = s:signDefHead . l:type
+        let l:name = s:signDefHead.l:type
         let l:text = get(l:sign, 'text', '')
         let l:texthl = get(l:sign, 'texthl', 'BMBPSignHl')
         let l:linehl = get(l:sign, 'linehl', 'Normal')
@@ -111,9 +107,9 @@ endfor
 " Attr: Additional attribute
 " Skip: Whether to unset if sign existing (set 1 for merging: forbiden unset)
 function s:SignToggle(file, line, type, attr, skip)
-    let l:def = s:signDefHead . a:type . (empty(a:attr) ? '' : 'Attr')
+    let l:def = s:signDefHead.a:type.(empty(a:attr) ? '' : 'Attr')
     let l:vec = s:signVec[a:type]
-    let l:signPlace = execute('sign place file=' . a:file)
+    let l:signPlace = execute('sign place file='.a:file)
     let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)  \S+\='.l:def)
     let g:BMBPSign_SignSetFlag = 1
 
@@ -186,14 +182,18 @@ function s:SignJump(types, action, id, attrs, file)
     endif
 
     " Try jumping to a tab containing this buf or new tabpage
-    let l:bufnr = bufnr(l:file)
-    if index(tabpagebuflist(), l:bufnr) == -1
-        let l:winId = win_findbuf(l:bufnr)
+    if exists('*misc#EditFile')
+        call misc#EditFile(l:file, 'tabedit')
+    else
+        let l:bufnr = bufnr(l:file)
+        if index(tabpagebuflist(), l:bufnr) == -1
+            let l:winId = win_findbuf(l:bufnr)
 
-        if !empty(l:winId)
-            exe win_id2tabwin(l:winId[0])[0].'tabnext'
-        elseif index(get(get(w:, 'bufHis', {}), 'list', []), l:file) == -1 && !empty(expand('%'))
-            tabnew
+            if !empty(l:winId)
+                exe win_id2tabwin(l:winId[0])[0].'tabnext'
+            else
+                exe 'tabedit '.l:file
+            endif
         endif
     endif
 
@@ -509,9 +509,9 @@ function s:ProjectUI(start, tip)
     let l:page = a:start / 10 + 1
 
     " ui: head
-    let l:ui = "** Project option  (cwd: ".fnamemodify(getcwd(), ':~').
-                \ '     num: '.len(s:projectItem)."     page: ".l:page.")\n".
-                \ "   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  ".
+    let l:ui = '** Project option  (cwd: '.fnamemodify(getcwd(), ':~').
+                \ '     num: '.len(s:projectItem).'     page: '.l:page.")\n".
+                \ '   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  '.
                 \ "Q:vimleave  a/n:new  0-9:item\n".
                 \ "   !?:selection mode    Del:deletion mode    Mod:modification mode\n".
                 \ repeat('=', min([&columns - 10, 90]))."\n"
@@ -554,7 +554,7 @@ function s:ProjectMenu()
             qall
         elseif l:char == "\<cr>"
             let l:tip = matchstr(l:tip, '\S*$')
-        elseif l:char =~# '\d\|\s' && l:char < len(s:projectItem)
+        elseif l:char =~# '\v\d|\s' && l:char < len(s:projectItem)
             " Specific operation
             if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1]
                         \ && exists('g:BMBPSign_Projectized'))
@@ -568,7 +568,7 @@ function s:ProjectMenu()
             elseif l:mode ==# 'm'
                 " modify
                 let l:path = split(s:projectItem[l:char])[-1]
-                echo s:ProjectUI(l:start[0], '▼ Modelify item ' . str2nr(l:char))
+                echo s:ProjectUI(l:start[0], '▼ Modelify item '.str2nr(l:char))
                 let l:argv = split(input("<name > <type>: "))
                 redraw!
                 if len(l:argv) == 2
@@ -590,10 +590,10 @@ function s:ProjectMenu()
                 call s:ProjectManager(l:argc, l:argv)
                 break
             else
-                let l:tip = 'Wrong Argument, Reselect. ' . matchstr(l:tip, '\S*$')
+                let l:tip = 'Wrong Argument, Reselect. '.matchstr(l:tip, '\S*$')
             endif
         else
-            let l:tip = 'Invalid(' . l:char . '), Reselect. ' . matchstr(l:tip, '\S*$')
+            let l:tip = 'Invalid('.l:char.'), Reselect. '.matchstr(l:tip, '\S*$')
         endif
     endwhile
 endfunction
@@ -606,7 +606,7 @@ function s:ProjectManager(argc, argv)
         call s:ProjectSwitch(a:argv[0])
     elseif a:argc == 2
         let l:type = has_key(s:projectType, a:argv[1]) ? a:argv[1] : 'default'
-        let l:path = s:projectType[l:type] . '/' . a:argv[0]
+        let l:path = s:projectType[l:type].'/'.a:argv[0]
         call s:ProjectNew(a:argv[0], l:type, l:path)
     elseif a:argc == 3
         call s:ProjectNew(a:argv[0], a:argv[1], fnamemodify(a:argv[2], ':p'))
@@ -651,7 +651,7 @@ function s:WorkSpaceSave(pre)
     " Remember the current window of each tab(modify session file: append)
     let l:curWin = range(1, tabpagenr('$'))
     unlet l:curWin[tabpagenr() - 1]
-    call map(l:curWin, "v:val . 'tabdo ' . tabpagewinnr(v:val) . 'wincmd w'")
+    call map(l:curWin, "v:val.'tabdo '.tabpagewinnr(v:val).'wincmd w'")
     call writefile(l:curWin + ['tabnext '.tabpagenr()], l:sessionFile, 'a')
 
     " Project processing
@@ -725,17 +725,19 @@ function s:QfListSet(title, types)
 
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            let l:line = matchlist(l:signPlace, '\v    \S+\=(\d+)'.
-                        \ '  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+            let l:line = matchlist(l:signPlace,
+                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:signDefHead)
 
-            if empty(l:line)
+            if empty(l:line) || !filereadable(l:sign.file)
                 continue
+            elseif !executable('sed') && !bufloaded(l:sign.file)
+                exe '0vsplit +hide '.l:sign.file
             endif
 
             let l:text = '['.l:sign.id.':'.l:type.(empty(l:sign.attr) ? '' : ':'.l:sign.attr).'] '.(
                         \ executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
-                        \ get(getbufline(l:sign.file, l:line[1]), 0, '')
+                        \ getbufline(l:sign.file, l:line[1])[0]
                         \ )
 
             let l:qf.items += [{
@@ -768,25 +770,6 @@ function s:QfListUpdate(types)
 endfunction
 
 
-" comment char
-let s:commentChar = {
-            \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
-            \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
-            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
-            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
-            \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
-            \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
-            \ 'ada': '--',
-            \ 'lisp': ';', 'scheme': ';',
-            \ 'vim': "\""
-            \ }
-
-" Generate todo statement
-function s:TodoStatement(filetype)
-    return get(s:commentChar, a:filetype, '') . ' TODO: '
-endfunction
-
-
 " == Global def =================================== {{{1
 function BMBPSign#Project(...)
     call s:ProjectManager(a:0, a:000)
@@ -814,7 +797,7 @@ function BMBPSign#SignToggle(...)
         endif
     endfor
 
-    if !filereadable(l:file) || !empty(getbufvar(l:file, '&buftype', ''))
+    if !filereadable(l:file)
         return
     elseif !bufexists(l:file)
         exe 'badd ' . l:file
@@ -825,15 +808,6 @@ function BMBPSign#SignToggle(...)
     endif
 
     for l:lin in uniq(sort(l:lins))
-        if l:type ==# 'todo' && get(getbufline(l:file, l:lin), 0, '') !~ 'TODO:'
-            exe 'buffer ' . l:file
-            call cursor(l:lin, 1)
-            call append('.', s:TodoStatement(getbufvar(l:file, '&filetype')))
-            normal j==
-            silent write
-            let l:lin += 1
-        endif
-
         call s:SignToggle(l:file, l:lin, l:type, l:attr, 0)
     endfor
 

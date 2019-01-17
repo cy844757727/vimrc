@@ -23,7 +23,7 @@ function! s:UpdateNERTreeView()
 
     if l:nerd != -1
         let l:id = win_getid()
-        exe l:nerd . 'wincmd w'
+        exe l:nerd.'wincmd w'
         call b:NERDTree.root.refresh()
         call b:NERDTree.render()
         call win_gotoid(l:id)
@@ -191,9 +191,9 @@ function! misc#ReverseComment() range
     if has_key(s:commentChar, &ft)
         let l:pos = getpos('.')
         let l:char = s:commentChar[&ft]
-        let l:range = a:firstline . ',' . a:lastline
-        silent exe l:range . 's+^+' . l:char . '+e'
-        silent exe l:range . 's+^' . l:char . l:char . '++e'
+        let l:range = a:firstline.','.a:lastline
+        silent exe l:range.'s+^+'.l:char.'+e'
+        silent exe l:range.'s+^'.l:char.l:char.'++e'
         call setpos('.', l:pos)
     endif
 endfunction
@@ -201,11 +201,11 @@ endfunction
 
 " 字符串查找替换
 function! misc#StrSubstitute(str)
-    let l:subs = input('Replace ' . "\"" . a:str . "\"" . ' with: ')
+    let l:subs = input('Replace '."\"".a:str."\"".' with: ')
 
     if !empty(l:subs)
         let l:pos = getpos('.')
-        exe '%s/' . a:str . '/' . l:subs . '/Ig'
+        exe '%s/'.a:str.'/'.l:subs.'/Ig'
         call setpos('.', l:pos)
     endif
 endfunction
@@ -218,7 +218,7 @@ function! misc#SaveFile()
     if !empty(&buftype)
         return
     elseif empty(l:file)
-        exe 'file ' . input('Set file name: ')
+        exe 'file '.input('Set file name: ')
         filetype detect
         write
         call s:UpdateNERTreeView()
@@ -308,20 +308,20 @@ function! misc#TabLine()
             let l:lable .= '%{misc#TabLabel('.(l:i+1).','.l:width.')} '
         elseif s:TabLineStart + s:TabLineChars == l:chars + 1
             " Encounter segmentation symbols (last tab)
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} ' . l:endSpace . '>'
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '.l:endSpace.'>'
             let l:last = 1
         elseif s:TabLineStart + s:TabLineChars == l:chars + 2
             " After segmentation symbols (last tab)
             let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '
-            let l:lable .= '%#TabLineSeparator#│' . l:endSpace . '%#TabLine#>'
+            let l:lable .= '%#TabLineSeparator#│'.l:endSpace.'%#TabLine#>'
             let l:last = 1
         elseif s:TabLineStart + s:TabLineChars == l:chars
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).')}' . l:endSpace
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).')}'.l:endSpace
             let l:lable .= l:i != l:num - 1 ? '>' : ' '
             let l:last = 1
         elseif s:TabLineStart + s:TabLineChars < l:chars
             let l:width = strchars(l:tabList[l:i]) - l:chars + s:TabLineStart + s:TabLineChars - 2
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).','.l:width.')}' . l:endSpace
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).','.l:width.')}'.l:endSpace
             let l:lable .=  '>'
             let l:last = 1
         else
@@ -330,7 +330,7 @@ function! misc#TabLine()
 
         " select the highlighting & tab page number (for mouse clicks)
         let l:s .= (l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#').
-                    \ '%' . (l:i + 1) . 'T' . l:lable
+                    \ '%'.(l:i + 1).'T'.l:lable
 
         " Separator symbols
         if !exists('l:last') && l:i != l:num - 1
@@ -440,7 +440,7 @@ function! misc#BufHisSwitch(action)
 
     if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
         silent update
-        silent exe 'buffer ' . w:bufHis.list[-1]
+        silent exe 'buffer '.w:bufHis.list[-1]
         call s:BufHisEcho()
     else
         " Discard invalid item
@@ -458,7 +458,7 @@ function! s:BufHisEcho()
     let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
 
     " Mark out the current item
-    let l:bufList[-1] = '[' . l:bufList[-1][1:-2] . ']'
+    let l:bufList[-1] = '['.l:bufList[-1][1:-2].']'
 
     " Readjusting position (Put the initial edited text first)
     let l:ind = index(w:bufHis.list, w:bufHis.init)
@@ -500,12 +500,12 @@ function! s:BufHisEcho()
 
         " Add prefix to head when not displayed completely
         if w:bufHis.start > 0
-            let l:str = '<' . strcharpart(l:str, 1)
+            let l:str = '<'.strcharpart(l:str, 1)
         endif
 
         " Add suffix to tail when not displayed completely
         if w:bufHis.start + w:bufHis.chars < l:allChars
-            let l:str = strcharpart(l:str, 0, strchars(l:str) - 1) . '>'
+            let l:str = strcharpart(l:str, 0, strchars(l:str) - 1).'>'
         endif
     endif
 
@@ -583,7 +583,7 @@ function! misc#NextItem(...)
         let l:ex = l:action ==# 'next' ? 'ALENextWrap' : 'ALEPreviousWrap'
     else
         let l:flag = l:action ==# 'next' ? 'w' : 'wb'
-        let l:re = {'qf': '^[^|]', 'tagbar': "^[^ \"]", 'nerdtree': '/$'}
+        let l:re = {'qf': '^[^|]', 'tagbar': '^[^ "]', 'nerdtree': '/$'}
 
         if has_key(l:re, &ft)
             let l:ex = "call search('".l:re[&ft]."', '".l:flag."')"
@@ -606,7 +606,7 @@ function! misc#Information(...)
 
     if a:0 == 0
         if isdirectory('.git')
-            let l:info .= ' '.matchstr(system('git branch'), '\(\* \)\zs\w*').'    '
+            let l:info .= ' '.matchstr(system('git branch'), '\v(\* )\zs\w*').'    '
         endif
 
         let l:time = strftime('%H:%M')
@@ -617,7 +617,7 @@ function! misc#Information(...)
         let l:info .= '  '.strftime("%Y %b %d %T")."\n"
 
         if isdirectory('.git')
-            let l:info .= '  '.substitute(matchstr(system('git branch'),'\w.*\w'), "\n", '  ', 'g')."\n"
+            let l:info .= '  '.join(split(system('git branch'), '\v  +|\n'), '  ')."\n"
         endif
 
         let l:info .= '  '.l:cwd."\n".' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.l:file."\n".
@@ -643,7 +643,7 @@ function! misc#CleanBufferList()
     endfor
 
     for l:str in split(execute('ls'), "\n")
-        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+")')
+        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+h?\s+")')
 
         if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) && empty(
                     \ matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
@@ -669,6 +669,34 @@ function! misc#MsgFilter(...)
     let l:msg = filter(split(execute('messages'), "\n"), "v:val =~? '".l:filter."'")
     echo join(l:num >= len(l:msg) ? l:msg : l:msg[-l:num:], "\n")
 endfunction
+
+
+function! misc#EditFile(file, ...)
+    if !filereadable(a:file)
+        return
+    elseif !bufexists(a:file)
+        exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+        return
+    endif
+
+    let l:file = fnamemodify(a:file, ':p')
+
+    for l:tab in range(1, tabpagenr('$'))
+        for l:win in range(1, tabpagewinnr(l:tab, '$'))
+            let l:var = gettabwinvar(l:tab, l:win, 'bufHis', {'list': []})
+
+            if index(l:var.list, l:file) != -1
+                exe l:tab.'tabnext'
+                exe l:win.'wincmd w'
+                exe 'buffer '.l:file
+                return
+            endif
+        endfor
+    endfor
+
+    exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+endfunction
+
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()
@@ -678,8 +706,8 @@ function! misc#WinResize()
 
     if exists('t:MaxmizeWin')
         let l:winnr = win_id2win(t:MaxmizeWin[2])
-        exe l:winnr . 'resize ' . t:MaxmizeWin[0]
-        exe 'vert ' . l:winnr . 'resize ' . t:MaxmizeWin[1]
+        exe l:winnr.'resize '.t:MaxmizeWin[0]
+        exe 'vert '.l:winnr.'resize '.t:MaxmizeWin[1]
         if t:MaxmizeWin[2] == win_getid()
             unlet t:MaxmizeWin
             return
@@ -687,8 +715,8 @@ function! misc#WinResize()
     endif
 
     let t:MaxmizeWin = [winheight(0), winwidth(0), win_getid()]
-    exe 'resize ' . max([float2nr(0.8 * &lines), t:MaxmizeWin[0]])
-    exe 'vert resize ' . max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
+    exe 'resize '.max([float2nr(0.8 * &lines), t:MaxmizeWin[0]])
+    exe 'vert resize '.max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
 endfunction
 
 
@@ -760,7 +788,7 @@ function! s:ToggleTagbar()
         let g:tagbar_left=0
     else
         let l:id = win_getid()
-        exe bufwinnr('NERD_tree') . 'wincmd w'
+        exe bufwinnr('NERD_tree').'wincmd w'
         TagbarOpen
         call win_gotoid(l:id)
     endif
@@ -783,7 +811,7 @@ function! misc#ToggleBottombar(winType, ...)
         elseif getqflist({'winid': 1}).winid != 0
             cclose
         else
-            exe 'copen ' . get(g:, 'BottomWinHeight', 15)
+            exe 'copen '.get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
         cclose

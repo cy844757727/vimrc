@@ -309,15 +309,19 @@ function! async#RunScript(...)
 
     if !filereadable(l:file)
         return
-    elseif !bufexists(l:file)
-        exe 'badd '.l:file
+    elseif !executable('sed') && !bufloaded(l:file)
+        exe '0vsplit +hide '.l:file
     endif
 
-    let l:lineOne = getbufline(l:file, 1)[0]
+    let l:lineOne = executable('sed') ? system('sed -n 1p '.l:file)[:-2] : getbufline(l:file, 1)[0]
     let l:interpreter = matchstr(l:lineOne, '\v^(#!.*/(env\s+)?)\zs.*$')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
+        if !bufexists(l:file)
+            exe 'badd '.l:file
+        endif
+
         let l:interpreter = getbufvar(l:file, '&filetype')
     endif
 
@@ -334,8 +338,8 @@ function! async#DbgScript(...)
 
     if !filereadable(l:file)
         return
-    elseif !bufexists(l:file)
-        exe 'badd '.l:file
+    elseif !executable('sed') && !bufloaded(l:file)
+        exe '0vsplit +hide '.l:file
     endif
 
     " Analyze script type & set var: cmd, postCmd, prompt, re...
@@ -381,11 +385,15 @@ endfunction
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug
 " Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
-    let l:lineOne = getbufline(a:file, 1)[0]
+    let l:lineOne = executable('sed') ? system('sed -n 1p '.a:file)[:-2] : getbufline(a:file, 1)[0]
     let l:interpreter = matchstr(l:lineOne, '\v^(#!.*/(env\s*)?)\zs\w+')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
+        if !bufexists(l:file)
+            exe 'badd '.a:file
+        endif
+
         let l:interpreter = getbufvar(a:file, '&filetype')
     endif
 

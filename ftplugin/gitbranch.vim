@@ -8,11 +8,8 @@ endif
 let b:did_ftplugin = 1
 let b:curL = -1
 
-setlocal nonu
-setlocal nowrap
 setlocal buftype=nofile
 setlocal tabstop=1
-setlocal foldcolumn=0
 setlocal statusline=%2(\ %)\ Branch%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
