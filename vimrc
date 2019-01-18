@@ -105,10 +105,10 @@ inoremap <C-\> <Esc>o
 nnoremap <silent> <C-g> :echo misc#Information()<CR>
 map! <C-g> <Esc><C-g>
 " External open
-nnoremap <silent> \cd :exe 'cd ' . expand('%:h') . '\|pwd'<CR>
+nnoremap <silent> \cd :exe 'cd '.expand('%:h').'\|pwd'<CR>
 nnoremap <silent> \od :Async xdg-open .<CR>
-nnoremap <silent> \of :exe 'Async xdg-open ' . expand('%')<CR>
-nnoremap <silent> \rf :exe 'Async xdg-open ' . expand('%:h')<CR>
+nnoremap <silent> \of :exe 'Async xdg-open '.expand('%')<CR>
+nnoremap <silent> \rf :exe 'Async xdg-open '.expand('%:h')<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
@@ -135,8 +135,8 @@ nnoremap <silent> \[ :pop<CR>
 nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
-vnoremap <C-f> yk:exe '/' . getreg('0')<CR>
-nnoremap <C-f> yiwk:exe '/' . getreg('0')<CR>kn
+vnoremap <C-f> yk:exe '/'.getreg('0')<CR>
+nnoremap <C-f> yiwk:exe '/'.getreg('0')<CR>kn
 vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
 nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>

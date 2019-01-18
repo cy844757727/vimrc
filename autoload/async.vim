@@ -397,14 +397,14 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:interpreter = getbufvar(a:file, '&filetype')
     endif
 
-    let l:dbg = {
+    let l:dbg = deepcopy(s:dbg)
+    call extend(l:dbg, {
                 \ 'file': a:file,
                 \ 'cwd': getcwd(),
                 \ 'var': copy(get(s:dbgShared, a:file, {}))
-                \ }
+                \ })
 
     let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
-    call extend(l:dbg, s:dbg)
 
     if l:interpreter ==# 'bash' && executable('bashdb')
         " Bash script
@@ -488,12 +488,12 @@ function! s:DbgUIInitalize(dbg)
     if index(t:dbg.win, 'var') != -1
         exe 'topleft '.s:dbgSideWidth.'vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
-        set wrap
-        set nonumber
-        set nobuflisted
-        set winfixwidth
-        set buftype=nofile
-        set filetype=dbgvar
+        setlocal wrap
+        setlocal nonumber
+        setlocal nobuflisted
+        setlocal winfixwidth
+        setlocal buftype=nofile
+        setlocal filetype=dbgvar
         setlocal statusline=\ Variables
     endif
 
@@ -502,12 +502,12 @@ function! s:DbgUIInitalize(dbg)
         let l:height = (&lines - s:dbgWinHeight - 3)/2 - 3
         exe 'belowright '.l:height.'new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
-        set wrap
-        set nonumber
-        set nobuflisted
-        set winfixheight
-        set buftype=nofile
-        set filetype=dbgwatch
+        setlocal wrap
+        setlocal nonumber
+        setlocal nobuflisted
+        setlocal winfixheight
+        setlocal buftype=nofile
+        setlocal filetype=dbgwatch
         setlocal statusline=\ Watch%{get(t:dbg,'watchFlag',0)?'\ ':''}
     endif
 
@@ -515,16 +515,15 @@ function! s:DbgUIInitalize(dbg)
     if index(t:dbg.win, 'stack') != -1
         exe 'belowright '.s:dbgWinHeight.'new stack_'.t:dbg.id.'.dbgstack'
         let t:dbg.stackWinId = win_getid()
-        set nowrap
-        set nonumber
-        set nobuflisted
-        set winfixheight
-        set buftype=nofile
-        set filetype=dbgstack
+        setlocal nowrap
+        setlocal nonumber
+        setlocal nobuflisted
+        setlocal winfixheight
+        setlocal buftype=nofile
+        setlocal filetype=dbgstack
         setlocal statusline=\ Call\ Stack
     endif
 endfunction
-
 
 
 " Creat maping for easy debuging
