@@ -294,33 +294,31 @@ function! s:SubMenu()
                 \ "    (g)c                   <git gc>\n".
                 \ "    (r)ebase branch        <git rebash>\n"
                 \ "!?:"
+
     let l:msg = ''
+    let l:separator = repeat('=', 50)
     let l:char = nr2char(getchar())
     redraw!
     if l:char == 'a'
-        echo "** Add remote repository\n" .
-                    \ '============================================================'
+        echo "** Add remote repository\n".l:separator
         let l:str = input('[option] Name & URL：', 'origin ')
         if l:str != ''
             let l:msg = system('git remote add ' . l:str)
         endif
     elseif l:char == 't'
-        echo "** Attach a tag\n" .
-                    \ '======================================================='
+        echo "** Attach a tag\n".l:separator
         let l:str = input('[-a -m Note] Tag: ')
         if l:str != ''
             let l:msg = system('git tag ' . l:str)
         endif
     elseif l:char == 'c'
-        echo "** Create and switch a new branch\n" .
-                    \ '======================================'
+        echo "** Create and switch a new branch\n".l:separator
         let l:name = input('Branch: ')
         if l:name != ''
             let l:msg = system('git stash && git checkout -q -b ' . l:name)
         endif
     elseif l:char == 'm'
-        echo "** merge the specified branch to current\n" .
-                    \ '============================================'
+        echo "** merge the specified branch to current\n".l:separator
         let l:branch = input('Branch: ', '', 'custom,git#CompleteBranch')
         if l:branch != ''
             let l:msg = system('git merge ' . l:branch)
@@ -328,8 +326,7 @@ function! s:SubMenu()
     elseif l:char ==# 'g'
         let l:msg = system('git gc')
     elseif l:char == 'r'
-        echo "** rebase the specified branch to current\n" .
-                    \ '============================================'
+        echo "** rebase the specified branch to current\n".l:separator
         let l:branch = input('Branch: ', '', 'custom,git#CompleteBranch')
         if l:branch != ''
             let l:msg = system('git rebase ' . l:branch)

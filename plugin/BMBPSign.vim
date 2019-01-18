@@ -47,8 +47,8 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSi
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
 
 " project command
-com! -nargs=* -complete=custom,BMBPSign_CompleteProject  Project :call BMBPSign#Project(<f-args>)
-com! -nargs=* -complete=custom,BMBPSign_CompleteProject  MProject :call BMBPSign#Project(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteProject Project :call BMBPSign#Project(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteProject MProject :call BMBPSign#Project(<f-args>)
 
 " Completion function
 function! BMBPSign_CompleteProject(L, C, P)
@@ -56,7 +56,7 @@ function! BMBPSign_CompleteProject(L, C, P)
     if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
         return join(keys(g:BMBPSign_ProjectType), "\n")
     elseif (a:L == '' && l:num ==3) || (a:L != '' && l:num == 4)
-        return glob(a:L . '*')
+        return join(getcompletion(a:L.'*', 'file'))
     endif
 endfunction
 
@@ -73,8 +73,8 @@ function! BMBPSign_CompleteSignType(L, C, P)
 endfunction
 
 function! BMBPSign_CompleteSignFileType(L, C, P)
-    return BMBPSign_CompleteSignFile(a:L, a:C, a:P) .
-                \ "\n|\n" .
+    return BMBPSign_CompleteSignFile(a:L, a:C, a:P).
+                \ "\n|\n".
                 \ BMBPSign_CompleteSignType(a:L, a:C, a:P)
 endfunction
 
@@ -88,7 +88,8 @@ function s:VimEnterEvent()
     endif
 
     let l:file = expand('%')
-    if filereadable('.signrecord') && !empty(l:file) && !empty(systemlist('grep ' . l:file . ' .signrecord'))
+    if filereadable('.signrecord') && !empty(l:file) &&
+                \ !empty(systemlist('grep '.l:file.' .signrecord'))
         call BMBPSign#SignLoad()
     endif
 endfunction

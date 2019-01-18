@@ -290,6 +290,7 @@ function! misc#TabLine()
         let l:endSpace = repeat(' ',
                     \ l:width - strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)))
     else
+        let s:TabLineStart = 0
         let l:endSpace = ''
     endif
 
@@ -614,7 +615,7 @@ function! misc#Information(...)
                     \ l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
         let l:info .= repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
     else
-        let l:info .= '  '.strftime("%Y %b %d %T")."\n"
+        let l:info .= '  '.strftime("%Y %b %d %A %H:%M")."\n"
 
         if isdirectory('.git')
             let l:info .= '  '.join(split(system('git branch'), '\v  +|\n'), '  ')."\n"
