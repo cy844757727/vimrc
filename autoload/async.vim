@@ -26,10 +26,9 @@ let s:displayIcon = {
 " Default terminal option
 let s:termPrefix = '!Terminal'
 let s:termOption = {
-            \ 'term_rows': get(g:, 'BottomWinHeight', 15),
             \ 'term_kill': 'kill',
             \ 'term_finish': 'close',
-            \ 'stoponexit': 'exit',
+            \ 'stoponexit': 'term',
             \ 'norestore': 1
             \ }
 
@@ -63,7 +62,7 @@ endif
 " Action: on, off, toggle (default: toggle)
 " Type: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd after terminal started
-function! async#TermToggle(...)
+function! async#TermToggle(...) abort
     " Ensure starting insert mode
     if bufname('%') =~# '\v^!' && mode() ==# 'n'
         normal a
@@ -76,10 +75,10 @@ function! async#TermToggle(...)
             let l:action = a:000[l:i]
         elseif index(keys(s:termType), a:000[l:i]) != -1
             let l:type = a:000[l:i]
-            let l:name .= get(s:displayIcon, l:type, ': '.l:type.' ')
+            let l:name = s:termPrefix . get(s:displayIcon, l:type, ': '.l:type.' ')
         elseif a:000[l:i]
-            let l:type = a:000[l:i] > 0 ? a:000[l:i] + 0 : a:000[l:i] + 10
-            let l:name .= get(s:displayIcon, l:type, ' ')
+            let l:type = a:000[l:i] + (a:000[l:i] > 0 ? 0 : 10)
+            let l:name = s:termPrefix . get(s:displayIcon, l:type, ' ')
             let l:type = s:shell.l:type
         else
             let l:postCmd = matchstr(join(a:000[l:i:], ' '), '\w.*')
@@ -111,23 +110,27 @@ function! async#TermToggle(...)
             let l:num -= 1
         endwhile
 
+        " Terminal window height
+        let l:height = get(g:, 'BottomWinHeight', 15)
+
         if l:bufnr == -1
             " Creat a terminal
             let l:option = copy(s:termOption)
             let l:option['term_name'] = l:name
             let l:option['curwin'] = 1
-            exe 'belowright '.get(s:termOption, 'term_rows', 15).'split'
+            exe 'belowright '.l:height.'split'
             let l:bufnr = term_start(l:cmd, l:option)
         else
             " Display terminal
-            silent exe 'belowright '.get(s:termOption, 'term_rows', 15).'split +'.l:bufnr.'buffer'
+            silent exe 'belowright '.l:height.'split +'.l:bufnr.'buffer'
         endif
     elseif l:action ==# 'off' && !empty(l:postCmd) && l:bufnr == -1
-        " Allow background execution when first starting
+        " Allow background execution when first creating terminal
         let l:option = copy(s:termOption)
         let l:option['term_name'] = l:name
         let l:option['hidden'] = 1
         let l:bufnr = term_start(l:cmd, l:option)
+        " Without this, buftype may be empty
         call setbufvar(l:bufnr, '&buftype', 'terminal')
     endif
 
@@ -141,26 +144,22 @@ endfunction
 
 
 " Switch terminal window between exists terminal {{{2
-function! async#TermSwitch(...)
+function! async#TermSwitch(...) abort
     if bufname('%') !~# s:termPrefix
         return
     endif
 
-    let l:action = a:0 > 0 ? a:1 : 'next'
-    let l:termList = filter(split(execute('ls R'), "\n"), "v:val =~ '!Terminal'")
+    let l:termList = filter(split(execute('ls R'), "\n"), "v:val =~# '".s:termPrefix."'")
 
     if len(l:termList) > 1
         call map(l:termList, "split(v:val)[0] + 0")
         let l:ind = index(l:termList, bufnr('%'))
-
-        if l:action ==# 'next'
-            let l:ind = (l:ind + 1) % len(l:termList)
-        else
-            let l:ind -= 1
-        endif
+        let l:ind = a:0 == 0 || a:1 == 'next' ?
+                    \ (l:ind + 1) % len(l:termList) :
+                    \ l:ind - 1
 
         hide
-        silent exe 'belowright '.get(s:termOption, 'term_rows', 15).'split +'.l:termList[l:ind].'buffer'
+        silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.l:termList[l:ind].'buffer'
         let l:buf = map(l:termList, "' '.bufname(v:val)")
         let l:buf[l:ind] = '['.l:buf[l:ind][1:-2].']'
         echo strpart(join(l:buf), 0, &columns)
@@ -252,22 +251,15 @@ function! async#JobIds_complete(L, C, P)
 endfunction
 
 " === Script run/debug === {{{1
-let s:dbgWinHeight = get(g:, 'BottomWinHeight', 15) * 2 / 3
-let s:dbgSideWidth = get(g:, 'SideWinWidth', 30) * 4 / 3
-
 let s:dbgShared = {}
 let s:dbg = {
-            \ 'id': 0,
-            \ 'sign': {},
-            \ 'tempMsg': '',
-            \ 'map': {
+            \ 'id': 0, 'sign': {}, 'tempMsg': '', 'map': {
             \ 'C': 'condition', 'D': 'disable',   'E': 'enable',
             \ 'B': 'clear',     'b': 'break',     '<CR>': ' ',
             \ 'c': 'continue',  's': 'step',      'n': 'next',
             \ 'p': 'print',     'R': 'run',       'i': 'send',
             \ 'v': 'display',   'V': 'undisplay', '\d': '_undisplay',
-            \ 'q': 'quit',      'r': 'return'
-            \ }
+            \ 'q': 'quit',      'r': 'return'}
             \ }
 
 function! s:dbg.sendCmd(cmd, args, ...)
@@ -357,15 +349,18 @@ function! async#DbgScript(...)
     " Set sign id
     let l:dbg.sign.id = (l:dbg.id + 1) * 10
 
+    " Determinal dbg window height & side window width
+    let l:height = get(g:, 'BottomWinHeight', 15) * 2 / 3
+    let l:width = get(g:, 'SideWinWidth', 30) * 4 / 3
+
     " Ui initialization & maping
-    call s:DbgUIInitalize(l:dbg)
+    call s:DbgUIInitalize(l:dbg, l:height, l:width)
     call s:DbgMaping()
 
     " Start debug
     call win_gotoid(t:dbg.dbgWinId)
     let l:option = copy(s:termOption)
     let l:option['curwin'] = 1
-    let l:option['term_rows'] = s:dbgWinHeight
     let l:option['out_cb'] = function('s:DbgMsgHandle')
     let l:option['exit_cb'] = function('s:DbgOnExit')
     let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
@@ -398,12 +393,9 @@ function! s:DbgScriptAnalyze(file, breakPoint)
     endif
 
     let l:dbg = deepcopy(s:dbg)
-    call extend(l:dbg, {
-                \ 'file': a:file,
-                \ 'cwd': getcwd(),
-                \ 'var': copy(get(s:dbgShared, a:file, {}))
-                \ })
-
+    let l:dbg.file = a:file
+    let l:dbg.cwd = getcwd()
+    let l:dbg.var = copy(get(s:dbgShared, a:file, {}))
     let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
 
     if l:interpreter ==# 'bash' && executable('bashdb')
@@ -444,11 +436,9 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         " Perl script
         let l:dbg.name = 'perl'
         let l:dbg.tool = 'perl'
-        let l:alias = [
-                    \ '= break b', '= bt T', '= step s',
+        let l:alias = ['= break b', '= bt T', '= step s',
                     \ '= continue c', '= next n', '= watch w',
-                    \ '= run R', '= quit q'
-                    \ ]
+                    \ '= run R', '= quit q']
         let l:breakFile = tempname()
         call writefile(l:alias + a:breakPoint, l:breakFile)
         let l:dbg.cmd = l:interpreter.' -d '.a:file
@@ -466,7 +456,7 @@ endfunction
 
 " Configure new tabpage for debug
 " and set t:dbg variable
-function! s:DbgUIInitalize(dbg)
+function! s:DbgUIInitalize(dbg, height, width)
     if exists('t:dbg')
         1wincmd w
     endif
@@ -480,13 +470,13 @@ function! s:DbgUIInitalize(dbg)
     let t:dbg.srcWinId = win_getid()
 
     " Debug console window
-    exe 'belowright '.s:dbgWinHeight.'split'
+    exe 'belowright '.a:height.'split'
     let t:dbg.dbgWinId = win_getid()
     set winfixheight
 
     " Variables window
     if index(t:dbg.win, 'var') != -1
-        exe 'topleft '.s:dbgSideWidth.'vnew var_'.t:dbg.id.'.dbgvar'
+        exe 'topleft '.a:width.'vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
         setlocal wrap
         setlocal nonumber
@@ -499,8 +489,7 @@ function! s:DbgUIInitalize(dbg)
 
     " Watch point window
     if index(t:dbg.win, 'watch') != -1
-        let l:height = (&lines - s:dbgWinHeight - 3)/2 - 3
-        exe 'belowright '.l:height.'new Watch_'.t:dbg.id.'.dbgwatch'
+        exe 'belowright '.((&lines - a:height - 9)/2).'new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
         setlocal wrap
         setlocal nonumber
@@ -513,7 +502,7 @@ function! s:DbgUIInitalize(dbg)
 
     " Call stack window
     if index(t:dbg.win, 'stack') != -1
-        exe 'belowright '.s:dbgWinHeight.'new stack_'.t:dbg.id.'.dbgstack'
+        exe 'belowright '.a:height.'new stack_'.t:dbg.id.'.dbgstack'
         let t:dbg.stackWinId = win_getid()
         setlocal nowrap
         setlocal nonumber
@@ -799,13 +788,29 @@ endfunction
 
 " Gdb tool： debug binary file
 " BreakPoint: list type
-function! async#GdbStart(...)
-    if a:0 == 0
-        return
-    endif
+function! async#GdbStart(...) abort
+    let l:binFile = get(a:000, 0, '')
+    let l:breakPoint = get(a:000, 1, [])
 
-    let l:binFile = a:1
-    let l:breakPoint = a:0 > 1 ? a:2 : []
+    if empty(l:binFile)
+        let l:files = filter(glob('*', '', 1),
+                    \ "!isdirectory(v:val) && getfperm(v:val) =~# 'x' && v:val !~# '\v\.s?o$'")
+        let l:num = len(l:files)
+
+        if l:num == 0
+            return
+        elseif l:num == 1
+            let l:binFile = l:files[0]
+        else
+            let l:i = 0
+            let l:str = "Selete target to debug: \n"
+            for l:file in l:files
+                let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
+                let l:i += 1
+            endfor
+            let l:binFile = l:files[input(l:str.'!?: ')]
+        endif
+    endif
 
     if !exists(':Termdebug')
         packadd termdebug
@@ -816,11 +821,11 @@ function! async#GdbStart(...)
     let t:tab_lable = ' -- Debug --'
 
     if empty(l:breakPoint)
-        exe 'Termdebug '.l:binFile
+        exe 'silent Termdebug '.l:binFile
     else
         let l:tempFile = tempname()
         call writefile(l:breakPoint, l:tempFile)
-        exe 'Termdebug -x '.l:tempFile. ' '.l:binFile
+        exe 'silent Termdebug -x '.l:tempFile.' '.l:binFile
     endif
 
     " Gdb on exit
@@ -828,7 +833,7 @@ function! async#GdbStart(...)
 endfunction
 
 function! s:GdbOnExit()
-    if exists('t:dbg')
+    if exists('t:tab_lable')
         try
             tabclose
         catch

@@ -836,11 +836,8 @@ function BMBPSign#SignJump(...)
     endfor
 
     if empty(l:types)
-        if !empty(l:action)
-            let l:types = exists('t:dbg') ? ['break'] : ['book']
-        else
-            let l:types = exists('t:dbg') ? ['break', 'tbreak'] : keys(s:signVec)
-        endif
+        let l:types = exists('t:dbg') ? ['break', 'tbreak'] :
+                    \ empty(l:action) ? keys(s:signVec) : ['book']
     endif
 
     call s:SignJump(l:types, l:action, l:id, l:attrs, l:file)
@@ -1000,12 +997,12 @@ function BMBPSign#SetQfList(...)
 
     if !empty(l:types)
         call s:QfListSet(a:1, l:types)
-        exe 'copen ' . get(g:, 'BottomWinHeight', 15)
-        set nowrap
+        exe 'copen '.get(g:, 'BottomWinHeight', 15)
+        setlocal nowrap
     endif
 
     if !has_key(s:typesGroup, l:group) && a:0 > 1
-        call extend(s:typesGroup, {l:group: a:000[1:]})
+        let s:typesGroup[l:group] = a:000[1:]
     endif
 endfunction
 

@@ -228,7 +228,7 @@ tnoremap <silent> <PageDown> <C-w>N<PageDown>
 tnoremap <silent> <PageUp> <C-w>N<PageUp>
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call execute(['normal a', "call async#TermSwitch('previous')"], '')<CR>
-tnoremap <silent> <C-right> <C-w>N:call execute(['normal a', "call async#TermSwitch('next')", ''])<CR>
+tnoremap <silent> <C-right> <C-w>N:call execute(['normal a', "call async#TermSwitch('next')"], '')<CR>
 noremap  <silent> <C-left>  :call misc#BufHisSwitch('previous')<CR>
 noremap  <silent> <C-right> :call misc#BufHisSwitch('next')<CR>
 map! <C-left> <Esc><C-left>
