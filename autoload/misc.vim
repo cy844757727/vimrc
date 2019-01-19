@@ -84,16 +84,13 @@ function! misc#F5FunctionKey(...) abort
             if l:runMode
                 AsyncRun make
             else
-                let l:binFile = filter(glob('*', '', 1), "!isdirectory(v:val) && getfperm(v:val) =~# 'x'")
-                if len(l:binFile) == 1
-                    call async#GdbStart(l:binFile[0], l:BreakPoint)
-                endif
+                call async#GdbStart('', l:breakPoint)
             endif
         elseif index(['c', 'cpp'], &ft) != -1
             if l:runMode
-                AsyncRun g++ -Wall -O0 -g3 % -o binFile
+                AsyncRun g++ -Wall -O0 -g3 % -o %<
             else
-                call async#GdbStart('binFile', l:BreakPoint)
+                call async#GdbStart(expand('%<'), l:breakPoint)
             endif
         endif
     endif
@@ -578,12 +575,10 @@ endfunction
 
 
 function! misc#NextItem(...)
-    let l:action = a:0 > 0 ? a:1 : 'next'
-
     if empty(&buftype)
-        let l:ex = l:action ==# 'next' ? 'ALENextWrap' : 'ALEPreviousWrap'
+        let l:ex = (a:0 == 0 || a:1 ==# 'next') ? 'ALENextWrap' : 'ALEPreviousWrap'
     else
-        let l:flag = l:action ==# 'next' ? 'w' : 'wb'
+        let l:flag = (a:0 == 0 || a:1 ==# 'next') ? 'w' : 'wb'
         let l:re = {'qf': '^[^|]', 'tagbar': '^[^ "]', 'nerdtree': '/$'}
 
         if has_key(l:re, &ft)
@@ -825,11 +820,12 @@ function! SwitchXPermission()
     let l:currentNode = g:NERDTreeFileNode.GetSelected()
     let l:flag = getfperm(l:currentNode.path.str())[2] ==# 'x' ? '-x ' : '+x '
     call system('chmod '.l:falg."'".l:currentNode.path.str()."'")
-    silent call nerdtree#ui_glue#invokeKeyMap('R')
+    call b:NERDTree.root.refresh()
+    call b:NERDTree.render()
 endfunction
 
 function! DebugFile(node)
-    call async#GdbStart(a:node.path.str, BMBPSign#SignRecord('break', 'tbreak'))
+    call async#GdbStart(a:node.path.str(), BMBPSign#SignRecord('break', 'tbreak'))
 endfunction
 
 call NERDTreeAddMenuItem({
