@@ -254,6 +254,7 @@ let g:netrw_browse_split=4
 let g:netrw_altv=1
 let g:netrw_banner=0
 let g:netrw_liststyle=3
+let g:NERDTreeWinPos = 'left'
 let g:NERDTreeWinSize=get(g:, 'SideWinWidth', 31)
 let g:NERDTreeStatusline=' פּ NERDTree'
 let g:NERDTreeAutoDeleteBuffer=1
@@ -357,12 +358,16 @@ let g:BMBPSign_SpecialBuf = {
 
 " SpecialBuf hanle
 function! Vimrc_Tagbar()
-    if bufwinnr('NERD_tree') == -1
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
+    if g:tagbar_vertical == 0
         TagbarOpen
-        let g:tagbar_vertical=19
-        let g:tagbar_left=0
+    elseif bufwinnr('NERD_tree') == -1
+        let l:tmp = g:tagbar_vertical
+        let l:tmp1 = g:tagbar_left
+        let g:tagbar_vertical = 0
+        let g:tagbar_left = g:NERDTreeWinPos == 'left'
+        TagbarOpen
+        let g:tagbar_vertical = l:tmp
+        let g:tagbar_left = l:tmp1
         wincmd W
     else
         exe bufwinnr('NERD_tree').'wincmd w'

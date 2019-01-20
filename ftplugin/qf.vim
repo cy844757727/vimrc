@@ -6,6 +6,7 @@ if exists("b:did_ftplugin_")
     finish
 endif
 let b:did_ftplugin_ = 1
+setlocal winfixheight
 
 nnoremap <buffer> t :call <SID>Open('tabedit')<CR>
 nnoremap <buffer> T :call <SID>Open('tabedit', 'big')<CR>

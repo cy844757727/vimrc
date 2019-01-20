@@ -736,24 +736,22 @@ function! misc#ToggleSidebar(...)
             TagbarClose
             NERDTreeClose
         endif
-    elseif l:statue == 0
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
-        TagbarOpen
-        let g:tagbar_vertical=19
-        let g:tagbar_left=0
-    elseif l:statue == 1
-        NERDTreeClose
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
-        TagbarOpen
-        let g:tagbar_vertical=19
-        let g:tagbar_left=0
-    elseif l:statue == 2
-        TagbarClose
-        NERDTreeToggle
+    elseif g:tagbar_vertical > 0 ||
+                \ (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
+                \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+        if l:statue == 0
+            call s:ToggleTagbar()
+        elseif l:statue == 1
+            NERDTreeClose
+            call s:ToggleTagbar()
+        elseif l:statue == 2
+            TagbarClose
+            NERDTreeToggle
+        else
+            TagbarClose
+        endif
     else
-        TagbarClose
+        call s:ToggleTagbar()
     endif
 endfunction
 
@@ -763,9 +761,17 @@ function! s:ToggleNERDTree()
     if bufwinnr('NERD_tree') != -1
         NERDTreeClose
     elseif bufwinnr('Tagbar') != -1
-        TagbarClose
+        if g:tagbar_vertical > 0 ||
+                    \ (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
+                    \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+            TagbarClose
+        endif
+
         NERDTreeToggle
-        TagbarOpen
+
+        if g:tagbar_vertical > 0
+            TagbarOpen
+        endif
     else
         NERDTreeToggle
     endif
@@ -777,16 +783,28 @@ function! s:ToggleTagbar()
     if bufwinnr('Tagbar') != -1
         TagbarClose
     elseif bufwinnr('NERD_tree') == -1
-        let g:tagbar_vertical=0
-        let g:tagbar_left=1
-        TagbarOpen
-        let g:tagbar_vertical= &lines/2 - 2
-        let g:tagbar_left=0
-    else
+        if g:tagbar_vertical == 0
+            TagbarOpen
+        else
+            let l:tmp = g:tagbar_vertical
+            let l:tmp1 = g:tagbar_left
+            let g:tagbar_vertical = 0
+            let g:tagbar_left = g:NERDTreeWinPos == 'left'
+            TagbarOpen
+            let g:tagbar_vertical= l:tmp
+            let g:tagbar_left = l:tmp1
+        endif
+    elseif g:tagbar_vertical > 0
         let l:id = win_getid()
         exe bufwinnr('NERD_tree').'wincmd w'
         TagbarOpen
         call win_gotoid(l:id)
+    else
+        if (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
+                    \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+            NERDTreeClose
+        endif
+        TagbarOpen
     endif
 endfunction
 

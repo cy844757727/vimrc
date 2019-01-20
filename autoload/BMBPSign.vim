@@ -282,12 +282,12 @@ function s:SignSave(signFile, types)
     let l:content = []
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            try
+            if has_key(l:signs, l:sign.id)
                 let l:line = l:signs[l:sign.id]
-            catch
+            else
                 " Ignore invalid data
                 continue
-            endtry
+            endif
 
             let l:content += [l:type.' '.l:sign.file.':'.l:line]
 

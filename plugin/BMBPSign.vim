@@ -47,7 +47,6 @@ com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSi
 com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
 
 " project command
-com! -nargs=* -complete=custom,BMBPSign_CompleteProject Project :call BMBPSign#Project(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject MProject :call BMBPSign#Project(<f-args>)
 
 " Completion function

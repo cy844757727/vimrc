@@ -119,10 +119,12 @@ function! async#TermToggle(...) abort
             let l:option['term_name'] = l:name
             let l:option['curwin'] = 1
             exe 'belowright '.l:height.'split'
+            setlocal winfixheight
             let l:bufnr = term_start(l:cmd, l:option)
         else
             " Display terminal
             silent exe 'belowright '.l:height.'split +'.l:bufnr.'buffer'
+            setlocal winfixheight
         endif
     elseif l:action ==# 'off' && !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first creating terminal
@@ -173,7 +175,7 @@ let s:maxJob = 20
 
 
 " Cmd: list or string
-function! async#JobRun(cmd, bang)
+function! async#JobRun(bang, cmd) abort
     if len(s:asyncJob) > s:maxJob
         return
     endif
@@ -262,7 +264,7 @@ let s:dbg = {
             \ 'q': 'quit',      'r': 'return'}
             \ }
 
-function! s:dbg.sendCmd(cmd, args, ...)
+function! s:dbg.sendCmd(cmd, args, ...) abort
     let l:args = a:args
     let g:temp =1
 
@@ -296,7 +298,7 @@ function! s:dbg.sendCmd(cmd, args, ...)
 endfunction
 
 
-function! async#RunScript(...)
+function! async#RunScript(...) abort
     let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%')
 
     if !filereadable(l:file)
@@ -324,7 +326,7 @@ endfunction
 
 
 " Debug a script file
-function! async#DbgScript(...)
+function! async#DbgScript(...) abort
     let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%:p')
     let l:breakPoint = a:0 > 1 ? a:2 : []
 
@@ -794,7 +796,7 @@ function! async#GdbStart(...) abort
 
     if empty(l:binFile)
         let l:files = filter(glob('*', '', 1),
-                    \ "!isdirectory(v:val) && getfperm(v:val) =~# 'x' && v:val !~# '\v\.s?o$'")
+                    \ "!isdirectory(v:val) && getfperm(v:val) =~# 'x' && v:val !~# '\\v\\.s?o$'")
         let l:num = len(l:files)
 
         if l:num == 0
