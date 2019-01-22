@@ -26,7 +26,7 @@ function! Term_completeFun(L, C, P)
 
     for l:item in l:cmd[1:]
         if executable(l:item)
-            return getcompletion(a:L.'*', 'file')
+            return map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
         endif
     endfor
 
@@ -41,6 +41,6 @@ function! Async_completeFun(L, C, P)
         return getcompletion(a:L.'*', 'shellcmd')
     endif
 
-    return getcompletion(a:L.'*', 'file')
+    return map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
 endfunction
 

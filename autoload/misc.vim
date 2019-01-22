@@ -33,6 +33,7 @@ endfunction
 
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
+" Parameter value: origin, task, run, debug, reverse
 function! misc#F5FunctionKey(...) abort
     let l:type = a:0 > 0 ? a:1 : 'origin'
 
@@ -69,8 +70,8 @@ function! misc#F5FunctionKey(...) abort
         " Compile, Run, Debug
         update
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
-        let l:runMode = (!empty(l:breakPoint) && l:type ==# 'reverse')
-                    \ || (empty(l:breakPoint) && l:type !=# 'reverse')
+        let l:runMode = get({'run': 1, 'debug': 0, 'reverse': !empty(l:breakPoint)},
+                    \ l:type, empty(l:breakPoint))
 
         if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             " script language
@@ -94,6 +95,11 @@ function! misc#F5FunctionKey(...) abort
             endif
         endif
     endif
+endfunction
+
+
+function misc#F5Complete(L, C, P)
+    return "run\ndebug\nreverse\ntask"
 endfunction
 
 

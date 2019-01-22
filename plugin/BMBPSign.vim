@@ -55,7 +55,7 @@ function! BMBPSign_CompleteProject(L, C, P)
     if (a:L == '' && l:num == 2) || (a:L != '' && l:num == 3)
         return join(keys(g:BMBPSign_ProjectType), "\n")
     elseif (a:L == '' && l:num ==3) || (a:L != '' && l:num == 4)
-        return join(getcompletion(a:L.'*', 'file'))
+        return join(getcompletion(a:L.'*', 'file'), "\n")
     endif
 endfunction
 

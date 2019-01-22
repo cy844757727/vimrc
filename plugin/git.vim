@@ -31,7 +31,7 @@ function! GIT_Complete(L, C, P)
     endif
 
     if !isdirectory('.git') || index(l:cmd, '--') != -1
-        let l:list = getcompletion(a:L.'*', 'file')
+        let l:list = map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
     elseif a:L =~ '^-' && len(filter(copy(l:cmd), "v:val !~ '^-'")) < 3
         let l:list = systemlist('git help '.(l:cmd[1] =~ '^-' ? 'git' : l:cmd[1])."|sed -n '".
                     \ 's/^ \+\(-\{1,2\}\w[-a-zA-Z]*\).*/\1/p'."'|grep '".a:L."'")

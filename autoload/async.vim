@@ -81,7 +81,7 @@ function! async#TermToggle(...) abort
             let l:name = s:termPrefix . get(s:displayIcon, l:type, ' ')
             let l:type = s:shell.l:type
         else
-            let l:postCmd = matchstr(join(a:000[l:i:], ' '), '\w.*')
+            let l:postCmd = join(map(copy(a:000[l:i:]), 'fnameescape(v:val)'), ' ')
             break
         endif
     endfor
@@ -208,7 +208,6 @@ function! s:JobOnExit(job, status)
     endif
 
     call execute(l:ex, '')
-
     unlet s:asyncJob[l:id]
 endfunction
 
@@ -796,13 +795,13 @@ function! async#GdbStart(...) abort
 
     if empty(l:binFile)
         let l:files = filter(glob('*', '', 1),
-                    \ "!isdirectory(v:val) && getfperm(v:val) =~# 'x' && v:val !~# '\\v\\.s?o$'")
+                    \ "!isdirectory(v:val) && executable('./'.v:val) && v:val !~# '\\v\\.s?o$'")
         let l:num = len(l:files)
 
         if l:num == 0
             return
         elseif l:num == 1
-            let l:binFile = l:files[0]
+            let l:binFile = fnameescape(l:files[0])
         else
             let l:i = 0
             let l:str = "Selete target to debug: \n"
@@ -810,7 +809,7 @@ function! async#GdbStart(...) abort
                 let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
                 let l:i += 1
             endfor
-            let l:binFile = l:files[input(l:str.'!?: ')]
+            let l:binFile = fnameescape(l:files[input(l:str.'!?: ')])
         endif
     endif
 
@@ -832,6 +831,7 @@ function! async#GdbStart(...) abort
 
     " Gdb on exit
     autocmd BufUnload <buffer> call s:GdbOnExit()
+    let t:task = 'call term_sendkeys('.bufnr('%').",'q\ny\n')"
 endfunction
 
 function! s:GdbOnExit()
@@ -839,6 +839,7 @@ function! s:GdbOnExit()
         try
             tabclose
         catch
+            unlet t:task
             unlet t:tab_lable
         endtry
     endif

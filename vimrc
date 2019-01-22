@@ -66,10 +66,11 @@ augroup END
 command! Info :echo misc#Information('more')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! UTags :Async! ctags -R -f .tags
+command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
-command! -nargs=1 Task :exe get(<args>:, 'task', 'echo')
-command! -nargs=+ -complete=file Open :Async xdg-open <args>
-command! -nargs=? Vresize :vertical resize <args>
+command! -nargs=? Task :exe get(empty('<args>') ? g: : <args>:, 'task', 'echo')
+command! -nargs=* -range -complete=file Open :exe 'Async xdg-open '.(empty('<args>') ? getreg('*') : '<args>')
+command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabe <args>
 command! -range -addr=tabs TN :<line1>tabnext
 command! -range -addr=tabs TP :<line1>tabprevious
@@ -105,10 +106,10 @@ inoremap <C-\> <Esc>o
 nnoremap <silent> <C-g> :echo misc#Information()<CR>
 map! <C-g> <Esc><C-g>
 " External open
-nnoremap <silent> \cd :exe 'cd '.expand('%:h').'\|pwd'<CR>
+nnoremap <silent> \cd :exe 'cd '.fnameescape(expand('%:h')).'\|pwd'<CR>
 nnoremap <silent> \od :Async xdg-open .<CR>
-nnoremap <silent> \of :exe 'Async xdg-open '.expand('%')<CR>
-nnoremap <silent> \rf :exe 'Async xdg-open '.expand('%:h')<CR>
+nnoremap <silent> \of :exe 'Async xdg-open '.fnameescape(expand('%'))<CR>
+nnoremap <silent> \rf :exe 'Async xdg-open '.fnameescape(expand('%:h'))<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
@@ -135,9 +136,9 @@ nnoremap <silent> \[ :pop<CR>
 nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
-vnoremap <C-f> yk:exe '/'.getreg('0')<CR>
-nnoremap <C-f> yiwk:exe '/'.getreg('0')<CR>kn
-vnoremap <C-h> y:call misc#StrSubstitute(getreg('0'))<CR>
+vnoremap <C-f> <Esc>k:exe '/'.getreg('*')<CR>
+nnoremap <C-f> viw<Esc>k:exe '/'.getreg('*')<CR>kn
+vnoremap <C-h> <Esc>:call misc#StrSubstitute(getreg('*'))<CR>
 nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
@@ -202,12 +203,12 @@ map! <S-f12> <Esc><S-f12>
 map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
 tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix')"])<CR>
-tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'book')"])<CR>
-tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'todo')"])<CR>
-tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', 'break')"])<CR>
+tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','book')"])<CR>
+tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','todo')"])<CR>
+tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal')"])<CR>
-tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', 'ipy')"])<CR>
-tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', 'py3')"])<CR>
+tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipy')"])<CR>
+tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','py3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
 
 " Window & tab switch
