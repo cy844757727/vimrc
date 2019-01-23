@@ -58,17 +58,11 @@ function! s:HI(group, ...)
     let l:bg = a:0 > 1 ? a:2 : s:none
     let l:em = a:0 > 2 ? a:3 : 'NONE'
 
-    let l:hiStr = 'hi '.a:group.
+    exe 'hi '.a:group.
                 \ ' guifg='.l:fg[0].' ctermfg='.get(l:fg, 1, 'NONE').
                 \ ' guibg='.l:bg[0].' ctermbg='.get(l:bg, 1, 'NONE').
-                \ ' gui='.l:em.' cterm='.l:em
-
-    " special
-    if a:0 > 3
-        let l:hiStr .= ' guisp='.a:4[0]
-    endif
-
-    exe l:hiStr
+                \ ' gui='.l:em.' cterm='.l:em.
+                \ (a:0 > 3 ? ' guisp='.a:4[0] : '')
 endfunction
 
 

@@ -616,7 +616,7 @@ function! misc#Information(...)
                     \ l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
         let l:info .= repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
     else
-        let l:info .= '  '.strftime("%Y %b %d %A %H:%M")."\n"
+        let l:info .= '  '.strftime('%Y %b %d %A %H:%M')."\n"
 
         if isdirectory('.git')
             let l:info .= '  '.join(split(system('git branch'), '\v  +|\n'), '  ')."\n"
@@ -843,7 +843,7 @@ endfunction
 function! SwitchXPermission()
     let l:currentNode = g:NERDTreeFileNode.GetSelected()
     let l:flag = getfperm(l:currentNode.path.str())[2] ==# 'x' ? '-x ' : '+x '
-    call system('chmod '.l:falg."'".l:currentNode.path.str()."'")
+    call system('chmod '.l:flag."'".l:currentNode.path.str()."'")
     call b:NERDTree.root.refresh()
     call b:NERDTree.render()
 endfunction

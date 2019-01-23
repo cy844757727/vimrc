@@ -14,7 +14,7 @@ let g:loaded_Async = 1
 
 
 command -nargs=* -complete=customlist,Term_completeFun TTerm :call async#TermToggle('toggle', <f-args>)
-command -nargs=+ -complete=customlist,Term_completeFun Term :call async#TermToggle('on', <f-args>)
+command -nargs=* -complete=customlist,Term_completeFun Term :call async#TermToggle('on', <f-args>)
 command -nargs=+ -complete=customlist,Term_completeFun HTerm :call async#TermToggle('off', <f-args>)
 command -nargs=+ -bang -complete=customlist,Async_completeFun Async :call async#JobRun('<bang>', <q-args>)
 command -bang SAsync :call async#JobStop('<bang>')

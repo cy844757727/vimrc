@@ -1,14 +1,14 @@
 " Basic configure ======================
 " """"""""""""""""""""""""""""""""""""""""""""
 " set default options
-set nocompatible number noshowcmd splitright confirm ruler wrap
-set autoread autoindent autochdir nobackup noswapfile cursorline
-set ignorecase incsearch hlsearch wildmenu smartindent smarttab
-set nospell termguicolors
+set nocompatible number noshowcmd splitright wildmenu ruler wrap
+set autoread autoindent autochdir noswapfile nobackup confirm
+set hlsearch ignorecase incsearch cursorline smarttab nospell
+set smartindent termguicolors
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
 set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
 set foldtext=misc#FoldText()
-"set eadirection=
+set tabline=%!misc#TabLine()
 set tags+=./.tags,.tags
 set shortmess=aoOtTcF
 set mousetime=1000
@@ -20,7 +20,7 @@ set title titlestring=♦\ Vim
 set winminheight=0 winminwidth=0
 set fillchars=fold:\ ,diff:\ ,vert:│
 set completeopt=menu,menuone,noinsert,preview,noselect
-set diffopt=vertical,filler,foldcolumn:0,context:5,iwhite
+set diffopt=vertical,filler,foldcolumn:0,context:5
 " gcc/g++
 set errorformat=%f:%l:%c:\ %m
 " verilog: modelsim
@@ -31,14 +31,11 @@ set errorformat=%f:%l:%c:\ %m
 "set errorformat+=**\ Error:\ %f(%l.%c):\ %m
 "set errorformat+=**\ at\ %f(%l):\ %m
 "set errorformat+=**\ at\ %f(%l.%c):\ %m
-" Language & encode set
+" Language & encode config
 set encoding=utf-8
 set fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
-" TabLine: using t:tab_lable (['glyph', 'name']) variable in tabpage can set custom label
-" if Non-existent, using default configure
-set tabline=%!misc#TabLine()
-" Statusline set
+" Statusline config
 set laststatus=2
 set statusline=\ %{misc#GetWebIcon('head')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(\ %)
@@ -107,9 +104,9 @@ nnoremap <silent> <C-g> :echo misc#Information()<CR>
 map! <C-g> <Esc><C-g>
 " External open
 nnoremap <silent> \cd :exe 'cd '.fnameescape(expand('%:h')).'\|pwd'<CR>
-nnoremap <silent> \od :Async xdg-open .<CR>
-nnoremap <silent> \of :exe 'Async xdg-open '.fnameescape(expand('%'))<CR>
-nnoremap <silent> \rf :exe 'Async xdg-open '.fnameescape(expand('%:h'))<CR>
+nnoremap <silent> \od :Open .<CR>
+nnoremap <silent> \of :exe 'Open '.fnameescape(expand('%'))<CR>
+nnoremap <silent> \rf :exe 'Open '.fnameescape(expand('%:h'))<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>

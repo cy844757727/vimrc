@@ -61,15 +61,17 @@ endif
 " Args: action, type, postCmd
 " Action: on, off, toggle (default: toggle)
 " Type: specified by s:termType (default: s:shell)
-" PostCmd: executing cmd after terminal started
+" PostCmd: executing cmd after starting a terminal
 function! async#TermToggle(...) abort
     " Ensure starting insert mode
     if bufname('%') =~# '\v^!' && mode() ==# 'n'
         normal a
     endif
 
+    " Default variables
     let [l:action, l:type, l:name, l:postCmd] = ['toggle', s:shell, s:termPrefix, '']
 
+    " Configure variables
     for l:i in range(len(a:000))
         if index(['toggle', 'on', 'off'], a:000[l:i]) != -1
             let l:action = a:000[l:i]
@@ -81,7 +83,7 @@ function! async#TermToggle(...) abort
             let l:name = s:termPrefix . get(s:displayIcon, l:type, ' ')
             let l:type = s:shell.l:type
         else
-            let l:postCmd = join(map(copy(a:000[l:i:]), 'fnameescape(v:val)'), ' ')
+            let l:postCmd = join(map(copy(a:000[l:i:]), "substitute(v:val, ' ', '\\\\ ', 'g')"), ' ')
             break
         endif
     endfor
@@ -91,12 +93,8 @@ function! async#TermToggle(...) abort
     let l:bufnr = bufnr(l:name)
 
     if l:winnr != -1
-        if l:action ==# 'on'
-            exe l:winnr.'wincmd w'
-        elseif index(['toggle', 'off'], l:action) != -1
-            exe l:winnr.'hide'
-        endif
-    elseif index(['toggle', 'on'], l:action) != -1
+        exe l:winnr.(l:action ==# 'on' ? 'wincmd w' : 'hide')
+    elseif l:action !=# 'off'
         " Hide other terminal
         let l:other = bufwinnr(s:termPrefix)
         if l:other != -1
@@ -126,7 +124,7 @@ function! async#TermToggle(...) abort
             silent exe 'belowright '.l:height.'split +'.l:bufnr.'buffer'
             setlocal winfixheight
         endif
-    elseif l:action ==# 'off' && !empty(l:postCmd) && l:bufnr == -1
+    elseif !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first creating terminal
         let l:option = copy(s:termOption)
         let l:option['term_name'] = l:name
@@ -265,11 +263,10 @@ let s:dbg = {
 
 function! s:dbg.sendCmd(cmd, args, ...) abort
     let l:args = a:args
-    let g:temp =1
 
     if a:cmd ==# 'condition'
-        let l:breakInfo = t:dbg.name ==# 'bash' ? 'info break' : 'break'
-        call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
+        call term_sendkeys(t:dbg.dbgBufnr,
+                    \ (t:dbg.name ==# 'bash' ? 'info break' : 'break')."\n")
 
         let l:counts = 10
         while get(t:dbg, 'breakFlag', 1) != 1 && l:counts > 0
@@ -433,7 +430,7 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:dbg.d = ';;'
         let l:dbg.win = ['var', 'stack']
         call extend(l:dbg.map, {'p': 'p', 'P': 'pp', 'j': 'jump', 'u': 'until'})
-    elseif l:interpreter =~# 'perl'
+    elseif l:interpreter =~# 'perl' && executable('perl')
         " Perl script
         let l:dbg.name = 'perl'
         let l:dbg.tool = 'perl'
@@ -601,8 +598,8 @@ function! <SID>DbgSendCmd(cmd)
         let t:dbg.varFlag = 1
     elseif index(['condition', 'disable', 'enable', 'clear', 'delete'], a:cmd) != -1
         if !get(t:dbg, 'breakFlag', 0)
-            let l:breakInfo = t:dbg.name ==# 'bash' ? 'info break' : 'break'
-            call term_sendkeys(t:dbg.dbgBufnr, l:breakInfo."\n")
+            call term_sendkeys(t:dbg.dbgBufnr,
+                        \ (t:dbg.name ==# 'bash' ? 'info break' : 'break')."\n")
 
             let l:counts = 10
             while get(t:dbg, 'breakFlag', 1) != 1 && l:counts > 0
@@ -641,7 +638,7 @@ endfunction
 "
 function! s:DbgMsgHandle(job, msg)
     " Use command prompt to determine a message block
-    if a:msg !~ t:dbg.prompt
+    if a:msg !~# t:dbg.prompt
         let t:dbg.tempMsg .= a:msg
         return
     endif
@@ -795,7 +792,7 @@ function! async#GdbStart(...) abort
 
     if empty(l:binFile)
         let l:files = filter(glob('*', '', 1),
-                    \ "!isdirectory(v:val) && executable('./'.v:val) && v:val !~# '\\v\\.s?o$'")
+                    \ "!isdirectory(v:val) && executable('./'.v:val)")
         let l:num = len(l:files)
 
         if l:num == 0
@@ -803,13 +800,18 @@ function! async#GdbStart(...) abort
         elseif l:num == 1
             let l:binFile = fnameescape(l:files[0])
         else
-            let l:i = 0
-            let l:str = "Selete target to debug: \n"
+            let [l:i, l:str] = [0, "Selete target to debug: \n"]
             for l:file in l:files
                 let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
                 let l:i += 1
             endfor
-            let l:binFile = fnameescape(l:files[input(l:str.'!?: ')])
+            let l:sel = input(l:str.'!?: ')
+
+            if empty(l:sel)
+                return
+            endif
+
+            let l:binFile = fnameescape(l:sel)
         endif
     endif
 

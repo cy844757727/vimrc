@@ -23,7 +23,7 @@ let g:colors_name = 'cydark'
 " palette
 let s:none  = ['NONE', 'NONE']
 let s:white = ['#ffffff', 231]
-let s:black = ['#000000', 16]
+let s:black = ['#000000',  16]
 let s:fg    = ['#c5c5bf', 251]
 let s:bg    = ['#202020', 234]
 let s:bg1   = ['#292929', 236]  " Statuslinunc pmenu
@@ -58,17 +58,11 @@ function! s:HI(group, ...)
     let l:bg = a:0 > 1 ? a:2 : s:none
     let l:em = a:0 > 2 ? a:3 : 'NONE'
 
-    let l:hiStr = 'hi '.a:group.
+    exe 'hi '.a:group.
                 \ ' guifg='.l:fg[0].' ctermfg='.get(l:fg, 1, 'NONE').
                 \ ' guibg='.l:bg[0].' ctermbg='.get(l:bg, 1, 'NONE').
-                \ ' gui='.l:em.' cterm='.l:em
-
-    " special
-    if a:0 > 3
-        let l:hiStr .= ' guisp='.a:4[0]
-    endif
-
-    exe l:hiStr
+                \ ' gui='.l:em.' cterm='.l:em.
+                \ (a:0 > 3 ? ' guisp='.a:4[0] : '')
 endfunction
 
 

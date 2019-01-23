@@ -341,8 +341,7 @@ function s:SignDisplayStr(items)
     let l:str = "  id      type      where\n"
 
     for [l:id, l:val] in items(a:items)
-        let l:str .= printf(
-                    \ '  %-3d     %-6s    %s:%d', l:id, l:val.type,
+        let l:str .= printf('  %-3d     %-6s    %s:%d', l:id, l:val.type,
                     \ substitute(l:val.sign.file, getcwd().'/', '', ''), l:val.lin
                     \ ).'   '.l:val.sign.attr."\n"
     endfor
@@ -517,8 +516,7 @@ function s:ProjectUI(start, tip)
                 \ repeat('=', min([&columns - 10, 90]))."\n"
 
     " ui: body (Path conversion)
-    let l:ui .= join(
-                \ map(s:projectItem[a:start:a:start+9],
+    let l:ui .= join(map(s:projectItem[a:start:a:start+9],
                 \ "printf(' %3d: ', v:key).substitute(v:val, ' '.$HOME, ' ~', '')"), "\n"
                 \ )."\n".a:tip
 
