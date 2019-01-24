@@ -366,14 +366,12 @@ function s:SignAddAttr(types, file, lin, attrs)
         return
     endif
 
-    if empty(l:val.sign.attr) && len(l:arg) > 1
+    if (empty(l:val.sign.attr) && len(l:arg) > 1) ||
+                \ (!empty(l:val.sign.attr) && len(l:arg) < 2)
         exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
         exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
-                    \ ' name='.s:signDefHead.l:val.type.'Attr file='.l:val.sign.file
-    elseif !empty(l:val.sign.attr) && len(l:arg) < 2
-        exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
-        exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
-                    \ ' name='.s:signDefHead.l:val.type.' file='.l:val.sign.file
+                    \ ' name='.s:signDefHead.l:val.type.(len(l:arg) > 1 ? 'Attr' : '').
+                    \ ' file='.l:val.sign.file
     endif
 
     let l:val.sign.attr = get(l:arg, 1, '')

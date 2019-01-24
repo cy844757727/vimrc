@@ -22,9 +22,9 @@ command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, BMBPSign#Sig
 
 
 function! Term_completeFun(L, C, P)
-    let l:cmd = split(strpart(a:C, 0, a:P))
+    let l:ex = split(strpart(a:C, 0, a:P))
 
-    for l:item in l:cmd[1:]
+    for l:item in l:ex[1:]
         if executable(l:item)
             return map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
         endif

@@ -21,25 +21,25 @@ augroup END
 
 
 function! GIT_Complete(L, C, P)
-    let l:cmd = split(strpart(a:C, 0, a:P))
+    let l:ex = split(strpart(a:C, 0, a:P))
 
-    if l:cmd[0] == 'Git'
-        let l:cmd[0] = 'git'
+    if l:ex[0] == 'Git'
+        let l:ex[0] = 'git'
     else
-        let l:cmd[0] = strpart(l:cmd[0], 1)
-        let l:cmd = ['git'] + l:cmd
+        let l:ex[0] = strpart(l:ex[0], 1)
+        let l:ex = ['git'] + l:ex
     endif
 
-    if !isdirectory('.git') || index(l:cmd, '--') != -1
+    if !isdirectory('.git') || (index(l:ex, '--') != -1 && a:L !~ '--')
         let l:list = map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
-    elseif a:L =~ '^-' && len(filter(copy(l:cmd), "v:val !~ '^-'")) < 3
-        let l:list = systemlist('git help '.(l:cmd[1] =~ '^-' ? 'git' : l:cmd[1])."|sed -n '".
-                    \ 's/^ \+\(-\{1,2\}\w[-a-zA-Z]*\).*/\1/p'."'|grep '".a:L."'")
-    elseif len(l:cmd) == 1 || (len(l:cmd) == 2 && a:L != '')
-        let l:list = systemlist("man git|sed -n '".'s/^ \+git-\([-a-zA-Z]*\).*/\1/p'."'|grep '".a:L."'")
-    elseif l:cmd[1] !~ '^-' && ((len(l:cmd) == 2 && a:L == '') || (len(l:cmd) == 3 && a:L != ''))
-        let l:list = systemlist('man git '.l:cmd[1]."|sed -n '".
-                    \ '7,30s/^ \+git'.l:cmd[1].' \(\w[-a-z]\+\) [-<\[].*/\1/p'."'|grep '".a:L."'")
+    elseif a:L =~ '^-' && len(filter(copy(l:ex), "v:val !~ '^-'")) < 3
+        let l:list = systemlist('git help '.(l:ex[1] =~ '^-' ? 'git' : l:ex[1])."|sed -n '".
+                    \ 's/^ \+\(-\{1,2\}\w[-a-zA-Z]*\).*/\1/p'."'|grep -e '".a:L."'")
+    elseif len(l:ex) == 1 || (len(l:ex) == 2 && a:L != '')
+        let l:list = systemlist("man git|sed -n '".'s/^ \+git-\([-a-zA-Z]*\).*/\1/p'."'|grep -e '".a:L."'")
+    elseif l:ex[1] !~ '^-' && ((len(l:ex) == 2 && a:L == '') || (len(l:ex) == 3 && a:L != ''))
+        let l:list = systemlist('man git '.l:ex[1]."|sed -n '".
+                    \ '7,30s/^ \+git'.l:ex[1].' \(\w[-a-z]\+\) [-<\[].*/\1/p'."'|grep -e '".a:L."'")
     else
         return []
     endif

@@ -34,29 +34,21 @@ endfunction
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
 " Parameter value: origin, task, run, debug, reverse
-function! misc#F5FunctionKey(...) abort
-    let l:type = a:0 > 0 ? a:1 : 'origin'
-
-    if l:type ==# 'task'
-        if exists('b:task')
-            exe b:task
-        elseif exists('w:task')
-            exe w:task
-        elseif exists('t:task')
-            exe t:task
-        elseif exists('g:task')
-            exe g:task
-        elseif exists('g:TASK')
-            exe g:TASK
-        endif
-
-        return
-    endif
-
-    if exists('t:git_tabpageManager')
-        call git#Refresh()
+function! misc#F5FunctionKey(type) abort
+    if a:type ==# 'task'
+        exe
+                    \ exists('b:task') ? b:task :
+                    \ exists('w:task') ? w:task :
+                    \ exists('t:task') ? t:task :
+                    \ exists('g:task') ? g:task :
+                    \ get(g:, 'TASK', '')
     elseif &diff
         diffupdate
+    elseif &filetype == 'nerdtree'
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
+    elseif exists('t:git_tabpageManager')
+        call git#Refresh()
     elseif !s:SwitchToEmptyBuftype()
         return
     elseif &filetype =~# 'verilog'
@@ -71,15 +63,15 @@ function! misc#F5FunctionKey(...) abort
         update
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
         let l:runMode = get({'run': 1, 'debug': 0, 'reverse': !empty(l:breakPoint)},
-                    \ l:type, empty(l:breakPoint))
+                    \ a:type, empty(l:breakPoint))
 
         if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             " script language
             if l:runMode
                 cclose
-                call async#RunScript(expand('%:p'))
+                call async#RunScript(expand('%'))
             else
-                call async#DbgScript(expand('%:p'), l:breakPoint)
+                call async#DbgScript(expand('%'), l:breakPoint)
             endif
         elseif filereadable('makefile') || filereadable('Makefile')
             if l:runMode
@@ -96,7 +88,6 @@ function! misc#F5FunctionKey(...) abort
         endif
     endif
 endfunction
-
 
 function misc#F5Complete(L, C, P)
     return "run\ndebug\nreverse\ntask"
@@ -138,39 +129,38 @@ function! misc#CodeFormat() range
     mark z
 
     " Determine range
-    let l:range = a:firstline == a:lastline ? '%' : a:firstline . ',' . a:lastline
+    let l:range = a:firstline == a:lastline ? '%' : a:firstline.','.a:lastline
 
     " Default format operator list
-    let l:formatCmd = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /\v-^']
+    let l:formatEx = [l:range.'normal ==', l:range.'s/\s*$//', 'silent! /\v-^']
 
     " Custom formatting
     if &filetype =~# 'verilog'
-        let l:formatCmd = [
+        let l:formatEx = [
                     \ l:range.'s/\v[0-9a-zA-Z_)\]]\zs\s*([-+=*/%><|&!?~:^][=><|&~]?)\s*\ze[a-zA-Z_(]/ \1 /ge',
                     \ l:range.'s/\v\(\zs\s*|\s*\ze\)//ge',
                     \ l:range.'s/\v(,|;)\zs\s*\ze\w/ /ge'
-                    \ ] + l:formatCmd[1:]
+                    \ ] + l:formatEx[1:]
     elseif &filetype ==# 'make'
-        let l:formatCmd = [
+        let l:formatEx = [
                     \ l:range.'s/\v\w\zs\s*(+=|=|:=)\s*/ \1 /ge',
                     \ l:range.'s/\v:\zs\s*\ze(\w|\$)/ /ge'
-                    \ ] + l:formatCmd
-    endif
+                    \ ] + l:formatEx
 
-    " Use external tools & Config cmd
-    " Tools: clang-format, autopep8, perltidy, shfmt
-    if index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format-7')
-        let l:formatCmd = l:range."!clang-format-7 -style='{IndentWidth: 4}'"
+        " Use external tools & Config cmd
+        " Tools: clang-format, autopep8, perltidy, shfmt
+    elseif index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format-7')
+        let l:formatEx = l:range."!clang-format-7 -style='{IndentWidth: 4}'"
     elseif &filetype ==# 'python' && executable('yapf') && executable('yapf3')
-        let l:formatCmd = l:range.(getline(1) =~# 'python3' ? '!yapf3' : '!yapf')
+        let l:formatEx = l:range.(getline(1) =~# 'python3' ? '!yapf3' : '!yapf')
     elseif &filetype ==# 'perl' && executable('perltidy')
-        let l:formatCmd = l:range.'!perltidy'
+        let l:formatEx = l:range.'!perltidy'
     elseif &filetype ==# 'sh' && executable('shfmt')
-        let l:formatCmd = l:range.'!shfmt -s -i 4'
+        let l:formatEx = l:range.'!shfmt -s -i 4'
     endif
 
     " Format code
-    call execute(l:formatCmd)
+    call execute(l:formatEx)
     call setpos('.', l:pos)
     write
 endfunction
@@ -204,6 +194,10 @@ endfunction
 
 " 字符串查找替换
 function! misc#StrSubstitute(str)
+    if empty(a:str)
+        return
+    endif
+
     let l:subs = input('Replace '."\"".a:str."\"".' with: ')
 
     if !empty(l:subs)
@@ -222,8 +216,8 @@ function! misc#SaveFile()
         return
     elseif empty(l:file)
         exe 'file '.input('Set file name: ')
-        filetype detect
         write
+        filetype detect
         call s:UpdateNERTreeView()
     elseif exists('s:DoubleClick_500MSTimer')
         wall
@@ -518,10 +512,12 @@ endfunction
 
 
 function! misc#GetWebIcon(type, ...)
+    let l:file = a:0 > 0 ? a:1 : expand('%')
+
     if a:type == 'head'
-        if bufname('%') =~ '^!'
+        if l:file =~ '^!'
             return 'ﲵ'
-        elseif &buftype == 'help'
+        elseif getbufvar(l:file, '&bt', '') == 'help'
             return ''
         elseif exists('g:BMBPSign_Projectized')
             return ''
@@ -529,29 +525,22 @@ function! misc#GetWebIcon(type, ...)
 
         return ''
     elseif a:type == 'fileformat'
-        if getbufvar(bufnr('%'), '&binary', 0)
+        if getbufvar(l:file, '&binary', 0)
             return ''
         endif
 
         return WebDevIconsGetFileFormatSymbol()
     elseif a:type == 'filetype'
-        if a:0 == 0
-            let l:file = expand('%')
-            let l:tfile = expand('%:t')
-            let l:extend = expand('%:e')
-        else
-            let l:file = a:1
-            let l:tfile = fnamemodify(a:1, ':t')
-            let l:extend = fnamemodify(a:1, ':e')
-        endif
+        let l:tfile = fnamemodify(l:file, ':t')
+        let l:extend = fnamemodify(l:file, ':e')
 
-        if empty(l:extend) && l:tfile !~ '^\.' && bufexists(l:file)
-            let l:tfile .= '.'.getbufvar(l:file, '&filetype')
+        if empty(l:extend) && l:tfile !~# '^\.' && bufexists(l:file)
+            let l:file .= '.'.getbufvar(l:file, '&filetype')
         elseif getbufvar(l:file, '&buftype') == 'help'
             return ''
         endif
 
-        return WebDevIconsGetFileTypeSymbol(l:tfile)
+        return WebDevIconsGetFileTypeSymbol(l:file)
     endif
 endfunction
 
@@ -581,19 +570,18 @@ endfunction
 
 
 function! misc#NextItem(...)
+    let l:next = a:0 == 0 || a:1 ==# 'next'
+
     if empty(&buftype)
-        let l:ex = (a:0 == 0 || a:1 ==# 'next') ? 'ALENextWrap' : 'ALEPreviousWrap'
+        exe l:next ? 'ALENextWrap' : 'ALEPreviousWrap'
     else
-        let l:flag = (a:0 == 0 || a:1 ==# 'next') ? 'w' : 'wb'
-        let l:re = {'qf': '^[^|]', 'tagbar': '^[^ "]', 'nerdtree': '/$'}
+        let l:re = get({'qf': '^[^|]', 'tagbar': '^[^ "]', 'nerdtree': '/$'}, &ft, '')
 
-        if has_key(l:re, &ft)
-            let l:ex = "call search('".l:re[&ft]."', '".l:flag."')"
+        if empty(l:re)
+            return
         endif
-    endif
 
-    if exists('l:ex')
-        exe l:ex
+        exe "call search('".l:re."','".(l:next ? 'w' : 'wb')."')"
     endif
 endfunction
 
@@ -677,7 +665,7 @@ function! misc#EditFile(file, ...)
     if !filereadable(a:file)
         return
     elseif !bufexists(a:file)
-        exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+        exe get(a:000, 0, 'edit').' '.a:file
         return
     endif
 
@@ -696,7 +684,7 @@ function! misc#EditFile(file, ...)
         endfor
     endfor
 
-    exe (a:0 > 0 ? a:1 : 'edit').' '.a:file
+    exe get(a:000, 0, 'edit').' '.a:file
 endfunction
 
 " ############### 窗口相关 ######################################
@@ -792,13 +780,11 @@ function! s:ToggleTagbar()
         if g:tagbar_vertical == 0
             TagbarOpen
         else
-            let l:tmp = g:tagbar_vertical
-            let l:tmp1 = g:tagbar_left
+            let l:temp = [g:tagbar_vertical, g:tagbar_left]
             let g:tagbar_vertical = 0
             let g:tagbar_left = g:NERDTreeWinPos == 'left'
             TagbarOpen
-            let g:tagbar_vertical= l:tmp
-            let g:tagbar_left = l:tmp1
+            let [g:tagbar_vertical, g:tagbar_left] = l:temp
         endif
     elseif g:tagbar_vertical > 0
         let l:id = win_getid()
@@ -828,10 +814,10 @@ function! misc#ToggleBottombar(winType, ...)
             call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
         elseif l:type == 'todo'
             call BMBPSign#SetQfList('TodoList', 'todo')
-        elseif getqflist({'winid': 1}).winid != 0
-            cclose
-        else
+        elseif getqflist({'winid': 1}).winid == 0
             exe 'copen '.get(g:, 'BottomWinHeight', 15)
+        else
+            cclose
         endif
     elseif a:winType == 'terminal'
         cclose
@@ -841,16 +827,27 @@ endfunction
 " ####################################################################
 
 function! SwitchXPermission()
-    let l:currentNode = g:NERDTreeFileNode.GetSelected()
-    let l:flag = getfperm(l:currentNode.path.str())[2] ==# 'x' ? '-x ' : '+x '
-    call system('chmod '.l:flag."'".l:currentNode.path.str()."'")
+    let l:node = g:NERDTreeFileNode.GetSelected().path.str()
+
+    if isdirectory(l:node)
+        return
+    endif
+
+    let l:perm = getfperm(l:node)
+    let l:flag = executable(l:node) ? '-' : 'x'
+    call setfperm(l:node, strcharpart(l:perm, 0, 2).l:flag.
+                \ strcharpart(l:perm, 3, 2).l:flag.
+                \ strcharpart(l:perm, 6, 2).l:flag)
+
     call b:NERDTree.root.refresh()
     call b:NERDTree.render()
 endfunction
 
+
 function! DebugFile(node)
     call async#GdbStart(a:node.path.str(), BMBPSign#SignRecord('break', 'tbreak'))
 endfunction
+
 
 call NERDTreeAddMenuItem({
             \ 'text': 'Switch file (x) permission',

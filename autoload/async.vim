@@ -117,13 +117,13 @@ function! async#TermToggle(...) abort
             let l:option['term_name'] = l:name
             let l:option['curwin'] = 1
             exe 'belowright '.l:height.'split'
-            setlocal winfixheight
             let l:bufnr = term_start(l:cmd, l:option)
         else
             " Display terminal
             silent exe 'belowright '.l:height.'split +'.l:bufnr.'buffer'
-            setlocal winfixheight
         endif
+
+        setlocal winfixheight
     elseif !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first creating terminal
         let l:option = copy(s:termOption)
@@ -217,8 +217,8 @@ function! async#JobStop(how)
     endif
 
     let l:how = empty(a:how) ? 'term' : 'kill'
-
     let l:prompt = 'Select jobs to stop ('.l:how.') ...'
+
     for [l:id, l:job] in items(s:asyncJob)
         let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
     endfor
@@ -259,32 +259,32 @@ let s:dbg = {
             \ 'c': 'continue',  's': 'step',      'n': 'next',
             \ 'p': 'print',     'R': 'run',       'i': 'send',
             \ 'v': 'display',   'V': 'undisplay', '\d': '_undisplay',
-            \ 'q': 'quit',      'r': 'return'}
+            \ 'k': 'up',        'j': 'down',      'q': 'quit',
+            \ 'r': 'return'}
             \ }
 
 function! s:dbg.sendCmd(cmd, args, ...) abort
     let l:args = a:args
 
-    if a:cmd ==# 'condition'
-        call term_sendkeys(t:dbg.dbgBufnr,
-                    \ (t:dbg.name ==# 'bash' ? 'info break' : 'break')."\n")
+    if index(['condition', 'disable', 'enable'], a:cmd) != -1
+        call term_sendkeys(self.dbgBufnr,
+                    \ (self.name ==# 'bash' ? 'info break' : 'break')."\n")
 
         let l:counts = 10
-        while get(t:dbg, 'breakFlag', 1) != 1 && l:counts > 0
+        while get(self, 'breakFlag', 1) != 1 && l:counts > 0
             sleep 100m
             let l:counts -= 1
         endwhile
 
-        for l:str in get(t:dbg, 'break', [])
+        for l:str in get(self, 'break', [])
             if l:str =~# substitute(a:args, getcwd().'/', '', '')
                 let l:id = matchstr(l:str, '^\d\+')
+                let l:args = l:id.' '.(a:0 > 0 ? a:1 : '')
                 break
             endif
         endfor
 
-        if exists('l:id')
-            let l:args = l:id.' '.(a:0 > 0 ? a:1 : '')
-        else
+        if !exists('l:id')
             return
         endif
     endif
@@ -295,46 +295,40 @@ function! s:dbg.sendCmd(cmd, args, ...) abort
 endfunction
 
 
-function! async#RunScript(...) abort
-    let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%')
-
-    if !filereadable(l:file)
+function! async#RunScript(file) abort
+    if !filereadable(a:file)
         return
-    elseif !executable('sed') && !bufloaded(l:file)
-        exe '0vsplit +hide '.l:file
+    elseif !executable('sed') && !bufloaded(a:file)
+        exe '0vsplit +hide '.a:file
     endif
 
-    let l:lineOne = executable('sed') ? system('sed -n 1p '.l:file)[:-2] : getbufline(l:file, 1)[0]
-    let l:interpreter = matchstr(l:lineOne, '\v^(#!.*/(env\s+)?)\zs.*$')
+    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(a:file))[:-2] :
+                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs.*$')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
-        if !bufexists(l:file)
-            exe 'badd '.l:file
+        if !bufexists(a:file)
+            exe 'badd '.a:file
         endif
 
-        let l:interpreter = getbufvar(l:file, '&filetype')
+        let l:interpreter = getbufvar(a:file, '&filetype')
     endif
 
-    let l:cmd = l:interpreter.' '.l:file
-    let l:bufnr = async#TermToggle('on')
-    call term_sendkeys(l:bufnr, "clear\n".l:cmd."\n")
+    call term_sendkeys(async#TermToggle('on'),
+                \ "clear\n".l:interpreter.' '.shellescape(a:file)."\n")
 endfunction
 
 
 " Debug a script file
-function! async#DbgScript(...) abort
-    let l:file = a:0 > 0 && a:1 !=# '%' ? a:1 : expand('%:p')
-    let l:breakPoint = a:0 > 1 ? a:2 : []
-
-    if !filereadable(l:file)
+function! async#DbgScript(file, breakPoint) abort
+    if !filereadable(a:file)
         return
-    elseif !executable('sed') && !bufloaded(l:file)
-        exe '0vsplit +hide '.l:file
+    elseif !executable('sed') && !bufloaded(a:file)
+        exe '0vsplit +hide '.a:file
     endif
 
     " Analyze script type & set var: cmd, postCmd, prompt, re...
-    let l:dbg = s:DbgScriptAnalyze(l:file, l:breakPoint)
+    let l:dbg = s:DbgScriptAnalyze(a:file, a:breakPoint)
     if !has_key(l:dbg, 'cmd')
         return -1
     endif
@@ -379,8 +373,8 @@ endfunction
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug
 " Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
-    let l:lineOne = executable('sed') ? system('sed -n 1p '.a:file)[:-2] : getbufline(a:file, 1)[0]
-    let l:interpreter = matchstr(l:lineOne, '\v^(#!.*/(env\s*)?)\zs\w+')
+    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(a:file))[:-2] :
+                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s*)?)\zs\S+')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
@@ -394,7 +388,8 @@ function! s:DbgScriptAnalyze(file, breakPoint)
     let l:dbg = deepcopy(s:dbg)
     let l:dbg.file = a:file
     let l:dbg.cwd = getcwd()
-    let l:dbg.var = copy(get(s:dbgShared, a:file, {}))
+    " Using full path to prevent file conflict (fnamemodify)
+    let l:dbg.var = copy(get(s:dbgShared, fnamemodify(a:file, ':p'), {}))
     let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
 
     if l:interpreter ==# 'bash' && executable('bashdb')
@@ -462,8 +457,7 @@ function! s:DbgUIInitalize(dbg, height, width)
 
     " Source view window
     exe 'tabedit '.a:dbg.file
-    let l:suffix = get(s:displayIcon, a:dbg.id, ' ')
-    let t:tab_lable = ' -- Debug'.l:suffix.'--'
+    let t:tab_lable = ' -- Debug'.get(s:displayIcon, a:dbg.id, ' ').'--'
     let t:task = "call t:dbg.sendCmd('q', '')"
     let t:dbg = a:dbg
     let t:dbg.srcWinId = win_getid()
@@ -503,7 +497,7 @@ endfunction
 
 
 " Creat maping for easy debuging
-function! s:DbgMaping(...)
+function! s:DbgMaping()
     let l:mapPrefix = 'nnoremap <buffer> <silent> '
 
     if exists('t:dbg.varWinId')
@@ -537,8 +531,6 @@ function! s:DbgMaping(...)
             exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
         endfor
 
-        nnoremap <buffer> <silent> u :call <SID>DbgSendCmd('up')<CR>
-        nnoremap <buffer> <silent> d :call <SID>DbgSendCmd('down')<CR>
         nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
     endif
 endfunction
@@ -753,13 +745,14 @@ endfunction
 
 
 " 
-function! s:DbgOnExit(...)
+function! s:DbgOnExit(job, status)
     if has_key(t:dbg.sign, 'file')
         exe 'sign unplace '.t:dbg.sign.id.' file='.t:dbg.sign.file
     endif
 
     if exists('t:dbg')
-        call extend(s:dbgShared, {t:dbg.file: t:dbg.var})
+        " Using full path to prevent file conflict (fnamemodify)
+        call extend(s:dbgShared, {fnamemodify(t:dbg.file, ':p'): t:dbg.var})
 
         try
             tabclose
@@ -775,11 +768,10 @@ endfunction
 
 " Gdb tool： debug binary file
 " BreakPoint: list type
-function! async#GdbStart(...) abort
-    let l:binFile = get(a:000, 0, '')
-    let l:breakPoint = get(a:000, 1, [])
-
-    if empty(l:binFile)
+function! async#GdbStart(binFile, breakPoint) abort
+    if filereadable(a:binFile)
+        let l:binFile = a:binFile
+    else
         let l:files = filter(glob('*', '', 1),
                     \ "!isdirectory(v:val) && executable('./'.v:val)")
         let l:num = len(l:files)
@@ -800,7 +792,7 @@ function! async#GdbStart(...) abort
                 return
             endif
 
-            let l:binFile = fnameescape(l:sel)
+            let l:binFile = fnameescape(l:files[l:sel])
         endif
     endif
 
@@ -812,11 +804,11 @@ function! async#GdbStart(...) abort
     tabnew
     let t:tab_lable = ' -- Debug --'
 
-    if empty(l:breakPoint)
+    if empty(a:breakPoint)
         exe 'silent Termdebug '.l:binFile
     else
         let l:tempFile = tempname()
-        call writefile(l:breakPoint, l:tempFile)
+        call writefile(a:breakPoint, l:tempFile)
         exe 'silent Termdebug -x '.l:tempFile.' '.l:binFile
     endif
 

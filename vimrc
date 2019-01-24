@@ -148,8 +148,8 @@ map! <C-w> <Esc><C-w>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<CR>
-noremap <silent> <f5>   :call misc#F5FunctionKey('origin')<CR>
-noremap <silent> <C-f5> :call misc#F5FunctionKey('reverse')<CR>
+noremap <silent> <f5>   :call misc#F5FunctionKey('run')<CR>
+noremap <silent> <C-f5> :call misc#F5FunctionKey('debug')<CR>
 noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
@@ -218,8 +218,8 @@ noremap  <silent> <S-pageDown> :wincmd w<CR>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 
-tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('origin')"])<CR>
-tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('reverse')"])<CR>
+tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('run')"])<CR>
+tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('debug')"])<CR>
 tnoremap <silent> <S-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('task')"])<CR>
 
 tnoremap <silent> <PageDown> <C-w>N<PageDown>
@@ -293,9 +293,11 @@ let g:tagbar_status_func = 'TagbarStatusFunc'
 
 function! TagbarStatusFunc(current, sort, fname, flags, ...) abort
     let l:flagstr = join(a:flags, '')
+
     if l:flagstr != ''
         let l:flagstr = '['.l:flagstr.'] '
     endif
+
     return '  Tagbar: '.l:flagstr.a:fname
 endfunction
 
@@ -359,13 +361,11 @@ function! Vimrc_Tagbar()
     if g:tagbar_vertical == 0
         TagbarOpen
     elseif bufwinnr('NERD_tree') == -1
-        let l:tmp = g:tagbar_vertical
-        let l:tmp1 = g:tagbar_left
+        let l:temp = [g:tagbar_vertical, g:tagbar_left]
         let g:tagbar_vertical = 0
         let g:tagbar_left = g:NERDTreeWinPos == 'left'
         TagbarOpen
-        let g:tagbar_vertical = l:tmp
-        let g:tagbar_left = l:tmp1
+        let [g:tagbar_vertical, g:tagbar_left] = l:temp
         wincmd W
     else
         exe bufwinnr('NERD_tree').'wincmd w'
@@ -397,7 +397,6 @@ let g:BMBPSign_PostLoadEventList = [
 
 function! PreSaveWorkSpace_Var()
     let g:TABVAR_MAXMIZEWIN = {}
-    let g:TABVAR_RECORDOFTREE = {}
     let g:WINVAR_BUFHIS = {}
 
     for l:nr in range(1, tabpagenr('$'))

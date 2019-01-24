@@ -134,15 +134,14 @@ function <SID>DeleteItem(...)
         redraw!
         return
     elseif l:linT != 0 && l:curL > l:linT
-        let l:msg = system('git tag -d ' . l:str)
+        let l:msg = system('git tag -d '.l:str)
     elseif l:linS != 0 && l:curL > l:linS
-        let l:msg = system('git stash drop ' . l:str)
+        let l:msg = system('git stash drop '.l:str)
         let l:self = 1
     elseif l:linR != 0 && l:curL > l:linR
-        let l:msg = system('git remote remove ' . l:str)
+        let l:msg = system('git remote remove '.l:str)
     else
-        let l:flag = a:0 == 0 ? '-d ' : '-D '
-        let l:msg = system('git branch ' . l:flag . l:str)
+        let l:msg = system('git branch '.(a:0 == 0 ? '-d ' : '-D ').l:str)
     endif
     redraw!
     if l:msg =~ 'error:\|fatal:'

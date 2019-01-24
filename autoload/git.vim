@@ -209,8 +209,7 @@ let s:menuUI1 =  "** Git Menu:\n".
             \ "    a(m)end           <git commit --amend -m>\n".
             \ "    (p)ush            <git push>\n".
             \ "    (f)etch           <git fetch>\n".
-            \ "    (P)ull            <git pull>\n".
-            \ "!?:"
+            \ "    (P)ull            <git pull>\n"
 
 let s:menuTip1 = {
             \ 'g': 'Compressing...',
@@ -230,15 +229,14 @@ let s:menuCmd1 = {
             \ }
 
 let s:menuUI2 =  "** Git Menu:\n" .
-            \ "==================================================\n" .
-            \ "    (a)dd remote           <git remote add>\n" .
-            \ "    (t)ag HEAD             <git tag>\n" .
-            \ "    (c)heckout new branch  <git checkout -q -b>\n" .
-            \ "    (m)erge branch         <git merge>\n" .
+            \ "==================================================\n".
+            \ "    (a)dd remote           <git remote add>\n".
+            \ "    (t)ag                  <git tag>\n".
+            \ "    (c)heckout new branch  <git checkout -q -b>\n".
+            \ "    (m)erge branch         <git merge>\n".
             \ "    (r)ebase branch        <git rebash>\n".
-            \ "    (d)iff tool            <git difftool -y>\n" .
-            \ "    (M)erge tool           <git mergetool -y>\n" .
-            \ "!?:"
+            \ "    (d)iff tool            <git difftool -y>\n".
+            \ "    (M)erge tool           <git mergetool -y>\n" 
 
 let s:sep = repeat('=', 50)
 let s:menuTip2 = {
@@ -282,7 +280,7 @@ function! git#Menu(sel)
                 let l:msg = system("git commit -m '".l:str."'")[:-2]
             endif
         elseif l:char ==# 'm'
-            let l:str = input("Input a message(--amend -m): ", system('git log --pretty=format:%s -1'))
+            let l:str = input('Input a message(--amend -m): ', system('git log --pretty=format:%s -1'))
             if l:str =~# '\S'
                 let l:msg = system("git commit --amend -m '".l:str."'")[:-2]
             endif
@@ -295,7 +293,7 @@ function! git#Menu(sel)
             let l:str = function('input', s:menuInput2[l:char])()
 
             if l:str =~# '\S'
-                let l:msg = system(s:menuCmd2[l:char].l:str)
+                let l:msg = system(s:menuCmd2[l:char].l:str)[:-2]
             endif
         elseif l:char ==# 'd'
             :!git difftool -y
@@ -309,6 +307,7 @@ function! git#Menu(sel)
     if l:msg !~ '\verror:|fatal:'
         call git#Refresh()
     endif
+
     redraw
     echo l:msg
 endfunction
