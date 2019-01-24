@@ -21,7 +21,8 @@ nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch()<CR>
 nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(1)<CR>
 nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(2)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
-nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>

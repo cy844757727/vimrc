@@ -15,7 +15,8 @@ nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
-nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>

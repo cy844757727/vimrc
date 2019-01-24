@@ -8,7 +8,7 @@ endif
 let g:loaded_GIT_Manager = 1
 
 command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
-command! -nargs=* -complete=customlist,GIT_Complete Gdiff :call git#Diff(<f-args>)
+command! -nargs=* -complete=customlist,GIT_Complete Gdiff :call git#Diff(<q-args>)
 
 
 augroup Git_manager

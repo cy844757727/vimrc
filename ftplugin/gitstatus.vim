@@ -22,7 +22,8 @@ nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -65,22 +66,16 @@ function <SID>EditFile()
         return
     endif
 
-    let l:file = fnamemodify(l:file, ':p')
-
-    for l:tab in range(1, tabpagenr('$'))
-        for l:win in range(1, tabpagewinnr(l:tab, '$'))
-            let l:var = gettabwinvar(l:tab, l:win, 'bufHis', {'list': []})
-
-            if index(l:var.list, l:file) != -1
-                exe l:tab.'tabnext'
-                exe l:win.'wincmd w'
-                exe 'edit '.l:file
-                return
-            endif
-        endfor
-    endfor
-
-    exe '-tabedit '.l:file
+    if exists('*misc#EditFile')
+        call misc#EditFile(l:file, '-tabedit')
+    else
+        let l:winId = win_findbuf(bufnr(l:file))
+        if l:winId != []
+            call win_gotoid(l:winId[0])
+        elseif filereadable(l:file)
+            exec '-tabedit ' . l:file
+        endif
+    endif
 endfunction
 
 function <SID>FileDiff()

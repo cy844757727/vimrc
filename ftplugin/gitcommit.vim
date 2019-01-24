@@ -21,7 +21,8 @@ nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> m :call git#MainMenu()<CR>
+nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
 nnoremap <buffer> <silent> 1 :1wincmd w<CR>
 nnoremap <buffer> <silent> 2 :2wincmd w<CR>
@@ -39,7 +40,7 @@ endif
 function! Git_MyCommitFoldInfo()
     let l:line = getline(v:foldstart)
     let l:mode = getline(v:foldstart + 1)
-    let l:file = matchstr(l:line, '\(diff --\w* \(a/\)\?\)\zs\S*')
+    let l:file = matchstr(l:line, '\v(diff --\w* (a/)?)\zs\S*')
 
     if l:mode =~ 'index '
         let l:mode = getline(v:foldstart + 2)
@@ -56,9 +57,9 @@ function! Git_MyCommitFoldInfo()
     elseif l:mode =~ 'old mode '
         let l:file = '   '.l:file
     elseif l:mode =~ 'rename from'
-        let l:file = '   '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+        let l:file = '   '.l:file.'   '.matchstr(l:line, '\v( b/)\zs\S*')
     elseif l:mode =~ 'copy from '
-        let l:file = '   '.l:file.'   '.matchstr(l:line, '\( b/\)\zs\S*')
+        let l:file = '   '.l:file.'   '.matchstr(l:line, '\v( b/)\zs\S*')
     elseif l:mode =~ 'Binary files '
         let l:file = '   '.l:file
     else

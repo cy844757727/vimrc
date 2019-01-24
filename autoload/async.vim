@@ -199,7 +199,8 @@ endfunction
 
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
-    let l:ex = ["echom 'async: ".s:asyncJob[l:id].cmd.' '.(a:status == 0 ? '[Done]' : '[Failed]')."'"]
+    let l:ex = ["echom 'async: ".s:asyncJob[l:id].cmd.' '.
+                \ (a:status == 0 ? '[Done]' : '[Failed]')."'"]
 
     if has_key(s:asyncJob[l:id], 'quiet')
         let l:ex += ["echo ' '"]
@@ -223,7 +224,7 @@ function! async#JobStop(how)
     endfor
 
     while 1
-        let l:jobIds = input(l:prompt."\nInput id: ", '', 'custom,async#JobIds_complete')
+        let l:jobIds = input(l:prompt."\nInput id: ", '', 'custom,async#CompleteIds')
 
         if l:jobIds !~# '\v\S'
             return
@@ -245,7 +246,7 @@ function! async#JobRuning()
     return len(s:asyncJob)
 endfunction
 
-function! async#JobIds_complete(L, C, P)
+function! async#CompleteIds(L, C, P)
     return join(keys(s:asyncJob), "\n")
 endfunction
 
@@ -470,18 +471,14 @@ function! s:DbgUIInitalize(dbg, height, width)
     " Debug console window
     exe 'belowright '.a:height.'split'
     let t:dbg.dbgWinId = win_getid()
-    set winfixheight
+    setlocal winfixheight
 
     " Variables window
     if index(t:dbg.win, 'var') != -1
         exe 'topleft '.a:width.'vnew var_'.t:dbg.id.'.dbgvar'
         let t:dbg.varWinId = win_getid()
-        setlocal wrap
-        setlocal nonumber
-        setlocal nobuflisted
-        setlocal winfixwidth
-        setlocal buftype=nofile
-        setlocal filetype=dbgvar
+        setlocal wrap nonu nobuflisted winfixwidth
+        setlocal buftype=nofile filetype=dbgvar
         setlocal statusline=\ Variables
     endif
 
@@ -489,12 +486,8 @@ function! s:DbgUIInitalize(dbg, height, width)
     if index(t:dbg.win, 'watch') != -1
         exe 'belowright '.((&lines - a:height - 9)/2).'new Watch_'.t:dbg.id.'.dbgwatch'
         let t:dbg.watchWinId = win_getid()
-        setlocal wrap
-        setlocal nonumber
-        setlocal nobuflisted
-        setlocal winfixheight
-        setlocal buftype=nofile
-        setlocal filetype=dbgwatch
+        setlocal wrap nonu nobuflisted winfixheight
+        setlocal buftype=nofile filetype=dbgwatch
         setlocal statusline=\ Watch%{get(t:dbg,'watchFlag',0)?'\ ':''}
     endif
 
@@ -502,12 +495,8 @@ function! s:DbgUIInitalize(dbg, height, width)
     if index(t:dbg.win, 'stack') != -1
         exe 'belowright '.a:height.'new stack_'.t:dbg.id.'.dbgstack'
         let t:dbg.stackWinId = win_getid()
-        setlocal nowrap
-        setlocal nonumber
-        setlocal nobuflisted
-        setlocal winfixheight
-        setlocal buftype=nofile
-        setlocal filetype=dbgstack
+        setlocal nowrap nonu nobuflisted winfixheight
+        setlocal buftype=nofile filetype=dbgstack
         setlocal statusline=\ Call\ Stack
     endif
 endfunction

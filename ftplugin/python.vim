@@ -18,6 +18,6 @@ let b:did_ftplugin_ = 1
 let b:ale_linters = ['pylint', 'pyflakes']
 let b:ale_fixers = ['autopep8']
 
-set foldmethod=indent
+setlocal foldmethod=indent
 " 
 "let b:ale_lint_on_text_changed = 'always'
