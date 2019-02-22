@@ -52,7 +52,7 @@ let g:SideWinWidth = 31
 " Autocmd & command ===================== {{{1
 augroup UsrDefCmd
     autocmd!
-    autocmd QuickFixCmdPost * copen 15
+    autocmd QuickFixCmdPost * exe 'copen '.get(g:, 'BottomWinHeight', 15)
     autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
@@ -68,7 +68,7 @@ command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=? Task :exe get(empty('<args>') ? g: : <args>:, 'task', 'echo')
 command! -nargs=* -range -complete=file Open :exe 'Async xdg-open '.(empty('<args>') ? getreg('*') : '<args>')
 command! -nargs=? VResize :vertical resize <args>
-command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabe <args>
+command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
 command! -range -addr=tabs TN :<line1>tabnext
 command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)

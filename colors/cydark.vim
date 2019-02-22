@@ -2,7 +2,7 @@
 " File: cydark.vim
 " Author: Cy <844757727@qq.com>
 " Description: dark colorscheme
-" Last Modified: 2019年01月06日 星期日 17时02分45秒
+" Last Modified: 2019年02月17日 星期日 17时49分26秒
 " =================================================
 
 if !has('gui_running') && (!has('termguicolors') || !&termguicolors)
@@ -99,7 +99,7 @@ call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 
 " === Diff ===
 call s:HI('DiffAdd', s:none, ['#192920'])
-call s:HI('DiffChange', s:none, ['#203045'])
+call s:HI('DiffChange', s:none, ['#20303a'])
 call s:HI('DiffDelete', ['#4f2525'], ['#4f2525'])
 call s:HI('DiffText', s:none)
 

@@ -54,12 +54,12 @@ function! git#FormatBranch()
         let l:content += ['', 'Remote:', ''] + l:remote
     endif
 
-    if !empty(l:tag)
-        let l:content += ['', 'Tag:', ''] + l:tag
-    endif
-
     if !empty(l:stash)
         let l:content += ['', 'Stash:', ''] + l:stash
+    endif
+
+    if !empty(l:tag)
+        let l:content += ['', 'Tag:', ''] + l:tag
     endif
 
     return l:content
@@ -143,14 +143,14 @@ function! git#Toggle()
         let l:gitTab = tabpagenr()
 
         try
-            exe s:TabPrevious . 'tabnext'
+            exe s:TabPrevious.'tabnext'
         catch 'E121'
             1tabnext
         catch 'E16'
             $tabnext
         endtry
 
-        exe l:gitTab . 'tabclose'
+        exe l:gitTab.'tabclose'
     else
         let s:TabPrevious = tabpagenr()
 
@@ -199,7 +199,7 @@ function! git#Refresh()
 endfunction
 
 
-let s:menuUI1 =  "** Git Menu:\n".
+let s:menuUI1 = "** Git Menu:\n".
             \ "==================================================\n".
             \ "    (i)nitialize      <git init>\n".
             \ "    (g)c              <git gc>\n".
@@ -211,24 +211,17 @@ let s:menuUI1 =  "** Git Menu:\n".
             \ "    (f)etch           <git fetch>\n".
             \ "    (P)ull            <git pull>\n"
 
-let s:menuTip1 = {
-            \ 'g': 'Compressing...',
-            \ 'p': 'Pushing...',
-            \ 'P': 'Pulling...',
-            \ 'f': 'Fetching...'
+let s:menu1 = {
+            \ 'i': {'cmd': 'git init'},
+            \ 'a': {'cmd': 'git add .'},
+            \ 'r': {'cmd': 'git reset -q HEAD'},
+            \ 'g': {'cmd': 'git gc', 'tip': 'Compressing...'},
+            \ 'p': {'cmd': 'git push', 'tip': 'Pushing...'},
+            \ 'P': {'cmd': 'git pull', 'tip': 'Pulling...'},
+            \ 'f': {'cmd': 'git fetch', 'tip': 'Fetching...'}
             \ }
 
-let s:menuCmd1 = {
-            \ 'i': 'git init -a',
-            \ 'a': 'git add .',
-            \ 'r': 'git reset -q HEAD',
-            \ 'g': 'git gc',
-            \ 'p': 'git push',
-            \ 'P': 'git pull',
-            \ 'f': 'git fetch'
-            \ }
-
-let s:menuUI2 =  "** Git Menu:\n" .
+let s:menuUI2 = "** Git Menu:\n".
             \ "==================================================\n".
             \ "    (a)dd remote           <git remote add>\n".
             \ "    (t)ag                  <git tag>\n".
@@ -239,42 +232,51 @@ let s:menuUI2 =  "** Git Menu:\n" .
             \ "    (M)erge tool           <git mergetool -y>\n" 
 
 let s:sep = repeat('=', 50)
-let s:menuTip2 = {
-            \ 'a': "** Add remote repository\n".s:sep,
-            \ 't': "** Attach a tag\n".s:sep,
-            \ 'c': "** Create and switch a new branch\n".s:sep,
-            \ 'm': "** merge the specified branch to current\n".s:sep,
-            \ 'r': "** rebase the specified branch to current\n".s:sep
-            \ }
-
-let s:menuInput2 = {
-            \ 'a': ['[option] Name & URL: ', 'origin '],
-            \ 't': ['[option] [-a] [-m Note] Tag [commit]: '],
-            \ 'c': ['NewBranch [startpoint]: '],
-            \ 'm': ['[option] Branch: ', '', 'custom,git#CompleteBranch'],
-            \ 'r': ['[option] Branch: ', '', 'custom,git#CompleteBranch']
-            \ }
-
-let s:menuCmd2 = {
-            \ 'a': 'git remote add ',
-            \ 't': 'git tag ',
-            \ 'c': 'git stash && git checkout -q -b ',
-            \ 'm': 'git merge ',
-            \ 'r': 'git rebase '
-            \ }
+let s:menu2 = {'a': {
+            \ 'cmd': 'git remote add ',
+            \ 'tip': "** Add remote repository\n".s:sep,
+            \ 'input': ['[option] Name & URL: ', 'origin ']
+            \ }, 't': {
+            \ 'cmd': 'git tag ',
+            \ 'tip': "** Attach a tag\n".s:sep,
+            \ 'input': ['[option] [-a] [-m Note] Tag [commit]: ']
+            \ }, 'c': {
+            \ 'cmd': 'git stash -q && git checkout -q -b ',
+            \ 'tip': "** Create and switch a new branch\n".s:sep,
+            \ 'input': ['NewBranch [startpoint]: '],
+            \ }, 'm': {
+            \ 'cmd': 'git merge ',
+            \ 'tip': "** merge the specified branch to current\n".s:sep,
+            \ 'input': ['[option] Branch: ', '', 'custom,git#CompleteBranch']
+            \ }, 'r': {
+            \ 'cmd': 'git rebase ',
+            \ 'tip': "** rebase the specified branch to current\n".s:sep,
+            \ 'input': ['[option] branch: ', '', 'custom,git#completebranch']
+            \ }}
 
 
-function! git#Menu(sel)
-    let l:msg = ''
-    echo a:sel ? s:menuUI1 : s:menuUI2
+function! git#Menu(menu)
+    let l:menu = a:menu ? s:menu1 : s:menu2
+    echo a:menu ? s:menuUI1 : s:menuUI2
     let l:char = nr2char(getchar())
     redraw!
 
-    if a:sel
-        if has_key(s:menuCmd1, l:char)
-            echo get(s:menuTip1, l:char, ' ')
-            let l:msg = system(s:menuCmd1[l:char])[:-2]
-        elseif l:char ==# 'c'
+    if has_key(l:menu, l:char)
+        let l:item = l:menu[l:char]
+        echo get(l:item, 'tip', '')
+
+        let l:str = ''
+        if has_key(l:item, 'input')
+            let l:str = function('input', l:item['input'])()
+
+            if l:str !~# '\S'
+                return
+            endif
+        endif
+
+        let l:msg = system(l:item['cmd'].l:str)[:-2]
+    elseif a:menu
+        if l:char ==# 'c'
             let l:str = input('Input a message(-m): ')
             if l:str =~# '\S'
                 let l:msg = system("git commit -m '".l:str."'")[:-2]
@@ -284,27 +286,18 @@ function! git#Menu(sel)
             if l:str =~# '\S'
                 let l:msg = system("git commit --amend -m '".l:str."'")[:-2]
             endif
-        else
-            return
         endif
     else
-        if has_key(s:menuCmd2, l:char)
-            echo get(s:menuTip2, l:char, ' ')
-            let l:str = function('input', s:menuInput2[l:char])()
-
-            if l:str =~# '\S'
-                let l:msg = system(s:menuCmd2[l:char].l:str)[:-2]
-            endif
-        elseif l:char ==# 'd'
+        if l:char ==# 'd'
             :!git difftool -y
         elseif l:char ==# 'M'
             :!git mergetool -y
-        else
-            return
         endif
     endif
 
-    if l:msg !~ '\verror:|fatal:'
+    if !exists('l:msg')
+        return
+    elseif l:msg !~ '\verror:|fatal:'
         call git#Refresh()
     endif
 

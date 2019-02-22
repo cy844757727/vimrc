@@ -374,7 +374,7 @@ endfunction
 " Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
     let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(a:file))[:-2] :
-                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s*)?)\zs\S+')
+                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs\S+')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
@@ -553,8 +553,8 @@ let s:cmdPromptInfo = {
             \ 'disable': 'Disable break numbers: ',
             \ 'enable': 'Enable break numbers: ',
             \ 'p': 'Print a variable or expression: ',
-            \ 'x': 'Print a variable or expression: ',
-            \ 'pp': 'Print a variable or expression: ',
+            \ 'x': 'Pretty Print a variable or expression: ',
+            \ 'pp': 'Pretty print a variable or expression: ',
             \ 'print': 'Print a variable or expression: ',
             \ 'send': 'Execute a debug command: '
             \ }

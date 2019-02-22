@@ -176,7 +176,7 @@ let s:commentChar = {
             \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
             \ 'ada': '--',
             \ 'lisp': ';', 'scheme': ';',
-            \ 'vim': "\""
+            \ 'vim': '"'
             \ }
 
 "  Toggle comment
@@ -198,7 +198,7 @@ function! misc#StrSubstitute(str)
         return
     endif
 
-    let l:subs = input('Replace '."\"".a:str."\"".' with: ')
+    let l:subs = input('Replace "'.a:str.'" with: ')
 
     if !empty(l:subs)
         let l:pos = getpos('.')
@@ -393,7 +393,7 @@ endfunction
 " a:1 if exists define the action
 " otherwise record the history to w:bufHis
 function! s:BufHisRecord()
-    if !empty(&buftype) || empty(expand('%'))
+    if !empty(&buftype) || expand('%') =~# '\v^/|^$'
         return
     endif
 
@@ -436,7 +436,7 @@ function! misc#BufHisSwitch(action)
         call insert(w:bufHis.list, remove(w:bufHis.list, -1))
     endif
 
-    if bufexists(w:bufHis.list[-1]) && empty(getbufvar(w:bufHis.list[-1], '&bt', ''))
+    if bufexists(w:bufHis.list[-1])
         silent update
         silent exe 'buffer '.w:bufHis.list[-1]
         call s:BufHisEcho()
@@ -589,7 +589,6 @@ endfunction
 function! misc#Information(...)
     let l:info = ''
     let l:cwd = fnamemodify(getcwd(), ':~')
-    let l:file = expand('%')
     let l:nr = bufnr('%')
     let l:lines = line('$')
     let l:count = wordcount()
@@ -610,9 +609,9 @@ function! misc#Information(...)
             let l:info .= '  '.join(split(system('git branch'), '\v  +|\n'), '  ')."\n"
         endif
 
-        let l:info .= '  '.l:cwd."\n".' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.l:file."\n".
+        let l:info .= '  '.l:cwd."\n".' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.expand('%')."\n".
                     \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
-                    \ '   '.matchstr(system('ls -lh '.l:file), '\v.*\d+:\d+')
+                    \ '   '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
     endif
 
     return l:info
