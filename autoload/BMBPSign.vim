@@ -60,7 +60,9 @@ endif
 let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
 let s:projectType = get(g:, 'BMBPSign_ProjectType', {})
-call extend(s:projectType, {'default': $HOME.'/Documents'}, 'keep')
+call extend(s:projectType, {'default': $HOME.'/Documents/'}, 'keep')
+" For $HOME path substitute
+call map(s:projectType, "fnamemodify(v:val, ':p')")
 
 " Project record file defination
 let s:projectFile = get(
@@ -77,9 +79,6 @@ let s:sessionOptions = get(g:, 'BMBPSign_SessionOption',
 
 " Load project items
 let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
-
-" For $HOME path substitute
-call map(s:projectType, "fnamemodify(v:val, ':p')")
 
 " Sign type extendsion: customized
 for l:sign in get(g:, 'BMBPSignTypeExtend', [])
@@ -305,14 +304,14 @@ function s:SignSave(signFile, types)
     endif
 endfunction
 
-function s:strMatch(str, words)
+function s:StrMatch(str, words)
     for l:word in a:words
-        if a:str !~? l:word
-            return 0
+        if a:str =~? l:word
+            return 1
         endif
     endfor
 
-    return 1
+    return 0
 endfunction
 
 " Filter sign by types & file & lin
@@ -326,7 +325,7 @@ function s:SignFilter(types, file, lin, attrs)
             let l:list = matchlist(l:signPlace, '\v    \S+\=(\d+)  id\='.
                         \ l:sign.id.'  \S+\='.s:signDefHead)
 
-            if !empty(l:list) && l:list[1] =~? a:lin && s:strMatch(l:sign.attr, a:attrs)
+            if !empty(l:list) && l:list[1] =~? a:lin && s:StrMatch(l:sign.attr, a:attrs)
                 let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
             endif
         endfor
@@ -412,7 +411,7 @@ endfunction
 
 " == Project def =============================================== {{{1
 " New project & save workspace or modify current project
-function s:ProjectNew(name, type, path)
+function s:ProjectNew(name, type, path) abort
     set noautochdir
     let g:BMBPSign_Projectized = 1
 
@@ -501,97 +500,94 @@ endfunction
 
 
 " Menu UI
-function s:ProjectUI(start, tip)
+function s:ProjectUI(page, tip)
     " ten items per page
-    let l:page = a:start / 10 + 1
+    let l:pages = (len(s:projectItem) - 1) / 10
+    let l:page = a:page < 0 ? 0 : a:page > l:pages ? l:pages : a:page
 
     " ui: head
     let l:ui = '** Project option  (cwd: '.fnamemodify(getcwd(), ':~').
-                \ '     num: '.len(s:projectItem).'     page: '.l:page.")\n".
+                \ '     num: '.len(s:projectItem).'     page: '.(l:page+1).'/'.(l:pages+1).")\n".
                 \ '   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  '.
-                \ "Q:vimleave  a/n:new  0-9:item\n".
+                \ "Q:vimleave  n:new  0-9:item\n".
                 \ "   !?:selection mode    Del:deletion mode    Mod:modification mode\n".
                 \ repeat('=', min([&columns - 10, 90]))."\n"
 
     " ui: body (Path conversion)
-    let l:ui .= join(map(s:projectItem[a:start:a:start+9],
+    let l:start = l:page * 10
+    let l:ui .= join(map(s:projectItem[l:start:l:start+9],
                 \ "printf(' %3d: ', v:key).substitute(v:val, ' '.$HOME, ' ~', '')"), "\n"
                 \ )."\n".a:tip
 
-    return [l:ui, l:page]
+    echo l:ui
+    return l:page
 endfunction
 
 
 function s:ProjectMenu()
-    let [l:tip, l:mode] = ['!?:', 's']
-    let l:start = empty(s:projectItem) ? [0] : range(0, len(s:projectItem) - 1, 10)
+    let [l:page, l:tip, l:err, l:mode] = [0, '!?:', '', 's']
+    let l:modeTip = {'s': '!?:', 'd': 'Deletion:', 'm': 'Modification:'}
 
     while 1
         " Disply UI
-        let [l:ui, l:page]= s:ProjectUI(l:start[0], l:tip)
-        echo l:ui
+        let l:page = s:ProjectUI(l:page, l:err.l:tip)
         let l:char = nr2char(getchar())
-        redraw!
+        let l:err = ''
 
         " options & Mode selection
-        if l:char ==# 'p' && l:start != []
-            call add(l:start, remove(l:start, 0))
-        elseif l:char ==# 'P' && l:start != []
-            call insert(l:start, remove(l:start, -1))
-        elseif l:char ==# 's'
-            let [l:tip, l:mode] = ['!?:', 's']
-        elseif l:char =~# 'd'
-            let [l:tip, l:mode] = ['Del:', 'd']
-        elseif l:char ==# 'm'
-            let [l:tip, l:mode] = ['Mod:', 'm']
+        if l:char ==# 'p'
+            let l:page += 1
+        elseif l:char ==# 'P'
+            let l:page -= 1
+        elseif has_key(l:modeTip, l:char)
+            let [l:tip, l:mode] = [l:modeTip[l:char], l:char]
         elseif l:char ==# 'q' || l:char == "\<Esc>"
-            return
+            break
         elseif l:char ==# 'Q'
             qall
-        elseif l:char == "\<cr>"
-            let l:tip = matchstr(l:tip, '\S*$')
-        elseif l:char =~# '\v\d|\s' && l:char < len(s:projectItem)
+        elseif l:char =~# '\v[0-9 ]'
             " Specific operation
-            if l:mode ==# 's' && !(getcwd() ==# split(s:projectItem[l:start[0] + l:char])[-1]
-                        \ && exists('g:BMBPSign_Projectized'))
-                " select
-                call s:ProjectSwitch(l:char + 10 * (l:page - 1))
+            let l:sel = l:char + l:page * 10
+            if l:sel >= len(s:projectItem)
+                let l:err = 'Out of range! '
+            elseif l:mode ==# 's'   " select
+                call s:ProjectSwitch(l:sel)
                 break
-            elseif l:mode ==# 'd'
-                " delete
-                call remove(s:projectItem, l:char)
+            elseif l:mode ==# 'd'   " delete
+                call remove(s:projectItem, l:sel)
                 call writefile(s:projectItem, s:projectFile)
-            elseif l:mode ==# 'm'
-                " modify
-                let l:path = split(s:projectItem[l:char])[-1]
-                echo s:ProjectUI(l:start[0], '▼ Modelify item '.str2nr(l:char))
-                let l:argv = split(input("<name > <type>: "))
-                redraw!
+            elseif l:mode ==# 'm'   " modify
+                let l:item = split(s:projectItem[l:sel])
+                let l:argv = split(input('▼ Modify item '.str2nr(l:char).' <name> <type>: ',
+                            \ l:item[0].' '.l:item[2]))
+
                 if len(l:argv) == 2
-                    let s:projectItem[l:char] = printf('%-20s  Type: %-12s  Path: %s',
-                                \ l:argv[0], l:argv[1], l:path)
+                    let s:projectItem[l:sel] = printf('%-20s  Type: %-12s  Path: %s',
+                                \ l:argv[0], l:argv[1], l:item[-1])
                     call writefile(s:projectItem, s:projectFile)
                 else
-                    let l:tip = 'Wrong Argument, Reselect. Mod:'
+                    let l:err = 'Wrong Argument, Reselect. '
                 endif
             endif
-        elseif l:char =~# '\v[an]'
+        elseif l:char ==# 'n'
             " new
-            echo s:ProjectUI(l:start[0], '▼ New Project')
-            let l:argv = split(input('<name> <type> [path]: ', '', 'file'))
+            let l:argv = split(input('▼ New Project <name> <type> [path]: ', '', 'file'))
             let l:argc = len(l:argv)
-            redraw!
 
             if l:argc == 2 || l:argc == 3
                 call s:ProjectManager(l:argc, l:argv)
                 break
             else
-                let l:tip = 'Wrong Argument, Reselect. '.matchstr(l:tip, '\S*$')
+                let l:err = 'Wrong Argument, Reselect. '
             endif
         else
-            let l:tip = 'Invalid('.l:char.'), Reselect. '.matchstr(l:tip, '\S*$')
+            let l:err = 'Invalid('.l:char.'), Reselect. '
         endif
+
+        redraw!
     endwhile
+
+    redraw!
 endfunction
 
 
@@ -602,10 +598,10 @@ function s:ProjectManager(argc, argv)
         call s:ProjectSwitch(a:argv[0])
     elseif a:argc == 2
         let l:type = has_key(s:projectType, a:argv[1]) ? a:argv[1] : 'default'
-        let l:path = s:projectType[l:type].'/'.a:argv[0]
+        let l:path = s:projectType[l:type].a:argv[0]
         call s:ProjectNew(a:argv[0], l:type, l:path)
     elseif a:argc == 3
-        call s:ProjectNew(a:argv[0], a:argv[1], fnamemodify(a:argv[2], ':p'))
+        call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2])
     endif
 endfunction
 
@@ -651,15 +647,17 @@ function s:WorkSpaceSave(pre)
     call writefile(l:curWin + ['tabnext '.tabpagenr()], l:sessionFile, 'a')
 
     " Project processing
-    let [l:type, l:path] = ['undef', getcwd()]
-    let l:parentPath = fnamemodify(l:path, ':h')
-    for l:item in items(s:projectType)
-        if l:item[1] == l:parentPath
-            let l:type = l:item[0]
-            break
-        endif
-    endfor
-    call s:ProjectNew(fnamemodify(l:path, ':t'), l:type, l:path)
+    if !exists('g:BMBPSign_Projectized')
+        let [l:type, l:path] = ['undef', getcwd()]
+        let l:parentPath = fnamemodify(l:path, ':h')
+        for l:item in items(s:projectType)
+            if l:item[1] == l:parentPath
+                let l:type = l:item[0]
+                break
+            endif
+        endfor
+        call s:ProjectNew(fnamemodify(l:path, ':t'), l:type, l:path)
+    endif
 
     " Post-save processing
     if exists('g:BMBPSign_PostSaveEventList')

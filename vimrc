@@ -308,7 +308,7 @@ let g:tagbar_type_make = {
             \ 'm:macros',
             \ 't:targets'
             \ ]
-            \}
+            \ }
 "    Markdown
 let g:tagbar_type_markdown = {
             \ 'ctagstype' : 'markdown',
