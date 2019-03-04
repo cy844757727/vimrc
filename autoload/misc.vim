@@ -586,7 +586,11 @@ function! misc#NextItem(...)
 endfunction
 
 
-function! misc#Information(...)
+function! misc#Information(...) range
+    if get(a:000, 0, '') ==# 'visual'
+        normal gv
+    endif
+
     let l:info = ''
     let l:cwd = fnamemodify(getcwd(), ':~')
     let l:nr = bufnr('%')
@@ -601,20 +605,25 @@ function! misc#Information(...)
         let l:time = strftime('%H:%M')
         let l:info .= ' '.l:cwd.'    '.' '.l:nr.': '.l:lines.'L, '.
                     \ l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
-        let l:info .= repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
-    else
+        echo l:info.repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
+    elseif a:1 ==# 'detail'
         let l:info .= '  '.strftime('%Y %b %d %A %H:%M')."\n"
 
         if isdirectory('.git')
             let l:info .= '  '.join(split(system('git branch'), '\v  +|\n'), '  ')."\n"
         endif
 
-        let l:info .= '  '.l:cwd."\n".' '.misc#GetWebIcon('filetype').' '.l:nr.'-'.expand('%')."\n".
+        echo l:info.'  '.l:cwd."\n".'  '.l:nr.'-'.expand('%')."\n".
                     \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
-                    \ '   '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
+                    \ '  '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
+    elseif a:1 ==# 'visual'
+        exe 'normal '.visualmode()
+        redraw
+        echo 'Lines: '.(a:lastline-a:firstline+1).'/'.l:lines.'   '.
+                    \ 'Words: '.l:count.visual_words.'/'.l:count.words.'   '.
+                    \ 'Chars: '.l:count.visual_chars.'/'.l:count.chars.'   '.
+                    \ 'Bytes: '.l:count.visual_bytes.'/'.l:count.bytes
     endif
-
-    return l:info
 endfunction
 
 

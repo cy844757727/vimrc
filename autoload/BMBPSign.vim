@@ -77,9 +77,6 @@ let s:vimInfo = get(g:, 'BMBPSign_VimInfo', "'50,!,:100,/100,@100")
 let s:sessionOptions = get(g:, 'BMBPSign_SessionOption',
             \ 'blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal')
 
-" Load project items
-let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
-
 " Sign type extendsion: customized
 for l:sign in get(g:, 'BMBPSignTypeExtend', [])
     try
@@ -208,7 +205,7 @@ function s:SignClear(types)
 
         " Unset sign
         for l:sign in l:vec
-            if l:sign.attr !~? '\v&keep'
+            if l:sign.attr !~? '\v&keep' && bufexists(l:sign.file)
                 exe 'sign unplace '.l:sign.id.' file='.l:sign.file
                 unlet s:signId[l:sign.id]
             endif
@@ -447,7 +444,6 @@ function s:ProjectNew(name, type, path) abort
     endif
 
     exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
-    echo substitute(l:item, ' '.$HOME, ' ~', '')
 endfunction
 
 
@@ -468,7 +464,7 @@ function s:ProjectSwitch(sel)
         endif
 
         if exists('g:BMBPSign_Projectized')
-            call s:WorkSpaceSave('')
+            silent call s:WorkSpaceSave('')
         endif
 
         exe 'silent cd '.l:path
@@ -494,8 +490,6 @@ function s:ProjectSwitch(sel)
     " Put item first
     call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
-
-    echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
 endfunction
 
 
@@ -506,18 +500,16 @@ function s:ProjectUI(page, tip)
     let l:page = a:page < 0 ? 0 : a:page > l:pages ? l:pages : a:page
 
     " ui: head
-    let l:ui = '** Project option  (cwd: '.fnamemodify(getcwd(), ':~').
+    let l:ui = '** Project menu (cwd: '.fnamemodify(getcwd(), ':~').
                 \ '     num: '.len(s:projectItem).'     page: '.(l:page+1).'/'.(l:pages+1).")\n".
                 \ '   s:select  d:delete  m:modify  p:pageDown  P:pageUp  q:quit  '.
-                \ "Q:vimleave  n:new  0-9:item\n".
-                \ "   !?:selection mode    Del:deletion mode    Mod:modification mode\n".
-                \ repeat('=', min([&columns - 10, 90]))."\n"
+                \ "Q:vimleave  n:new  0-9:item\n".repeat('=', min([&columns - 10, 90]))."\n"
 
     " ui: body (Path conversion)
     let l:start = l:page * 10
     let l:ui .= join(map(s:projectItem[l:start:l:start+9],
-                \ "printf(' %3d: ', v:key).substitute(v:val, ' '.$HOME, ' ~', '')"), "\n"
-                \ )."\n".a:tip
+                \ "printf(' %3d: ', v:key).substitute(v:val, ' '.$HOME, ' ~', '')"),
+                \ "\n")."\n".a:tip
 
     echo l:ui
     return l:page
@@ -548,6 +540,7 @@ function s:ProjectMenu()
         elseif l:char =~# '\v[0-9 ]'
             " Specific operation
             let l:sel = l:char + l:page * 10
+
             if l:sel >= len(s:projectItem)
                 let l:err = 'Out of range! '
             elseif l:mode ==# 's'   " select
@@ -592,6 +585,8 @@ endfunction
 
 
 function s:ProjectManager(argc, argv)
+    let s:projectItem = filereadable(s:projectFile) ? readfile(s:projectFile) : []
+
     if a:argc == 0
         call s:ProjectMenu()
     elseif a:argc == 1
@@ -599,10 +594,12 @@ function s:ProjectManager(argc, argv)
     elseif a:argc == 2
         let l:type = has_key(s:projectType, a:argv[1]) ? a:argv[1] : 'default'
         let l:path = s:projectType[l:type].a:argv[0]
-        call s:ProjectNew(a:argv[0], l:type, l:path)
+        call s:ProjectNew(a:argv[0], a:argv[1], l:path)
     elseif a:argc == 3
         call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2])
     endif
+
+    echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
 endfunction
 
 
@@ -647,17 +644,15 @@ function s:WorkSpaceSave(pre)
     call writefile(l:curWin + ['tabnext '.tabpagenr()], l:sessionFile, 'a')
 
     " Project processing
-    if !exists('g:BMBPSign_Projectized')
-        let [l:type, l:path] = ['undef', getcwd()]
-        let l:parentPath = fnamemodify(l:path, ':h')
-        for l:item in items(s:projectType)
-            if l:item[1] == l:parentPath
-                let l:type = l:item[0]
-                break
-            endif
-        endfor
-        call s:ProjectNew(fnamemodify(l:path, ':t'), l:type, l:path)
-    endif
+    let [l:type, l:path] = ['undef', getcwd()]
+    let l:parentPath = fnamemodify(l:path, ':h')
+    for l:item in items(s:projectType)
+        if l:item[1] == l:parentPath
+            let l:type = l:item[0]
+            break
+        endif
+    endfor
+    call s:ProjectManager(3, [fnamemodify(l:path, ':t'), l:type, l:path])
 
     " Post-save processing
     if exists('g:BMBPSign_PostSaveEventList')

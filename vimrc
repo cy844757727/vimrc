@@ -60,7 +60,7 @@ augroup UsrDefCmd
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
 augroup END
 
-command! Info :echo misc#Information('more')
+command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! UTags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
@@ -100,8 +100,9 @@ map! <C-j> <Esc><C-j>
 map! <C-k> <Esc><C-k>
 
 inoremap <C-\> <Esc>o
-nnoremap <silent> <C-g> :echo misc#Information()<CR>
+nnoremap <silent> <C-g> :call misc#Information()<CR>
 map! <C-g> <Esc><C-g>
+vnoremap <silent> <C-g> :call misc#Information('visual')<CR>
 " External open
 nnoremap <silent> \cd :exe 'cd '.fnameescape(expand('%:h')).'\|pwd'<CR>
 nnoremap <silent> \od :Open .<CR>
