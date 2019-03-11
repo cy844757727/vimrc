@@ -93,7 +93,7 @@ call s:HI('FoldColumn', ['#cfb55f'])
 hi! link CursorLineNr LineNr
 " === TabLine ===
 call s:HI('TabLine', s:none, s:bg1)
-call s:HI('TabLinesel', s:none, s:none, 'bold')
+call s:HI('TabLinesel', s:none, ['#383e4a'], 'bold')
 call s:HI('TabLineFill')
 call s:HI('TabLineSeparator', ['#383e4a'], s:bg1)
 

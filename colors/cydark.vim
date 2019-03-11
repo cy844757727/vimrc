@@ -25,8 +25,8 @@ let s:none  = ['NONE', 'NONE']
 let s:white = ['#ffffff', 231]
 let s:black = ['#000000',  16]
 let s:fg    = ['#c5c5bf', 251]
-let s:bg    = ['#202020', 234]
-let s:bg1   = ['#292929', 236]  " Statuslinunc pmenu
+let s:bg    = ['#282828', 234]
+let s:bg1   = ['#333333', 236]  " Statuslinunc pmenu
 let s:gray  = ['#353535', 236]  " search visual
 let s:red   = ['#e44442']       " error errorsign
 
@@ -79,16 +79,16 @@ call s:HI('Visual', s:none, s:gray)
 call s:HI('Search', s:none, s:gray)
 call s:HI('InSearch', s:none, s:none, 'reverse')
 call s:HI('QuickFixLine', s:none, s:none, 'bold')
-call s:HI('CursorLine', s:none, ['#252525', 235])
+call s:HI('CursorLine', s:none, ['#292929', 235])
 call s:HI('StatusLine', s:white, ['#105070', 24])
 call s:HI('StatusLineNC', s:none, s:bg1, 'bold')
 call s:HI('LineNr', ['#4a4a4a', 239])
 call s:HI('Directory', ['#60c0d0'])
 call s:HI('WildMenu', s:black, ['#d8dd41'])
 call s:HI('Todo', ['#b5d5b5'], s:none, 'italic')
-call s:HI('MatchParen', s:fg, ['#007fa0'])
-call s:HI('Folded', ['#bfa54f'], ['#1b1a1a'])
-call s:HI('FoldColumn', ['#bfa54f'])
+call s:HI('MatchParen', s:fg, ['#006f90'])
+call s:HI('Folded', ['#c7ad57'], ['#242323'])
+call s:HI('FoldColumn', ['#c7ad57'])
 
 hi! link CursorLineNr LineNr
 " === TabLine ===
@@ -101,12 +101,12 @@ call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 call s:HI('DiffAdd', s:none, ['#192920'])
 call s:HI('DiffChange', s:none, ['#20303a'])
 call s:HI('DiffDelete', ['#4f2525'], ['#4f2525'])
-call s:HI('DiffText', s:none)
+call s:HI('DiffText', s:none, ['#202020'])
 
 " === Msg ===
 call s:HI('Question', s:black, s:fg)
 call s:HI('ErrorMsg', s:white, ['#b53030', 124])
-call s:HI('WarningMsg', s:white, ['#8a5005', 130])
+call s:HI('WarningMsg', s:white, ['#9a5000', 130])
 call s:HI('ModeMsg', s:none, s:none, 'bold')
 call s:HI('MoreMsg', ['#60b030'])
 
@@ -132,7 +132,7 @@ call s:HI('Comment', ['#458520', 76], s:none, 'italic')
 call s:HI('Statement', ['#ddb740', 220])
 call s:HI('String', ['#e5c07b', 215])
 call s:HI('Operator', ['#c5e5f5', 230])
-call s:HI('Conditional', ['#e06c75', 220])
+call s:HI('Conditional', ['#f06c75', 220])
 call s:HI('Function', ['#d18a66'])
 
 hi! link Special Constant
@@ -153,7 +153,7 @@ call s:HI('AsyncDbgHl', ['#8bebff'])
 
 " ale.vim
 call s:HI('ALEErrorSign', s:red)
-call s:HI('ALEWarningSign', ['#ca8010'])
+call s:HI('ALEWarningSign', ['#da9020'])
 
 hi! link ALEError Error
 hi! link ALEWarning Normal
@@ -161,7 +161,7 @@ hi! link ALEWarning Normal
 hi! link TagbarAccessPublic Comment
 hi! link TagbarAccessProtected Type
 hi! link TagbarAccessPrivate Conditional
-hi! link TagbarSignature Directory
+hi! link TagbarSignature Identifier
 
 " NERDTree.vim
 hi! link NERDTreeDir Directory

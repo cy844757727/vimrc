@@ -13,7 +13,7 @@ let g:loaded_A_Async = 1
 
 
 " === Embeded terminal === {{{1
-hi default AsyncDbgHl ctermfg=16 guifg=#8BEBFF
+hi default AsyncDbgHl ctermfg=16 guifg=#8bebff
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
 let s:displayIcon = {

@@ -27,7 +27,7 @@ function! <SID>Open(way, ...)
     
     cclose
 
-    if a:0 > 0 && exists('*misc#EditFile')
+    if a:0 == 0 && exists('*misc#EditFile')
         call misc#EditFile(l:match[0], a:way)
     else
         exe a:way.' '.l:match[0]

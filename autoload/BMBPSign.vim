@@ -322,7 +322,8 @@ function s:SignFilter(types, file, lin, attrs)
             let l:list = matchlist(l:signPlace, '\v    \S+\=(\d+)  id\='.
                         \ l:sign.id.'  \S+\='.s:signDefHead)
 
-            if !empty(l:list) && l:list[1] =~? a:lin && s:StrMatch(l:sign.attr, a:attrs)
+            if !empty(l:list) && l:list[1] =~? a:lin &&
+                        \ (empty(a:attrs) || s:StrMatch(l:sign.attr, a:attrs))
                 let l:items[l:sign.id] = {'sign': l:sign, 'type': l:type, 'lin': l:list[1]}
             endif
         endfor
