@@ -173,7 +173,6 @@ function <SID>HelpDoc()
                 \ "Git Status quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
-                \ "    m:       git menu\n" .
                 \ "    d:       diff file              (git difftool)\n" .
                 \ "    r:       reset file staging     (git reset HEAD --)\n" .
                 \ "    R:       reset all staged file  (git reset HEAD)\n" .

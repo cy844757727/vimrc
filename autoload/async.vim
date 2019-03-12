@@ -296,26 +296,32 @@ endfunction
 
 
 function! async#RunScript(file) abort
-    if !filereadable(a:file)
+    let l:file = a:file ==# 'visual' ? expand('%') : a:file
+
+    if !filereadable(l:file)
         return
-    elseif !executable('sed') && !bufloaded(a:file)
-        exe '0vsplit +hide '.a:file
+    elseif !executable('sed') && !bufloaded(l:file)
+        exe '0vsplit +hide '.l:file
     endif
 
-    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(a:file))[:-2] :
-                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs.*$')
+    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(l:file))[:-2] :
+                \ getbufline(l:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs.*$')
 
     " No #!, try to use filetype
     if empty(l:interpreter)
-        if !bufexists(a:file)
-            exe 'badd '.a:file
+        if !bufexists(l:file)
+            exe 'badd '.l:file
         endif
 
-        let l:interpreter = getbufvar(a:file, '&filetype')
+        let l:interpreter = getbufvar(l:file, '&filetype')
     endif
 
-    call term_sendkeys(async#TermToggle('on'),
-                \ "clear\n".l:interpreter.' '.shellescape(a:file)."\n")
+    if a:file ==# 'visual'
+        call term_sendkeys(async#TermToggle('on', l:interpreter), trim(getreg('*'))."\n")
+    else
+        call term_sendkeys(async#TermToggle('on', s:shell),
+                    \ "clear\n".l:interpreter.' '.shellescape(l:file)."\n")
+    endif
 endfunction
 
 

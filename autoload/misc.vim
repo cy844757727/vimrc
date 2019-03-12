@@ -15,6 +15,8 @@ augroup misc_autocmd
     autocmd!
     " Auto record buf history for each window
     autocmd BufEnter *[^0-9] call s:BufHisRecord()
+    autocmd TabLeave * call s:TabEvent('leave')
+    autocmd TabClosed * call s:TabEvent('close')
 augroup END
 
 "  Refresh NERTree
@@ -34,7 +36,7 @@ endfunction
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
 " Parameter value: origin, task, run, debug, reverse
-function! misc#F5FunctionKey(type) abort
+function! misc#F5FunctionKey(type) abort range
     if a:type ==# 'task'
         exe
                     \ exists('b:task') ? b:task :
@@ -62,14 +64,18 @@ function! misc#F5FunctionKey(type) abort
         " Compile, Run, Debug
         update
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
-        let l:runMode = get({'run': 1, 'debug': 0, 'reverse': !empty(l:breakPoint)},
+        let l:runMode = get({'run': 1, 'debug': 0, 'visual': 2, 'reverse': !empty(l:breakPoint)},
                     \ a:type, empty(l:breakPoint))
 
         if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             " script language
             if l:runMode
                 cclose
-                call async#RunScript(expand('%'))
+                if a:type ==# 'visual'
+                    call async#RunScript('visual')
+                else
+                    call async#RunScript(expand('%'))
+                endif
             else
                 call async#DbgScript(expand('%'), l:breakPoint)
             endif
@@ -87,7 +93,7 @@ function! misc#F5FunctionKey(type) abort
             endif
         elseif &filetype ==# 'vim'
             if l:runMode
-                source %
+                exe a:type ==# 'visual' ? getreg('*') : 'source %'
             else
                 breakdel *
                 for l:item in l:breakPoint
@@ -129,6 +135,21 @@ function s:SwitchToEmptyBuftype()
     return 0
 endfunction
 
+let s:preTabNr = {'0': 1, '1': 1, 'cur': 0}
+function s:TabEvent(act)
+    if a:act == 'leave'
+        let s:preTabNr[s:preTabNr.cur] = tabpagenr()
+        let s:preTabNr.cur = !s:preTabNr.cur
+    elseif a:act == 'close'
+        try
+            exe s:preTabNr[s:preTabNr.cur].'tabnext'
+        catch 'E16'
+            $tabnext
+        endtry
+
+        let s:preTabNr[!s:preTabNr.cur] = s:preTabNr[s:preTabNr.cur]
+    endif
+endfunction
 
 " Specified range code formatting
 function! misc#CodeFormat() range
@@ -597,8 +618,8 @@ function! misc#NextItem(...)
 endfunction
 
 
-function! misc#Information(...) range
-    if get(a:000, 0, '') ==# 'visual'
+function! misc#Information(act) range
+    if a:act ==# 'visual'
         normal gv
     endif
 
@@ -608,7 +629,7 @@ function! misc#Information(...) range
     let l:lines = line('$')
     let l:count = wordcount()
 
-    if a:0 == 0
+    if a:act ==# 'simple'
         if isdirectory('.git')
             let l:info .= ' '.matchstr(system('git branch'), '\v(\* )\zs\w*').'    '
         endif
@@ -617,7 +638,7 @@ function! misc#Information(...) range
         let l:info .= ' '.l:cwd.'    '.' '.l:nr.': '.l:lines.'L, '.
                     \ l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'
         echo l:info.repeat(' ', &columns - strdisplaywidth(l:info.l:time) - 1).l:time
-    elseif a:1 ==# 'detail'
+    elseif a:act ==# 'detail'
         let l:info .= '  '.strftime('%Y %b %d %A %H:%M')."\n"
 
         if isdirectory('.git')
@@ -627,7 +648,7 @@ function! misc#Information(...) range
         echo l:info.'  '.l:cwd."\n".'  '.l:nr.'-'.expand('%')."\n".
                     \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
                     \ '  '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
-    elseif a:1 ==# 'visual'
+    elseif a:act ==# 'visual'
         exe 'normal '.visualmode()
         redraw
         echo 'Lines: '.(a:lastline-a:firstline+1).'/'.l:lines.'   '.

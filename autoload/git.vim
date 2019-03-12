@@ -140,20 +140,8 @@ endfunction
 
 function! git#Toggle()
     if exists('t:git_tabpageManager')
-        let l:gitTab = tabpagenr()
-
-        try
-            exe s:TabPrevious.'tabnext'
-        catch 'E121'
-            1tabnext
-        catch 'E16'
-            $tabnext
-        endtry
-
-        exe l:gitTab.'tabclose'
+        tabclose
     else
-        let s:TabPrevious = tabpagenr()
-
         try
             exe win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0].'tabnext'
             call git#Refresh()

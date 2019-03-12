@@ -93,7 +93,6 @@ function <SID>HelpDoc()
     echo
                 \ "Git log quick help !?\n".
                 \ "==================================================\n".
-                \ "    m:       git menu\n".
                 \ "    t:       tag commit            (git tag)\n".
                 \ "    \\rs:     reset commit          (git reset --hard)\n".
                 \ "    \\rv:     revert commit         (git revert)\n".

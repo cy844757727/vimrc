@@ -100,7 +100,7 @@ map! <C-j> <Esc><C-j>
 map! <C-k> <Esc><C-k>
 
 inoremap <C-\> <Esc>o
-nnoremap <silent> <C-g> :call misc#Information()<CR>
+nnoremap <silent> <C-g> :call misc#Information('simple')<CR>
 map! <C-g> <Esc><C-g>
 vnoremap <silent> <C-g> :call misc#Information('visual')<CR>
 " External open
@@ -149,12 +149,13 @@ map! <C-w> <Esc><C-w>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<CR>
-noremap <silent> <f5>   :call misc#F5FunctionKey('run')<CR>
+nnoremap <silent> <f5>   :call misc#F5FunctionKey('run')<CR>
+vnoremap <silent> <f5>   :call misc#F5FunctionKey('visual')<CR>
 noremap <silent> <C-f5> :call misc#F5FunctionKey('debug')<CR>
 noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
-map! <f5> <Esc><f5>
+"map! <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
 map! <C-S-f5> <Esc><S-f5>
 " BMBPSign.vim: bookmark, breakpoint
@@ -184,7 +185,7 @@ noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottombar('terminal')<CR>
 noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipy')<CR>
-noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'py3')<CR>
+noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'python3')<CR>
 noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
@@ -206,7 +207,7 @@ tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottom
 tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal')"])<CR>
 tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipy')"])<CR>
-tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','py3')"])<CR>
+tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','python3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
 
 " Window & tab switch
@@ -244,8 +245,9 @@ let g:Lf_DefaultMode = 'NameOnly'
 " === async.vim === {{{1
 let g:Async_TerminalType = {
             \ 'dc_shell': 'dc_shell',
-            \ 'py2': 'python',
-            \ 'py3': 'python3',
+            \ 'python':  'python',
+            \ 'python2': 'python2',
+            \ 'python3': 'python3',
             \ 'ipy': 'ipython3'
             \ }
 

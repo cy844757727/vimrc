@@ -17,9 +17,10 @@ nnoremap <buffer> <silent> a :call <SID>ApplyStash()<CR>
 nnoremap <buffer> <silent> c :call <SID>CheckOutBranch()<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
-nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch()<CR>
-nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(1)<CR>
-nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(2)<CR>
+nnoremap <buffer> <silent> \m :call <SID>Merge_Rebase_Branch(1)<CR>
+nnoremap <buffer> <silent> \M :call <SID>Merge_Rebase_Branch(3)<CR>
+nnoremap <buffer> <silent> \r :call <SID>Merge_Rebase_Branch(2)<CR>
+nnoremap <buffer> <silent> \R :call <SID>Merge_Rebase_Branch(4)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
 nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
 nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
@@ -153,19 +154,17 @@ function <SID>DeleteItem(...)
     endif
 endfunction
 
-function <SID>Merge_Rebase_Branch(...)
+function <SID>Merge_Rebase_Branch(flag)
     let l:str = matchstr(getline('.'), '^\s\+\w\+')
     let l:lin = search('^[RST]\w*:', 'n')
     if l:str != '' && (l:lin == 0 || l:lin > line('.'))
-        let l:op = a:0 == 0 ? 'merge ' . l:str : 
-                    \ a:1 == 1 ? 'rebase ' . l:str : 'rebase --continue '
-        let l:msg = system('git ' . l:op)
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            echo l:msg
+        let l:op = (a:flag % 2 ? 'merge ' : 'rebase ').(a:flag > 2 ? '--continue' : l:str) 
+        let l:msg =  system('git ' . l:op)
+
+        if l:msg !~ 'error:\|fatal:'
             call git#Refresh()
         endif
+        echo l:msg
     endif
 endfunction
 
@@ -200,12 +199,12 @@ function <SID>HelpDoc()
                 \ "Git branch quick help !?\n" .
                 \ "==================================================\n" .
                 \ "    <space>: echo\n" .
-                \ "    m:       git menu\n" .
                 \ "    a:       apply stash                (git stash apply)\n" .
                 \ "    c:       checkout branch            (git checkout)\n" .
                 \ "    \\d:      delete current item\n" .
                 \ "    \\D:      delete (force)\n" .
                 \ "    \\m:      merge to current branch    (git merge)\n" .
+                \ "    \\M:      merge to current branch    (git merge --continue)\n" .
                 \ "    \\r:      rebase to current branch   (git rebase)\n" .
                 \ "    \\R:      rebase continue            (git rebase --continue)\n" .
                 \ "    1234:    jump to 1234 window"
