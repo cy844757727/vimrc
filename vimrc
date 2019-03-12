@@ -223,8 +223,10 @@ tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5FunctionK
 tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('debug')"])<CR>
 tnoremap <silent> <S-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('task')"])<CR>
 
-tnoremap <silent> <PageDown> <C-w>N<PageDown>
-tnoremap <silent> <PageUp> <C-w>N<PageUp>
+tnoremap <silent> <PageDown> <C-w>N
+tnoremap <silent> <PageUp> <C-w>N
+tnoremap <silent> <C-e> <C-w>N
+tnoremap <silent> <C-y> <C-w>N
 " Buffer switch
 tnoremap <silent> <C-left>  <C-w>N:call execute(['normal a', "call async#TermSwitch('previous')"], '')<CR>
 tnoremap <silent> <C-right> <C-w>N:call execute(['normal a', "call async#TermSwitch('next')"], '')<CR>

@@ -85,6 +85,12 @@ function! misc#F5FunctionKey(type) abort
             else
                 call async#GdbStart(expand('%<'), l:breakPoint)
             endif
+        elseif &filetype ==# 'vim'
+            if l:runMode
+                source %
+            else
+                debug source %
+            endif
         endif
     endif
 endfunction
