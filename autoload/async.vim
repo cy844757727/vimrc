@@ -495,6 +495,16 @@ function! s:DbgUIInitalize(dbg, height, width)
     endif
 endfunction
 
+function <SID>DbgHelpDoc()
+    let [l:s, l:i] = ['  ', 1]
+
+    for [l:key, l:action] in items(t:dbg.map)
+        let l:s .= printf('%-15s', l:key.':'.l:action).(l:i % 3 ? '' : "\n  ")
+        let l:i += 1
+    endfor 
+
+    echo l:s
+endfunction
 
 " Creat maping for easy debuging
 function! s:DbgMaping()
@@ -511,6 +521,7 @@ function! s:DbgMaping()
             exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
         endfor
 
+        nnoremap <buffer> <silent> ? :call <SID>DbgHelpDoc()<CR>
         nnoremap <buffer> <silent> <space> :call <SID>DbgVarDispaly()<CR>
     endif
 
