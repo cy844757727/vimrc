@@ -89,6 +89,11 @@ function! misc#F5FunctionKey(type) abort
             if l:runMode
                 source %
             else
+                breakdel *
+                for l:item in l:breakPoint
+                    let l:list = split(l:item, '[ :]')
+                    exe 'breakadd file '.l:list[2].' '.l:list[1]
+                endfor
                 debug source %
             endif
         endif
