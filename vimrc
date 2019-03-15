@@ -243,7 +243,7 @@ let g:Lf_DefaultMode = 'NameOnly'
 
 " === async.vim === {{{1
 let g:Async_TerminalType = {
-            \ 'dc_shell' : 'dc_shell',
+            \ 'dc_shell': 'dc_shell',
             \ 'py2': 'python',
             \ 'py3': 'python3',
             \ 'ipy': 'ipython3'
@@ -307,15 +307,15 @@ endfunction
 "  TagBar 其他语言支持
 "    Makefile
 let g:tagbar_type_make = {
-            \ 'kinds':[
+            \ 'kinds': [
             \ 'm:macros',
             \ 't:targets'
             \ ]
             \ }
 "    Markdown
 let g:tagbar_type_markdown = {
-            \ 'ctagstype' : 'markdown',
-            \ 'kinds' : [
+            \ 'ctagstype': 'markdown',
+            \ 'kinds': [
             \ 'h:Heading_L1',
             \ 'i:Heading_L2',
             \ 'k:Heading_L3'
@@ -453,22 +453,22 @@ endfunction
 " === webdevicons.vim === {{{1
 " Extended icon
 let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
-            \ 'v'     : '', 'vh'    : '', 'vp'    : '', 'vt'    : '',
-            \ 'vg'    : '', 'vo'    : '', 'vhdl'  : '', 'vhd'   : '',
-            \ 'sv'    : '', 'svi'   : '', 'svh'   : '', 'svp'   : '',
-            \ 'sva'   : '',
-            \ 'mp3'   : '', 'aac'   : '', 'flac'  : '', 'ape'   : '',
-            \ 'ogg'   : '', 'mp4'   : '', 'avi'   : '', 'mkv'   : '',
-            \ 'jar'   : '', 'zip'   : '', 'rar'   : '', 'gzip'  : '',
-            \ 'gz'    : '', '7z'    : '', 'tar'   : '',
-            \ 'xls'   : '', 'xlsx'  : '', 'doc'   : '', 'docx'  : '',
-            \ 'ppt'   : '', 'pptx'  : '', 'text'  : '', 'pdf'   : '',
-            \ 'iso'   : '', 'git'   : '', 'help'  : '',
-            \ 'tags'  : '', 'tag'   : ''
+            \ 'v':     '', 'vh':   '', 'vp':   '', 'vt':   '',
+            \ 'vg':    '', 'vo':   '', 'vhdl': '', 'vhd':  '',
+            \ 'sv':    '', 'svi':  '', 'svh':  '', 'svp':  '',
+            \ 'sva':   '',
+            \ 'mp3':   '', 'aac':  '', 'flac': '', 'ape':  '',
+            \ 'ogg':   '', 'mp4':  '', 'avi':  '', 'mkv':  '',
+            \ 'jar':   '', 'zip':  '', 'rar':  '', 'gzip': '',
+            \ 'gz':    '', '7z':   '', 'tar':  '',
+            \ 'xls':   '', 'xlsx': '', 'doc':  '', 'docx': '',
+            \ 'ppt':   '', 'pptx': '', 'text': '', 'pdf':  '',
+            \ 'iso':   '', 'git':  '', 'help': '',
+            \ 'tags':  '', 'tag':  ''
             \ }
 
 let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
-            \ '.tags' : '', '.tag'  : ''
+            \ '.tags': '', '.tag': ''
             \ }
 
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''

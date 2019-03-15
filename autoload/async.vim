@@ -26,10 +26,10 @@ let s:displayIcon = {
 " Default terminal option
 let s:termPrefix = '!Terminal'
 let s:termOption = {
-            \ 'term_kill': 'kill',
+            \ 'term_kill':   'kill',
             \ 'term_finish': 'close',
-            \ 'stoponexit': 'term',
-            \ 'norestore': 1
+            \ 'stoponexit':  'term',
+            \ 'norestore':   1
             \ }
 
 " Default terminal type
@@ -180,9 +180,9 @@ function! async#JobRun(bang, cmd) abort
 
     let l:job = job_start(a:cmd, {
                 \ 'exit_cb': function('s:JobOnExit'),
-                \ 'in_io': 'null',
-                \ 'out_io': 'null',
-                \ 'err_io': 'null'
+                \ 'in_io':   'null',
+                \ 'out_io':  'null',
+                \ 'err_io':  'null'
                 \ })
 
     " Record a job
@@ -254,13 +254,13 @@ endfunction
 let s:dbgShared = {}
 let s:dbg = {
             \ 'id': 0, 'sign': {}, 'tempMsg': '', 'map': {
-            \ 'C': 'condition', 'D': 'disable',   'E': 'enable',
-            \ 'B': 'clear',     'b': 'break',     '<CR>': ' ',
-            \ 'c': 'continue',  's': 'step',      'n': 'next',
-            \ 'p': 'print',     'R': 'run',       'i': 'send',
+            \ 'C': 'condition', 'D': 'disable',   'E':  'enable',
+            \ 'B': 'clear',     'b': 'break',     'r':  'return',
+            \ 'c': 'continue',  's': 'step',      'n':  'next',
+            \ 'p': 'print',     'R': 'run',       'i':  'send',
             \ 'v': 'display',   'V': 'undisplay', '\d': '_undisplay',
-            \ 'k': 'up',        'j': 'down',      'q': 'quit',
-            \ 'r': 'return'}
+            \ 'k': 'up',        'j': 'down',      'q':  'quit',
+            \ '<CR>': ' '}
             \ }
 
 function! s:dbg.sendCmd(cmd, args, ...) abort
