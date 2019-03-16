@@ -173,17 +173,17 @@ let s:maxJob = 20
 
 
 " Cmd: list or string
-function! async#JobRun(bang, cmd) abort
+function! async#JobRun(bang, cmd, ...) abort
     if len(s:asyncJob) > s:maxJob
         return
     endif
 
-    let l:job = job_start(a:cmd, {
+    let l:job = job_start(a:cmd, extend({
                 \ 'exit_cb': function('s:JobOnExit'),
                 \ 'in_io':   'null',
                 \ 'out_io':  'null',
                 \ 'err_io':  'null'
-                \ })
+                \ } , get(a:000, 0, {})))
 
     " Record a job
     if job_status(l:job) ==# 'run'
@@ -319,11 +319,15 @@ function! async#RunScript(file) abort
     if a:file ==# 'visual'
         let l:interpreter = matchstr(l:interpreter, '^\S*')
         let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
-        call term_sendkeys(async#TermToggle('on', l:cmd), trim(getreg('*'), "\n")."\n")
+        call term_sendkeys(async#TermToggle('on', l:cmd), s:StrPreModify(getreg('*'))."\n")
     else
         call term_sendkeys(async#TermToggle('on', s:shell),
                     \ "clear\n".l:interpreter.' '.shellescape(l:file)."\n")
     endif
+endfunction
+
+function s:StrPreModify(str)
+    return join(split(a:str, '\v\n(\s*\n)*'), "\n")."\n"
 endfunction
 
 
@@ -454,7 +458,6 @@ function! s:DbgScriptAnalyze(file, breakPoint)
 
     return l:dbg
 endfunction
-
 
 " Configure new tabpage for debug
 " and set t:dbg variable

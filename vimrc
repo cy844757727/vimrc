@@ -62,7 +62,7 @@ augroup END
 
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
-command! UTags :Async! ctags -R -f .tags
+command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=? Task :exe get(empty('<args>') ? g: : <args>:, 'task', 'echo')
@@ -74,6 +74,7 @@ command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Avdel :Async vdel -lib work -all
+command! -nargs=? -range -complete=tag Ag :call misc#FindRef('<args>')
 
 "快捷键映射===================== {{{1
 " 括号引号自动补全
@@ -122,6 +123,7 @@ function! Vimrc_leader(cmd)
     call setpos("''", l:save_pos)
 endfunction
 
+nnoremap <silent> \ag :call misc#FindRef('(?<=\\W)'.expand('<cword>').'(?=\\W)')<CR>
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>

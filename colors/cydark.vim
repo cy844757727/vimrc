@@ -91,6 +91,7 @@ call s:HI('Folded', ['#c7ad57'], ['#242323'])
 call s:HI('FoldColumn', ['#c7ad57'])
 
 hi! link CursorLineNr LineNr
+hi! link qfLineNr Function
 " === TabLine ===
 call s:HI('TabLine', s:none, ['#444444', 238])
 call s:HI('TabLinesel', s:none, s:none, 'bold')

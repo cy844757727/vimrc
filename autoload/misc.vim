@@ -102,6 +102,34 @@ function misc#F5Complete(L, C, P)
 endfunction
 
 
+let s:fileFilter = {
+            \ 'vim': '-G .*vim$ ',
+            \ 'python': '-G .*py$ ',
+            \ 'c': '-G .*(c|cpp)$ ',
+            \ 'cpp': '-G .*(c|cpp)$ '
+            \ }
+
+function misc#FindRef(str) range
+    let l:type = &filetype
+    call async#TermToggle('off')
+    exe 'copen '.g:BottomWinHeight
+    call setqflist([], 'r')
+    let l:str = empty(a:str) ? '(?<=\\W)'.getreg('*').'(?=\\W)' : a:str
+    let s:agTitle = l:str =~ '\v^\(' ? l:str[8:-8] : l:str
+    let l:op = '-i --nocolor '.(l:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
+
+    let l:job = job_start('ag '.l:op.l:str, {
+                \ 'in_io': 'null',
+                \ 'out_io': 'pipe',
+                \ 'out_mode': 'nl',
+                \ 'out_cb': function('s:MsgGather')
+                \ })
+endfunction
+
+function s:MsgGather(job, msg)
+    call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': 'FindRef: '.s:agTitle})
+endfunction
+
 " Switch to buffer with empty buftype
 function s:SwitchToEmptyBuftype()
     if empty(&buftype)
