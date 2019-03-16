@@ -184,7 +184,7 @@ noremap <silent> <C-f10>   :call misc#ToggleBottombar('quickfix', 'book')<CR>
 noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottombar('terminal')<CR>
-noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipy')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipython3')<CR>
 noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'python3')<CR>
 noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
@@ -206,7 +206,7 @@ tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottom
 tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','todo')"])<CR>
 tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal')"])<CR>
-tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipy')"])<CR>
+tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipython3')"])<CR>
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','python3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
 
@@ -243,13 +243,11 @@ let g:termdebug_wide = 1
 let g:Lf_DefaultMode = 'NameOnly'
 
 " === async.vim === {{{1
-let g:Async_TerminalType = {
-            \ 'dc_shell': 'dc_shell',
-            \ 'python':  'python',
-            \ 'python2': 'python2',
-            \ 'python3': 'python3',
-            \ 'ipy': 'ipython3'
-            \ }
+let g:Async_TerminalType = [
+            \ 'python3',  'python2',  'python',
+            \ 'ipython3', 'ipython2', 'ipython',
+            \ 'dc_shell'
+            \ ]
 
 " === Netrw-NERDTree === {{{1
 let g:netrw_dirhistmax=0

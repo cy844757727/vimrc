@@ -60,54 +60,45 @@ function! misc#F5FunctionKey(type) abort range
         else
             AsyncRun vlib work && vmap work work && vlog -work work %
         endif
-    else
-        " Compile, Run, Debug
+    elseif a:type ==# 'run'
+        update
+        if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+            cclose
+            call async#RunScript(expand('%'))
+        elseif !empty(glob('[mM]ake[fF]ile'))
+            AsyncRun make
+        elseif index(['c', 'cpp'], &ft) != -1
+            AsyncRun g++ -Wall -O0 -g3 % -o %<
+        elseif &filetype ==# 'vim'
+            source %
+        endif
+    elseif a:type ==# 'debug'
         update
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
-        let l:runMode = get({'run': 1, 'debug': 0, 'visual': 2, 'reverse': !empty(l:breakPoint)},
-                    \ a:type, empty(l:breakPoint))
 
-        if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
-            " script language
-            if l:runMode
-                cclose
-                if a:type ==# 'visual'
-                    call async#RunScript('visual')
-                else
-                    call async#RunScript(expand('%'))
-                endif
-            else
-                call async#DbgScript(expand('%'), l:breakPoint)
-            endif
-        elseif filereadable('makefile') || filereadable('Makefile')
-            if l:runMode
-                AsyncRun make
-            else
-                call async#GdbStart('', l:breakPoint)
-            endif
-        elseif index(['c', 'cpp'], &ft) != -1
-            if l:runMode
-                AsyncRun g++ -Wall -O0 -g3 % -o %<
-            else
-                call async#GdbStart(expand('%<'), l:breakPoint)
-            endif
+        if index(['sh', 'python', 'perl'], &ft) != -1
+            call async#DbgScript(expand('%'), l:breakPoint)
+        elseif !empty(glob('[mM]ake[fF]ile')) || index(['c', 'cpp'], &ft) != -1
+            call async#GdbStart(expand('%<'), l:breakPoint)
         elseif &filetype ==# 'vim'
-            if l:runMode
-                exe a:type ==# 'visual' ? getreg('*') : 'source %'
-            else
-                breakdel *
-                for l:item in l:breakPoint
-                    let l:list = split(l:item, '[ :]')
-                    exe 'breakadd file '.l:list[2].' '.l:list[1]
-                endfor
-                debug source %
-            endif
+            breakdel *
+            for l:item in l:breakPoint
+                let l:list = split(l:item, '[ :]')
+                exe 'breakadd file '.l:list[2].' '.l:list[1]
+            endfor
+            debug source %
+        endif
+    elseif a:type ==# 'visual'
+        if index(['sh', 'python', 'ruby'], &ft) != -1
+            call async#RunScript('visual')
+        elseif &filetype ==# 'vim'
+            exe getreg('*')
         endif
     endif
 endfunction
 
 function misc#F5Complete(L, C, P)
-    return "run\ndebug\nreverse\ntask"
+    return "run\ndebug\nvisual\ntask"
 endfunction
 
 
@@ -770,9 +761,7 @@ function! misc#ToggleSidebar(...)
             TagbarClose
             NERDTreeClose
         endif
-    elseif g:tagbar_vertical > 0 ||
-                \ (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
-                \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+    elseif g:tagbar_vertical > 0 || (g:tagbar_left != (g:NERDTreeWinPos == 'right'))
         if l:statue == 0
             call s:ToggleTagbar()
         elseif l:statue == 1
@@ -795,9 +784,7 @@ function! s:ToggleNERDTree()
     if bufwinnr('NERD_tree') != -1
         NERDTreeClose
     elseif bufwinnr('Tagbar') != -1
-        if g:tagbar_vertical > 0 ||
-                    \ (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
-                    \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+        if g:tagbar_vertical > 0 || (g:tagbar_left != (g:NERDTreeWinPos == 'right'))
             TagbarClose
         endif
 
@@ -832,8 +819,7 @@ function! s:ToggleTagbar()
         TagbarOpen
         call win_gotoid(l:id)
     else
-        if (g:tagbar_left == 1 && g:NERDTreeWinPos == 'left') ||
-                    \ (g:tagbar_left == 0 && g:NERDTreeWinPos == 'right')
+        if g:tagbar_left != (g:NERDTreeWinPos == 'right')
             NERDTreeClose
         endif
         TagbarOpen

@@ -22,9 +22,12 @@ let s:displayIcon = {
             \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
             \ }
 
-" ""
+" Default terminal type
+let s:shell = fnamemodify(&shell, ':t')
+let s:termType = [s:shell]
+let s:termPrefix = '!Term'
+
 " Default terminal option
-let s:termPrefix = '!Terminal'
 let s:termOption = {
             \ 'term_kill':   'kill',
             \ 'term_finish': 'close',
@@ -32,19 +35,10 @@ let s:termOption = {
             \ 'norestore':   1
             \ }
 
-" Default terminal type
-let s:shell = fnamemodify(&shell, ':t')
-let s:termType = {
-            \ s:shell: s:shell,
-            \ s:shell.'1': s:shell,
-            \ s:shell.'2': s:shell,
-            \ s:shell.'3': s:shell,
-            \ s:shell.'4': s:shell,
-            \ s:shell.'5': s:shell,
-            \ s:shell.'6': s:shell,
-            \ s:shell.'7': s:shell,
-            \ s:shell.'8': s:shell,
-            \ s:shell.'9': s:shell
+" Specify an interactive interpreter for a type
+let s:interactive = {
+            \ 'sh': s:shell,
+            \ 'ruby': 'irb'
             \ }
 
 " Extend terminal type & icon
@@ -56,11 +50,14 @@ if exists('g:Async_displayIcon')
     call extend(s:displayIcon, g:Async_displayIcon)
 endif
 
+if exists('g:Async_interactive')
+    call extend(s:interactive, g:Async_interactive)
+endif
 
 " Switch embedded terminal {{{2
-" Args: action, type, postCmd
+" Args: action, cmd, postCmd
 " Action: on, off, toggle (default: toggle)
-" Type: specified by s:termType (default: s:shell)
+" Cmd: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd after starting a terminal
 function! async#TermToggle(...) abort
     " Ensure starting insert mode
@@ -69,34 +66,37 @@ function! async#TermToggle(...) abort
     endif
 
     " Default variables
-    let [l:action, l:type, l:name, l:postCmd] = ['toggle', s:shell, s:termPrefix, '']
+    let [l:action, l:cmd, l:name, l:postCmd] =
+                \ ['toggle', s:shell, s:termPrefix.': '.s:shell.' ', '']
 
     " Configure variables
     for l:i in range(len(a:000))
         if index(['toggle', 'on', 'off'], a:000[l:i]) != -1
             let l:action = a:000[l:i]
-        elseif index(keys(s:termType), a:000[l:i]) != -1
-            let l:type = a:000[l:i]
-            let l:name = s:termPrefix . get(s:displayIcon, l:type, ': '.l:type.' ')
+        elseif index(s:termType, a:000[l:i]) != -1
+            let l:cmd = a:000[l:i]
+            let l:name = s:termPrefix . get(s:displayIcon, l:cmd, ': '.l:cmd.' ')
         elseif a:000[l:i]
-            let l:type = a:000[l:i] + (a:000[l:i] > 0 ? 0 : 10)
-            let l:name = s:termPrefix . get(s:displayIcon, l:type, ' ')
-            let l:type = s:shell.l:type
+            let l:cmd = s:shell
+            let l:num = a:000[l:i] + (a:000[l:i] > 0 ? 0 : 10)
+            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
         else
             let l:postCmd = join(map(copy(a:000[l:i:]), "substitute(v:val, ' ', '\\\\ ', 'g')"), ' ')
             break
         endif
     endfor
 
-    let l:cmd = s:termType[l:type]
     let l:winnr = bufwinnr(l:name)
     let l:bufnr = bufnr(l:name)
+    let l:other = bufwinnr(s:termPrefix)
 
-    if l:winnr != -1
+    if l:winnr != -1 
         exe l:winnr.(l:action ==# 'on' ? 'wincmd w' : 'hide')
+    elseif l:name ==# s:termPrefix.': '.s:shell.' ' && l:other != -1
+        " For default key always switch terminal window
+        exe l:other.'hide'
     elseif l:action !=# 'off'
         " Hide other terminal
-        let l:other = bufwinnr(s:termPrefix)
         if l:other != -1
             exe l:other.'hide'
         endif
@@ -317,7 +317,9 @@ function! async#RunScript(file) abort
     endif
 
     if a:file ==# 'visual'
-        call term_sendkeys(async#TermToggle('on', l:interpreter), trim(getreg('*'))."\n")
+        let l:interpreter = matchstr(l:interpreter, '^\S*')
+        let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
+        call term_sendkeys(async#TermToggle('on', l:cmd), trim(getreg('*'), "\n")."\n")
     else
         call term_sendkeys(async#TermToggle('on', s:shell),
                     \ "clear\n".l:interpreter.' '.shellescape(l:file)."\n")

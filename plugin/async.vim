@@ -30,7 +30,7 @@ function! Term_completeFun(L, C, P)
         endif
     endfor
 
-    return getcompletion(a:L.'*', 'shellcmd')
+    return filter(copy(g:Async_TerminalType), "v:val =~ '^".a:L."'") + getcompletion(a:L.'*', 'shellcmd')
 endfunction
 
 
