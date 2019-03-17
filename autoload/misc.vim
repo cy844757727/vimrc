@@ -90,6 +90,7 @@ function! misc#F5FunctionKey(type) abort range
         endif
     elseif a:type ==# 'visual'
         if index(['sh', 'python', 'ruby'], &ft) != -1
+            cclose
             call async#RunScript('visual')
         elseif &filetype ==# 'vim'
             exe getreg('*')
@@ -109,25 +110,44 @@ let s:fileFilter = {
             \ 'cpp': '-G .*(c|cpp)$ '
             \ }
 
-function misc#FindRef(str) range
+function misc#FindRef(str) range abort
     let l:type = &filetype
-    call async#TermToggle('off')
-    exe 'copen '.g:BottomWinHeight
-    call setqflist([], 'r')
+    if !exists('g:BMBPSign_Output')
+        call async#TermToggle('off')
+        exe 'copen '.g:BottomWinHeight
+        call setqflist([], 'r')
+    endif
     let l:str = empty(a:str) ? '(?<=\\W)'.getreg('*').'(?=\\W)' : a:str
     let s:agTitle = l:str =~ '\v^\(' ? l:str[8:-8] : l:str
     let l:op = '-i --nocolor '.(l:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
+    let s:refDict = {'title': '[ag]\ '.s:agTitle, 'mode': 'w', 'content': {}}
 
     let l:job = job_start('ag '.l:op.l:str, {
                 \ 'in_io': 'null',
                 \ 'out_io': 'pipe',
                 \ 'out_mode': 'nl',
-                \ 'out_cb': function('s:MsgGather')
+                \ 'out_cb': function('s:MsgGather'),
+                \ 'exit_cb': function('s:AgOnExist')
                 \ })
 endfunction
 
-function s:MsgGather(job, msg)
-    call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': 'FindRef: '.s:agTitle})
+function s:AgOnExist(job, status)
+    if exists('g:BMBPSign_Output')
+        call infoWin#Toggle(s:refDict)
+    endif
+endfunction
+
+function! s:MsgGather(job, msg) abort
+    if exists('g:BMBPSign_Output')
+        let l:list = split(a:msg, ':')
+        let l:file = fnamemodify(l:list[0], ':.')
+        if !has_key(s:refDict.content, l:file)
+            let s:refDict.content[l:file] = []
+        endif
+        let s:refDict.content[l:file] += [l:list[1].': '.trim(join(l:list[2:], ':'))]
+    else
+        call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': 'FindRef: '.s:agTitle})
+    endif
 endfunction
 
 " Switch to buffer with empty buftype
@@ -868,6 +888,8 @@ function! misc#ToggleBottombar(winType, ...)
             call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
         elseif l:type == 'todo'
             call BMBPSign#SetQfList('TodoList', 'todo')
+        elseif bufwinnr('infoWin') != -1
+            exe bufwinnr('infoWin').'hide'
         elseif getqflist({'winid': 1}).winid == 0
             exe 'copen '.get(g:, 'BottomWinHeight', 15)
         else
@@ -875,6 +897,9 @@ function! misc#ToggleBottombar(winType, ...)
         endif
     elseif a:winType == 'terminal'
         cclose
+        if bufwinnr('infoWin') != -1
+            exe bufwinnr('infoWin').'hide'
+        endif
         call async#TermToggle('toggle', l:type)
     endif
 endfunction

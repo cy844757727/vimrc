@@ -356,6 +356,7 @@ let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 
 " === BMBPSign.vim === {{{1
+let g:BMBPSign_Output = 1
 let g:BMBPSign_SpecialBuf = {
             \ 'NERD_tree': 'bw|NERDTree',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'

@@ -747,6 +747,38 @@ function s:QfListSet(title, types)
 endfunction
 
 
+function s:InfoWinSet(title, types)
+    let l:dict = {'title': a:title, 'mode': 'w', 'content': {}}
+    let l:signPlace = execute('sign place')
+
+    for l:type in a:types
+        for l:sign in get(s:signVec, l:type, [])
+            let l:line = matchlist(l:signPlace,
+                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+
+            if empty(l:line) || !filereadable(l:sign.file)
+                continue
+            elseif !executable('sed') && !bufloaded(l:sign.file)
+                exe '0vsplit +hide '.l:sign.file
+            endif
+
+            let l:file = fnamemodify(l:sign.file, ':.')
+            if !has_key(l:dict.content, l:file)
+                let l:dict.content[l:file] = []
+            endif
+
+            let l:dict.content[l:file] += [
+                        \ l:line[1].': '.trim(executable('sed') ? 
+                        \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
+                        \ getbufline(l:sign.file, l:line[1])[0]).
+                        \ '    [Id:'.l:sign.id.(empty(l:sign.attr) ? '' : '  Attr:'.l:sign.attr).']'
+                        \ ]
+        endfor
+    endfor
+
+    call infoWin#Toggle(l:dict)
+endfunction
+
 " Update quickfix when sign changes
 function s:QfListUpdate(types)
     let l:group = tolower(getqflist({'title': 1}).title)
@@ -985,7 +1017,12 @@ function BMBPSign#SetQfList(...)
     let l:group = tolower(a:1)
     let l:types = a:0 > 1 ? a:000[1:] : get(s:typesGroup, l:group, [])
 
-    if !empty(l:types)
+    if empty(l:types)
+        return
+    elseif exists('g:BMBPSign_Output')
+        cclose
+        call s:InfoWinSet(a:1, l:types)
+    else
         call s:QfListSet(a:1, l:types)
         exe 'copen '.get(g:, 'BottomWinHeight', 15)
         setlocal nowrap
