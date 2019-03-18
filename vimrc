@@ -144,10 +144,8 @@ imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
 noremap <silent> <C-l>  :redraw!<CR>
-noremap <silent> <C-w>  :close<CR>
 noremap <silent> <S-t>  :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 map! <C-l> <Esc><C-l>
-map! <C-w> <Esc><C-w>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<CR>

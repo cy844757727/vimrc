@@ -21,7 +21,15 @@ nnoremap <silent> <buffer> e :call <SID>Open('edit')<CR>
 nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
+nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
+function! <SID>MaxMin()
+    if winheight(0) == get(g:, 'BottomWinHeight', 15)
+        resize
+    else
+        exe 'resize '.get(g:, 'BottomWinHeight', 15)
+    endif
+endfunction
 
 function! <SID>Open(way, ...)
     try
