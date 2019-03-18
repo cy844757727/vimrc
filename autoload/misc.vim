@@ -120,7 +120,7 @@ function misc#FindRef(str) range abort
     let l:str = empty(a:str) ? '(?<=\\W)'.getreg('*').'(?=\\W)' : a:str
     let s:agTitle = l:str =~ '\v^\(' ? l:str[8:-8] : l:str
     let l:op = '-i --nocolor '.(l:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
-    let s:refDict = {'title': '[ag]\ '.s:agTitle, 'mode': 'w', 'content': {}}
+    let s:refDict = {'title': ' '.s:agTitle, 'mode': 'w', 'content': {}}
 
     let l:job = job_start('ag '.l:op.l:str, {
                 \ 'in_io': 'null',
@@ -146,7 +146,7 @@ function! s:MsgGather(job, msg) abort
         endif
         let s:refDict.content[l:file] += [l:list[1].': '.trim(join(l:list[2:], ':'))]
     else
-        call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': 'FindRef: '.s:agTitle})
+        call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': ' '.s:agTitle})
     endif
 endfunction
 
@@ -749,6 +749,7 @@ function! misc#EditFile(file, ...)
     endif
 
     let l:file = fnamemodify(a:file, ':p')
+    let l:way = get(a:000, 0, 'edit')
 
     for l:tab in range(1, tabpagenr('$'))
         for l:win in range(1, tabpagewinnr(l:tab, '$'))
@@ -757,13 +758,17 @@ function! misc#EditFile(file, ...)
             if index(l:var.list, l:file) != -1
                 exe l:tab.'tabnext'
                 exe l:win.'wincmd w'
-                exe 'buffer '.l:file
+                if l:file !~? expand('%') || l:way !=# 'edit'
+                    exe 'buffer '.l:file
+                endif
                 return
             endif
         endfor
     endfor
 
-    exe get(a:000, 0, 'edit').' '.a:file
+    if l:file !~? expand('%')
+        exe l:way.' '.a:file
+    endif
 endfunction
 
 " ############### 窗口相关 ######################################
@@ -883,11 +888,11 @@ function! misc#ToggleBottombar(winType, ...)
         call async#TermToggle('off')
 
         if l:type == 'book'
-            call BMBPSign#SetQfList('BookMark', 'book')
+            call BMBPSign#SetQfList(' BookMark', 'book')
         elseif l:type == 'break'
-            call BMBPSign#SetQfList('BreakPoint', 'break', 'tbreak')
+            call BMBPSign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
         elseif l:type == 'todo'
-            call BMBPSign#SetQfList('TodoList', 'todo')
+            call BMBPSign#SetQfList(' TodoList', 'todo')
         elseif bufwinnr('infoWin') != -1
             exe bufwinnr('infoWin').'hide'
         elseif getqflist({'winid': 1}).winid == 0

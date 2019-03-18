@@ -13,10 +13,10 @@ nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> <2-leftmouse> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> t :call <SID>Open('tabedit')<CR>
 nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'big')<CR>
-nnoremap <silent> <buffer> s :call <SID>Open('split')<CR>
-nnoremap <silent> <buffer> S :call <SID>Open('split', 'big')<CR>
-nnoremap <silent> <buffer> v :call <SID>Open('vsplit')<CR>
-nnoremap <silent> <buffer> V :call <SID>Open('vsplit', 'big')<CR>
+nnoremap <silent> <buffer> s :call <SID>Open('bel split')<CR>
+nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'big')<CR>
+nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit')<CR>
+nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'big')<CR>
 nnoremap <silent> <buffer> e :call <SID>Open('edit')<CR>
 nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
@@ -46,7 +46,7 @@ function! <SID>Open(way, ...)
 
     if a:0 == 0 && exists('*misc#EditFile')
         call misc#EditFile(l:file, a:way)
-    else
+    elseif l:file !~? expand('%') || a:way !=# 'edit'
         exe a:way.' '.l:file
     endif
 
@@ -73,6 +73,6 @@ function s:GetLine()
         let l:nr -= 1
     endwhile
 
-    return [b:path.'/'.l:file, l:lin]
+    return [b:infoWin.path.'/'.l:file, l:lin]
 endfunction
 

@@ -10,13 +10,16 @@ function! s:Set(dict)
         let s:bufnr = bufnr('%')
     endif
 
-    let b:title = get(a:dict, 'title', 'information')
-    let b:path = getcwd()
     setlocal nonu nowrap winfixheight buftype=nofile nobuflisted
     setlocal foldcolumn=0 noreadonly modifiable foldmethod=indent
     let l:list = s:DisplayStr(a:dict.content, '')
     let l:mode = get(a:dict, 'mode', 'w')
-    exe 'setlocal statusline=\ InfoWin:\ '.b:title.'%=%l/'.len(l:list).'\ '
+    let b:infoWin = {'title': fnameescape(get(a:dict, 'title', '[InfoWin]')),
+                \ 'files': len(keys(a:dict.content)),
+                \ 'items': len(l:list) - len(keys(a:dict.content)),
+                \ 'path': getcwd()}
+    exe 'setlocal statusline=\ '.b:infoWin.title.
+                \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
     if l:mode ==# 'w'
         edit!
@@ -36,13 +39,14 @@ function! infoWin#Toggle(...)
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split infoWin'
         setlocal nonu nowrap winfixheight buftype=nofile filetype=infowin nobuflisted
         setlocal foldcolumn=0 noreadonly modifiable foldmethod=indent
-        setlocal statusline=\ InfoWin:\ 
+        setlocal statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
     elseif bufwinnr(s:bufnr) != -1
         exe bufwinnr(s:bufnr).'hide'
     else
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
-        exe 'setlocal statusline=\ InfoWin:\ '.get(b:, 'title', '').'%=%l/'.line('$').'\ '
+        exe 'setlocal statusline=\ '.b:infoWin.title.
+                    \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
     endif
 endfunction
 
