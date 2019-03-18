@@ -104,51 +104,61 @@ endfunction
 
 
 let s:fileFilter = {
-            \ 'vim': '-G .*vim$ ',
-            \ 'python': '-G .*py$ ',
-            \ 'c': '-G .*(c|cpp)$ ',
-            \ 'cpp': '-G .*(c|cpp)$ '
+            \ 'vim': '-G \\.vim$ ',
+            \ 'python': '-G \\.py$ ',
+            \ 'c': '-G \\.(c|cpp|h|hpp)$ ',
+            \ 'cpp': '-G \\.(c|cpp|h|hpp)$ ',
+            \ 'verilog': '-G \\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$',
+            \ 'systemverilog': '-G \\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
             \ }
 
-function misc#FindRef(str) range abort
+function misc#FindRef(str) abort
+    let l:title = a:str =~ '\v^\\' ? a:str[3:-4] : a:str
+
+    if l:title !~? '\S'
+        if exists('g:BMBPSign_Output')
+            call infoWin#Toggle('toggle')
+        endif
+        return
+    endif
+
     let l:type = &filetype
+    let l:op = '-i --nocolor '.(a:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
+    let l:option = {'in_io': 'null', 'out_io': 'pipe', 'out_mode': 'nl'}
+
     if !exists('g:BMBPSign_Output')
+        call infoWin#Toggle('off')
         call async#TermToggle('off')
         exe 'copen '.g:BottomWinHeight
-        call setqflist([], 'r')
-    endif
-    let l:str = empty(a:str) ? '(?<=\\W)'.getreg('*').'(?=\\W)' : a:str
-    let s:agTitle = l:str =~ '\v^\(' ? l:str[8:-8] : l:str
-    let l:op = '-i --nocolor '.(l:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
-    let s:refDict = {'title': ' '.s:agTitle, 'mode': 'w', 'content': {}}
-
-    let l:job = job_start('ag '.l:op.l:str, {
-                \ 'in_io': 'null',
-                \ 'out_io': 'pipe',
-                \ 'out_mode': 'nl',
-                \ 'out_cb': function('s:MsgGather'),
-                \ 'exit_cb': function('s:AgOnExist')
-                \ })
-endfunction
-
-function s:AgOnExist(job, status)
-    if exists('g:BMBPSign_Output')
-        call infoWin#Toggle(s:refDict)
-    endif
-endfunction
-
-function! s:MsgGather(job, msg) abort
-    if exists('g:BMBPSign_Output')
-        let l:list = split(a:msg, ':')
-        let l:file = fnamemodify(l:list[0], ':.')
-        if !has_key(s:refDict.content, l:file)
-            let s:refDict.content[l:file] = []
-        endif
-        let s:refDict.content[l:file] += [l:list[1].': '.trim(join(l:list[2:], ':'))]
+        call setqflist([], 'r', {'lines': [], 'title':  ' '.l:title})
+        let l:option.out_cb = function('s:MsgQfSet')
     else
-        call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg], 'title': ' '.s:agTitle})
+        let s:refDict = {'title': ' '.l:title, 'mode': 'w', 'content': {}}
+        let l:option.out_cb = function('s:MsgInfoWinSet')
+        let l:option.exit_cb = function('s:RefOnExistInfoWin')
     endif
+
+    let l:job = job_start('ag '.l:op.a:str, l:option)
 endfunction
+
+function s:RefOnExistInfoWin(job, status)
+    call infoWin#Set(s:refDict)
+endfunction
+
+function! s:MsgQfSet(job, msg)
+    call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg]})
+endfunction
+
+function! s:MsgInfoWinSet(job, msg) abort
+    let l:list = split(a:msg, ':')
+    let l:file = fnamemodify(l:list[0], ':.')
+    if !has_key(s:refDict.content, l:file)
+        let s:refDict.content[l:file] = []
+    endif
+    let s:refDict.content[l:file] += [l:list[1].': '.trim(join(l:list[2:], ':'))]
+endfunction
+
+
 
 " Switch to buffer with empty buftype
 function s:SwitchToEmptyBuftype()
@@ -893,18 +903,16 @@ function! misc#ToggleBottombar(winType, ...)
             call BMBPSign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
         elseif l:type == 'todo'
             call BMBPSign#SetQfList(' TodoList', 'todo')
-        elseif bufwinnr('infoWin') != -1
-            exe bufwinnr('infoWin').'hide'
-        elseif getqflist({'winid': 1}).winid == 0
-            exe 'copen '.get(g:, 'BottomWinHeight', 15)
-        else
+        elseif getqflist({'winid': 1}).winid != 0
             cclose
+        elseif infoWin#IsVisible()
+            call infoWin#Toggle('off')
+        else
+            exe 'copen '.get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
         cclose
-        if bufwinnr('infoWin') != -1
-            exe bufwinnr('infoWin').'hide'
-        endif
+        call infoWin#Toggle('off')
         call async#TermToggle('toggle', l:type)
     endif
 endfunction

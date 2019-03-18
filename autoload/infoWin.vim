@@ -2,16 +2,21 @@
 "
 "
 
-function! s:Set(dict)
-    if exists('s:bufnr') && bufwinnr(s:bufnr) != -1
-        exe bufwinnr(s:bufnr).'wincmd w'
-    else
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split infoWin'
-        let s:bufnr = bufnr('%')
+function! infoWin#Set(dict)
+    if type(a:dict) !=# type({})
+        return
     endif
 
-    setlocal nonu nowrap winfixheight buftype=nofile nobuflisted
-    setlocal foldcolumn=0 noreadonly modifiable foldmethod=indent
+    if !bufexists(get(s:, 'bufnr', -1))
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
+        let s:bufnr = bufnr('%')
+    else
+        silent exe bufwinnr(s:bufnr) != -1 ?
+                    \ bufwinnr(s:bufnr).'wincmd w' :
+                    \ 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
+    endif
+
+    setlocal winfixheight noreadonly modifiable
     let l:list = s:DisplayStr(a:dict.content, '')
     let l:mode = get(a:dict, 'mode', 'w')
     let b:infoWin = {'title': fnameescape(get(a:dict, 'title', '[InfoWin]')),
@@ -19,7 +24,7 @@ function! s:Set(dict)
                 \ 'items': len(l:list) - len(keys(a:dict.content)),
                 \ 'path': getcwd()}
     exe 'setlocal statusline=\ '.b:infoWin.title.
-                \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
+                \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
     if l:mode ==# 'w'
         edit!
@@ -32,27 +37,26 @@ function! s:Set(dict)
 endfunction
 
 
-function! infoWin#Toggle(...)
-    if a:0 > 0
-        call s:Set(a:1)
-    elseif !exists('s:bufnr')
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split infoWin'
-        setlocal nonu nowrap winfixheight buftype=nofile filetype=infowin nobuflisted
-        setlocal foldcolumn=0 noreadonly modifiable foldmethod=indent
-        setlocal statusline=\ [InfoWin]
+function! infoWin#Toggle(act) abort
+    if bufwinnr(get(s:, 'bufnr', -1)) != -1
+        exe a:act == 'on' ? bufwinnr(s:bufnr).'wincmd w' : bufwinnr(s:bufnr).'hide'
+    elseif a:act ==# 'off'
+        return
+    elseif !bufexists(get(s:, 'bufnr', -1))
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
+        setlocal winfixheight readonly nomodifiable filetype=infowin statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
-    elseif bufwinnr(s:bufnr) != -1
-        exe bufwinnr(s:bufnr).'hide'
     else
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
-        exe 'setlocal statusline=\ '.b:infoWin.title.
-                    \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
+        silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
     endif
 endfunction
 
+function infoWin#IsVisible()
+    return bufwinnr(get(s:, 'bufnr', -1)) != -1
+endfunction
 
 let s:indent = '   '
-function! s:DisplayStr(content, indent)
+function! s:DisplayStr(content, indent) abort
     let l:list = []
     for [l:key, l:val] in items(a:content)
         let l:list += [a:indent.l:key]
@@ -63,7 +67,7 @@ function! s:DisplayStr(content, indent)
         elseif l:type == type([])
             let l:list += map(l:val, "'".a:indent.s:indent."'.v:val")
         else
-            let l:list += a:indent.s:indent.l:val
+            let l:list += [a:indent.s:indent.l:val]
         endif
     endfor
     return l:list

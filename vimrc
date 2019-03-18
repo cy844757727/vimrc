@@ -74,7 +74,7 @@ command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :AsyncRun make
 command! Avdel :Async vdel -lib work -all
-command! -nargs=? -range -complete=tag Ag :call misc#FindRef('<args>')
+command! -nargs=? -complete=tag Ag :call misc#FindRef('<args>')
 
 "快捷键映射===================== {{{1
 " 括号引号自动补全
@@ -123,7 +123,8 @@ function! Vimrc_leader(cmd)
     call setpos("''", l:save_pos)
 endfunction
 
-nnoremap <silent> \ag :call misc#FindRef('(?<=\\W)'.expand('<cword>').'(?=\\W)')<CR>
+nnoremap <silent> \ag :call misc#FindRef('\\b'.expand('<cword>').'\\b')<CR>
+vnoremap <silent> \ag :call misc#FindRef(getreg('*'))<CR>
 nnoremap <silent> \= :call misc#CodeFormat()<CR>
 vnoremap <silent> \= :call misc#CodeFormat()<CR>
 nnoremap <silent> \q :call misc#ReverseComment()<CR>

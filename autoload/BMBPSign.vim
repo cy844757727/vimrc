@@ -776,7 +776,7 @@ function s:InfoWinSet(title, types)
         endfor
     endfor
 
-    call infoWin#Toggle(l:dict)
+    call infoWin#Set(l:dict)
 endfunction
 
 " Update quickfix when sign changes

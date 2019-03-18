@@ -9,6 +9,8 @@ if exists("b:did_ftplugin_")
 endif
 let b:did_ftplugin_ = 1
 
+setlocal nonu nowrap buftype=nofile nobuflisted foldcolumn=0 foldmethod=indent
+
 nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> <2-leftmouse> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> t :call <SID>Open('tabedit')<CR>
@@ -31,7 +33,7 @@ function! <SID>MaxMin()
     endif
 endfunction
 
-function! <SID>Open(way, ...)
+function! <SID>Open(way, ...) abort
     try
         let [l:file, l:lin] = s:GetLine()
     catch
@@ -55,15 +57,16 @@ function! <SID>Open(way, ...)
 endfunction
 
 
-function s:GetLine()
+function s:GetLine() abort
     let l:line = getline('.')
     let l:indent = strdisplaywidth(matchstr(l:line, '\v^\s*'))
-    if l:indent == 0
+    let l:lin = matchstr(l:line, '\v^\s+\zs\d+\ze:')
+
+    if l:indent == 0 || empty(l:lin)
         return []
     endif
 
     let l:nr = line('.') - 1
-    let l:lin = matchstr(l:line, '\v\d+\ze:')
     while l:nr > 0
         let l:line = getline(l:nr)
         if strdisplaywidth(matchstr(l:line, '\v^\s*')) < l:indent
