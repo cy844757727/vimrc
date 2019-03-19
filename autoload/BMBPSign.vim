@@ -767,12 +767,12 @@ function s:InfoWinSet(title, types)
                 let l:dict.content[l:file] = []
             endif
 
-            let l:dict.content[l:file] += [
-                        \ l:line[1].': '.trim(executable('sed') ? 
+            let l:dict.content[l:file] += [printf('%-5s %s', l:line[1].':',
+                        \ (trim(executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
-                        \ getbufline(l:sign.file, l:line[1])[0]).
+                        \ getbufline(l:sign.file, l:line[1])[0])).
                         \ '    [Id:'.l:sign.id.(empty(l:sign.attr) ? '' : '  Attr:'.l:sign.attr).']'
-                        \ ]
+                        \ )]
         endfor
     endfor
 

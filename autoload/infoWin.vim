@@ -24,7 +24,7 @@ function! infoWin#Set(dict)
                 \ 'items': len(l:list) - len(keys(a:dict.content)),
                 \ 'path': getcwd()}
     exe 'setlocal statusline=\ '.b:infoWin.title.
-                \ '%=%l/'.len(l:list).'\ \ \ \ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
+                \ '%=\ %l/'.len(l:list).'%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
     if l:mode ==# 'w'
         edit!
@@ -55,7 +55,7 @@ function infoWin#IsVisible()
     return bufwinnr(get(s:, 'bufnr', -1)) != -1
 endfunction
 
-let s:indent = '   '
+let s:indent = '  '
 function! s:DisplayStr(content, indent) abort
     let l:list = []
     for [l:key, l:val] in items(a:content)

@@ -64,6 +64,7 @@ function! misc#F5FunctionKey(type) abort range
         update
         if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             cclose
+            call infoWin#Toggle('off')
             call async#RunScript(expand('%'))
         elseif !empty(glob('[mM]ake[fF]ile'))
             AsyncRun make
@@ -91,6 +92,7 @@ function! misc#F5FunctionKey(type) abort range
     elseif a:type ==# 'visual'
         if index(['sh', 'python', 'ruby'], &ft) != -1
             cclose
+            call infoWin#Toggle('off')
             call async#RunScript('visual')
         elseif &filetype ==# 'vim'
             exe getreg('*')
@@ -155,7 +157,7 @@ function! s:MsgInfoWinSet(job, msg) abort
     if !has_key(s:refDict.content, l:file)
         let s:refDict.content[l:file] = []
     endif
-    let s:refDict.content[l:file] += [l:list[1].': '.trim(join(l:list[2:], ':'))]
+    let s:refDict.content[l:file] += [printf('%-5s %s', l:list[1].':', trim(join(l:list[2:], ':')))]
 endfunction
 
 
@@ -605,6 +607,8 @@ function! misc#GetWebIcon(type, ...)
         endif
 
         return ''
+    elseif !empty(&buftype)
+        return ''
     elseif a:type == 'fileformat'
         if getbufvar(l:file, '&binary', 0)
             return ''
