@@ -99,9 +99,9 @@ call s:HI('TabLineFill', s:none)
 call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 
 " === Diff ===
-call s:HI('DiffAdd', s:none, ['#192920'])
+call s:HI('DiffAdd', s:none, ['#192020'])
 call s:HI('DiffChange', s:none, ['#20303a'])
-call s:HI('DiffDelete', ['#4f2525'], ['#4f2525'])
+call s:HI('DiffDelete', ['#502525'], ['#502525'])
 call s:HI('DiffText', s:none, ['#202020'])
 
 " === Msg ===
@@ -145,7 +145,7 @@ hi! link Title Conditional
 
 " === Plugin highlight ===
 " infoWin.vim
-hi! link InfoWinMatch Search
+call s:HI('InfoWinMatch', ['#c9a936'])
 
 " BMBPSign.vim
 call s:HI('BookMark', ['#cc7832'])

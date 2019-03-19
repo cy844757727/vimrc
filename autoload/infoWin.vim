@@ -8,12 +8,14 @@ function! infoWin#Set(dict)
     endif
 
     if !bufexists(get(s:, 'bufnr', -1))
+        call s:SwitchToEmptyBuf()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         let s:bufnr = bufnr('%')
+    elseif bufwinnr(s:bufnr) != -1
+        exe bufwinnr(s:bufnr).'wincmd w'
     else
-        silent exe bufwinnr(s:bufnr) != -1 ?
-                    \ bufwinnr(s:bufnr).'wincmd w' :
-                    \ 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
+        call s:SwitchToEmptyBuf()
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
     endif
 
     setlocal winfixheight noreadonly modifiable
@@ -47,10 +49,12 @@ function! infoWin#Toggle(act) abort
     elseif a:act ==# 'off'
         return
     elseif !bufexists(get(s:, 'bufnr', -1))
+        call s:SwitchToEmptyBuf()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         setlocal winfixheight readonly nomodifiable filetype=infowin statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
     else
+        call s:SwitchToEmptyBuf()
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
     endif
 endfunction
@@ -75,5 +79,24 @@ function! s:DisplayStr(content, indent) abort
         endif
     endfor
     return l:list
+endfunction
+
+function s:SwitchToEmptyBuf()
+    if empty(&buftype)
+        return 1
+    endif
+
+    wincmd w
+    let l:win = winnr('$')
+    while l:win > 0
+        if empty(&buftype)
+            return 1
+        endif
+
+        wincmd w
+        let l:win -= 1
+    endwhile
+
+    return 0
 endfunction
 

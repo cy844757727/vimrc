@@ -115,19 +115,19 @@ let s:fileFilter = {
             \ 'systemverilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
             \ }
 
-function! misc#Ag(str, ...) abort
-    if a:str !~? '\S'
+function! misc#Ag(str, word) abort
+    if a:str !~ '\S'
         if exists('g:BMBPSign_Output')
             call infoWin#Toggle('toggle')
         endif
         return
     endif
 
-    let l:type = &filetype
     let l:option = {'out_io': 'pipe', 'out_mode': 'nl'}
+    let l:type = a:str =~# '\v-\S+ ' ? 'none' : &filetype
 
     if exists('g:BMBPSign_Output')
-        let s:refDict = {'title': ' '.a:str, 'mode': 'w', 'content': {}, 'hi': a:str}
+        let s:refDict = {'title': ' '.a:str, 'mode': 'w', 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
         let l:option.out_cb = function('s:AgOnOut_Info')
         let l:option.exit_cb = function('s:AgOnExit_Info')
     else
@@ -138,14 +138,15 @@ function! misc#Ag(str, ...) abort
     endif
 
     " file filter, skip comment line and search string
-    let l:cmd = 'ag -i --nocolor --nogroup '.(
-                \ a:str !~# ' -G ' && has_key(s:fileFilter, l:type) ?
+    let l:cmd = 'ag --nocolor --nogroup '.(
+                \ has_key(s:fileFilter, l:type) ?
                 \ '-G '.s:fileFilter[l:type].' ' : ''
                 \ ).(
                 \ has_key(s:commentChar, l:type) ?
                 \ '^(?!\\s*'.fnameescape(s:commentChar[l:type]).').*' : ''
-                \ ).
-                \ fnameescape(a:0 > 0 ? '\b'.a:str.'\b' : a:str)
+                \ ).(
+                \ a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str
+                \ )
 
     call async#JobRun('!', l:cmd, l:option)
 endfunction
@@ -166,7 +167,6 @@ function! s:AgOnOut_Info(job, msg) abort
     endif
     let s:refDict.content[l:file] += [printf('%-5s %s', l:list[1].':', trim(join(l:list[2:], ':')))]
 endfunction
-
 
 
 " Switch to buffer with empty buftype

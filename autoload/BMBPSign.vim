@@ -771,7 +771,7 @@ function s:InfoWinSet(title, types)
                         \ (trim(executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
                         \ getbufline(l:sign.file, l:line[1])[0])).
-                        \ '    [Id:'.l:sign.id.(empty(l:sign.attr) ? '' : '  Attr:'.l:sign.attr).']'
+                        \ '    ['.l:sign.id.(empty(l:sign.attr) ? '' : ',  '.l:sign.attr).']'
                         \ )]
         endfor
     endfor
