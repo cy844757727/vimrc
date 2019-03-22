@@ -34,6 +34,10 @@ function! infoWin#Set(dict)
     endif
 
     setlocal readonly nomodifiable filetype=infowin
+
+    if has_key(a:dict, 'hi')
+        exe 'syn match InfoWinMatch /'.a:dict.hi.'/'
+    endif
 endfunction
 
 

@@ -173,22 +173,32 @@ let s:maxJob = 20
 
 
 " Cmd: list or string
-function! async#JobRun(bang, cmd, ...) abort
+function! async#JobRun(bang, cmd, option) abort
     if len(s:asyncJob) > s:maxJob
         return
     endif
 
-    let l:job = job_start(a:cmd, extend({
-                \ 'exit_cb': function('s:JobOnExit'),
-                \ 'in_io':   'null',
-                \ 'out_io':  'null',
-                \ 'err_io':  'null'
-                \ } , get(a:000, 0, {})))
+    let l:option = extend({
+                \ 'in_io':  'null',
+                \ 'out_io': 'null',
+                \ 'err_io': 'null'
+                \ }, a:option)
+
+    if has_key(l:option, 'exit_cb')
+        let l:FunRef = l:option.exit_cb
+    endif
+
+    let l:option.exit_cb = function('s:JobOnExit')
+    let l:job = job_start(a:cmd, l:option)
 
     " Record a job
     if job_status(l:job) ==# 'run'
         let l:id = matchstr(l:job, '\d\+')
         let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}
+
+        if exists('l:FunRef')
+            let s:asyncJob[l:id].fun = l:FunRef
+        endif
 
         if !empty(a:bang)
             let s:asyncJob[l:id].quiet = 1
@@ -207,6 +217,12 @@ function! s:JobOnExit(job, status)
     endif
 
     call execute(l:ex, '')
+    silent set statusline
+
+    if has_key(s:asyncJob[l:id], 'fun')
+        call s:asyncJob[l:id].fun(a:job, a:status)
+    endif
+
     unlet s:asyncJob[l:id]
 endfunction
 

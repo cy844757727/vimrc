@@ -144,6 +144,9 @@ hi! link Label Statement
 hi! link Title Conditional
 
 " === Plugin highlight ===
+" infoWin.vim
+hi! link InfoWinMatch Search
+
 " BMBPSign.vim
 call s:HI('BookMark', ['#cc7832'])
 call s:HI('TodoList', ['#619fc6'])

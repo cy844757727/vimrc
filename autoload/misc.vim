@@ -106,18 +106,17 @@ endfunction
 
 
 let s:fileFilter = {
-            \ 'vim': '-G \\.vim$ ',
-            \ 'python': '-G \\.py$ ',
-            \ 'c': '-G \\.(c|cpp|h|hpp)$ ',
-            \ 'cpp': '-G \\.(c|cpp|h|hpp)$ ',
-            \ 'verilog': '-G \\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$',
-            \ 'systemverilog': '-G \\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
+            \ 'vim': '\\.vim$',
+            \ 'python': '\\.py$',
+            \ 'c': '\\.(c|cpp|h|hpp)$',
+            \ 'cpp': '\\.(c|cpp|h|hpp)$',
+            \ 'perl': '\\.(pl|pm)$',
+            \ 'verilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$',
+            \ 'systemverilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
             \ }
 
-function misc#FindRef(str) abort
-    let l:title = a:str =~ '\v^\\' ? a:str[3:-4] : a:str
-
-    if l:title !~? '\S'
+function! misc#Ag(str, ...) abort
+    if a:str !~? '\S'
         if exists('g:BMBPSign_Output')
             call infoWin#Toggle('toggle')
         endif
@@ -125,33 +124,41 @@ function misc#FindRef(str) abort
     endif
 
     let l:type = &filetype
-    let l:op = '-i --nocolor '.(a:str !~# ' -G ' ? get(s:fileFilter, l:type, '') : '')
-    let l:option = {'in_io': 'null', 'out_io': 'pipe', 'out_mode': 'nl'}
+    let l:option = {'out_io': 'pipe', 'out_mode': 'nl'}
 
-    if !exists('g:BMBPSign_Output')
-        call infoWin#Toggle('off')
+    if exists('g:BMBPSign_Output')
+        let s:refDict = {'title': ' '.a:str, 'mode': 'w', 'content': {}, 'hi': a:str}
+        let l:option.out_cb = function('s:AgOnOut_Info')
+        let l:option.exit_cb = function('s:AgOnExit_Info')
+    else
         call async#TermToggle('off')
         exe 'copen '.g:BottomWinHeight
-        call setqflist([], 'r', {'lines': [], 'title':  ' '.l:title})
-        let l:option.out_cb = function('s:MsgQfSet')
-    else
-        let s:refDict = {'title': ' '.l:title, 'mode': 'w', 'content': {}}
-        let l:option.out_cb = function('s:MsgInfoWinSet')
-        let l:option.exit_cb = function('s:RefOnExistInfoWin')
+        call setqflist([], 'r', {'lines': [], 'title':  ' '.a:str})
+        let l:option.out_cb = function('s:AgOnOut_Qf')
     endif
 
-    let l:job = job_start('ag '.l:op.a:str, l:option)
+    " file filter, skip comment line and search string
+    let l:cmd = 'ag -i --nocolor --nogroup '.(
+                \ a:str !~# ' -G ' && has_key(s:fileFilter, l:type) ?
+                \ '-G '.s:fileFilter[l:type].' ' : ''
+                \ ).(
+                \ has_key(s:commentChar, l:type) ?
+                \ '^(?!\\s*'.fnameescape(s:commentChar[l:type]).').*' : ''
+                \ ).
+                \ fnameescape(a:0 > 0 ? '\b'.a:str.'\b' : a:str)
+
+    call async#JobRun('!', l:cmd, l:option)
 endfunction
 
-function s:RefOnExistInfoWin(job, status)
+function s:AgOnExit_Info(...)
     call infoWin#Set(s:refDict)
 endfunction
 
-function! s:MsgQfSet(job, msg)
+function! s:AgOnOut_Qf(job, msg)
     call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg]})
 endfunction
 
-function! s:MsgInfoWinSet(job, msg) abort
+function! s:AgOnOut_Info(job, msg) abort
     let l:list = split(a:msg, ':')
     let l:file = fnamemodify(l:list[0], ':.')
     if !has_key(s:refDict.content, l:file)
