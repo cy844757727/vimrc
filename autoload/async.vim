@@ -35,12 +35,6 @@ let s:termOption = {
             \ 'norestore':   1
             \ }
 
-" Specify an interactive interpreter for a type
-let s:interactive = {
-            \ 'sh': s:shell,
-            \ 'ruby': 'irb'
-            \ }
-
 " Extend terminal type & icon
 if exists('g:Async_TerminalType')
     call extend(s:termType, g:Async_TerminalType)
@@ -311,6 +305,12 @@ function! s:dbg.sendCmd(cmd, args, ...) abort
 endfunction
 
 
+" Specify an interactive interpreter for a type
+let s:interactive = {
+            \ 'sh': s:shell,
+            \ 'ruby': 'irb'
+            \ }
+
 function! async#RunScript(file) abort
     let l:file = a:file ==# 'visual' ? expand('%') : a:file
 
@@ -320,7 +320,8 @@ function! async#RunScript(file) abort
         exe '0vsplit +hide '.l:file
     endif
 
-    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(l:file))[:-2] :
+    let l:interpreter = matchstr(executable('sed') ?
+                \ system('sed -n 1p '.shellescape(l:file))[:-2] :
                 \ getbufline(l:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs.*$')
 
     " No #!, try to use filetype
@@ -335,15 +336,12 @@ function! async#RunScript(file) abort
     if a:file ==# 'visual'
         let l:interpreter = matchstr(l:interpreter, '^\S*')
         let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
-        call term_sendkeys(async#TermToggle('on', l:cmd), s:StrPreModify(getreg('*'))."\n")
+        call term_sendkeys(async#TermToggle('on', l:cmd),
+                    \ substitute(getreg('*'), '\v\n(\s*\n)+|\n?$', '\n', 'g')."\n")
     else
         call term_sendkeys(async#TermToggle('on', s:shell),
                     \ "clear\n".l:interpreter.' '.shellescape(l:file)."\n")
     endif
-endfunction
-
-function s:StrPreModify(str)
-    return join(split(a:str, '\v\n(\s*\n)*'), "\n")."\n"
 endfunction
 
 

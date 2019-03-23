@@ -26,11 +26,8 @@ nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
 function! <SID>MaxMin()
-    if winheight(0) == get(g:, 'BottomWinHeight', 15)
-        resize
-    else
-        exe 'resize '.get(g:, 'BottomWinHeight', 15)
-    endif
+    exe 'resize '.(winheight(0) != get(g:, 'BottomWinHeight', 15) ?
+                \ get(g:, 'BottomWinHeight', 15) : '')
 endfunction
 
 function! <SID>Open(way, ...) abort
@@ -40,11 +37,7 @@ function! <SID>Open(way, ...) abort
         return
     endtry
 
-    if get(a:000, 0, '') !=# 'keep'
-        quit
-    else
-        wincmd W
-    endif
+    exe get(a:000, 0, '') !=# 'keep' ? 'quit' : 'wincmd W'
 
     if a:0 == 0 && exists('*misc#EditFile')
         call misc#EditFile(l:file, a:way)

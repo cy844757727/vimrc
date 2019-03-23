@@ -748,7 +748,7 @@ endfunction
 
 
 function s:InfoWinSet(title, types)
-    let l:dict = {'title': a:title, 'mode': 'w', 'content': {}}
+    let l:dict = {'title': a:title, 'content': {}}
     let l:signPlace = execute('sign place')
 
     for l:type in a:types
@@ -767,12 +767,12 @@ function s:InfoWinSet(title, types)
                 let l:dict.content[l:file] = []
             endif
 
-            let l:dict.content[l:file] += [printf('%-5s %s', l:line[1].':',
-                        \ (trim(executable('sed') ? 
+            let l:dict.content[l:file] += [
+                        \ printf('%-5s %s   %s', l:line[1].':', (trim(executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
-                        \ getbufline(l:sign.file, l:line[1])[0])).
-                        \ '    ['.l:sign.id.(empty(l:sign.attr) ? '' : ',  '.l:sign.attr).']'
-                        \ )]
+                        \ getbufline(l:sign.file, l:line[1])[0])),
+                        \ '['.l:sign.id.(empty(l:sign.attr) ? '' : ',  '.l:sign.attr).']')
+                        \ ]
         endfor
     endfor
 

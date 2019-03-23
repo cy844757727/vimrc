@@ -100,8 +100,8 @@ call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 
 " === Diff ===
 call s:HI('DiffAdd', s:none, ['#192020'])
-call s:HI('DiffChange', s:none, ['#20303a'])
-call s:HI('DiffDelete', ['#502525'], ['#502525'])
+call s:HI('DiffChange', s:none, ['#1a2a35'])
+call s:HI('DiffDelete', ['#361a1a'], ['#361a1a'])
 call s:HI('DiffText', s:none, ['#202020'])
 
 " === Msg ===

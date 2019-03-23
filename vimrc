@@ -1,23 +1,22 @@
 " Basic configure ======================
 " """"""""""""""""""""""""""""""""""""""""""""
+" The following four lines are placed at the front 
+" so that there is no flash at startup
+syntax on
+set termguicolors
+colorscheme cydark
+filetype plugin indent on
 " set default options
 set nocompatible number noshowcmd splitright wildmenu ruler wrap
 set autoread autoindent autochdir noswapfile nobackup confirm
 set hlsearch ignorecase incsearch cursorline smarttab nospell
-set smartindent termguicolors
+set smartindent
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
 set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
-set foldtext=misc#FoldText()
-set tabline=%!misc#TabLine()
-set tags+=./.tags,.tags
-set shortmess=aoOtTcF
-set mousetime=1000
-set signcolumn=auto
-set viminfo=
-set bsdir=buffer
-set mouse=a
-set title titlestring=♦\ Vim
-set winminheight=0 winminwidth=0
+set foldtext=misc#FoldText() tabline=%!misc#TabLine()
+set shortmess=aoOtTcF mousetime=1000 signcolumn=auto
+set tags+=./.tags,.tags bsdir=buffer mouse=a viminfo=
+set title titlestring=\ Vim winminheight=0 winminwidth=0
 set fillchars=fold:\ ,diff:\ ,vert:│
 set completeopt=menu,menuone,noinsert,preview,noselect
 set diffopt=vertical,filler,foldcolumn:0,context:5
@@ -32,8 +31,7 @@ set errorformat=%f:%l:%c:\ %m
 "set errorformat+=**\ at\ %f(%l):\ %m
 "set errorformat+=**\ at\ %f(%l.%c):\ %m
 " Language & encode config
-set encoding=utf-8
-set fileformats=unix,dos,mac
+set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
@@ -43,9 +41,6 @@ set statusline+=%{misc#GetWebIcon('filetype')}\ %Y
 set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc}
 set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
-syntax on
-colorscheme cydark
-filetype plugin indent on
 " Global variables
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
@@ -66,7 +61,7 @@ command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=? Task :exe get(empty('<args>') ? g: : <args>:, 'task', 'echo')
-command! -nargs=* -range -complete=file Open :exe 'Async xdg-open '.(empty('<args>') ? getreg('*') : '<args>')
+command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
 command! -range -addr=tabs TN :<line1>tabnext
@@ -87,13 +82,8 @@ inoremap } <C-r>=Vimrc_ClosePair('}')<CR>
 inoremap " ""<Esc>i
 
 function! Vimrc_ClosePair(char)
-    if getline('.')[col('.') - 1] == a:char
-        return "\<Right>"
-    endif
-
-    return a:char
+    return getline('.')[col('.') - 1] == a:char ? "\<Right>" : a:char
 endfunction
-
 
 noremap <silent> <C-j> :call misc#NextItem('next')<CR>
 noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
@@ -109,6 +99,8 @@ nnoremap <silent> \cd :exe 'cd '.fnameescape(expand('%:h')).'\|pwd'<CR>
 nnoremap <silent> \od :Open .<CR>
 nnoremap <silent> \of :exe 'Open '.fnameescape(expand('%'))<CR>
 nnoremap <silent> \rf :exe 'Open '.fnameescape(expand('%:h'))<CR>
+vnoremap <silent> \op <Esc>:exe 'Async xdg-open '.getreg('*')<CR>
+nnoremap <silent> \op :exe 'Async xdg-open '.expand('<cWORD>')<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
@@ -125,13 +117,13 @@ endfunction
 
 nnoremap <silent> \ag :call misc#Ag(expand('<cword>'), 'word')<CR>
 vnoremap <silent> \ag :call misc#Ag(getreg('*'), '')<CR>
-nnoremap <silent> \= :call misc#CodeFormat()<CR>
-vnoremap <silent> \= :call misc#CodeFormat()<CR>
-nnoremap <silent> \q :call misc#ReverseComment()<CR>
-vnoremap <silent> \q :call misc#ReverseComment()<CR>
-nnoremap <silent> \h :call misc#HEXCovent()<CR>
-nnoremap <silent> \] :tag<CR>
-nnoremap <silent> \[ :pop<CR>
+nnoremap <silent> \=  :call misc#CodeFormat()<CR>
+vnoremap <silent> \=  :call misc#CodeFormat()<CR>
+nnoremap <silent> \q  :call misc#ReverseComment()<CR>
+vnoremap <silent> \q  :call misc#ReverseComment()<CR>
+nnoremap <silent> \h  :call misc#HEXCovent()<CR>
+nnoremap <silent> \]  :tag<CR>
+nnoremap <silent> \[  :pop<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
 
 nnoremap <C-@> :Ydc<CR>
@@ -150,8 +142,8 @@ map! <C-l> <Esc><C-l>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<CR>
-nnoremap <silent> <f5>   :call misc#F5FunctionKey('run')<CR>
-vnoremap <silent> <f5>   :call misc#F5FunctionKey('visual')<CR>
+nnoremap <silent> <f5>  :call misc#F5FunctionKey('run')<CR>
+vnoremap <silent> <f5>  :call misc#F5FunctionKey('visual')<CR>
 noremap <silent> <C-f5> :call misc#F5FunctionKey('debug')<CR>
 noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
 map! <f3> <Esc><f3>

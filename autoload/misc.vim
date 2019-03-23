@@ -36,7 +36,7 @@ endfunction
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
 " Parameter value: origin, task, run, debug, reverse
-function! misc#F5FunctionKey(type) abort range
+function! misc#F5FunctionKey(type) range abort
     if a:type ==# 'task'
         exe
                     \ exists('b:task') ? b:task :
@@ -95,7 +95,9 @@ function! misc#F5FunctionKey(type) abort range
             call infoWin#Toggle('off')
             call async#RunScript('visual')
         elseif &filetype ==# 'vim'
-            exe getreg('*')
+            silent exe line('''<').','.line('''>').'write! .tempfile'
+            source .tempfile
+            call delete('.tempfile')
         endif
     endif
 endfunction
@@ -108,8 +110,8 @@ endfunction
 let s:fileFilter = {
             \ 'vim': '\\.vim$',
             \ 'python': '\\.py$',
-            \ 'c': '\\.(c|cpp|h|hpp)$',
-            \ 'cpp': '\\.(c|cpp|h|hpp)$',
+            \ 'c': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
+            \ 'cpp': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
             \ 'perl': '\\.(pl|pm)$',
             \ 'verilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$',
             \ 'systemverilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
@@ -127,7 +129,7 @@ function! misc#Ag(str, word) abort
     let l:type = a:str =~# '\v-\S+ ' ? 'none' : &filetype
 
     if exists('g:BMBPSign_Output')
-        let s:refDict = {'title': ' '.a:str, 'mode': 'w', 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
+        let s:refDict = {'title': ' '.a:str, 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
         let l:option.out_cb = function('s:AgOnOut_Info')
         let l:option.exit_cb = function('s:AgOnExit_Info')
     else
@@ -171,26 +173,18 @@ endfunction
 
 " Switch to buffer with empty buftype
 function s:SwitchToEmptyBuftype()
-    if empty(&buftype)
-        return 1
-    elseif winnr('$') == 1
-        return 0
-    endif
-
-    let l:cur = winnr()
-    let l:ex = (&filetype ==# 'qf' || bufname('%') =~# '\v^!Terminal') ?
-                \ 'wincmd W' : 'wincmd w'
-
-    exe l:ex
-    while winnr() != l:cur
-        if empty(&buftype)
-            return 1
-        endif
+    if !empty(&buftype)
+        let l:cur = winnr()
+        let l:ex = (&filetype ==# 'qf' || bufname('%') =~# '\v^!Terminal') ?
+                    \ 'wincmd W' : 'wincmd w'
 
         exe l:ex
-    endwhile
+        while winnr() != l:cur && !empty(&buftype)
+            exe l:ex
+        endwhile
+    endif
 
-    return 0
+    return empty(&buftype)
 endfunction
 
 let s:preTabNr = {'0': 1, '1': 1, 'cur': 0}

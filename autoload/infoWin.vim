@@ -1,45 +1,37 @@
 "
 "
 "
-
+" Dict: 'title': '', 'content': {'file1': [], ...}, 'hi': '', 
 function! infoWin#Set(dict)
-    if type(a:dict) !=# type({})
+    if type(a:dict) != type({})
         return
     endif
 
     if !bufexists(get(s:, 'bufnr', -1))
-        call s:SwitchToEmptyBuf()
+        call s:SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         let s:bufnr = bufnr('%')
     elseif bufwinnr(s:bufnr) != -1
         exe bufwinnr(s:bufnr).'wincmd w'
     else
-        call s:SwitchToEmptyBuf()
+        call s:SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
     endif
 
     setlocal winfixheight noreadonly modifiable
     let l:list = s:DisplayStr(a:dict.content, '')
-    let l:mode = get(a:dict, 'mode', 'w')
-    let b:infoWin = {'title': fnameescape(get(a:dict, 'title', '[InfoWin]')),
+    let b:infoWin = {'title': get(a:dict, 'title', '[InfoWin]'),
                 \ 'files': len(keys(a:dict.content)),
                 \ 'items': len(l:list) - len(keys(a:dict.content)),
-                \ 'path': getcwd()}
-    exe 'setlocal statusline=\ '.b:infoWin.title.
-                \ '%=\ %l/'.len(l:list).'%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
+                \ 'path': getcwd(),
+                \ 'bufnr': s:bufnr}
+    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.len(l:list).
+                \ '%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
-    if l:mode ==# 'w'
-        edit!
-        call setline(1, l:list)
-    elseif l:mode ==# 'a'
-        call append(line('$'), l:list)
-    endif
-
+    edit!
+    call setline(1, l:list)
     setlocal readonly nomodifiable filetype=infowin
-
-    if has_key(a:dict, 'hi')
-        exe 'syn match InfoWinMatch /'.a:dict.hi.'/'
-    endif
+    exe 'syn match InfoWinMatch /'.(has_key(a:dict, 'hi') ? a:dict.hi : '\v-^').'/'
 endfunction
 
 
@@ -49,18 +41,33 @@ function! infoWin#Toggle(act) abort
     elseif a:act ==# 'off'
         return
     elseif !bufexists(get(s:, 'bufnr', -1))
-        call s:SwitchToEmptyBuf()
+        call s:SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         setlocal winfixheight readonly nomodifiable filetype=infowin statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
     else
-        call s:SwitchToEmptyBuf()
+        call s:SwitchToEmptyBuftype()
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
     endif
 endfunction
 
 function infoWin#IsVisible()
     return bufwinnr(get(s:, 'bufnr', -1)) != -1
+endfunction
+
+function infoWin#GetVal(list)
+    if !bufexists(get(s:, 'bufnr', -1))
+        return {}
+    endif
+
+    let l:dict = {}
+    let l:infoWin = getbufvar(s:bufnr, 'infoWin', {})
+
+    for l:key in a:list
+        let l:dict[l:key] = get(l:infoWin, l:key, -1)
+    endfor
+
+    return l:dict
 endfunction
 
 let s:indent = '  '
@@ -81,22 +88,16 @@ function! s:DisplayStr(content, indent) abort
     return l:list
 endfunction
 
-function s:SwitchToEmptyBuf()
-    if empty(&buftype)
-        return 1
+function s:SwitchToEmptyBuftype()
+    if !empty(&buftype)
+        let l:cur = winnr()
+        wincmd w
+
+        while winnr() != l:cur && !empty(&buftype)
+            wincmd w
+        endwhile
     endif
 
-    wincmd w
-    let l:win = winnr('$')
-    while l:win > 0
-        if empty(&buftype)
-            return 1
-        endif
-
-        wincmd w
-        let l:win -= 1
-    endwhile
-
-    return 0
+    return empty(&buftype)
 endfunction
 
