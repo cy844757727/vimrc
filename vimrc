@@ -47,7 +47,7 @@ let g:SideWinWidth = 31
 " Autocmd & command ===================== {{{1
 augroup UsrDefCmd
     autocmd!
-    autocmd QuickFixCmdPost * exe 'copen '.get(g:, 'BottomWinHeight', 15)
+"    autocmd QuickFixCmdPost * exe 'copen '.get(g:, 'BottomWinHeight', 15)
     autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
@@ -67,7 +67,7 @@ command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
 command! -range -addr=tabs TN :<line1>tabnext
 command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
-command! -nargs=* Amake :AsyncRun make
+command! -nargs=* Amake :Asyncrun make
 command! Avdel :Async vdel -lib work -all
 command! -nargs=? -complete=tag Ag :call misc#Ag(<q-args>, '')
 
@@ -172,11 +172,11 @@ noremap <silent> <C-f8>    :call misc#ToggleSidebar('Tagbar')<CR>
 noremap <silent> <S-f8>    :call misc#ToggleSidebar('NERDTree')<CR>
 noremap <silent> <C-S-f8>  :call misc#ToggleSidebar('all')<CR>
 noremap <silent> <f9>      :call git#Toggle()<CR>
-noremap <silent> <f10>     :call misc#ToggleBottombar('quickfix')<CR>
+noremap <silent> <f10>     :call misc#ToggleBottombar('quickfix', '')<CR>
 noremap <silent> <C-f10>   :call misc#ToggleBottombar('quickfix', 'book')<CR>
 noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
-noremap <silent> <f12>     :call misc#ToggleBottombar('terminal')<CR>
+noremap <silent> <f12>     :call misc#ToggleBottombar('terminal', '')<CR>
 noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipython3')<CR>
 noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'python3')<CR>
 noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
@@ -194,11 +194,11 @@ map! <C-f12> <Esc><C-f12>
 map! <S-f12> <Esc><S-f12>
 map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
-tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix')"])<CR>
+tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', '')"])<CR>
 tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','book')"])<CR>
 tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','todo')"])<CR>
 tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
-tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal')"])<CR>
+tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', '')"])<CR>
 tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipython3')"])<CR>
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','python3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>

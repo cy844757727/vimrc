@@ -16,16 +16,16 @@ let g:loaded_A_Async = 1
 hi default AsyncDbgHl ctermfg=16 guifg=#8bebff
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
-let s:displayIcon = {
+let s:displayIcon = extend({
             \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
             \ '4': ' ➍ ', '5': ' ➎ ', '6': ' ➏ ',
             \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
-            \ }
+            \ }, get(g:, 'Async_displayIcon', {}))
 
 " Default terminal type
-let s:shell = fnamemodify(&shell, ':t')
-let s:termType = [s:shell]
 let s:termPrefix = '!Term'
+let s:shell = fnamemodify(&shell, ':t')
+let s:termType = extend([s:shell], get(g:, 'Async_TerminalType', []))
 
 " Default terminal option
 let s:termOption = {
@@ -35,95 +35,74 @@ let s:termOption = {
             \ 'norestore':   1
             \ }
 
-" Extend terminal type & icon
-if exists('g:Async_TerminalType')
-    call extend(s:termType, g:Async_TerminalType)
-endif
+function s:termAnalyzeCmd(cmd)
+    let l:list = split(a:cmd, ' ')
+    " Default variables
+    let [l:cmd, l:name, l:postCmd] =
+                \ [s:shell, s:termPrefix.': '.s:shell.' ', '']
 
-if exists('g:Async_displayIcon')
-    call extend(s:displayIcon, g:Async_displayIcon)
-endif
+    for l:i in range(len(l:list))
+        if index(s:termType, l:list[l:i]) != -1
+            let l:cmd = l:list[l:i]
+            let l:name = s:termPrefix . get(s:displayIcon, l:cmd, ': '.l:cmd.' ')
+        elseif l:list[l:i]
+            let l:cmd = s:shell
+            let l:num = l:list[l:i] + (l:list[l:i] > 0 ? 0 : 10)
+            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
+        else
+            let l:postCmd = s:parameterExpand(join(l:list[l:i:], ' '))
+            break
+        endif
+    endfor
 
-if exists('g:Async_interactive')
-    call extend(s:interactive, g:Async_interactive)
-endif
+    return [l:cmd, l:name, l:postCmd]
+endfunction
 
 " Switch embedded terminal {{{2
 " Args: action, cmd, postCmd
 " Action: on, off, toggle (default: toggle)
 " Cmd: specified by s:termType (default: s:shell)
 " PostCmd: executing cmd after starting a terminal
-function! async#TermToggle(...) abort
+function! async#TermToggle(action, cmd) abort
     " Ensure starting insert mode
     if bufname('%') =~# '\v^!' && mode() ==# 'n'
         normal a
     endif
 
-    " Default variables
-    let [l:action, l:cmd, l:name, l:postCmd] =
-                \ ['toggle', s:shell, s:termPrefix.': '.s:shell.' ', '']
-
-    " Configure variables
-    for l:i in range(len(a:000))
-        if index(['toggle', 'on', 'off'], a:000[l:i]) != -1
-            let l:action = a:000[l:i]
-        elseif index(s:termType, a:000[l:i]) != -1
-            let l:cmd = a:000[l:i]
-            let l:name = s:termPrefix . get(s:displayIcon, l:cmd, ': '.l:cmd.' ')
-        elseif a:000[l:i]
-            let l:cmd = s:shell
-            let l:num = a:000[l:i] + (a:000[l:i] > 0 ? 0 : 10)
-            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
-        else
-            let l:postCmd = join(map(copy(a:000[l:i:]), "substitute(v:val, ' ', '\\\\ ', 'g')"), ' ')
-            break
-        endif
-    endfor
-
-    let l:winnr = bufwinnr(l:name)
-    let l:bufnr = bufnr(l:name)
-    let l:other = bufwinnr(s:termPrefix)
+    let [l:cmd, l:name, l:postCmd] = s:termAnalyzeCmd(a:cmd)
+    let [l:winnr, l:bufnr, l:other] =
+                \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
 
     if l:winnr != -1 
-        exe l:winnr.(l:action ==# 'on' ? 'wincmd w' : 'hide')
-    elseif l:name ==# s:termPrefix.': '.s:shell.' ' && l:other != -1
-        " For default key always switch terminal window
+        exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
+    elseif l:name ==# s:termPrefix.': '.s:shell.' ' && l:other != -1 && empty(l:postCmd)
+        " For default key always switch off terminal window
         exe l:other.'hide'
-    elseif l:action !=# 'off'
+    elseif a:action !=# 'off'
         " Hide other terminal
         if l:other != -1
             exe l:other.'hide'
         endif
 
         " Skip window containing buf with nonempty buftype
-        let l:num = winnr('$')
-        while !empty(&buftype) && l:num > 0
-            wincmd w
-            let l:num -= 1
-        endwhile
-
-        " Terminal window height
-        let l:height = get(g:, 'BottomWinHeight', 15)
+        call misc#SwitchToEmptyBuftype()
 
         if l:bufnr == -1
             " Creat a terminal
-            let l:option = copy(s:termOption)
-            let l:option['term_name'] = l:name
-            let l:option['curwin'] = 1
-            exe 'belowright '.l:height.'split'
-            let l:bufnr = term_start(l:cmd, l:option)
+            exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split'
+            let l:bufnr = term_start(l:cmd, extend(copy(s:termOption),
+                        \ {'term_name': l:name, 'curwin': 1}))
         else
             " Display terminal
-            silent exe 'belowright '.l:height.'split +'.l:bufnr.'buffer'
+            silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).
+                        \ 'split +'.l:bufnr.'buffer'
         endif
 
         setlocal winfixheight
     elseif !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first creating terminal
-        let l:option = copy(s:termOption)
-        let l:option['term_name'] = l:name
-        let l:option['hidden'] = 1
-        let l:bufnr = term_start(l:cmd, l:option)
+        let l:bufnr = term_start(l:cmd, extend(copy(s:termOption),
+                    \ {'term_name': l:name, 'hidden': 1}))
         " Without this, buftype may be empty
         call setbufvar(l:bufnr, '&buftype', 'terminal')
     endif
@@ -149,8 +128,7 @@ function! async#TermSwitch(...) abort
         call map(l:termList, "split(v:val)[0] + 0")
         let l:ind = index(l:termList, bufnr('%'))
         let l:ind = a:0 == 0 || a:1 == 'next' ?
-                    \ (l:ind + 1) % len(l:termList) :
-                    \ l:ind - 1
+                    \ (l:ind + 1) % len(l:termList) : l:ind - 1
 
         hide
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.l:termList[l:ind].'buffer'
@@ -163,70 +141,102 @@ endfunction
 " === Asynchronous task/job === {{{1
 " {'jobId': cmd}
 let s:asyncJob = {}
-let s:maxJob = 20
+let s:jobOption = {
+            \ 'in_io':  'null',
+            \ 'out_io': 'null',
+            \ 'err_io': 'null',
+            \ 'stoponexit': 'term'
+            \ }
 
+function s:parameterExpand(cmd)
+    let l:cmd = split(a:cmd, ' ')
+    let [l:num, l:i] = [len(l:cmd), 0]
+
+    while l:i < l:num
+        if l:cmd[l:i] =~# '\v^(\%|#\d?)(\<|(:[phtre.~])+)?$' || index([
+                    \ '<cfile>', '<afile>', '<abuf>',
+                    \ '<amatch>', '<sfile>', '<slnum>',
+                    \ '<cword>', '<cWORD>', '<client>'
+                    \ ], l:cmd[l:i]) != -1
+            let l:cmd[l:i] = fnameescape(expand(l:cmd[l:i]))
+        elseif l:cmd[l:i] ==# '<root>'
+            let l:cmd[l:i] = fnameescape(getcwd())
+        endif
+
+        let l:i += 1
+    endwhile
+
+    return join(l:cmd, ' ')
+endfunction
 
 " Cmd: list or string
 function! async#JobRun(bang, cmd, option) abort
-    if len(s:asyncJob) > s:maxJob
-        return
+    let l:record = {'quiet': !empty(a:bang)}
+    let l:option = extend(extend(copy(s:jobOption), a:option),
+                \ {'exit_cb': function('s:JobOnExit')})
+
+    if has_key(a:option, 'exit_cb')
+        let l:record.fun = a:option.exit_cb
     endif
 
-    let l:option = extend({
-                \ 'in_io':  'null',
-                \ 'out_io': 'null',
-                \ 'err_io': 'null'
-                \ }, a:option)
-
-    if has_key(l:option, 'exit_cb')
-        let l:FunRef = l:option.exit_cb
+    if has_key(a:option, 'ex')
+        let l:record.ex = a:option.ex
+        unlet l:option['ex']
     endif
 
-    let l:option.exit_cb = function('s:JobOnExit')
-    let l:job = job_start(a:cmd, l:option)
+    let l:job = job_start(s:parameterExpand(a:cmd), l:option)
+    let s:asyncJob[matchstr(l:job, '\d\+')] = extend(l:record, {'cmd': a:cmd, 'job': l:job})
+endfunction
 
-    " Record a job
-    if job_status(l:job) ==# 'run'
-        let l:id = matchstr(l:job, '\d\+')
-        let s:asyncJob[l:id] = {'cmd': a:cmd, 'job': l:job}
 
-        if exists('l:FunRef')
-            let s:asyncJob[l:id].fun = l:FunRef
-        endif
+function! async#JobRunOut(bang, cmd) abort
+    let l:cmd = s:parameterExpand(a:cmd)
+    exe 'copen '.get(g:, 'BottomWinHeight', 15)
+    call setqflist([], 'r', {'title': 'Asyncrun: '.a:cmd, 'lines': []})
+    let l:job = job_start(l:cmd, {
+                \ 'out_io': 'pipe', 'out_mode': 'nl',
+                \ 'callback': function('s:JobCallBack'),
+                \ 'exit_cb': function('s:JobOnExit')
+                \ })
+    let s:asyncJob[matchstr(l:job, '\d\+')] = {'cmd': a:cmd.'  [out]', 'job': l:job, 'quiet': 1}
+endfunction
 
-        if !empty(a:bang)
-            let s:asyncJob[l:id].quiet = 1
-        endif
+function s:JobCallBack(job, msg)
+    call setqflist([], 'a', {'lines': [a:msg]})
+
+    if &buftype ==# 'quickfix'
+        normal G
     endif
 endfunction
 
 
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
-    let l:ex = ["echom 'async: ".s:asyncJob[l:id].cmd.' '.
-                \ (a:status == 0 ? '[Done]' : '[Failed]')."'"]
-
-    if has_key(s:asyncJob[l:id], 'quiet')
-        let l:ex += ["echo ' '"]
-    endif
-
-    call execute(l:ex, '')
-    silent set statusline
-
-    if has_key(s:asyncJob[l:id], 'fun')
-        call s:asyncJob[l:id].fun(a:job, a:status)
-    endif
-
+    let l:job = s:asyncJob[l:id]
     unlet s:asyncJob[l:id]
+    " Update statuline ↓↓↓
+    set laststatus=2
+    let l:ex = ["echom 'async: ".l:job.cmd.' '.
+                \ (a:status == 0 ? '[Done]' : '[Failed '.a:status.']')."'"] +
+                \ (get(l:job, 'quiet', 0) ? ["echo ' '"] : [])
+    call execute(l:ex, '')
+
+    if has_key(l:job, 'fun')
+        call l:job.fun(a:job, a:status)
+    endif
+
+    if has_key(l:job, 'ex')
+        call execute(l:job.ex)
+    endif
 endfunction
 
 
-function! async#JobStop(how)
+function! async#JobStop(bang)
     if empty(s:asyncJob)
         return
     endif
 
-    let l:how = empty(a:how) ? 'term' : 'kill'
+    let l:how = empty(a:bang) ? 'term' : 'kill'
     let l:prompt = 'Select jobs to stop ('.l:how.') ...'
 
     for [l:id, l:job] in items(s:asyncJob)
@@ -269,7 +279,7 @@ let s:dbg = {
             \ 'c': 'continue',  's': 'step',      'n':  'next',
             \ 'p': 'print',     'R': 'run',       'i':  'send',
             \ 'v': 'display',   'V': 'undisplay', '\d': '_undisplay',
-            \ 'k': 'up',        'j': 'down',      'q':  'quit',
+            \ 'K': 'up',        'J': 'down',      'q':  'quit',
             \ '<CR>': ' '}
             \ }
 
@@ -306,53 +316,57 @@ endfunction
 
 
 " Specify an interactive interpreter for a type
-let s:interactive = {
-            \ 'sh': s:shell,
-            \ 'ruby': 'irb'
-            \ }
+let s:interactive = extend({'sh': s:shell, 'ruby': 'irb'},
+            \ get(g:, 'Async_interactive', {}))
 
-function! async#RunScript(file) abort
-    let l:file = a:file ==# 'visual' ? expand('%') : a:file
 
-    if !filereadable(l:file)
-        return
-    elseif !executable('sed') && !bufloaded(l:file)
+" Get the interpreter of the script from the first line (#!)
+function s:GetScriptInterpreter(file, fullFlag)
+    if !filereadable(a:file)
+        return ''
+    elseif !executable('sed') && !bufloaded(a:file)
         exe '0vsplit +hide '.l:file
     endif
 
     let l:interpreter = matchstr(executable('sed') ?
-                \ system('sed -n 1p '.shellescape(l:file))[:-2] :
-                \ getbufline(l:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs.*$')
+                \ system('sed -n 1p '.shellescape(a:file))[:-2] :
+                \ getbufline(a:file, 1)[0],
+                \ '\v^(#!.*/(env\s+)?)\zs'.(a:fullFlag ? '.*$' : '\S+'))
 
     " No #!, try to use filetype
     if empty(l:interpreter)
-        if !bufexists(l:file)
-            exe 'badd '.l:file
+        if !bufexists(a:file)
+            exe 'badd '.a:file
         endif
 
-        let l:interpreter = getbufvar(l:file, '&filetype')
+        let l:interpreter = getbufvar(a:file, '&filetype')
+    endif
+
+    return l:interpreter
+endfunction
+
+
+function! async#ScriptRun(file) abort
+    let l:file = a:file ==# 'visual' ? expand('%') : a:file
+    let l:interpreter = s:GetScriptInterpreter(l:file, 1)
+
+    if empty(l:interpreter)
+        return
     endif
 
     if a:file ==# 'visual'
         let l:interpreter = matchstr(l:interpreter, '^\S*')
-        let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
-        call term_sendkeys(async#TermToggle('on', l:cmd),
-                    \ substitute(getreg('*'), '\v\n(\s*\n)+|\n?$', '\n', 'g')."\n")
+        call term_sendkeys(async#TermToggle('on', get(s:interactive, l:interpreter, l:interpreter)),
+                    \ substitute(getreg('*'), '\v\n(\s*\n)+|\n?$|^\n?', '\n', 'g')."\n")
     else
-        call term_sendkeys(async#TermToggle('on', s:shell),
-                    \ "clear\n".l:interpreter.' '.shellescape(l:file)."\n")
+        call term_sendkeys(async#TermToggle('on', 'clear'),
+                    \ l:interpreter.' '.shellescape(l:file)."\n")
     endif
 endfunction
 
 
 " Debug a script file
-function! async#DbgScript(file, breakPoint) abort
-    if !filereadable(a:file)
-        return
-    elseif !executable('sed') && !bufloaded(a:file)
-        exe '0vsplit +hide '.a:file
-    endif
-
+function! async#ScriptDbg(file, breakPoint) abort
     " Analyze script type & set var: cmd, postCmd, prompt, re...
     let l:dbg = s:DbgScriptAnalyze(a:file, a:breakPoint)
     if !has_key(l:dbg, 'cmd')
@@ -372,17 +386,15 @@ function! async#DbgScript(file, breakPoint) abort
     let l:height = get(g:, 'BottomWinHeight', 15) * 2 / 3
     let l:width = get(g:, 'SideWinWidth', 30) * 4 / 3
 
-    " Ui initialization & maping
+    " Ui initialization & maping(l:dbg -> t:dbg)
     call s:DbgUIInitalize(l:dbg, l:height, l:width)
     call s:DbgMaping()
 
     " Start debug
     call win_gotoid(t:dbg.dbgWinId)
-    let l:option = copy(s:termOption)
-    let l:option['curwin'] = 1
-    let l:option['out_cb'] = function('s:DbgMsgHandle')
-    let l:option['exit_cb'] = function('s:DbgOnExit')
-    let t:dbg.dbgBufnr = term_start(t:dbg.cmd, l:option)
+    let t:dbg.dbgBufnr = term_start(t:dbg.cmd, extend(copy(s:termOption),
+                \ {'curwin': 1, 'out_cb': function('s:DbgMsgHandle'),
+                \ 'exit_cb': function('s:DbgOnExit')}))
 
     " Excuting postCmd
     if has_key(t:dbg, 'postCmd')
@@ -394,21 +406,38 @@ function! async#DbgScript(file, breakPoint) abort
     endif
 endfunction
 
+let s:dbgTool = {'bashdb': {
+            \ 'name': 'bash',
+            \ 'prompt': '\mbashdb<\d\+>',
+            \ 'fileNr': '\v\((\S+):(\d+)\):',
+            \ 'varVal': '\v^ \d+: (\S+) = (.*)$',
+            \ 'breakLine': '\vNum  *Type  *Disp  *Enb',
+            \ 'stackLine':  '\v^(->|##)\d+ ',
+            \ 'watchLine': '\v^(watchpoint \d+: |  old value: |  new value: )',
+            \ 'd': "\n"
+            \ }, 'pdb': {
+            \ 'name': 'python',
+            \ 'prompt': '\v\(Pdb\)',
+            \ 'fileNr': '\v^\> (\S+)\((\d+)\)',
+            \ 'varVal': '\v^display ([^:]+): (.*)$',
+            \ 'breakLine': '\v^Num  *Type  *Disp  *Enb',
+            \ 'stackLine':  '\v  \S+/bdb.py\(\d+\)',
+            \ 'd': ';;'
+            \ }, 'perl': {
+            \ 'name': 'perl',
+            \ 'prompt': '\m DB<\d\+> ',
+            \ 'fileNr': '\v\((\S+):(\d+)\)',
+            \ 'stackLine': '\m@ = '
+            \ }}
 
 " Analyze script type & set val: cmd, postCmd, prompt
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug
 " Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
-    let l:interpreter = matchstr(executable('sed') ? system('sed -n 1p '.shellescape(a:file))[:-2] :
-                \ getbufline(a:file, 1)[0], '\v^(#!.*/(env\s+)?)\zs\S+')
+    let l:interpreter = s:GetScriptInterpreter(a:file, 0)
 
-    " No #!, try to use filetype
     if empty(l:interpreter)
-        if !bufexists(l:file)
-            exe 'badd '.a:file
-        endif
-
-        let l:interpreter = getbufvar(a:file, '&filetype')
+        return {}
     endif
 
     let l:dbg = deepcopy(s:dbg)
@@ -420,41 +449,25 @@ function! s:DbgScriptAnalyze(file, breakPoint)
 
     if l:interpreter ==# 'bash' && executable('bashdb')
         " Bash script
-        let l:dbg.name = 'bash'
         let l:dbg.tool = 'bashdb'
         let l:breakFile = tempname()
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         call writefile(l:var + a:breakPoint + ['set args -q '.a:file], l:breakFile)
         let l:dbg.cmd = 'bashdb -q -x '.l:breakFile.' '.a:file
-        let l:dbg.prompt = '\mbashdb<\d\+>'
-        let l:dbg.fileNr = '\v\((\S+):(\d+)\):'
-        let l:dbg.varVal = '\v^ \d+: (\S+) = (.*)$'
-        let l:dbg.breakLine = '\vNum  *Type  *Disp  *Enb'
-        let l:dbg.stackLine =  '\v^(->|##)\d+ '
-        let l:dbg.watchLine = '\v^(watchpoint \d+: |  old value: |  new value: )'
-        let l:dbg.d = "\n"
         let l:dbg.win = ['var', 'watch', 'stack']
         call extend(l:dbg.map, {'B': 'delete', 'S': 'skip', 'f': 'finish',
                     \ 'w': 'watch', 'W': 'watche', 'P': 'x'})
     elseif l:interpreter =~# 'python' && executable('pdb')
         " Python script
-        let l:dbg.name = 'python'
         let l:dbg.tool = 'pdb'
         let l:dbg.cmd = l:interpreter.' -m pdb '.a:file
         let l:breakPoint = map(a:breakPoint, "substitute(v:val,'\\v(:\\d+)\\zs\\s+,?', ' ,', '')")
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         let l:dbg.postCmd = join(l:var + l:breakPoint, ';;')
-        let l:dbg.prompt = '\v\(Pdb\)'
-        let l:dbg.fileNr = '\v^\> (\S+)\((\d+)\)'
-        let l:dbg.varVal = '\v^display ([^:]+): (.*)$'
-        let l:dbg.breakLine = '\v^Num  *Type  *Disp  *Enb'
-        let l:dbg.stackLine =  '\v  \S+/bdb.py\(\d+\)'
-        let l:dbg.d = ';;'
         let l:dbg.win = ['var', 'stack']
         call extend(l:dbg.map, {'p': 'p', 'P': 'pp', 'j': 'jump', 'u': 'until'})
     elseif l:interpreter =~# 'perl' && executable('perl')
         " Perl script
-        let l:dbg.name = 'perl'
         let l:dbg.tool = 'perl'
         let l:alias = ['= break b', '= bt T', '= step s',
                     \ '= continue c', '= next n', '= watch w',
@@ -463,14 +476,13 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         call writefile(l:alias + a:breakPoint, l:breakFile)
         let l:dbg.cmd = l:interpreter.' -d '.a:file
         let l:dbg.postCmd = 'source '.l:breakFile
-        let l:dbg.prompt = '\m DB<\d\+> '
-        let l:dbg.fileNr = '\v\((\S+):(\d+)\)'
-        let l:dbg.stackLine = '\m@ = '
         let l:dbg.win = []
         call extend(l:dbg.map, {'w': 'watch'})
+    else
+        return {}
     endif
 
-    return l:dbg
+    return extend(l:dbg, s:dbgTool[l:dbg.tool])
 endfunction
 
 " Configure new tabpage for debug
@@ -572,7 +584,7 @@ function! s:DbgMaping()
 endfunction
 
 
-let s:cmdPromptInfo = {
+let s:dbgPromptInfo = {
             \ 'quit': 'Quit debug ?',
             \ 'jump': 'Jump to line number: ',
             \ 'until': 'Execute until line number: ',
@@ -596,7 +608,7 @@ let s:cmdPromptInfo = {
             \ }
 
 function! <SID>DbgSendCmd(cmd)
-    let l:prompt = get(s:cmdPromptInfo, a:cmd, '*****: ')
+    let l:prompt = get(s:dbgPromptInfo, a:cmd, '*****: ')
 
     if a:cmd ==# 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
         return

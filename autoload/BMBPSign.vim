@@ -59,18 +59,16 @@ endif
 " TODO: event handle
 let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
-let s:projectType = get(g:, 'BMBPSign_ProjectType', {})
-call extend(s:projectType, {'default': $HOME.'/Documents/'}, 'keep')
+let s:projectType = extend(get(g:, 'BMBPSign_ProjectType', {}),
+            \ {'default': $HOME.'/Documents/'}, 'keep')
 " For $HOME path substitute
 call map(s:projectType, "fnamemodify(v:val, ':p')")
 
 " Project record file defination
-let s:projectFile = get(
-            \ g:, 'BMBPSign_ProjectFile',
+let s:projectFile = get(g:, 'BMBPSign_ProjectFile',
             \ $HOME.(has('unix') || has('mac') ?
             \ '/.vim/.projectitem' :
-            \ '/vimfiles/.projectitem')
-            \ )
+            \ '/vimfiles/.projectitem'))
 
 " Default content to save
 let s:vimInfo = get(g:, 'BMBPSign_VimInfo', "'50,!,:100,/100,@100")

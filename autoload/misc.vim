@@ -51,25 +51,24 @@ function! misc#F5FunctionKey(type) range abort
         call b:NERDTree.render()
     elseif exists('t:git_tabpageManager')
         call git#Refresh()
-    elseif !s:SwitchToEmptyBuftype()
+    elseif !misc#SwitchToEmptyBuftype()
         return
-    elseif &filetype =~# 'verilog'
-        update
-        if isdirectory('work')
-            AsyncRun vlog -work work %
-        else
-            AsyncRun vlib work && vmap work work && vlog -work work %
-        endif
     elseif a:type ==# 'run'
         update
-        if index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+        if &filetype =~# 'verilog' && executable('vlib')
+            if isdirectory('work')
+                Asyncrun vlog -work work %
+            else
+                Asyncrun vlib work && vmap work work && vlog -work work %
+            endif
+        elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             cclose
             call infoWin#Toggle('off')
-            call async#RunScript(expand('%'))
+            call async#ScriptRun(expand('%'))
         elseif !empty(glob('[mM]ake[fF]ile'))
-            AsyncRun make
+            Asyncrun make
         elseif index(['c', 'cpp'], &ft) != -1
-            AsyncRun g++ -Wall -O0 -g3 % -o %<
+            Asyncrun g++ -Wall -O0 -g3 % -o %<
         elseif &filetype ==# 'vim'
             source %
         endif
@@ -78,7 +77,7 @@ function! misc#F5FunctionKey(type) range abort
         let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
 
         if index(['sh', 'python', 'perl'], &ft) != -1
-            call async#DbgScript(expand('%'), l:breakPoint)
+            call async#ScriptDbg(expand('%'), l:breakPoint)
         elseif !empty(glob('[mM]ake[fF]ile')) || index(['c', 'cpp'], &ft) != -1
             call async#GdbStart(expand('%<'), l:breakPoint)
         elseif &filetype ==# 'vim'
@@ -93,7 +92,7 @@ function! misc#F5FunctionKey(type) range abort
         if index(['sh', 'python', 'ruby'], &ft) != -1
             cclose
             call infoWin#Toggle('off')
-            call async#RunScript('visual')
+            call async#ScriptRun('visual')
         elseif &filetype ==# 'vim'
             silent exe line('''<').','.line('''>').'write! .tempfile'
             source .tempfile
@@ -107,7 +106,7 @@ function misc#F5Complete(L, C, P)
 endfunction
 
 
-let s:fileFilter = {
+let s:AgFileFilter = {
             \ 'vim': '\\.vim$',
             \ 'python': '\\.py$',
             \ 'c': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
@@ -122,6 +121,7 @@ function! misc#Ag(str, word) abort
         if exists('g:BMBPSign_Output')
             call infoWin#Toggle('toggle')
         endif
+
         return
     endif
 
@@ -133,7 +133,7 @@ function! misc#Ag(str, word) abort
         let l:option.out_cb = function('s:AgOnOut_Info')
         let l:option.exit_cb = function('s:AgOnExit_Info')
     else
-        call async#TermToggle('off')
+        call async#TermToggle('off', '')
         exe 'copen '.g:BottomWinHeight
         call setqflist([], 'r', {'lines': [], 'title':  ' '.a:str})
         let l:option.out_cb = function('s:AgOnOut_Qf')
@@ -141,8 +141,8 @@ function! misc#Ag(str, word) abort
 
     " file filter, skip comment line and search string
     let l:cmd = 'ag --nocolor --nogroup '.(
-                \ has_key(s:fileFilter, l:type) ?
-                \ '-G '.s:fileFilter[l:type].' ' : ''
+                \ has_key(s:AgFileFilter, l:type) ?
+                \ '-G '.s:AgFileFilter[l:type].' ' : ''
                 \ ).(
                 \ has_key(s:commentChar, l:type) ?
                 \ '^(?!\\s*'.fnameescape(s:commentChar[l:type]).').*' : ''
@@ -172,17 +172,15 @@ endfunction
 
 
 " Switch to buffer with empty buftype
-function s:SwitchToEmptyBuftype()
-    if !empty(&buftype)
-        let l:cur = winnr()
-        let l:ex = (&filetype ==# 'qf' || bufname('%') =~# '\v^!Terminal') ?
-                    \ 'wincmd W' : 'wincmd w'
+function misc#SwitchToEmptyBuftype()
+    let l:ex = (index(['qf', 'infowin'], &ft) != -1 || bufname('%') =~# '\v^!Term') ?
+                \ 'wincmd W' : 'wincmd w'
 
+    let l:num = winnr('$')
+    while !empty(&buftype) && l:num > 0
         exe l:ex
-        while winnr() != l:cur && !empty(&buftype)
-            exe l:ex
-        endwhile
-    endif
+        let l:num -= 1
+    endwhile
 
     return empty(&buftype)
 endfunction
@@ -368,8 +366,8 @@ function! misc#TabLine()
             endwhile
         endif
 
-        let l:endSpace = repeat(' ',
-                    \ l:width - strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)))
+        let l:endSpace = repeat(' ', l:width - strdisplaywidth(
+                    \ strcharpart(l:str, s:TabLineStart, s:TabLineChars)))
     else
         let s:TabLineStart = 0
         let l:endSpace = ''
@@ -896,17 +894,15 @@ endfunction
 
 
 "  Toggle bottom window (quickfix, terminal)
-function! misc#ToggleBottombar(winType, ...)
-    let l:type = a:0 > 0 ? a:1 : ''
-
+function! misc#ToggleBottombar(winType, type)
     if a:winType == 'quickfix'
-        call async#TermToggle('off')
+        call async#TermToggle('off', '')
 
-        if l:type == 'book'
+        if a:type == 'book'
             call BMBPSign#SetQfList(' BookMark', 'book')
-        elseif l:type == 'break'
+        elseif a:type == 'break'
             call BMBPSign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
-        elseif l:type == 'todo'
+        elseif a:type == 'todo'
             call BMBPSign#SetQfList(' TodoList', 'todo')
         elseif getqflist({'winid': 1}).winid != 0
             cclose
@@ -918,7 +914,7 @@ function! misc#ToggleBottombar(winType, ...)
     elseif a:winType == 'terminal'
         cclose
         call infoWin#Toggle('off')
-        call async#TermToggle('toggle', l:type)
+        call async#TermToggle('toggle', a:type)
     endif
 endfunction
 " ####################################################################

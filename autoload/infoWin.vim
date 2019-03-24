@@ -8,14 +8,14 @@ function! infoWin#Set(dict)
     endif
 
     if !bufexists(get(s:, 'bufnr', -1))
-        call s:SwitchToEmptyBuftype()
+        call misc#SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         let s:bufnr = bufnr('%')
     elseif bufwinnr(s:bufnr) != -1
         exe bufwinnr(s:bufnr).'wincmd w'
     else
-        call s:SwitchToEmptyBuftype()
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
+        call misc#SwitchToEmptyBuftype()
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
     endif
 
     setlocal winfixheight noreadonly modifiable
@@ -23,8 +23,7 @@ function! infoWin#Set(dict)
     let b:infoWin = {'title': get(a:dict, 'title', '[InfoWin]'),
                 \ 'files': len(keys(a:dict.content)),
                 \ 'items': len(l:list) - len(keys(a:dict.content)),
-                \ 'path': getcwd(),
-                \ 'bufnr': s:bufnr}
+                \ 'path': getcwd(), 'bufnr': s:bufnr}
     exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.len(l:list).
                 \ '%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
@@ -41,13 +40,13 @@ function! infoWin#Toggle(act) abort
     elseif a:act ==# 'off'
         return
     elseif !bufexists(get(s:, 'bufnr', -1))
-        call s:SwitchToEmptyBuftype()
+        call misc#SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         setlocal winfixheight readonly nomodifiable filetype=infowin statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
     else
-        call s:SwitchToEmptyBuftype()
-        silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new +'.s:bufnr.'buffer'
+        call misc#SwitchToEmptyBuftype()
+        silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
     endif
 endfunction
 
@@ -88,16 +87,4 @@ function! s:DisplayStr(content, indent) abort
     return l:list
 endfunction
 
-function s:SwitchToEmptyBuftype()
-    if !empty(&buftype)
-        let l:cur = winnr()
-        wincmd w
-
-        while winnr() != l:cur && !empty(&buftype)
-            wincmd w
-        endwhile
-    endif
-
-    return empty(&buftype)
-endfunction
 
