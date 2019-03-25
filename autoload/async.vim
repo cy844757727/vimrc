@@ -25,6 +25,7 @@ let s:displayIcon = extend({
 " Default terminal type
 let s:termPrefix = '!Term'
 let s:shell = fnamemodify(&shell, ':t')
+let s:termDefaultName = s:termPrefix.': '.s:shell.' '
 let s:termType = extend([s:shell], get(g:, 'Async_TerminalType', []))
 
 " Default terminal option
@@ -36,26 +37,27 @@ let s:termOption = {
             \ }
 
 function s:termAnalyzeCmd(cmd)
-    let l:list = split(a:cmd, ' ')
-    " Default variables
-    let [l:cmd, l:name, l:postCmd] =
-                \ [s:shell, s:termPrefix.': '.s:shell.' ', '']
+    let [l:list, l:i] = [split(a:cmd, ' '), 0]
 
-    for l:i in range(len(l:list))
-        if index(s:termType, l:list[l:i]) != -1
-            let l:cmd = l:list[l:i]
-            let l:name = s:termPrefix . get(s:displayIcon, l:cmd, ': '.l:cmd.' ')
+    while l:i < len(l:list)
+        if index(s:termType, l:list[l:i]) != -1 && !exists('l:cmd')
+            let [l:cmd, l:name] = [l:list[l:i], l:list[l:i]]
         elseif l:list[l:i]
-            let l:cmd = s:shell
-            let l:num = l:list[l:i] + (l:list[l:i] > 0 ? 0 : 10)
-            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
+            let [l:cmd, l:name] = [s:shell, l:list[l:i] + 0]
         else
-            let l:postCmd = s:parameterExpand(join(l:list[l:i:], ' '))
+            let l:postCmd = s:cmdExpand(l:list[l:i:])
             break
         endif
-    endfor
 
-    return [l:cmd, l:name, l:postCmd]
+        let l:i += 1
+    endwhile
+
+    if !exists('l:cmd')
+        let [l:cmd, l:name] = [s:shell, s:shell]
+    endif
+
+    let l:name = s:termPrefix . get(s:displayIcon, l:name, ': '.l:name.' ')
+    return [l:cmd, l:name, get(l:, 'postCmd', '')]
 endfunction
 
 " Switch embedded terminal {{{2
@@ -70,12 +72,12 @@ function! async#TermToggle(action, cmd) abort
     endif
 
     let [l:cmd, l:name, l:postCmd] = s:termAnalyzeCmd(a:cmd)
-    let [l:winnr, l:bufnr, l:other] =
-                \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
+    let [l:winnr, l:bufnr, l:other] = [bufwinnr(l:name), 
+                \ bufnr(l:name), bufwinnr(s:termPrefix)]
 
     if l:winnr != -1 
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
-    elseif l:name ==# s:termPrefix.': '.s:shell.' ' && l:other != -1 && empty(l:postCmd)
+    elseif l:name ==# s:termDefaultName && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
         exe l:other.'hide'
     elseif a:action !=# 'off'
@@ -108,7 +110,7 @@ function! async#TermToggle(action, cmd) abort
     endif
 
     " Excuting postCmd after establishing a terminal
-    if !empty(l:postCmd) && l:bufnr != -1
+    if !empty(l:postCmd)
         call term_sendkeys(l:bufnr, l:postCmd."\n")
     endif
 
@@ -148,30 +150,30 @@ let s:jobOption = {
             \ 'stoponexit': 'term'
             \ }
 
-function s:parameterExpand(cmd)
-    let l:cmd = split(a:cmd, ' ')
-    let [l:num, l:i] = [len(l:cmd), 0]
+function s:cmdExpand(cmd) abort
+    let [l:list, l:i] = [type(a:cmd) == type([]) ? a:cmd : split(a:cmd, ' '), 0]
 
-    while l:i < l:num
-        if l:cmd[l:i] =~# '\v^(\%|#\d?)(\<|(:[phtre.~])+)?$' || index([
+    while l:i < len(l:list)
+        if l:list[l:i] =~# '\v^(\%|#\d?)(\<|(:[phtre.~])+)?$' || index([
                     \ '<cfile>', '<afile>', '<abuf>',
                     \ '<amatch>', '<sfile>', '<slnum>',
                     \ '<cword>', '<cWORD>', '<client>'
-                    \ ], l:cmd[l:i]) != -1
-            let l:cmd[l:i] = fnameescape(expand(l:cmd[l:i]))
-        elseif l:cmd[l:i] ==# '<root>'
-            let l:cmd[l:i] = fnameescape(getcwd())
+                    \ ], l:list[l:i]) != -1
+            let l:list[l:i] = fnameescape(expand(l:list[l:i]))
+        elseif l:list[l:i] ==# '<root>'
+            let l:list[l:i] = fnameescape(getcwd())
         endif
 
         let l:i += 1
     endwhile
 
-    return join(l:cmd, ' ')
+    return join(l:list, ' ')
 endfunction
 
 " Cmd: list or string
-function! async#JobRun(bang, cmd, option) abort
-    let l:record = {'quiet': !empty(a:bang)}
+function! async#JobRun(bang, cmd, option, ...) abort
+    let l:record = extend({'cmd': a:cmd, 'quiet': !empty(a:bang)}, get(a:000, 0, {}))
+    let l:record.cmd .= has_key(l:record, 'flag') ? ' ['.l:record.flag.']' : ''
     let l:option = extend(extend(copy(s:jobOption), a:option),
                 \ {'exit_cb': function('s:JobOnExit')})
 
@@ -179,27 +181,19 @@ function! async#JobRun(bang, cmd, option) abort
         let l:record.fun = a:option.exit_cb
     endif
 
-    if has_key(a:option, 'ex')
-        let l:record.ex = a:option.ex
-        unlet l:option['ex']
-    endif
-
-    let l:job = job_start(s:parameterExpand(a:cmd), l:option)
-    let s:asyncJob[matchstr(l:job, '\d\+')] = extend(l:record, {'cmd': a:cmd, 'job': l:job})
+    let l:job = job_start(s:cmdExpand(a:cmd), l:option)
+    let s:asyncJob[matchstr(l:job, '\d\+')] = extend(l:record, {'job': l:job})
 endfunction
 
 
 function! async#JobRunOut(bang, cmd) abort
-    let l:cmd = s:parameterExpand(a:cmd)
-    exe 'copen '.get(g:, 'BottomWinHeight', 15)
     call setqflist([], 'r', {'title': 'Asyncrun: '.a:cmd, 'lines': []})
-    let l:job = job_start(l:cmd, {
-                \ 'out_io': 'pipe', 'out_mode': 'nl',
-                \ 'callback': function('s:JobCallBack'),
-                \ 'exit_cb': function('s:JobOnExit')
-                \ })
-    let s:asyncJob[matchstr(l:job, '\d\+')] = {'cmd': a:cmd.'  [out]', 'job': l:job, 'quiet': 1}
+    call async#JobRun(a:bang, a:cmd, {'out_io': 'pipe', 'err_io': 'pipe',
+                \ 'callback': function('s:JobCallBack')}, {
+                \ 'ex': "call s:JobCallBack('', '[Finished]')", 'flag': 'qf'})
+    exe 'copen '.get(g:, 'BottomWinHeight', 15)
 endfunction
+
 
 function s:JobCallBack(job, msg)
     call setqflist([], 'a', {'lines': [a:msg]})
@@ -216,17 +210,18 @@ function! s:JobOnExit(job, status)
     unlet s:asyncJob[l:id]
     " Update statuline ↓↓↓
     set laststatus=2
-    let l:ex = ["echom 'async: ".l:job.cmd.' '.
-                \ (a:status == 0 ? '[Done]' : '[Failed '.a:status.']')."'"] +
-                \ (get(l:job, 'quiet', 0) ? ["echo ' '"] : [])
-    call execute(l:ex, '')
+    echom 'async: '.l:job.cmd.' ['.(a:status ? 'Failed '.a:status : 'Done').']'
 
     if has_key(l:job, 'fun')
         call l:job.fun(a:job, a:status)
     endif
 
     if has_key(l:job, 'ex')
-        call execute(l:job.ex)
+        call execute(l:job.ex, '')
+    endif
+
+    if get(l:job, 'quiet', 0)
+        echo ' '
     endif
 endfunction
 
@@ -240,7 +235,7 @@ function! async#JobStop(bang)
     let l:prompt = 'Select jobs to stop ('.l:how.') ...'
 
     for [l:id, l:job] in items(s:asyncJob)
-        let l:prompt .= printf("\n    %d:  %s", l:id, l:job.cmd)
+        let l:prompt .= printf("\n  %d: %s", l:id, l:job.cmd)
     endfor
 
     while 1
@@ -806,6 +801,7 @@ function! s:DbgOnExit(job, status)
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
+            only
             unlet t:dbg
             unlet t:task
             unlet t:tab_lable
@@ -813,38 +809,39 @@ function! s:DbgOnExit(job, status)
     endif
 endfunction
 
+function s:GetExecutableFile()
+    let l:files = filter(glob('*', '', 1),
+                \ "!isdirectory(v:val) && executable('./'.v:val)")
+    let l:num = len(l:files)
+
+    if l:num == 0
+        return ''
+    elseif l:num == 1
+        return fnameescape(l:files[0])
+    endif
+
+    let [l:i, l:str] = [0, "Selete target to debug: \n"]
+    for l:file in l:files
+        let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
+        let l:i += 1
+    endfor
+
+    let l:sel = input(l:str.'!?: ')
+    if empty(l:sel)
+        return ''
+    endif
+
+    return fnameescape(l:files[l:sel])
+endfunction
 
 " Gdb tool： debug binary file
 " BreakPoint: list type
-function! async#GdbStart(binFile, breakPoint) abort
-    if filereadable(a:binFile)
-        let l:binFile = a:binFile
-    else
-        let l:files = filter(glob('*', '', 1),
-                    \ "!isdirectory(v:val) && executable('./'.v:val)")
-        let l:num = len(l:files)
+function! async#GdbStart(file, breakPoint) abort
+    let l:file = filereadable(a:file) ? a:file : s:GetExecutableFile()
 
-        if l:num == 0
-            return
-        elseif l:num == 1
-            let l:binFile = fnameescape(l:files[0])
-        else
-            let [l:i, l:str] = [0, "Selete target to debug: \n"]
-            for l:file in l:files
-                let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
-                let l:i += 1
-            endfor
-            let l:sel = input(l:str.'!?: ')
-
-            if empty(l:sel)
-                return
-            endif
-
-            let l:binFile = fnameescape(l:files[l:sel])
-        endif
-    endif
-
-    if !exists(':Termdebug')
+    if empty(l:file)
+        return
+    elseif !exists(':Termdebug')
         packadd termdebug
     endif
 
@@ -853,11 +850,11 @@ function! async#GdbStart(binFile, breakPoint) abort
     let t:tab_lable = ' -- Debug --'
 
     if empty(a:breakPoint)
-        exe 'silent Termdebug '.l:binFile
+        exe 'silent Termdebug '.l:file
     else
         let l:tempFile = tempname()
         call writefile(a:breakPoint, l:tempFile)
-        exe 'silent Termdebug -x '.l:tempFile.' '.l:binFile
+        exe 'silent Termdebug -x '.l:tempFile.' '.l:file
     endif
 
     " Gdb on exit

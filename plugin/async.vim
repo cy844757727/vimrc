@@ -31,7 +31,8 @@ function! Term_completeFun(L, C, P)
         endif
     endfor
 
-    return filter(copy(g:Async_TerminalType), "v:val =~ '^".a:L."'") + getcompletion(a:L.'*', 'shellcmd')
+    let l:default = filter(copy(g:Async_TerminalType), "v:val =~ '^".a:L."'")
+    return  (!empty(l:default) ? l:default + ['|'] : []) + getcompletion(a:L.'*', 'shellcmd')
 endfunction
 
 
