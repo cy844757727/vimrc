@@ -218,8 +218,9 @@ function s:JobOnExitQf(time, job, status)
         let l:integer = l:integer / 60
     endwhile
 
-    let l:elapse += l:integer > 0 ? [l:integer] : []
-    call s:JobCallBack(a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').'.'.l:point.
+    let l:elapse += l:integer > 0 || len(l:elapse) == 0 ? [l:integer] : []
+    let l:elapse[0] += l:point / 1000000.0
+    call s:JobCallBack(a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
                 \ ' '.(a:status ? ' '.a:status : ''))
 endfunction
 
