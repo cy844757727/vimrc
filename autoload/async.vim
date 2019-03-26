@@ -173,8 +173,8 @@ function s:cmdExpand(cmd) abort
 endfunction
 
 " Cmd: list or string
-function! async#JobRun(bang, cmd, option, ...) abort
-    let l:record = extend({'cmd': a:cmd, 'quiet': !empty(a:bang)}, get(a:000, 0, {}))
+function! async#JobRun(bang, cmd, option, extra) abort
+    let l:record = extend({'cmd': a:cmd, 'quiet': !empty(a:bang)}, a:extra)
     let l:record.cmd .= has_key(l:record, 'flag') ? ' '.l:record.flag : ''
     let l:option = extend(extend(copy(s:jobOption), a:option),
                 \ {'exit_cb': function('s:JobOnExit')})
@@ -189,19 +189,21 @@ endfunction
 
 
 " With Quickfix output
-function! async#JobRunOut(bang, cmd) abort
-    call setqflist([], 'r', {'title': 'Asyncrun: '.a:cmd, 'lines': []})
+function! async#JobRunOut(bang, cmd, extra) abort
+    let l:extra = extend({'title': 'Async: '.a:cmd, 'flag': '[qf]'}, a:extra)
+    let l:efm = has_key(l:extra, 'efm') ? {'efm': l:extra.efm} : {}
+    call setqflist([], 'r', {'lines': [], 'title': l:extra.title}) 
     call async#JobRun(a:bang, a:cmd, {
                 \ 'out_io': 'pipe', 'err_io': 'pipe',
-                \ 'callback': function('s:JobCallBack'),
+                \ 'callback': function('s:JobCallBack', [l:efm]),
                 \ 'exit_cb': function('s:JobOnExitQf', [reltime()])
-                \ }, {'flag': '[qf]'})
+                \ }, l:extra)
     exe 'copen '.get(g:, 'BottomWinHeight', 15)
 endfunction
 
 
-function s:JobCallBack(job, msg)
-    call setqflist([], 'a', {'lines': [a:msg]})
+function s:JobCallBack(efm, job, msg)
+    call setqflist([], 'a', extend({'lines': [a:msg]}, a:efm))
 
     if &buftype ==# 'quickfix'
         normal G
@@ -218,8 +220,9 @@ function s:JobOnExitQf(time, job, status)
         let l:integer = l:integer / 60
     endwhile
 
-    let l:elapse += l:integer > 0 ? [l:integer] : []
-    call s:JobCallBack(a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').'.'.l:point.
+    let l:elapse += l:integer > 0 || len(l:elapse) == 0 ? [l:integer] : []
+    let l:elapse[0] += l:point / 1000000.0
+    call s:JobCallBack({}, a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
                 \ ' '.(a:status ? ' '.a:status : ''))
 endfunction
 
@@ -230,7 +233,8 @@ function! s:JobOnExit(job, status)
     unlet s:asyncJob[l:id]
     " Update statuline ↓↓↓
     set laststatus=2
-    echom 'Async: '.l:job.cmd.' ['.(a:status ? ' '.a:status : '').']'
+    echom get(l:job, 'head', 'Async: ').
+                \ l:job.cmd.' ['.(a:status ? ' '.a:status : '').']'
 
     if has_key(l:job, 'fun')
         call l:job.fun(a:job, a:status)
