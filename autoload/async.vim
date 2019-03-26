@@ -87,7 +87,9 @@ function! async#TermToggle(action, cmd) abort
         endif
 
         " Skip window containing buf with nonempty buftype
-        call misc#SwitchToEmptyBuftype()
+        if exists('misc#SwitchToEmptyBuftype')
+            call misc#SwitchToEmptyBuftype()
+        endif
 
         if l:bufnr == -1
             " Creat a terminal
@@ -173,7 +175,7 @@ endfunction
 " Cmd: list or string
 function! async#JobRun(bang, cmd, option, ...) abort
     let l:record = extend({'cmd': a:cmd, 'quiet': !empty(a:bang)}, get(a:000, 0, {}))
-    let l:record.cmd .= has_key(l:record, 'flag') ? ' ['.l:record.flag.']' : ''
+    let l:record.cmd .= has_key(l:record, 'flag') ? ' '.l:record.flag : ''
     let l:option = extend(extend(copy(s:jobOption), a:option),
                 \ {'exit_cb': function('s:JobOnExit')})
 
@@ -186,11 +188,14 @@ function! async#JobRun(bang, cmd, option, ...) abort
 endfunction
 
 
+" With Quickfix output
 function! async#JobRunOut(bang, cmd) abort
     call setqflist([], 'r', {'title': 'Asyncrun: '.a:cmd, 'lines': []})
-    call async#JobRun(a:bang, a:cmd, {'out_io': 'pipe', 'err_io': 'pipe',
-                \ 'callback': function('s:JobCallBack')}, {
-                \ 'ex': "call s:JobCallBack('', '[Finished]')", 'flag': 'qf'})
+    call async#JobRun(a:bang, a:cmd, {
+                \ 'out_io': 'pipe', 'err_io': 'pipe',
+                \ 'callback': function('s:JobCallBack'),
+                \ 'exit_cb': function('s:JobOnExitQf', [reltime()])
+                \ }, {'flag': '[qf]'})
     exe 'copen '.get(g:, 'BottomWinHeight', 15)
 endfunction
 
@@ -204,13 +209,28 @@ function s:JobCallBack(job, msg)
 endfunction
 
 
+function s:JobOnExitQf(time, job, status)
+    let l:elapse = []
+    let [l:integer, l:point] = reltime(a:time)
+
+    while l:integer >= 60 && len(l:elapse) < 2
+        let l:elapse += [l:integer % 60]
+        let l:integer = l:integer / 60
+    endwhile
+
+    let l:elapse += l:integer > 0 ? [l:integer] : []
+    call s:JobCallBack(a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').'.'.l:point.
+                \ ' '.(a:status ? ' '.a:status : ''))
+endfunction
+
+
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
     let l:job = s:asyncJob[l:id]
     unlet s:asyncJob[l:id]
     " Update statuline ↓↓↓
     set laststatus=2
-    echom 'async: '.l:job.cmd.' ['.(a:status ? 'Failed '.a:status : 'Done').']'
+    echom 'Async: '.l:job.cmd.' ['.(a:status ? ' '.a:status : '').']'
 
     if has_key(l:job, 'fun')
         call l:job.fun(a:job, a:status)

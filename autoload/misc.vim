@@ -313,11 +313,11 @@ function! misc#SaveFile()
         endif
 
         let s:DoubleClick_500MSTimer = 1
-        let l:id = timer_start(500, 'misc#TimerHandle500MS')
+        call timer_start(500, function('s:TimerHandle500MS'))
     endif
 endfunction
 " ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-function! misc#TimerHandle500MS(id)
+function! s:TimerHandle500MS(id)
     unlet s:DoubleClick_500MSTimer
 endfunction
 
