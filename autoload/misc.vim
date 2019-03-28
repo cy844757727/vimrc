@@ -125,20 +125,7 @@ function! misc#Ag(str, word) abort
         return
     endif
 
-    let l:option = {'out_io': 'pipe', 'out_mode': 'nl'}
     let l:type = a:str =~# '\v-\S+ ' ? 'none' : &filetype
-
-    if exists('g:BMBPSign_Output')
-        let s:refDict = {'title': ' '.a:str, 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
-        let l:option.out_cb = function('s:AgOnOut_Info')
-        let l:option.exit_cb = function('s:AgOnExit_Info')
-    else
-        call async#TermToggle('off', '')
-        exe 'copen '.g:BottomWinHeight
-        call setqflist([], 'r', {'lines': [], 'title':  ' '.a:str})
-        let l:option.out_cb = function('s:AgOnOut_Qf')
-    endif
-
     " file filter, skip comment line and search string
     let l:cmd = 'ag --nocolor --nogroup '.(
                 \ has_key(s:AgFileFilter, l:type) ?
@@ -146,19 +133,22 @@ function! misc#Ag(str, word) abort
                 \ ).(
                 \ has_key(s:commentChar, l:type) ?
                 \ '^(?!\\s*'.fnameescape(s:commentChar[l:type]).').*' : ''
-                \ ).(
-                \ a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str
-                \ )
+                \ ).(a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str)
+    call async#TermToggle('off', '')
 
-    call async#JobRun('!', l:cmd, l:option)
+    if exists('g:BMBPSign_Output')
+        let s:refDict = {'title': ' '.a:str, 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
+        let l:option = {'out_io': 'pipe', 'out_mode': 'nl',
+                    \ 'out_cb': function('s:AgOnOut_Info'),
+                    \ 'exit_cb': function('s:AgOnExit_Info')}
+        call async#JobRun('!', l:cmd, l:option, {'flag': '[infowin]'})
+    else
+        call async#JobRunOut('!', l:cmd, {'title': ' '.a:str, 'efm': '%f:%l:%m'})
+    endif
 endfunction
 
 function s:AgOnExit_Info(...)
     call infoWin#Set(s:refDict)
-endfunction
-
-function! s:AgOnOut_Qf(job, msg)
-    call setqflist([], 'a', {'efm': '%f:%l:%m', 'lines': [a:msg]})
 endfunction
 
 function! s:AgOnOut_Info(job, msg) abort

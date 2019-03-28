@@ -16,8 +16,8 @@ let g:loaded_Async = 1
 command -nargs=* -complete=customlist,Term_completeFun TTerm :call async#TermToggle('toggle', <q-args>)
 command -nargs=* -complete=customlist,Term_completeFun Term :call async#TermToggle('on', <q-args>)
 command -nargs=+ -complete=customlist,Term_completeFun HTerm :call async#TermToggle('off', <q-args>)
-command -nargs=+ -bang -complete=customlist,Async_completeFun Async :call async#JobRun('<bang>', <q-args>, {})
-command -nargs=+ -bang -complete=customlist,Async_completeFun Asyncrun :call async#JobRunOut('<bang>', <q-args>)
+command -nargs=+ -bang -complete=customlist,Async_completeFun Async :call async#JobRun('<bang>', <q-args>, {}, {})
+command -nargs=+ -bang -complete=customlist,Async_completeFun Asyncrun :call async#JobRunOut('<bang>', <q-args>, {})
 command -bang SAsync :call async#JobStop('<bang>')
 command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, BMBPSign#SignRecord('break', 'tbreak'))
 

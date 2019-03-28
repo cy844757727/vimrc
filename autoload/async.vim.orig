@@ -222,7 +222,11 @@ function s:JobOnExitQf(time, job, status)
 
     let l:elapse += l:integer > 0 || len(l:elapse) == 0 ? [l:integer] : []
     let l:elapse[0] += l:point / 1000000.0
+<<<<<<< HEAD
+    call s:JobCallBack(a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
+=======
     call s:JobCallBack({}, a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
+>>>>>>> local
                 \ ' '.(a:status ? ' '.a:status : ''))
 endfunction
 
