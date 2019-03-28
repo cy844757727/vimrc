@@ -46,9 +46,6 @@ function! misc#F5FunctionKey(type) range abort
                     \ get(g:, 'TASK', '')
     elseif &diff
         diffupdate
-    elseif &filetype == 'nerdtree'
-        call b:NERDTree.root.refresh()
-        call b:NERDTree.render()
     elseif exists('t:git_tabpageManager')
         call git#Refresh()
     elseif !misc#SwitchToEmptyBuftype()
@@ -56,19 +53,18 @@ function! misc#F5FunctionKey(type) range abort
     elseif a:type ==# 'run'
         update
         if &filetype =~# 'verilog' && executable('vlib')
-            if isdirectory('work')
-                Asyncrun vlog -work work %
-            else
-                Asyncrun vlib work && vmap work work && vlog -work work %
-            endif
+            exe isdirectory('work') ? 'Asyncrun vlog -work work %' :
+                        \ 'Asyncrun vlib work && vmap work work && vlog -work work %'
         elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
             cclose
             call infoWin#Toggle('off')
             call async#ScriptRun(expand('%'))
         elseif !empty(glob('[mM]ake[fF]ile'))
-            Asyncrun make
-        elseif index(['c', 'cpp'], &ft) != -1
-            Asyncrun g++ -Wall -O0 -g3 % -o %<
+            Asyncrun! make
+        elseif &ft ==# 'c'
+            Asyncrun! gcc -Wall -O0 -g3 % -o %<
+        elseif &ft ==# 'cpp'
+            Asyncrun! g++ -Wall -O0 -g3 % -o %<
         elseif &filetype ==# 'vim'
             source %
         endif
@@ -596,7 +592,7 @@ function! misc#GetWebIcon(type, ...)
         endif
 
         return ''
-    elseif !empty(&buftype)
+    elseif !empty(getbufvar(l:file, '&bt'))
         return ''
     elseif a:type == 'fileformat'
         if getbufvar(l:file, '&binary', 0)
@@ -616,6 +612,8 @@ function! misc#GetWebIcon(type, ...)
 
         return WebDevIconsGetFileTypeSymbol(l:file)
     endif
+
+    return ''
 endfunction
 
 

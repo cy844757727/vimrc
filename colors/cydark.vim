@@ -34,8 +34,8 @@ let s:red   = ['#e44442']       " error errorsign
 " Different highlight for statusline between insertion mode and others
 augroup Color_statusline_cydark
     autocmd!
-    autocmd InsertEnter * :hi statusline guibg=#6D0EF2
-    autocmd InsertLeave * :hi statusline guibg=#105070
+    autocmd InsertEnter * :hi statusline guibg=#5d0fa2
+    autocmd InsertLeave * :hi statusline guibg=#005880
     autocmd ColorScheme * :call s:ClearAutocmd()
 augroup END
 
@@ -80,7 +80,7 @@ call s:HI('Search', s:none, s:gray)
 call s:HI('InSearch', s:none, s:none, 'reverse')
 call s:HI('QuickFixLine', s:none, s:none, 'bold')
 call s:HI('CursorLine', s:none, ['#303030', 235])
-call s:HI('StatusLine', s:white, ['#105070', 24])
+call s:HI('StatusLine', ['#dfdfdf'], ['#005880', 24])
 call s:HI('StatusLineNC', s:none, s:bg1, 'bold')
 call s:HI('LineNr', ['#4a4a4a', 239])
 call s:HI('Directory', ['#60c0d0'])
@@ -100,8 +100,8 @@ call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
 
 " === Diff ===
 call s:HI('DiffAdd', s:none, ['#192020'])
-call s:HI('DiffChange', s:none, ['#1a2a35'])
-call s:HI('DiffDelete', ['#361a1a'], ['#361a1a'])
+call s:HI('DiffChange', s:none, ['#25354a'])
+call s:HI('DiffDelete', ['#4a2020'], ['#4a2020'])
 call s:HI('DiffText', s:none, ['#202020'])
 
 " === Msg ===

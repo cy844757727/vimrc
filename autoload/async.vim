@@ -388,6 +388,7 @@ endfunction
 function! async#ScriptDbg(file, breakPoint) abort
     " Analyze script type & set var: cmd, postCmd, prompt, re...
     let l:dbg = s:DbgScriptAnalyze(a:file, a:breakPoint)
+
     if !has_key(l:dbg, 'cmd')
         return -1
     endif
@@ -431,8 +432,10 @@ let s:dbgTool = {'bashdb': {
             \ 'fileNr': '\v\((\S+):(\d+)\):',
             \ 'varVal': '\v^ \d+: (\S+) = (.*)$',
             \ 'breakLine': '\vNum  *Type  *Disp  *Enb',
-            \ 'stackLine':  '\v^(->|##)\d+ ',
+            \ 'stackLine': '\v^(->|##)\d+ ',
             \ 'watchLine': '\v^(watchpoint \d+: |  old value: |  new value: )',
+            \ 'map': {'B': 'delete', 'S': 'skip', 'f': 'finish', 'w': 'watch', 'W': 'watche', 'P': 'x'},
+            \ 'win': ['var', 'watch', 'stack'],
             \ 'd': "\n"
             \ }, 'pdb': {
             \ 'name': 'python',
@@ -440,12 +443,16 @@ let s:dbgTool = {'bashdb': {
             \ 'fileNr': '\v^\> (\S+)\((\d+)\)',
             \ 'varVal': '\v^display ([^:]+): (.*)$',
             \ 'breakLine': '\v^Num  *Type  *Disp  *Enb',
-            \ 'stackLine':  '\v  \S+/bdb.py\(\d+\)',
+            \ 'stackLine': '\v  \S+/bdb.py\(\d+\)',
+            \ 'map': {'p': 'p', 'P': 'pp', 'j': 'jump', 'u': 'until'},
+            \ 'win': ['var', 'stack'],
             \ 'd': ';;'
             \ }, 'perl': {
             \ 'name': 'perl',
             \ 'prompt': '\m DB<\d\+> ',
             \ 'fileNr': '\v\((\S+):(\d+)\)',
+            \ 'map': {'w': 'watch'},
+            \ 'win': [],
             \ 'stackLine': '\m@ = '
             \ }}
 
@@ -454,16 +461,9 @@ let s:dbgTool = {'bashdb': {
 " Prompt: command prompt
 function! s:DbgScriptAnalyze(file, breakPoint)
     let l:interpreter = s:GetScriptInterpreter(a:file, 0)
-
-    if empty(l:interpreter)
-        return {}
-    endif
-
-    let l:dbg = deepcopy(s:dbg)
-    let l:dbg.file = a:file
-    let l:dbg.cwd = getcwd()
     " Using full path to prevent file conflict (fnamemodify)
-    let l:dbg.var = copy(get(s:dbgShared, fnamemodify(a:file, ':p'), {}))
+    let l:dbg = {'file': a:file, 'cwd': getcwd(),
+                \ 'var': copy(get(s:dbgShared, fnamemodify(a:file, ':p'), {}))}
     let l:dbg.varFlag = len(l:dbg.var) ? 1 : 0
 
     if l:interpreter ==# 'bash' && executable('bashdb')
@@ -473,9 +473,6 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         call writefile(l:var + a:breakPoint + ['set args -q '.a:file], l:breakFile)
         let l:dbg.cmd = 'bashdb -q -x '.l:breakFile.' '.a:file
-        let l:dbg.win = ['var', 'watch', 'stack']
-        call extend(l:dbg.map, {'B': 'delete', 'S': 'skip', 'f': 'finish',
-                    \ 'w': 'watch', 'W': 'watche', 'P': 'x'})
     elseif l:interpreter =~# 'python' && executable('pdb')
         " Python script
         let l:dbg.tool = 'pdb'
@@ -483,8 +480,6 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         let l:breakPoint = map(a:breakPoint, "substitute(v:val,'\\v(:\\d+)\\zs\\s+,?', ' ,', '')")
         let l:var = map(keys(l:dbg.var), "'display '.v:val")
         let l:dbg.postCmd = join(l:var + l:breakPoint, ';;')
-        let l:dbg.win = ['var', 'stack']
-        call extend(l:dbg.map, {'p': 'p', 'P': 'pp', 'j': 'jump', 'u': 'until'})
     elseif l:interpreter =~# 'perl' && executable('perl')
         " Perl script
         let l:dbg.tool = 'perl'
@@ -495,13 +490,13 @@ function! s:DbgScriptAnalyze(file, breakPoint)
         call writefile(l:alias + a:breakPoint, l:breakFile)
         let l:dbg.cmd = l:interpreter.' -d '.a:file
         let l:dbg.postCmd = 'source '.l:breakFile
-        let l:dbg.win = []
-        call extend(l:dbg.map, {'w': 'watch'})
     else
         return {}
     endif
 
-    return extend(l:dbg, s:dbgTool[l:dbg.tool])
+    call extend(l:dbg, s:dbg)
+    call extend(l:dbg.map, s:dbgTool[l:dbg.tool].map)
+    return extend(l:dbg, s:dbgTool[l:dbg.tool], 'keep')
 endfunction
 
 " Configure new tabpage for debug
@@ -603,7 +598,7 @@ function! s:DbgMaping()
 endfunction
 
 
-let s:dbgPromptInfo = {
+let s:dbgPrompt = {
             \ 'quit': 'Quit debug ?',
             \ 'jump': 'Jump to line number: ',
             \ 'until': 'Execute until line number: ',
@@ -627,7 +622,7 @@ let s:dbgPromptInfo = {
             \ }
 
 function! <SID>DbgSendCmd(cmd)
-    let l:prompt = get(s:dbgPromptInfo, a:cmd, '*****: ')
+    let l:prompt = get(s:dbgPrompt, a:cmd, '*****: ')
 
     if a:cmd ==# 'quit' && confirm(l:prompt, "&Yes\n&No", 2) == 2
         return
@@ -825,10 +820,8 @@ function! s:DbgOnExit(job, status)
             tabclose
         catch
             call win_gotoid(t:dbg.srcWinId)
+            unlet t:dbg t:task t:tab_lable
             only
-            unlet t:dbg
-            unlet t:task
-            unlet t:tab_lable
         endtry
     endif
 endfunction
@@ -891,8 +884,8 @@ function! s:GdbOnExit()
         try
             tabclose
         catch
-            unlet t:task
-            unlet t:tab_lable
+            unlet t:task t:tab_lable
+            only
         endtry
     endif
 endfunction

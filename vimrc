@@ -67,8 +67,9 @@ command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
 command! -range -addr=tabs TN :<line1>tabnext
 command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
-command! -nargs=* Amake :Asyncrun make
+command! -nargs=* Amake :Async make <args>
 command! Avdel :Async vdel -lib work -all
+command! -nargs=+ -complete=file Arm :Async rm <args>
 command! -nargs=? -complete=tag Ag :call misc#Ag(<q-args>, '')
 
 "快捷键映射===================== {{{1
