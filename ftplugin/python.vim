@@ -14,6 +14,7 @@ if exists("b:did_ftplugin_")
     finish
 endif
 let b:did_ftplugin_ = 1
+let b:task = 'call async#ScriptRun(''visual'', 1)'
 
 let b:ale_linters = ['pylint', 'pyflakes']
 let b:ale_fixers = ['autopep8']

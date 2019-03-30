@@ -365,7 +365,7 @@ function s:GetScriptInterpreter(file, fullFlag)
 endfunction
 
 
-function! async#ScriptRun(file) abort
+function! async#ScriptRun(file, ...) abort
     let l:file = a:file ==# 'visual' ? expand('%') : a:file
     let l:interpreter = s:GetScriptInterpreter(l:file, 1)
 
@@ -373,14 +373,20 @@ function! async#ScriptRun(file) abort
         return
     endif
 
-    if a:file ==# 'visual'
-        let l:interpreter = matchstr(l:interpreter, '^\S*')
-        call term_sendkeys(async#TermToggle('on', get(s:interactive, l:interpreter, l:interpreter)),
-                    \ substitute(getreg('*'), '\v\n(\s*\n)+|\n?$|^\n?', '\n', 'g')."\n")
+    if a:file !=# 'visual'
+        let l:cmd = 'clear'
+        let l:postCmd = l:interpreter.' '.shellescape(l:file)
+    elseif a:0 > 0 && l:interpreter =~# 'python'
+        let l:cmd = 'jupyter-console'
+        let l:postCmd = join(['%%capture'] +
+                    \ filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'") +
+                    \ ['', ''], "\n")
     else
-        call term_sendkeys(async#TermToggle('on', 'clear'),
-                    \ l:interpreter.' '.shellescape(l:file)."\n")
+        let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
+        let l:postCmd = join(filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'"), "\n")."\n"
     endif
+
+    call term_sendkeys(async#TermToggle('on', l:cmd), l:postCmd."\n")
 endfunction
 
 

@@ -147,6 +147,7 @@ nnoremap <silent> <f5>  :call misc#F5FunctionKey('run')<CR>
 vnoremap <silent> <f5>  :call misc#F5FunctionKey('visual')<CR>
 noremap <silent> <C-f5> :call misc#F5FunctionKey('debug')<CR>
 noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
+vnoremap <silent> <S-f5> :call misc#F5FunctionKey('task_visual')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
 "map! <f5> <Esc><f5>
@@ -178,7 +179,7 @@ noremap <silent> <C-f10>   :call misc#ToggleBottombar('quickfix', 'book')<CR>
 noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottombar('terminal', '')<CR>
-noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'ipython3')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'jupyter-console')<CR>
 noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'python3')<CR>
 noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
@@ -200,7 +201,7 @@ tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottom
 tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','todo')"])<CR>
 tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', '')"])<CR>
-tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','ipython3')"])<CR>
+tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','jupyter-console')"])<CR>
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','python3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
 
@@ -240,7 +241,7 @@ let g:Lf_DefaultMode = 'NameOnly'
 let g:Async_TerminalType = [
             \ 'python3',  'python2',  'python',
             \ 'ipython3', 'ipython2', 'ipython',
-            \ 'dc_shell'
+            \ 'dc_shell', 'jupyter-console'
             \ ]
 
 " === Netrw-NERDTree === {{{1
