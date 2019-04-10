@@ -123,7 +123,7 @@ function s:SignToggle(file, line, type, attr, skip)
         if exists('t:dbg') && a:type =~# 'break'
             call t:dbg.sendCmd(a:type, a:file.':'.a:line)
         endif
-    elseif a:skip == 0
+    elseif !a:skip
         " Unset sign
         exe 'sign unplace '.l:id[1].' file='.a:file
         call filter(l:vec, 'v:val.id != '.l:id[1])
@@ -276,13 +276,12 @@ function s:SignSave(signFile, types)
     let l:content = []
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            if has_key(l:signs, l:sign.id)
-                let l:line = l:signs[l:sign.id]
-            else
+            if !has_key(l:signs, l:sign.id)
                 " Ignore invalid data
                 continue
             endif
 
+            let l:line = l:signs[l:sign.id]
             let l:content += [l:type.' '.l:sign.file.':'.l:line]
 
             if !empty(l:sign.attr)
@@ -361,8 +360,7 @@ function s:SignAddAttr(types, file, lin, attrs)
         return
     endif
 
-    if (empty(l:val.sign.attr) && len(l:arg) > 1) ||
-                \ (!empty(l:val.sign.attr) && len(l:arg) < 2)
+    if xor(empty(l:val.sign.attr), len(l:arg) == 1)
         exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
         exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
                     \ ' name='.s:signDefHead.l:val.type.(len(l:arg) > 1 ? 'Attr' : '').

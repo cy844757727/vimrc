@@ -321,7 +321,7 @@ endfunction
 
 
 let s:TabLineStart = 0
-let s:TabLineChars = 500
+let s:TabLineChars = &columns
 " Customize tabline
 function! misc#TabLine()
     let l:s = ''
@@ -353,9 +353,10 @@ function! misc#TabLine()
         endif
 
         let l:endSpace = repeat(' ', l:width - strdisplaywidth(
-                    \ strcharpart(l:str, s:TabLineStart, s:TabLineChars)))
+                    \ strcharpart(l:str, s:TabLineStart, s:TabLineChars)) - 1)
     else
         let s:TabLineStart = 0
+        let s:TabLineChars = l:width
         let l:endSpace = ''
     endif
 
@@ -370,51 +371,33 @@ function! misc#TabLine()
         if empty(l:s)
             " The first lable
             let l:width = s:TabLineStart - l:chars + 1
-            let l:lable = s:TabLineStart > 0 ? '<' : ' '
-            let l:lable .= '%{misc#TabLabel('.(l:i+1).','.l:width.')} '
-        elseif s:TabLineStart + s:TabLineChars == l:chars + 1
-            " Encounter segmentation symbols (last tab)
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '.l:endSpace.'>'
-            let l:last = 1
-        elseif s:TabLineStart + s:TabLineChars == l:chars + 2
-            " After segmentation symbols (last tab)
+            let l:lable = (s:TabLineStart > 0 ? '<' : ' ').
+                        \  '%{misc#TabLabel('.(l:i+1).','.l:width.')} '
+        elseif s:TabLineStart + s:TabLineChars > l:chars + 2
+            " Middle lable
             let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '
-            let l:lable .= '%#TabLineSeparator#│'.l:endSpace.'%#TabLine#>'
-            let l:last = 1
-        elseif s:TabLineStart + s:TabLineChars == l:chars
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).')}'.l:endSpace
-            let l:lable .= l:i != l:num - 1 ? '>' : ' '
-            let l:last = 1
-        elseif s:TabLineStart + s:TabLineChars < l:chars
-            let l:width = strchars(l:tabList[l:i]) - l:chars + s:TabLineStart + s:TabLineChars - 2
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).','.l:width.')}'.l:endSpace
-            let l:lable .=  '>'
-            let l:last = 1
         else
-            let l:lable = ' %{misc#TabLabel('.(l:i+1).')} '
+            " Last lable
+            let l:extra = s:TabLineStart + s:TabLineChars - l:chars
+            let l:width = strchars(l:tabList[l:i]) + l:extra - 2
+            let l:lable = ' %{misc#TabLabel('.(l:i+1).(l:extra < 0 ? ','.l:width : '').')}'.l:endSpace.
+                        \ repeat(' ', l:extra).(l:i == l:num -1 && !l:extra ? ' ' : '>')
+            let l:last = 1
         endif
 
         " select the highlighting & tab page number (for mouse clicks)
         let l:s .= (l:i == l:cur ? '%#TabLineSel#' : '%#TabLine#').
                     \ '%'.(l:i + 1).'T'.l:lable
 
-        " Separator symbols
-        if !exists('l:last') && l:i != l:num - 1
-            let l:s .= (l:i != l:cur && l:i + 1 != l:cur) ? '%#TabLineSeparator#│' : ' '
-        else
+        if exists('l:last') || l:i == l:num - 1
             break
         endif
+
+        " Separator symbols
+        let l:s .= (l:i != l:cur && l:i + 1 != l:cur) ? '%#TabLineSeparator#│' : ' '
     endfor
 
-    " after the last tab fill with TabLineFill and reset tab page nr
-    let l:s .= '%#TabLineFill#%T'
-
-    " right-align the label to close the current tab page
-    if tabpagenr('$') > 1
-        let l:s .= '%=%#TabLine#%999X ✘ '
-    endif
-
-    return l:s
+    return l:s.'%#TabLineFill#%T'.(tabpagenr('$') > 1 ? '%=%#TabLine#%999X ✘ ' : '')
 endfunction
 
 
@@ -440,15 +423,10 @@ function! misc#TabLabel(n, ...)
                 \ misc#GetWebIcon('filetype', l:name).' '.l:name.' '.l:modFlag)
 
     " Cut out a section of lable
-    if a:0 == 0
-        return l:lable
-    elseif a:1 == 0
-        return ''
-    elseif a:1 < 0
-        return strcharpart(l:lable, a:1)
-    else
-        return strcharpart(l:lable, 0, a:1)
-    endif
+    return 
+                \ a:0 == 0 ? l:lable :
+                \ a:1 >= 0 ? strcharpart(l:lable, 0, a:1) :
+                \ strcharpart(l:lable, a:1)
 endfunction
 
 
@@ -583,23 +561,15 @@ function! misc#GetWebIcon(type, ...)
     let l:file = a:0 > 0 ? a:1 : expand('%')
 
     if a:type == 'head'
-        if l:file =~ '^!'
-            return 'ﲵ'
-        elseif getbufvar(l:file, '&bt', '') == 'help'
-            return ''
-        elseif exists('g:BMBPSign_Projectized')
-            return ''
-        endif
-
-        return ''
+        return
+                    \ l:file =~ '^!'                      ? 'ﲵ' :
+                    \ getbufvar(l:file, '&bt') ==# 'help' ? '' :
+                    \ exists('g:BMBPSign_Projectized')    ? '' : ''
     elseif !empty(getbufvar(l:file, '&bt'))
         return ''
     elseif a:type == 'fileformat'
-        if getbufvar(l:file, '&binary', 0)
-            return ''
-        endif
-
-        return WebDevIconsGetFileFormatSymbol()
+        return getbufvar(l:file, '&binary') ? '' :
+                    \ WebDevIconsGetFileFormatSymbol()
     elseif a:type == 'filetype'
         let l:tfile = fnamemodify(l:file, ':t')
         let l:extend = fnamemodify(l:file, ':e')

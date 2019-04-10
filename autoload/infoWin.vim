@@ -19,6 +19,7 @@ function! infoWin#Set(dict)
     endif
 
     setlocal winfixheight noreadonly modifiable
+    let s:indent = get(a:dict, 'indent', '  ')
     let l:list = s:DisplayStr(a:dict.content, '')
     let b:infoWin = {'title': get(a:dict, 'title', '[InfoWin]'),
                 \ 'files': len(keys(a:dict.content)),

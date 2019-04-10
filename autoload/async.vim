@@ -344,7 +344,7 @@ function s:GetScriptInterpreter(file, fullFlag)
     if !filereadable(a:file)
         return ''
     elseif !executable('sed') && !bufloaded(a:file)
-        exe '0vsplit +hide '.l:file
+        exe 'belowright 0vsplit +hide '.l:file
     endif
 
     let l:interpreter = matchstr(executable('sed') ?
@@ -376,11 +376,16 @@ function! async#ScriptRun(file, ...) abort
     if a:file !=# 'visual'
         let l:cmd = 'clear'
         let l:postCmd = l:interpreter.' '.shellescape(l:file)
+    elseif empty(visualmode())
+        return
     elseif a:0 > 0 && l:interpreter =~# 'python'
         let l:cmd = 'jupyter-console'
-        let l:postCmd = join(['%%capture'] +
-                    \ filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'") +
-                    \ ['', ''], "\n")
+        let l:lines = filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'")
+        let l:postCmd = join(['%%capture'] + l:lines + ['', ''], "\n")
+
+        if l:lines[-1] =~# '^\s'
+            let l:postCmd .= "\n"
+        endif
     else
         let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
         let l:postCmd = join(filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'"), "\n")."\n"
@@ -436,10 +441,10 @@ let s:dbgTool = {'bashdb': {
             \ 'name': 'bash',
             \ 'prompt': '\mbashdb<\d\+>',
             \ 'fileNr': '\v\((\S+):(\d+)\):',
-            \ 'varVal': '\v^ \d+: (\S+) = (.*)$',
+            \ 'varVal': '\v^ \d+: ([^ ()]+) = (.*)$',
             \ 'breakLine': '\vNum  *Type  *Disp  *Enb',
-            \ 'stackLine': '\v^(->|##)\d+ ',
-            \ 'watchLine': '\v^(watchpoint \d+: |  old value: |  new value: )',
+            \ 'stackLine': '\v^(-\>|##)\d+ ',
+            \ 'watchLine': '\v^(Watchpoint \d+: |  old value: |  new value: )',
             \ 'map': {'B': 'delete', 'S': 'skip', 'f': 'finish', 'w': 'watch', 'W': 'watche', 'P': 'x'},
             \ 'win': ['var', 'watch', 'stack'],
             \ 'd': "\n"
