@@ -21,7 +21,8 @@ set fillchars=fold:\ ,diff:\ ,vert:│
 set completeopt=menu,menuone,noinsert,preview,noselect
 set diffopt=vertical,filler,foldcolumn:0,context:5
 " gcc/g++
-set errorformat=%f:%l:%c:\ %m
+set errorformat=%E%f:%l:%c:\ error:\ %m
+set errorformat+=%W%f:%l:%c:\ warning:\ %m
 " verilog: modelsim
 "set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l):\ %m
 "set errorformat+=**\ Error:\ (vlog-%*\\d)\ %f(%l.%c):\ %m

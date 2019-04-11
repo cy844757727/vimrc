@@ -400,7 +400,6 @@ function! misc#TabLine()
     return l:s.'%#TabLineFill#%T'.(tabpagenr('$') > 1 ? '%=%#TabLine#%999X ✘ ' : '')
 endfunction
 
-
 function! misc#TabLabel(n, ...)
     let l:buflist = tabpagebuflist(a:n)
     let l:winnr = tabpagewinnr(a:n) - 1
@@ -589,6 +588,10 @@ endfunction
 
 " Return linter status & job status
 function! misc#StatuslineExtra() abort
+    if !empty(&buftype)
+        return ''
+    endif
+
     let l:counts = ale#statusline#Count(bufnr(''))
     let l:all_errors = l:counts.error + l:counts.style_error
     let l:all_non_errors = l:counts.total - l:all_errors
@@ -939,8 +942,38 @@ endfunction
 function misc#Complete_Task(...)
     return join(keys(get(get(g:, 'ENV', {}), 'task_queue', {})), "\n")
 endfunction
-" ####################################################################
 
+function s:Num2Radix(list, radix, map, prefix) abort
+    let l:out = []
+    for l:num in type(a:list) == type([]) ? a:list : [a:list]
+        let l:str = ''
+
+        while l:num
+            let l:tmp = l:num % a:radix
+            let l:str = get(a:map, l:tmp, l:tmp).l:str
+            let l:num = l:num / a:radix
+        endwhile
+
+        let l:out += [a:prefix.l:str]
+    endfor
+
+    return type(a:list) == type([]) ? l:out : l:out[0]
+endfunction
+
+function misc#Hex(list, ...)
+    return s:Num2Radix(a:list, 16,
+                \ {'10': 'a', '11': 'b', '12': 'c', '13': 'd', '14': 'e', '15': 'f'}, get(a:000, 0, ''))
+endfunction
+
+function misc#Bin(list, ...)
+    return s:Num2Radix(a:list, 2, {}, get(a:000, 0, ''))
+endfunction
+
+function misc#Oct(list, ...)
+    return s:Num2Radix(a:list, 8, {}, get(a:000, 0, ''))
+endfunction
+
+" ####################################################################
 function! SwitchXPermission()
     let l:node = g:NERDTreeFileNode.GetSelected().path.str()
 

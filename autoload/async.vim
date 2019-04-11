@@ -161,6 +161,11 @@ function s:cmdExpand(cmd) abort
                     \ '<amatch>', '<sfile>', '<slnum>',
                     \ '<cword>', '<cWORD>', '<client>'
                     \ ], l:list[l:i]) != -1
+
+            if exists('*misc#SwitchToEmptyBuftype')
+                call misc#SwitchToEmptyBuftype()
+            endif
+
             let l:list[l:i] = fnameescape(expand(l:list[l:i]))
         elseif l:list[l:i] ==# '<root>'
             let l:list[l:i] = fnameescape(getcwd())
@@ -191,11 +196,10 @@ endfunction
 " With Quickfix output
 function! async#JobRunOut(bang, cmd, extra) abort
     let l:extra = extend({'title': 'Async: '.a:cmd, 'flag': '[qf]'}, a:extra)
-    let l:efm = has_key(l:extra, 'efm') ? {'efm': l:extra.efm} : {}
     call setqflist([], 'r', {'lines': [], 'title': l:extra.title}) 
     call async#JobRun(a:bang, a:cmd, {
                 \ 'out_io': 'pipe', 'err_io': 'pipe',
-                \ 'callback': function('s:JobCallBack', [l:efm]),
+                \ 'callback': function('s:JobCallBack', [get(l:extra, 'efm', &efm)]),
                 \ 'exit_cb': function('s:JobOnExitQf', [reltime()])
                 \ }, l:extra)
     exe 'copen '.get(g:, 'BottomWinHeight', 15)
@@ -203,7 +207,7 @@ endfunction
 
 
 function s:JobCallBack(efm, job, msg)
-    call setqflist([], 'a', extend({'lines': [a:msg]}, a:efm))
+    call setqflist([], 'a', {'lines': [a:msg], 'efm': a:efm})
 
     if &buftype ==# 'quickfix'
         normal G
@@ -222,7 +226,7 @@ function s:JobOnExitQf(time, job, status)
 
     let l:elapse += l:integer > 0 || len(l:elapse) == 0 ? [l:integer] : []
     let l:elapse[0] += l:point / 1000000.0
-    call s:JobCallBack({}, a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
+    call s:JobCallBack('%I%m', a:job, '[Finished] 羽'.join(reverse(l:elapse), ':').
                 \ ' '.(a:status ? ' '.a:status : ''))
 endfunction
 
@@ -244,7 +248,7 @@ function! s:JobOnExit(job, status)
         call execute(l:job.ex, '')
     endif
 
-    if get(l:job, 'quiet', 0)
+    if l:job.quiet
         echo ' '
     endif
 endfunction
