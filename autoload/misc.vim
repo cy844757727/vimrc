@@ -43,7 +43,7 @@ function! misc#F5FunctionKey(type) range abort
                     \ exists('w:task') ? w:task :
                     \ exists('t:task') ? t:task :
                     \ exists('g:task') ? g:task :
-                    \ get(g:, 'TASK', '')
+                    \ get(get(g:, 'ENV', {}), 'task', '')
     elseif &diff
         diffupdate
     elseif exists('t:git_tabpageManager')
@@ -97,13 +97,13 @@ function! misc#F5FunctionKey(type) range abort
     endif
 endfunction
 
-function misc#F5Complete(L, C, P)
+function misc#Complete_F5(L, C, P)
     return "run\ndebug\nvisual\ntask"
 endfunction
 
 
 let s:AgFileFilter = {
-            \ 'vim': '\\.vim$',
+            \ 'vim': '\\.vim$|vimrc|gvimrc',
             \ 'python': '\\.py$',
             \ 'c': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
             \ 'cpp': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
@@ -875,6 +875,69 @@ function! misc#ToggleBottombar(winType, type)
         call infoWin#Toggle('off')
         call async#TermToggle('toggle', a:type)
     endif
+endfunction
+
+
+function! misc#Enviroment(config) abort
+    if empty(a:config)
+        echo get(g:, 'ENV', {})
+        return
+    endif
+
+    if !exists('g:ENV')
+        let g:ENV = {}
+    endif
+
+    let l:str = []
+    for l:item in split(a:config, '\v\s*;\s*')
+        let l:list = split(l:item, '\v\s*\=\s*')
+
+        if len(l:list) == 1 && has_key(g:ENV, l:list[0])
+            let l:str += [l:list[0].'='.string(g:ENV[l:list[0]])]
+        elseif len(l:list) == 2
+            let g:ENV[l:list[0]] = l:list[1] =~ '\v^[[{]' ? eval(l:list[1]) : l:list[1]
+        endif
+    endfor
+
+    if !empty(l:str)
+        echo join(l:str, "\n")
+    endif
+endfunction
+
+function misc#Complete_ENV(...)
+    return join(keys(get(g:, 'ENV', {})), "\n")
+endfunction
+
+function! misc#TaskQueue(task) abort
+    if empty(a:task)
+        echo get(get(g:, 'ENV', {}), 'task_queue', {})
+        return
+    endif
+
+    let l:task_queue = {}
+    for l:item in split(a:task, '\v\s*;\s*')
+        let l:list = split(l:item, '\v\s*\=\s*')
+
+        if len(l:list) == 1 && has_key(get(get(g:, 'ENV', {}), 'task_queue'), l:list[0])
+            exe g:ENV.task_queue[l:list[0]]
+        elseif len(l:list) == 2
+            let l:task_queue[l:list[0]] = l:list[1]
+        endif
+    endfor
+
+    if !empty(l:task_queue)
+        if !exists('g:ENV')
+            let g:ENV = {'task_queue': {}}
+        elseif !has_key(g:ENV, 'task_queue')
+            let g:ENV.task_queue = {}
+        endif
+
+        call extend(g:ENV.task_queue, l:task_queue)
+    endif
+endfunction
+
+function misc#Complete_Task(...)
+    return join(keys(get(get(g:, 'ENV', {}), 'task_queue', {})), "\n")
 endfunction
 " ####################################################################
 

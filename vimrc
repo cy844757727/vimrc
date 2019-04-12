@@ -59,7 +59,9 @@ augroup END
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
-command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
+command! -nargs=? -complete=custom,misc#Complete_ENV Env :call misc#Enviroment(<q-args>)
+command! -nargs=? -complete=custom,misc#Complete_Task Task :call misc#TaskQueue(<q-args>)
+command! -nargs=? -complete=custom,misc#Complete_F5 F5 :call misc#F5FunctionKey(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
@@ -441,6 +443,14 @@ function! PostLoadWorkSpace_Var()
             endfor
         endfor
         unlet g:WINVAR_BUFHIS
+    endif
+
+    if exists('g:env')
+        if !exists('g:ENV')
+            let g:ENV = {}
+        endif
+
+        call extend(g:ENV, g:env, 'keep')
     endif
 endfunction
 

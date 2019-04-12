@@ -359,6 +359,10 @@ function s:GetScriptInterpreter(file, fullFlag)
         endif
 
         let l:interpreter = getbufvar(a:file, '&filetype')
+
+        if exists('g:ENV') && has_key(g:ENV, l:interpreter)
+            let l:interpreter = g:ENV[l:interpreter]
+        endif
     endif
 
     return l:interpreter
