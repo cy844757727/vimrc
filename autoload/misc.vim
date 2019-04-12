@@ -730,7 +730,7 @@ function! misc#EditFile(file, ...)
                 exe l:tab.'tabnext'
                 exe l:win.'wincmd w'
                 if l:file !~? expand('%') || l:way !=# 'edit'
-                    exe 'buffer '.l:file
+                    exe 'buffer '.matchstr(l:way, ' .*$').' '.l:file
                 endif
                 return
             endif
@@ -743,27 +743,6 @@ function! misc#EditFile(file, ...)
 endfunction
 
 
-function misc#PythonRunCell()
-    let l:lin1 = search('\v^#\%\%', 'bcn')
-    let l:lin2 = search('\v^#\%\%', 'nW') - 1
-
-    if !l:lin1
-        return
-    endif
-
-    let l:lin1 += 1
-    let l:lin2 = l:lin2 != -1 ? l:lin2 : line('$')
-    let l:interpreter = matchstr(getline(1), '\v^(#!.*/(env\s+)?)\zs\S+')
-    
-    if empty(l:interpreter)
-        let l:interpreter = &filetype
-    endif
-
-    let l:lines = join(['%%capture'] +
-                \ filter(getline(l:lin1, l:lin2), "v:val =~ '\\S'") +
-                \ ['', '', ''], "\n")
-    call term_sendkeys(async#TermToggle('on', 'jupyter-console'), l:lines)
-endfunction
 " ############### 窗口相关 ######################################
 " 最大化窗口/恢复
 function! misc#WinResize()

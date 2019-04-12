@@ -44,6 +44,7 @@ set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 " Global variables
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
+let g:SideWinMode = 0
 " Autocmd & command ===================== {{{1
 augroup UsrDefCmd
     autocmd!
@@ -60,12 +61,9 @@ command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#F5Complete F5 :call misc#F5FunctionKey(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
-command! -nargs=? Task :exe get(empty('<args>') ? g: : <args>:, 'task', 'echo')
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
-command! -range -addr=tabs TN :<line1>tabnext
-command! -range -addr=tabs TP :<line1>tabprevious
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :Async make <args>
 command! Avdel :Async vdel -lib work -all

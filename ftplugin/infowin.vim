@@ -3,7 +3,7 @@
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 "
-":
+"
 if exists("b:did_ftplugin_")
     finish
 endif
@@ -21,9 +21,16 @@ nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit')<CR>
 nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'big')<CR>
 nnoremap <silent> <buffer> e :call <SID>Open('edit')<CR>
 nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
+nnoremap <silent> <buffer> p :call <SID>Preview()<CR>
+nnoremap <silent> <buffer> P :call <SID>Preview('close')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
+
+augroup InfoWin_
+    autocmd!
+    autocmd BufWinLeave <buffer> call <SID>Preview('close')
+augroup END
 
 function! <SID>MaxMin()
     exe 'resize '.(winheight(0) != get(g:, 'BottomWinHeight', 15) ?
@@ -40,12 +47,11 @@ function! <SID>Open(way, ...) abort
     exe get(a:000, 0, '') !=# 'keep' ? 'quit' : 'wincmd W'
 
     if a:0 == 0 && exists('*misc#EditFile')
-        call misc#EditFile(l:file, a:way)
+        call misc#EditFile(l:file, a:way.' +'.l:lin)
     elseif l:file !~? expand('%') || a:way !=# 'edit'
-        exe a:way.' '.l:file
+        exe a:way.' +'.l:lin.' '.l:file
     endif
 
-    call cursor(l:lin, 1)
     normal zz
 endfunction
 
@@ -70,5 +76,34 @@ function s:GetLine() abort
     endwhile
 
     return [b:infoWin.path.'/'.l:file, l:lin]
+endfunction
+
+function <SID>Preview(...)
+    if a:0 > 0
+        let l:cur = winnr()
+        if l:cur != winnr('$') && getwinvar(l:cur + 1, 'infoWinPreview', 0)
+            exe (l:cur+1).'close'
+        endif
+
+        return
+    endif
+
+    try
+        let [l:file, l:lin] = s:GetLine()
+    catch
+        return
+    endtry
+    
+    let l:cur = winnr()
+    if l:cur != winnr('$') && getwinvar(l:cur + 1, 'infoWinPreview', 0)
+        wincmd w
+        exe l:file =~# bufname('%') ? 'normal '.l:lin.'ggzz' :
+                    \ 'edit +'.l:lin.' '.l:file
+    else
+        exe 'belowright vsplit +'.l:lin.' '.l:file
+        let w:infoWinPreview = 1
+    endif
+
+    wincmd W
 endfunction
 

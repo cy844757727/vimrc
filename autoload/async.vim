@@ -381,7 +381,7 @@ function! async#ScriptRun(file, ...) abort
     elseif a:0 > 0 && l:interpreter =~# 'python'
         let l:cmd = 'jupyter-console'
         let l:lines = filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'")
-        let l:postCmd = join(['%%capture'] + l:lines + ['', ''], "\n")
+        let l:postCmd = join(['%%capture vim'] + l:lines + ['', ''], "\n")
 
         if l:lines[-1] =~# '^\s'
             let l:postCmd .= "\n"
