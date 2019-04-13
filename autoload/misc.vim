@@ -35,73 +35,104 @@ endfunction
 
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
-" Parameter value: origin, task, run, debug, reverse
-function! misc#F5FunctionKey(type) range abort
-    if a:type =~# 'task'
-        exe
-                    \ exists('b:task') ? b:task :
-                    \ exists('w:task') ? w:task :
-                    \ exists('t:task') ? t:task :
-                    \ exists('g:task') ? g:task :
-                    \ get(get(g:, 'ENV', {}), 'task', '')
+" Parameter value: task, run, debug, visual {{{1
+function! misc#F5Function(type) range abort
+    if a:type ==# 'task'
+        call s:F5Function.task()
     elseif &diff
         diffupdate
     elseif exists('t:git_tabpageManager')
         call git#Refresh()
     elseif !misc#SwitchToEmptyBuftype()
         return
-    elseif a:type ==# 'run'
-        update
-        if &filetype =~# 'verilog' && executable('vlib')
-            exe isdirectory('work') ? 'Asyncrun vlog -work work %' :
-                        \ 'Asyncrun vlib work && vmap work work && vlog -work work %'
-        elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
-            cclose
-            call infoWin#Toggle('off')
-            call async#ScriptRun(expand('%'))
-        elseif !empty(glob('[mM]ake[fF]ile'))
-            Asyncrun! make
-        elseif &ft ==# 'c'
-            Asyncrun! gcc -Wall -O0 -g3 % -o %<
-        elseif &ft ==# 'cpp'
-            Asyncrun! g++ -Wall -O0 -g3 % -o %<
-        elseif &filetype ==# 'vim'
-            source %
-        endif
-    elseif a:type ==# 'debug'
-        update
-        let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
-
-        if index(['sh', 'python', 'perl'], &ft) != -1
-            call async#ScriptDbg(expand('%'), l:breakPoint)
-        elseif !empty(glob('[mM]ake[fF]ile')) || index(['c', 'cpp'], &ft) != -1
-            call async#GdbStart(expand('%<'), l:breakPoint)
-        elseif &filetype ==# 'vim'
-            breakdel *
-            for l:item in l:breakPoint
-                let l:list = split(l:item, '[ :]')
-                exe 'breakadd file '.l:list[2].' '.l:list[1]
-            endfor
-            debug source %
-        endif
-    elseif a:type ==# 'visual'
-        if index(['sh', 'python', 'ruby'], &ft) != -1
-            cclose
-            call infoWin#Toggle('off')
-            call async#ScriptRun('visual')
-        elseif &filetype ==# 'vim'
-            silent exe line('''<').','.line('''>').'write! .tempfile'
-            source .tempfile
-            call delete('.tempfile')
-        endif
+    elseif has_key(s:F5Function, a:type)
+        call s:F5Function[a:type]()
     endif
 endfunction
 
-function misc#Complete_F5(L, C, P)
-    return "run\ndebug\nvisual\ntask"
+" {'task', 'run', 'debug', 'visual'}
+let s:F5Function = {}
+
+" Task
+function s:F5Function.task()
+    let l:Task = exists('b:task') ? b:task :
+                \ exists('w:task') ? w:task :
+                \ exists('t:task') ? t:task :
+                \ exists('g:task') ? g:task :
+                \ get(get(g:, 'ENV', {}), 'task', '')
+    let l:type = type(l:Task)
+
+    if l:type == type(function('add'))
+        call l:Task()
+    elseif l:type == type('') || l:type == type([])
+        call execute(l:Task, '')
+    endif
+endfunction
+
+" Run
+function s:F5Function.run()
+    update
+    if &filetype =~# 'verilog' && executable('vlib')
+        let l:ex = isdirectory('work') ? 'Asyncrun vlog -work work %' :
+                    \ 'Asyncrun vlib work && vmap work work && vlog -work work %'
+    elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+        call misc#ToggleBottombar('only', 'terminal')
+        call async#ScriptRun(expand('%'))
+    elseif !empty(glob('[mM]ake[fF]ile'))
+        let l:ex = 'Asyncrun! make'
+    elseif &ft ==# 'c'
+        let l:ex = 'Asyncrun! gcc -Wall -O0 -g3 % -o %<'
+    elseif &ft ==# 'cpp'
+        let l:ex = 'Asyncrun! g++ -Wall -O0 -g3 % -o %<'
+    elseif &filetype ==# 'vim'
+        source %
+    endif
+
+    if exists('l:ex')
+        call misc#ToggleBottombar('only', 'quickfix')
+        exe l:ex
+    endif
+endfunction
+
+" Debug
+function s:F5Function.debug()
+    update
+    let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
+
+    if index(['sh', 'python', 'perl'], &ft) != -1
+        call async#ScriptDbg(expand('%'), l:breakPoint)
+    elseif !empty(glob('[mM]ake[fF]ile')) || index(['c', 'cpp'], &ft) != -1
+        call async#GdbStart(expand('%<'), l:breakPoint)
+    elseif &filetype ==# 'vim'
+        breakdel *
+
+        for l:item in l:breakPoint
+            let l:list = split(l:item, '[ :]')
+            exe 'breakadd file '.l:list[2].' '.l:list[1]
+        endfor
+
+        debug source %
+    endif
+endfunction
+
+" Visual
+function s:F5Function.visual()
+    if index(['sh', 'python', 'ruby'], &ft) != -1
+        call misc#ToggleBottombar('only', 'terminal')
+        call async#ScriptRun('visual')
+    elseif &filetype ==# 'vim'
+        let l:tempFile = tempname()
+        silent exe line('''<').','.line('''>').'write! '.l:tempFile
+        exe 'source '.l:tempFile
+    endif
+endfunction
+
+function misc#CompleteF5(L, C, P)
+    return join(keys(s:F5Function))
 endfunction
 
 
+" Ag: silver-search tool {{{1
 let s:AgFileFilter = {
             \ 'vim': '\\.vim$|vimrc|gvimrc',
             \ 'python': '\\.py$',
@@ -130,24 +161,23 @@ function! misc#Ag(str, word) abort
                 \ has_key(s:commentChar, l:type) ?
                 \ '^(?!\\s*'.fnameescape(s:commentChar[l:type]).').*' : ''
                 \ ).(a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str)
-    call async#TermToggle('off', '')
 
     if exists('g:BMBPSign_Output')
         let s:refDict = {'title': ' '.a:str, 'content': {}, 'hi': matchstr(a:str, '\v\S+$')}
         let l:option = {'out_io': 'pipe', 'out_mode': 'nl',
-                    \ 'out_cb': function('s:AgOnOut_Info'),
-                    \ 'exit_cb': function('s:AgOnExit_Info')}
+                    \ 'out_cb': function('s:AgOnOut'),
+                    \ 'exit_cb': function('s:AgOnExit')}
         call async#JobRun('!', l:cmd, l:option, {'flag': '[infowin]'})
     else
         call async#JobRunOut('!', l:cmd, {'title': ' '.a:str, 'efm': '%f:%l:%m'})
     endif
 endfunction
 
-function s:AgOnExit_Info(...)
+function s:AgOnExit(...)
     call infoWin#Set(s:refDict)
 endfunction
 
-function! s:AgOnOut_Info(job, msg) abort
+function! s:AgOnOut(job, msg) abort
     let l:list = split(a:msg, ':')
     let l:file = fnamemodify(l:list[0], ':.')
     if !has_key(s:refDict.content, l:file)
@@ -320,9 +350,9 @@ function! misc#HEXCovent()
 endfunction
 
 
+" Customize tabline {{{1
 let s:TabLineStart = 0
 let s:TabLineChars = &columns
-" Customize tabline
 function! misc#TabLine()
     let l:s = ''
     let l:cur = tabpagenr() - 1
@@ -436,7 +466,7 @@ endfunction
 
 
 " a:1 if exists define the action
-" otherwise record the history to w:bufHis
+" otherwise record the history to w:bufHis {{{1 
 function! s:BufHisRecord()
     if !empty(&buftype) || expand('%') =~# '\v^/|^$'
         return
@@ -770,7 +800,7 @@ endfunction
 
 
 " Combine nerdtree & tagbar
-" Switch between the two
+" Switch between the two {{{1
 function! misc#ToggleSidebar(...)
     let l:obj = a:0 > 0 ? a:1 : 'toggle'
     let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
@@ -856,8 +886,24 @@ endfunction
 
 
 "  Toggle bottom window (quickfix, terminal)
+let s:bottomBar = {
+            \ 'terminal': function('async#TermToggle', ['off', '']),
+            \ 'infowin':  function('infoWin#Toggle', ['off']),
+            \ 'quickfix': 'cclose'
+            \ }
+
 function! misc#ToggleBottombar(winType, type)
-    if a:winType == 'quickfix'
+    if a:winType ==# 'only'
+        for [l:key, l:Val] in items(s:bottomBar)
+            if l:key ==# a:type
+                continue
+            elseif type(l:Val) == type(function('add'))
+                call l:Val()
+            else
+                call execute(l:Val)
+            endif
+        endfor
+    elseif a:winType == 'quickfix'
         call async#TermToggle('off', '')
 
         if a:type == 'book'
@@ -874,13 +920,13 @@ function! misc#ToggleBottombar(winType, type)
             exe 'copen '.get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
-        cclose
-        call infoWin#Toggle('off')
+        call misc#ToggleBottombar('only', 'terminal')
         call async#TermToggle('toggle', a:type)
     endif
 endfunction
 
 
+" Env configure {{{1
 function! misc#Enviroment(config) abort
     if empty(a:config)
         echo get(g:, 'ENV', {})
@@ -898,7 +944,7 @@ function! misc#Enviroment(config) abort
         if len(l:list) == 1 && has_key(g:ENV, l:list[0])
             let l:str += [l:list[0].'='.string(g:ENV[l:list[0]])]
         elseif len(l:list) == 2
-            let g:ENV[l:list[0]] = l:list[1] =~ '\v^[[{]' ? eval(l:list[1]) : l:list[1]
+            let g:ENV[l:list[0]] = l:list[1] =~ '\v^([[{]|function\()' ? eval(l:list[1]) : l:list[1]
         endif
     endfor
 
@@ -907,7 +953,7 @@ function! misc#Enviroment(config) abort
     endif
 endfunction
 
-function misc#Complete_ENV(...)
+function misc#CompleteENV(...)
     return join(keys(get(g:, 'ENV', {})), "\n")
 endfunction
 
@@ -922,9 +968,16 @@ function! misc#TaskQueue(task) abort
         let l:list = split(l:item, '\v\s*\=\s*')
 
         if len(l:list) == 1 && has_key(get(get(g:, 'ENV', {}), 'task_queue'), l:list[0])
-            exe g:ENV.task_queue[l:list[0]]
+            let l:Task = g:ENV.task_queue[l:list[0]]
+            let l:type = type(l:Task)
+
+            if l:type == type(function('add'))
+                call l:Task()
+            elseif l:type == type('') || l:type == type([])
+                call execute(l:Task, '')
+            endif
         elseif len(l:list) == 2
-            let l:task_queue[l:list[0]] = l:list[1]
+            let l:task_queue[l:list[0]] = l:list[1] =~ '\v^(\[|function\()' ? eval(l:list[1]) : l:list[1]
         endif
     endfor
 
@@ -939,10 +992,11 @@ function! misc#TaskQueue(task) abort
     endif
 endfunction
 
-function misc#Complete_Task(...)
+function misc#CompleteTask(...)
     return join(keys(get(get(g:, 'ENV', {}), 'task_queue', {})), "\n")
 endfunction
 
+" radix {{{1
 function s:Num2Radix(list, radix, map, prefix) abort
     let l:out = []
     for l:num in type(a:list) == type([]) ? a:list : [a:list]
@@ -973,7 +1027,7 @@ function misc#Oct(list, ...)
     return s:Num2Radix(a:list, 8, {}, get(a:000, 0, ''))
 endfunction
 
-" ####################################################################
+" #################################################################### {{{1
 function! SwitchXPermission()
     let l:node = g:NERDTreeFileNode.GetSelected().path.str()
 

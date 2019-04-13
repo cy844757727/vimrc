@@ -13,16 +13,16 @@ endif
 let g:loaded_Async = 1
 
 
-command -nargs=* -complete=customlist,Term_completeFun TTerm :call async#TermToggle('toggle', <q-args>)
-command -nargs=* -complete=customlist,Term_completeFun Term :call async#TermToggle('on', <q-args>)
-command -nargs=+ -complete=customlist,Term_completeFun HTerm :call async#TermToggle('off', <q-args>)
-command -nargs=+ -bang -complete=customlist,Async_completeFun Async :call async#JobRun('<bang>', <q-args>, {}, {})
-command -nargs=+ -bang -complete=customlist,Async_completeFun Asyncrun :call async#JobRunOut('<bang>', <q-args>, {})
+command -nargs=* -complete=customlist,Async_CompleteTerm TTerm :call async#TermToggle('toggle', <q-args>)
+command -nargs=* -complete=customlist,Async_CompleteTerm Term :call async#TermToggle('on', <q-args>)
+command -nargs=+ -complete=customlist,Async_CompleteTerm HTerm :call async#TermToggle('off', <q-args>)
+command -nargs=+ -bang -complete=customlist,Async_CompleteAsync Async :call async#JobRun('<bang>', <q-args>, {}, {})
+command -nargs=+ -bang -complete=customlist,Async_CompleteAsync Asyncrun :call async#JobRunOut('<bang>', <q-args>, {})
 command -bang SAsync :call async#JobStop('<bang>')
 command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, BMBPSign#SignRecord('break', 'tbreak'))
 
 
-function! Term_completeFun(L, C, P)
+function! Async_CompleteTerm(L, C, P)
     let l:ex = split(strpart(a:C, 0, a:P))
 
     for l:item in l:ex[1:]
@@ -36,7 +36,7 @@ function! Term_completeFun(L, C, P)
 endfunction
 
 
-function! Async_completeFun(L, C, P)
+function! Async_CompleteAsync(L, C, P)
     let l:num = len(split(strpart(a:C, 0, a:P), '\v\s+'))
 
     if l:num == 1 || (l:num == 2 && a:L != '')

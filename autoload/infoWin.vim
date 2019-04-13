@@ -1,10 +1,16 @@
 "
 "
 "
-" Dict: 'title': '', 'content': {'file1': [], ...}, 'hi': '', 
+" Dict: 'title': '', 'content': {'file1': [], ...}, 'hi': '',
+"
+
 function! infoWin#Set(dict)
     if type(a:dict) != type({})
         return
+    endif
+
+    if exists('*misc#ToggleBottombar')
+        call misc#ToggleBottombar('only', 'infowin')
     endif
 
     if !bufexists(get(s:, 'bufnr', -1))

@@ -16,11 +16,11 @@ let g:loaded_A_Async = 1
 hi default AsyncDbgHl ctermfg=16 guifg=#8bebff
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
-let s:displayIcon = extend({
+let s:displayIcon = {
             \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
             \ '4': ' ➍ ', '5': ' ➎ ', '6': ' ➏ ',
             \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
-            \ }, get(g:, 'Async_displayIcon', {}))
+            \ }
 
 " Default terminal type
 let s:termPrefix = '!Term'
@@ -37,27 +37,20 @@ let s:termOption = {
             \ }
 
 function s:termAnalyzeCmd(cmd)
-    let [l:list, l:i] = [split(a:cmd, ' '), 0]
+    let l:list = split(a:cmd, ' ')
+    let [l:cmd, l:name] = [s:shell, s:termDefaultName]
 
-    while l:i < len(l:list)
-        if index(s:termType, l:list[l:i]) != -1 && !exists('l:cmd')
-            let [l:cmd, l:name] = [l:list[l:i], l:list[l:i]]
-        elseif l:list[l:i]
-            let [l:cmd, l:name] = [s:shell, l:list[l:i] + 0]
-        else
-            let l:postCmd = s:cmdExpand(l:list[l:i:])
-            break
+    if !empty(l:list)
+        if index(s:termType, l:list[0]) != -1
+            let l:cmd = remove(l:list, 0)
+            let l:name = s:termPrefix . ': '.l:cmd.' '
+        elseif l:list[0]
+            let l:num = remove(l:list, 0) + 0
+            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
         endif
-
-        let l:i += 1
-    endwhile
-
-    if !exists('l:cmd')
-        let [l:cmd, l:name] = [s:shell, s:shell]
     endif
 
-    let l:name = s:termPrefix . get(s:displayIcon, l:name, ': '.l:name.' ')
-    return [l:cmd, l:name, get(l:, 'postCmd', '')]
+    return [l:cmd, l:name, s:cmdExpand(l:list)]
 endfunction
 
 " Switch embedded terminal {{{2
@@ -153,8 +146,9 @@ let s:jobOption = {
             \ }
 
 function s:cmdExpand(cmd) abort
-    let [l:list, l:i] = [type(a:cmd) == type([]) ? a:cmd : split(a:cmd, ' '), 0]
+    let l:list = type(a:cmd) == type([]) ? a:cmd : split(a:cmd, ' ')
 
+    let l:i = 0
     while l:i < len(l:list)
         if l:list[l:i] =~# '\v^(\%|#\d?)(\<|(:[phtre.~])+)?$' || index([
                     \ '<cfile>', '<afile>', '<abuf>',
@@ -202,6 +196,7 @@ function! async#JobRunOut(bang, cmd, extra) abort
                 \ 'callback': function('s:JobCallBack', [get(l:extra, 'efm', &efm)]),
                 \ 'exit_cb': function('s:JobOnExitQf', [reltime()])
                 \ }, l:extra)
+
     exe 'copen '.get(g:, 'BottomWinHeight', 15)
 endfunction
 
@@ -373,7 +368,7 @@ function s:GetScriptInterpreter(file, fullFlag)
 endfunction
 
 
-function! async#ScriptRun(file, ...) abort
+function! async#ScriptRun(file) abort
     let l:file = a:file ==# 'visual' ? expand('%') : a:file
     let l:interpreter = s:GetScriptInterpreter(l:file, 1)
 
@@ -384,19 +379,11 @@ function! async#ScriptRun(file, ...) abort
     if a:file !=# 'visual'
         let l:cmd = 'clear'
         let l:postCmd = l:interpreter.' '.shellescape(l:file)
-    elseif empty(visualmode())
-        return
-    elseif a:0 > 0 && l:interpreter =~# 'python'
-        let l:cmd = 'jupyter-console'
-        let l:lines = filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'")
-        let l:postCmd = join(['%%capture vim'] + l:lines + ['', ''], "\n")
-
-        if l:lines[-1] =~# '^\s'
-            let l:postCmd .= "\n"
-        endif
-    else
+    elseif !empty(visualmode())
         let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
         let l:postCmd = join(filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'"), "\n")."\n"
+    else
+        return
     endif
 
     call term_sendkeys(async#TermToggle('on', l:cmd), l:postCmd."\n")
@@ -445,7 +432,8 @@ function! async#ScriptDbg(file, breakPoint) abort
     endif
 endfunction
 
-let s:dbgTool = {'bashdb': {
+let s:dbgTool = {}
+let s:dbgTool.bashdb = {
             \ 'name': 'bash',
             \ 'prompt': '\mbashdb<\d\+>',
             \ 'fileNr': '\v\((\S+):(\d+)\):',
@@ -456,7 +444,9 @@ let s:dbgTool = {'bashdb': {
             \ 'map': {'B': 'delete', 'S': 'skip', 'f': 'finish', 'w': 'watch', 'W': 'watche', 'P': 'x'},
             \ 'win': ['var', 'watch', 'stack'],
             \ 'd': "\n"
-            \ }, 'pdb': {
+            \ }
+
+let s:dbgTool.pdb = {
             \ 'name': 'python',
             \ 'prompt': '\v\(Pdb\)',
             \ 'fileNr': '\v^\> (\S+)\((\d+)\)',
@@ -466,14 +456,16 @@ let s:dbgTool = {'bashdb': {
             \ 'map': {'p': 'p', 'P': 'pp', 'j': 'jump', 'u': 'until'},
             \ 'win': ['var', 'stack'],
             \ 'd': ';;'
-            \ }, 'perl': {
+            \ }
+
+let s:dbgTool.perl = {
             \ 'name': 'perl',
             \ 'prompt': '\m DB<\d\+> ',
             \ 'fileNr': '\v\((\S+):(\d+)\)',
             \ 'map': {'w': 'watch'},
             \ 'win': [],
             \ 'stackLine': '\m@ = '
-            \ }}
+            \ }
 
 " Analyze script type & set val: cmd, postCmd, prompt
 " Cmd: Debug statement       " PostCmd: Excuting after starting a debug

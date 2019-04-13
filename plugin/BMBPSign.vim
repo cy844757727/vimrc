@@ -32,19 +32,19 @@ augroup BMBPSign
 augroup END
 
 " sign command
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType CSign :call BMBPSign#SignClear(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile CSign :call BMBPSign#SignClear(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignType TSign :call BMBPSign#SignToggle(<f-args>)
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType SSign :call BMBPSign#SignSave(<f-args>)
-com! -nargs=* -complete=custom,BMBPSign_CompleteSignFileType LSign :call BMBPSign#SignLoad(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile SSign :call BMBPSign#SignSave(<f-args>)
+com! -nargs=* -complete=custom,BMBPSign_CompleteSignTypeFile LSign :call BMBPSign#SignLoad(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignType NSign :call BMBPSign#SignJump('next', <f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignType PSign :call BMBPSign#SignJump('previous', <f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignType JSign :call BMBPSign#SignJump(<f-args>)
 com! -nargs=* -complete=custom,BMBPSign_CompleteSignType ASignAttr :call BMBPSign#SignAddAttr(<f-args>)
 
 " workspace command
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
-"com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile CWorkSpace :call BMBPSign#WorkSpaceClear(<q-args>)
-com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile  SWorkSpace :call BMBPSign#WorkSpaceSave(<q-args>)
+"com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile  CWorkSpace :call BMBPSign#WorkSpaceClear(<q-args>)
+com! -nargs=? -complete=custom,BMBPSign_CompleteWorkFile  LWorkSpace :call BMBPSign#WorkSpaceLoad(<q-args>)
 
 " project command
 com! -nargs=* -complete=custom,BMBPSign_CompleteProject MProject :call BMBPSign#Project(<f-args>)
@@ -59,7 +59,7 @@ function! BMBPSign_CompleteProject(L, C, P)
     endif
 endfunction
 
-function! BMBPSign_CompleteWorkFile(L, C, P)
+function! BMBPSign_CompleteWorkFile (L, C, P)
     return substitute(glob('*session'), '[_.]\w*', '', 'g')
 endfunction
 
@@ -71,7 +71,7 @@ function! BMBPSign_CompleteSignType(L, C, P)
     return join(BMBPSign#SignTypeList(), "\n")
 endfunction
 
-function! BMBPSign_CompleteSignFileType(L, C, P)
+function! BMBPSign_CompleteSignTypeFile(L, C, P)
     return BMBPSign_CompleteSignFile(a:L, a:C, a:P).
                 \ "\n|\n".
                 \ BMBPSign_CompleteSignType(a:L, a:C, a:P)

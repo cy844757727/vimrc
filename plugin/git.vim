@@ -7,8 +7,8 @@ if exists('g:loaded_GIT_Manager') || !executable('git')
 endif
 let g:loaded_GIT_Manager = 1
 
-command! -nargs=+ -complete=customlist,GIT_Complete Git :echo system('git ' . "<args>")
-command! -nargs=* -complete=customlist,GIT_Complete Gdiff :call git#Diff(<q-args>)
+command! -nargs=+ -complete=customlist,GIT_CompleteGit Git :echo system('git ' . "<args>")
+command! -nargs=* -complete=customlist,GIT_CompleteGit Gdiff :call git#Diff(<q-args>)
 
 
 augroup Git_manager
@@ -20,7 +20,7 @@ augroup Git_manager
 augroup END
 
 
-function! GIT_Complete(L, C, P)
+function! GIT_CompleteGit(L, C, P)
     let l:ex = split(strpart(a:C, 0, a:P))
 
     if l:ex[0] == 'Git'

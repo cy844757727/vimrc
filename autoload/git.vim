@@ -264,6 +264,7 @@ function! git#Menu(menu)
 
         let l:msg = system(l:item['cmd'].l:str)[:-2]
     elseif a:menu
+        " Special cases for menu1
         if l:char ==# 'c'
             let l:str = input('Input a message(-m): ')
             if l:str =~# '\S'
@@ -276,6 +277,7 @@ function! git#Menu(menu)
             endif
         endif
     else
+        " Special cases for menu2
         if l:char ==# 'd'
             :!git difftool -y
         elseif l:char ==# 'M'

@@ -60,9 +60,9 @@ augroup END
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
-command! -nargs=? -complete=custom,misc#Complete_ENV Env :call misc#Enviroment(<q-args>)
-command! -nargs=? -complete=custom,misc#Complete_Task Task :call misc#TaskQueue(<q-args>)
-command! -nargs=? -complete=custom,misc#Complete_F5 F5 :call misc#F5FunctionKey(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteENV Env :call misc#Enviroment(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#TaskQueue(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
@@ -144,11 +144,11 @@ map! <C-l> <Esc><C-l>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
 noremap <silent> <f4>   :call misc#WinResize()<CR>
-nnoremap <silent> <f5>  :call misc#F5FunctionKey('run')<CR>
-vnoremap <silent> <f5>  :call misc#F5FunctionKey('visual')<CR>
-noremap <silent> <C-f5> :call misc#F5FunctionKey('debug')<CR>
-noremap <silent> <S-f5> :call misc#F5FunctionKey('task')<CR>
-vnoremap <silent> <S-f5> :call misc#F5FunctionKey('task_visual')<CR>
+nnoremap <silent> <f5>  :call misc#F5Function('run')<CR>
+vnoremap <silent> <f5>  :call misc#F5Function('visual')<CR>
+noremap <silent> <C-f5> :call misc#F5Function('debug')<CR>
+noremap <silent> <S-f5> :call misc#F5Function('task')<CR>
+vnoremap <silent> <S-f5> :call misc#F5Function('task')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
 "map! <f5> <Esc><f5>
@@ -216,9 +216,9 @@ noremap  <silent> <S-pageDown> :wincmd w<CR>
 map! <S-PageUp> <Esc><S-PageUp>
 map! <S-PageDown> <Esc><S-PageDown>
 
-tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('run')"])<CR>
-tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('debug')"])<CR>
-tnoremap <silent> <S-f5> <C-w>N:call execute(['normal a', "call misc#F5FunctionKey('task')"])<CR>
+tnoremap <silent> <f5>   <C-w>N:call execute(['normal a', "call misc#F5Function('run')"])<CR>
+tnoremap <silent> <C-f5> <C-w>N:call execute(['normal a', "call misc#F5Function('debug')"])<CR>
+tnoremap <silent> <S-f5> <C-w>N:call execute(['normal a', "call misc#F5Function('task')"])<CR>
 
 tnoremap <silent> <PageDown> <C-w>N
 tnoremap <silent> <PageUp> <C-w>N
@@ -391,8 +391,8 @@ let g:BMBPSign_PreSaveEventList = [
             \ ]
 
 let g:BMBPSign_PostLoadEventList = [
-            \ 'call PostLoadWorkSpace_Var()',
-            \ 'Async! ctags -R -f .tags'
+            \ 'Async! ctags -R -f .tags',
+            \ 'call PostLoadWorkSpace_Var()'
             \ ]
 
 function! PreSaveWorkSpace_Var()
