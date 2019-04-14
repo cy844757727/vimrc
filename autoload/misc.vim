@@ -72,11 +72,12 @@ endfunction
 " Run
 function s:F5Function.run()
     update
+
     if &filetype =~# 'verilog' && executable('vlib')
         let l:ex = isdirectory('work') ? 'Asyncrun vlog -work work %' :
                     \ 'Asyncrun vlib work && vmap work work && vlog -work work %'
     elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
-        call misc#ToggleBottombar('only', 'terminal')
+        call misc#ToggleBottomBar('only', 'terminal')
         call async#ScriptRun(expand('%'))
     elseif !empty(glob('[mM]ake[fF]ile'))
         let l:ex = 'Asyncrun! make'
@@ -89,7 +90,7 @@ function s:F5Function.run()
     endif
 
     if exists('l:ex')
-        call misc#ToggleBottombar('only', 'quickfix')
+        call misc#ToggleBottomBar('only', 'quickfix')
         exe l:ex
     endif
 endfunction
@@ -118,7 +119,7 @@ endfunction
 " Visual
 function s:F5Function.visual()
     if index(['sh', 'python', 'ruby'], &ft) != -1
-        call misc#ToggleBottombar('only', 'terminal')
+        call misc#ToggleBottomBar('only', 'terminal')
         call async#ScriptRun('visual')
     elseif &filetype ==# 'vim'
         let l:tempFile = tempname()
@@ -801,7 +802,7 @@ endfunction
 
 " Combine nerdtree & tagbar
 " Switch between the two {{{1
-function! misc#ToggleSidebar(...)
+function! misc#ToggleSideBar(...)
     let l:obj = a:0 > 0 ? a:1 : 'toggle'
     let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
     let l:tag = bufwinnr('Tagbar') == -1 ? 0 : 2
@@ -892,7 +893,7 @@ let s:bottomBar = {
             \ 'quickfix': 'cclose'
             \ }
 
-function! misc#ToggleBottombar(winType, type)
+function! misc#ToggleBottomBar(winType, type)
     if a:winType ==# 'only'
         for [l:key, l:Val] in items(s:bottomBar)
             if l:key ==# a:type
@@ -920,7 +921,7 @@ function! misc#ToggleBottombar(winType, type)
             exe 'copen '.get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
-        call misc#ToggleBottombar('only', 'terminal')
+        call misc#ToggleBottomBar('only', 'terminal')
         call async#TermToggle('toggle', a:type)
     endif
 endfunction

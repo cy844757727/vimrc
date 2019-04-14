@@ -9,8 +9,8 @@ function! infoWin#Set(dict)
         return
     endif
 
-    if exists('*misc#ToggleBottombar')
-        call misc#ToggleBottombar('only', 'infowin')
+    if exists('*misc#ToggleBottomBar')
+        call misc#ToggleBottomBar('only', 'infowin')
     endif
 
     if !bufexists(get(s:, 'bufnr', -1))

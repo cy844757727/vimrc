@@ -170,19 +170,19 @@ map! <C-f7> <Esc><C-f7>
 map! <C-Down> <Esc><C-Down>
 map! <C-Up> <Esc><C-Up>
 " Window & tabpage toggle
-noremap <silent> <f8>      :call misc#ToggleSidebar()<CR>
-noremap <silent> <C-f8>    :call misc#ToggleSidebar('Tagbar')<CR>
-noremap <silent> <S-f8>    :call misc#ToggleSidebar('NERDTree')<CR>
-noremap <silent> <C-S-f8>  :call misc#ToggleSidebar('all')<CR>
+noremap <silent> <f8>      :call misc#ToggleSideBar()<CR>
+noremap <silent> <C-f8>    :call misc#ToggleSideBar('Tagbar')<CR>
+noremap <silent> <S-f8>    :call misc#ToggleSideBar('NERDTree')<CR>
+noremap <silent> <C-S-f8>  :call misc#ToggleSideBar('all')<CR>
 noremap <silent> <f9>      :call git#Toggle()<CR>
-noremap <silent> <f10>     :call misc#ToggleBottombar('quickfix', '')<CR>
-noremap <silent> <C-f10>   :call misc#ToggleBottombar('quickfix', 'book')<CR>
-noremap <silent> <S-f10>   :call misc#ToggleBottombar('quickfix', 'todo')<CR>
-noremap <silent> <C-S-f10> :call misc#ToggleBottombar('quickfix', 'break')<CR>
-noremap <silent> <f12>     :call misc#ToggleBottombar('terminal', '')<CR>
-noremap <silent> <C-f12>   :call misc#ToggleBottombar('terminal', 'jupyter-console')<CR>
-noremap <silent> <S-f12>   :call misc#ToggleBottombar('terminal', 'python3')<CR>
-noremap <silent> <C-S-f12> :call misc#ToggleBottombar('terminal', 'dc_shell')<CR>
+noremap <silent> <f10>     :call misc#ToggleBottomBar('quickfix', '')<CR>
+noremap <silent> <C-f10>   :call misc#ToggleBottomBar('quickfix', 'book')<CR>
+noremap <silent> <S-f10>   :call misc#ToggleBottomBar('quickfix', 'todo')<CR>
+noremap <silent> <C-S-f10> :call misc#ToggleBottomBar('quickfix', 'break')<CR>
+noremap <silent> <f12>     :call misc#ToggleBottomBar('terminal', '')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'jupyter-console')<CR>
+noremap <silent> <S-f12>   :call misc#ToggleBottomBar('terminal', 'python3')<CR>
+noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
 map! <S-f8> <Esc><S-f8>
@@ -197,14 +197,14 @@ map! <C-f12> <Esc><C-f12>
 map! <S-f12> <Esc><S-f12>
 map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
-tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix', '')"])<CR>
-tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','book')"])<CR>
-tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','todo')"])<CR>
-tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('quickfix','break')"])<CR>
-tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal', '')"])<CR>
-tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','jupyter-console')"])<CR>
-tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottombar('terminal','python3')"])<CR>
-tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottombar('terminal','dc_shell')"])<CR>
+tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix', '')"])<CR>
+tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','book')"])<CR>
+tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','todo')"])<CR>
+tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','break')"])<CR>
+tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal', '')"])<CR>
+tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','jupyter-console')"])<CR>
+tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python3')"])<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
 
 " Window & tab switch
 tnoremap <silent> <C-PageUp>   <C-w>N:call execute(['normal a', 'tabnext'])<CR>
