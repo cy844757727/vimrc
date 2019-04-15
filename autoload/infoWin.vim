@@ -28,11 +28,12 @@ function! infoWin#Set(dict)
     let s:indent = get(a:dict, 'indent', '  ')
     let l:list = s:DisplayStr(a:dict.content, '')
     let b:infoWin = {'title': get(a:dict, 'title', '[InfoWin]'),
+                \ 'type': get(a:dict, 'type', ''),
                 \ 'files': len(keys(a:dict.content)),
                 \ 'items': len(l:list) - len(keys(a:dict.content)),
                 \ 'path': getcwd(), 'bufnr': s:bufnr}
-    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.len(l:list).
-                \ '%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
+    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).
+                \ '%=\ %l/'.len(l:list).'%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
 
     edit!
     call setline(1, l:list)
@@ -87,10 +88,11 @@ function! s:DisplayStr(content, indent) abort
             let l:list +=  s:DisplayStr(l:val, a:indent.s:indent)
         elseif l:type == type([])
             let l:list += map(l:val, "'".a:indent.s:indent."'.v:val")
-        else
+        elseif l:type == type('')
             let l:list += [a:indent.s:indent.l:val]
         endif
     endfor
+
     return l:list
 endfunction
 

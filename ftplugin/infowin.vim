@@ -13,14 +13,14 @@ setlocal nonu nowrap buftype=nofile nobuflisted foldcolumn=0 foldmethod=indent
 
 nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> <2-leftmouse> :call <SID>Open('edit', 'keep')<CR>
-nnoremap <silent> <buffer> t :call <SID>Open('tabedit')<CR>
-nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'big')<CR>
-nnoremap <silent> <buffer> s :call <SID>Open('bel split')<CR>
-nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'big')<CR>
-nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit')<CR>
-nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'big')<CR>
-nnoremap <silent> <buffer> e :call <SID>Open('edit')<CR>
-nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
+nnoremap <silent> <buffer> t :call <SID>Open('tabedit', 'default')<CR>
+nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'force')<CR>
+nnoremap <silent> <buffer> s :call <SID>Open('bel split', 'default')<CR>
+nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'force')<CR>
+nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'default')<CR>
+nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'force')<CR>
+nnoremap <silent> <buffer> e :call <SID>Open('edit', 'default')<CR>
+nnoremap <silent> <buffer> E :call <SID>Open('edit', 'force')<CR>
 nnoremap <silent> <buffer> p :call <SID>Preview('noauto')<CR>
 nnoremap <silent> <buffer> P :call <SID>Preview('auto')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
@@ -42,52 +42,58 @@ function! <SID>MaxMin()
 endfunction
 
 
-function! <SID>Open(way, ...) abort
-    try
-        let [l:file, l:lin] = s:GetLine()
-    catch
+function! <SID>Open(way, mode) abort
+    let [l:file, l:lin, l:col] = s:GetLine()
+
+    if l:file == -1
         return
-    endtry
-
-    exe get(a:000, 0, '') !=# 'keep' ? 'quit' : 'wincmd W'
-
-    if a:0 == 0 && exists('*misc#EditFile')
-        call misc#EditFile(l:file, a:way.' +'.l:lin)
-    elseif l:file !~? expand('%') || a:way !=# 'edit'
-        exe a:way.' +'.l:lin.' '.l:file
     endif
 
-    normal zz
+    exe a:mode =~# 'keep' ? 'wincmd W' : 'quit'
+
+    if a:mode =~# 'default' && exists('*misc#EditFile')
+        call misc#EditFile(l:file, a:way.' +'.l:lin)
+    else
+        exe l:file =~# expand('%') ?
+                    \ 'normal '.l:lin.'ggzz' :
+                    \ a:way.' +'.l:lin.' '.l:file
+    endif
+
+    if l:col > 1
+        exe 'normal 0'.(l:col-1).'l'
+    endif
 endfunction
 
 
 function s:GetLine() abort
     let l:line = getline('.')
     let l:indent = strdisplaywidth(matchstr(l:line, '\v^\s*'))
-    let l:lin = matchstr(l:line, '\v^\s+\zs\d+\ze:')
+    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,:]+\ze:'), ',\|:')
 
     if l:indent == 0 || empty(l:lin)
-        return [-1, -1]
+        return [-1, -1, -1]
     endif
 
+    let [l:lin, l:col] = len(l:lin) == 1 ? [l:lin[0], -1] : l:lin
     let l:nr = line('.') - 1
+
     while l:nr > 0
         let l:line = getline(l:nr)
         if strdisplaywidth(matchstr(l:line, '\v^\s*')) < l:indent
-            let l:file = l:line
+            let l:file = trim(l:line)
             break
         endif
         let l:nr -= 1
     endwhile
 
-    return [b:infoWin.path.'/'.l:file, l:lin]
+    return exists('l:file') ? [b:infoWin.path.'/'.l:file, l:lin, l:col] : [-1, -1, -1]
 endfunction
 
 
 let s:currentLine = 0
 function <SID>Preview(flag)
     let s:auto = a:flag ==# 'auto' ? 1 : 0
-    let [l:file, l:lin] = s:GetLine()
+    let [l:file, l:lin, l:col] = s:GetLine()
 
     if l:file == -1
         return
@@ -108,6 +114,10 @@ function <SID>Preview(flag)
         let w:infoWinPreview = 1
     endif
 
+    if l:col > 1
+        exe 'normal 0'.(l:col-1).'l'
+    endif
+
     wincmd W
     let s:currentLine = line('.')
 endfunction
@@ -120,7 +130,7 @@ function s:PreviewAuto()
         return
     endif
 
-    let [l:file, l:lin] = s:GetLine()
+    let [l:file, l:lin, l:col] = s:GetLine()
     let s:currentLine = line('.')
 
     if l:file == -1
@@ -130,6 +140,11 @@ function s:PreviewAuto()
     wincmd w
     exe l:file =~# bufname('%') ? 'normal '.l:lin.'ggzz' :
                 \ 'edit +'.l:lin.' '.l:file
+
+    if l:col > 1
+        exe 'normal 0'.(l:col-1).'l'
+    endif
+
     wincmd W
 endfunction
 

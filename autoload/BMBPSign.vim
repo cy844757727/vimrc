@@ -118,21 +118,18 @@ function s:SignToggle(file, line, type, attr, skip)
         exe 'sign place '.s:newSignId.' line='.a:line.' name='.l:def.' file='.a:file
         call add(l:vec, {'id': s:newSignId, 'file': a:file, 'attr': a:attr})
         let s:signId[s:newSignId] = [a:type, a:file]
-
-        " Support async.vim script debug
-        if exists('t:dbg') && a:type =~# 'break'
-            call t:dbg.sendCmd(a:type, a:file.':'.a:line)
-        endif
     elseif !a:skip
         " Unset sign
         exe 'sign unplace '.l:id[1].' file='.a:file
         call filter(l:vec, 'v:val.id != '.l:id[1])
         unlet s:signId[l:id[1]]
+    else
+        return
+    endif
 
-        " Support async.vim script debug
-        if exists('t:dbg') && a:type =~# 'break'
-            call t:dbg.sendCmd('clear', a:file.':'.a:line)
-        endif
+    " Support async.vim script debug
+    if exists('t:dbg') && a:type =~# 'break'
+        call t:dbg.sendCmd(empty(l:id) ? a:type : 'clear', a:file.':'.a:line)
     endif
 endfunction
 
@@ -744,7 +741,7 @@ endfunction
 
 
 function s:InfoWinSet(title, types)
-    let l:dict = {'title': a:title, 'content': {}}
+    let l:dict = {'title': a:title, 'content': {}, 'type': 'sign'}
     let l:signPlace = execute('sign place')
 
     for l:type in a:types
