@@ -255,7 +255,7 @@ function! git#Menu(menu)
 
         let l:str = ''
         if has_key(l:item, 'input')
-            let l:str = function('input', l:item['input'])()
+            let l:str = call('input', l:item['input'])
 
             if l:str !~# '\S'
                 return

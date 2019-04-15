@@ -26,21 +26,28 @@ function! infoWin#Set(dict)
 
     setlocal winfixheight noreadonly modifiable
     let s:indent = get(a:dict, 'indent', '  ')
-    let l:list = s:DisplayStr(a:dict.content, '')
-    let b:infoWin = {'title': get(a:dict, 'title', '[InfoWin]'),
+    let b:infoWin = {
+                \ 'title': get(a:dict, 'title', '[InfoWin]'),
                 \ 'type': get(a:dict, 'type', ''),
-                \ 'files': len(keys(a:dict.content)),
-                \ 'items': len(l:list) - len(keys(a:dict.content)),
-                \ 'path': getcwd(), 'bufnr': s:bufnr}
-    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).
-                \ '%=\ %l/'.len(l:list).'%4(%)\ '.b:infoWin.files.'\ \ '.b:infoWin.items.'\ '
-
+                \ 'count': [], 'path': getcwd(), 'bufnr': s:bufnr,
+                \ 'getline': get(a:dict, 'getline', function('s:GetLine'))
+                \ }
     edit!
-    call setline(1, l:list)
+    call setline(1, s:DisplayStr(a:dict.content, ''))
     setlocal readonly nomodifiable filetype=infowin
+    let b:infoWin.count += [line('$') - s:Sum(b:infoWin.count)]
+    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.line('$').
+                \ '%4(%)\ '.b:infoWin.count[-2].'\ \ '.b:infoWin.count[-1].'\ '
     exe 'syn match InfoWinMatch /'.(has_key(a:dict, 'hi') ? a:dict.hi : '\v-^').'/'
 endfunction
 
+function! s:Sum(list)
+    let l:sum = 0
+    for l:item in a:list
+        let l:sum += l:item
+    endfor
+    return l:sum ? l:sum : 1
+endfunction
 
 function! infoWin#Toggle(act) abort
     if bufwinnr(get(s:, 'bufnr', -1)) != -1
@@ -80,6 +87,15 @@ endfunction
 let s:indent = '  '
 function! s:DisplayStr(content, indent) abort
     let l:list = []
+    let l:level = strdisplaywidth(a:indent) / strdisplaywidth(s:indent)
+    
+    " Data statistics
+    if l:level > len(b:infoWin.count) - 1
+        let b:infoWin.count += [len(keys(a:content))]
+    else
+        let b:infoWin.count[l:level] += len(keys(a:content))
+    endif
+
     for [l:key, l:val] in items(a:content)
         let l:list += [a:indent.l:key]
 
@@ -96,4 +112,19 @@ function! s:DisplayStr(content, indent) abort
     return l:list
 endfunction
 
+
+function s:GetLine()
+    let l:line = getline('.')
+    let l:indent = strdisplaywidth(matchstr(l:line, '\v^\s*'))
+    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,:]+\ze:'), ',\|:')
+
+    if l:indent == 0 || empty(l:lin)
+        return [-1, -1, -1]
+    endif
+
+    let [l:lin, l:col] = len(l:lin) == 1 ? [l:lin[0], -1] : l:lin
+    let l:nr = search('\v^\s{,'.(l:indent-1).'}\S', 'bnW')
+
+    return l:nr ? [b:infoWin.path.'/'.trim(getline(l:nr)), l:lin, l:col] : [-1, -1, -1]
+endfunction
 

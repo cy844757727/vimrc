@@ -196,7 +196,6 @@ function! async#JobRunOut(bang, cmd, extra) abort
                 \ 'callback': function('s:JobCallBack', [get(l:extra, 'efm', &efm)]),
                 \ 'exit_cb': function('s:JobOnExitQf', [reltime()])
                 \ }, l:extra)
-
     exe 'copen '.get(g:, 'BottomWinHeight', 15)
 endfunction
 
@@ -412,9 +411,8 @@ function! async#ScriptDbg(file, breakPoint) abort
     let l:height = get(g:, 'BottomWinHeight', 15) * 2 / 3
     let l:width = get(g:, 'SideWinWidth', 30) * 4 / 3
 
-    " Ui initialization & maping(l:dbg -> t:dbg)
+    " Ui initialization (l:dbg -> t:dbg)
     call s:DbgUIInitalize(l:dbg, l:height, l:width)
-    call s:DbgMaping()
 
     " Start debug
     call win_gotoid(t:dbg.dbgWinId)
@@ -430,6 +428,9 @@ function! async#ScriptDbg(file, breakPoint) abort
     if has_key(t:dbg, 'varWinId')
         call win_gotoid(t:dbg.varWinId)
     endif
+
+    let t:tab_lable = ' -- Debug'.get(s:displayIcon, t:dbg.id, ' ').'--'
+    let t:task = function('term_sendkeys', [t:dbg.dbgBufnr, "q\n"])
 endfunction
 
 let s:dbgTool = {}
@@ -519,8 +520,6 @@ function! s:DbgUIInitalize(dbg, height, width)
 
     " Source view window
     exe 'tabedit '.a:dbg.file
-    let t:tab_lable = ' -- Debug'.get(s:displayIcon, a:dbg.id, ' ').'--'
-    let t:task = "call t:dbg.sendCmd('q', '')"
     let t:dbg = a:dbg
     let t:dbg.srcWinId = win_getid()
 
@@ -536,6 +535,7 @@ function! s:DbgUIInitalize(dbg, height, width)
         setlocal wrap nonu nobuflisted winfixwidth
         setlocal buftype=nofile filetype=dbgvar
         setlocal statusline=\ Variables
+        call s:DbgMaping('var')
     endif
 
     " Watch point window
@@ -545,6 +545,7 @@ function! s:DbgUIInitalize(dbg, height, width)
         setlocal wrap nonu nobuflisted winfixheight
         setlocal buftype=nofile filetype=dbgwatch
         setlocal statusline=\ Watch%{get(t:dbg,'watchFlag',0)?'\ ':''}
+        call s:DbgMaping('normal')
     endif
 
     " Call stack window
@@ -554,6 +555,7 @@ function! s:DbgUIInitalize(dbg, height, width)
         setlocal nowrap nonu nobuflisted winfixheight
         setlocal buftype=nofile filetype=dbgstack
         setlocal statusline=\ Call\ Stack
+        call s:DbgMaping('normal')
     endif
 endfunction
 
@@ -569,42 +571,22 @@ function <SID>DbgHelpDoc()
 endfunction
 
 " Creat maping for easy debuging
-function! s:DbgMaping()
+function! s:DbgMaping(obj)
     let l:mapPrefix = 'nnoremap <buffer> <silent> '
 
-    if exists('t:dbg.varWinId')
-        call win_gotoid(t:dbg.varWinId)
+    for l:i in [1, 2, 3, 4, 5]
+        exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
+    endfor
 
+    nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
+
+    if a:obj ==# 'var'
         for [l:key, l:cmd] in items(t:dbg.map)
             exe l:mapPrefix.l:key." :call <SID>DbgSendCmd('".l:cmd."')<CR>"
         endfor
 
-        for l:i in [1, 2, 3, 4, 5]
-            exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
-        endfor
-
         nnoremap <buffer> <silent> ? :call <SID>DbgHelpDoc()<CR>
         nnoremap <buffer> <silent> <space> :call <SID>DbgVarDispaly()<CR>
-    endif
-
-    if exists('t:dbg.watchWinId')
-        call win_gotoid(t:dbg.watchWinId)
-
-        for l:i in [1, 2, 3, 4, 5]
-            exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
-        endfor
-
-        nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
-    endif
-
-    if exists('t:dbg.stackWinId')
-        call win_gotoid(t:dbg.stackWinId)
-
-        for l:i in [1, 2, 3, 4, 5]
-            exe l:mapPrefix.l:i.' :'.l:i.'wincmd w<CR>'
-        endfor
-
-        nnoremap <buffer> <silent> <space> :echo getline('.')<CR>
     endif
 endfunction
 
