@@ -154,7 +154,7 @@ function! misc#Ag(str, word) abort
     endif
 
     let l:type = a:str =~# '\v-\S+ ' ? 'none' : &filetype
-    " file filter, skip comment line and search string
+    " file filter and search string
     let l:cmd = 'ag --column --nocolor --nogroup '.(
                 \ has_key(s:AgFileFilter, l:type) ?
                 \ '-G '.s:AgFileFilter[l:type].' ' : ''
@@ -180,10 +180,6 @@ function! s:AgOnOut(job, msg) abort
     let l:list = matchlist(a:msg, '\v^([^:]+):(\d+):(\d+):(.*)$')
     let l:file = fnamemodify(l:list[1], ':.')
 
-    if !has_key(s:refDict.content, l:file)
-        let s:refDict.content[l:file] = []
-    endif
-
     " Skip comment string
     if has_key(s:commentChar, s:refDict.type)
         let l:ind = matchstrpos(l:list[4], s:commentChar[s:refDict.type])[2]
@@ -191,6 +187,10 @@ function! s:AgOnOut(job, msg) abort
         if l:ind == 1 || (l:ind != -1 && l:ind < l:list[3] && s:refDict.type !=# 'vim')
             return
         endif
+    endif
+
+    if !has_key(s:refDict.content, l:file)
+        let s:refDict.content[l:file] = []
     endif
 
     let s:refDict.content[l:file] += [printf('%-10s %s', l:list[2].':'.l:list[3].':', trim(l:list[4]))]
