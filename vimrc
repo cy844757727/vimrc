@@ -42,10 +42,11 @@ set statusline+=%{misc#GetWebIcon('filetype')}\ %Y
 set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc}
 set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
-" Global variables
+" Global enviroment config
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 0
+
 " Autocmd & command ===================== {{{1
 augroup UsrDefCmd
     autocmd!
@@ -60,13 +61,15 @@ augroup END
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
-command! -nargs=? -complete=custom,misc#CompleteENV Env :call misc#Enviroment(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#TaskQueue(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
+command! -bar TClose :try|tabclose|catch|if &diff|qa|endif|endtry 
+command! -bar TQuit :try|tabclose|catch|if &diff|qa|endif|endtry 
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! -nargs=* Amake :Async make <args>
 command! Avdel :Async vdel -lib work -all
@@ -139,7 +142,6 @@ imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
 noremap <silent> <C-l>  :redraw!<CR>
-noremap <silent> <S-t>  :try\|tabclose\|catch\|if &diff\|qa\|endif\|endtry<CR>
 map! <C-l> <Esc><C-l>
 " Save & winresize & f5 function
 noremap <silent> <f3>   :call misc#SaveFile()<CR>
@@ -239,7 +241,7 @@ let g:termdebug_wide = 1
 let g:Lf_DefaultMode = 'NameOnly'
 
 " === async.vim === {{{1
-let g:Async_TerminalType = [
+let g:async_terminalType = [
             \ 'python3',  'python2',  'python',
             \ 'ipython3', 'ipython2', 'ipython',
             \ 'dc_shell', 'jupyter-console'
@@ -349,8 +351,10 @@ let g:ale_lint_on_text_changed = 'normal'
 let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 
+" === infowin.vim === {{{1
+let g:Infowin_output = 1
+
 " === BMBPSign.vim === {{{1
-let g:BMBPSign_Output = 1
 let g:BMBPSign_SpecialBuf = {
             \ 'NERD_tree': 'bw|NERDTree',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
@@ -392,7 +396,8 @@ let g:BMBPSign_PreSaveEventList = [
 
 let g:BMBPSign_PostLoadEventList = [
             \ 'Async! ctags -R -f .tags',
-            \ 'call PostLoadWorkSpace_Var()'
+            \ 'call PostLoadWorkSpace_Var()',
+            \ 'call misc#EnvInitial()'
             \ ]
 
 function! PreSaveWorkSpace_Var()
@@ -444,14 +449,6 @@ function! PostLoadWorkSpace_Var()
             endfor
         endfor
         unlet g:WINVAR_BUFHIS
-    endif
-
-    if exists('g:env')
-        if !exists('g:ENV')
-            let g:ENV = {}
-        endif
-
-        call extend(g:ENV, g:env, 'keep')
     endif
 endfunction
 

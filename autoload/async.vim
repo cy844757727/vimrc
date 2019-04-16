@@ -26,7 +26,7 @@ let s:displayIcon = {
 let s:termPrefix = '!Term'
 let s:shell = fnamemodify(&shell, ':t')
 let s:termDefaultName = s:termPrefix.': '.s:shell.' '
-let s:termType = extend([s:shell], get(g:, 'Async_TerminalType', []))
+let s:termType = extend([s:shell], get(g:, 'async_terminalType', []))
 
 " Default terminal option
 let s:termOption = {
@@ -65,8 +65,8 @@ function! async#TermToggle(action, cmd) abort
     endif
 
     let [l:cmd, l:name, l:postCmd] = s:termAnalyzeCmd(a:cmd)
-    let [l:winnr, l:bufnr, l:other] = [bufwinnr(l:name), 
-                \ bufnr(l:name), bufwinnr(s:termPrefix)]
+    let [l:winnr, l:bufnr, l:other] = 
+                \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
 
     if l:winnr != -1 
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
@@ -303,8 +303,8 @@ function! s:dbg.sendCmd(cmd, args, ...) abort
     let l:args = a:args
 
     if index(['condition', 'disable', 'enable'], a:cmd) != -1
-        call term_sendkeys(self.dbgBufnr,
-                    \ (self.name ==# 'bash' ? 'info break' : 'break')."\n")
+        call term_sendkeys(self.dbgBufnr, (self.name ==# 'bash' ?
+                    \ 'info break' : 'break')."\n")
 
         let l:counts = 10
         while get(self, 'breakFlag', 1) != 1 && l:counts > 0
@@ -367,7 +367,7 @@ endfunction
 
 
 function! async#ScriptRun(file) abort
-    let l:file = a:file ==# 'visual' ? expand('%:p') : a:file
+    let l:file = a:file ==# 'visual' ? expand('%') : a:file
     let l:interpreter = s:GetScriptInterpreter(l:file, 1)
 
     if empty(l:interpreter)

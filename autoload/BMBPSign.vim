@@ -76,7 +76,7 @@ let s:sessionOptions = get(g:, 'BMBPSign_SessionOption',
             \ 'blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal')
 
 " Sign type extendsion: customized
-for l:sign in get(g:, 'BMBPSignTypeExtend', [])
+for l:sign in get(g:, 'BMBPSign_TypeExtend', [])
     try
         let l:type = l:sign.type
         let l:name = s:signDefHead.l:type
@@ -1012,7 +1012,7 @@ function BMBPSign#SetQfList(...)
 
     if empty(l:types)
         return
-    elseif exists('g:BMBPSign_Output')
+    elseif exists('g:Infowin_output')
         cclose
         call s:InfoWinSet(a:1, l:types)
     else

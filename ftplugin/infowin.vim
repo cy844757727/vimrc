@@ -87,6 +87,7 @@ function <SID>Preview(flag)
         exe 'belowright vsplit +'.l:lin.' '.l:file
         let w:infoWinPreview = 1
         let w:buftype = 1
+        setlocal statusline=\ 﩮%f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)%4P\ 
     endif
 
     if l:col > 1

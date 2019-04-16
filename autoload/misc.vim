@@ -45,7 +45,9 @@ function! misc#F5Function(type) range abort
         call git#Refresh()
     elseif !misc#SwitchToEmptyBuftype()
         return
-    elseif has_key(s:F5Function, a:type)
+    endif
+
+    if has_key(s:F5Function, a:type)
         call s:F5Function[a:type]()
     endif
 endfunction
@@ -146,7 +148,7 @@ let s:AgFileFilter = {
 
 function! misc#Ag(str, word) abort
     if a:str !~ '\S'
-        if exists('g:BMBPSign_Output')
+        if exists('g:Infowin_output')
             call infoWin#Toggle('toggle')
         endif
 
@@ -160,7 +162,7 @@ function! misc#Ag(str, word) abort
                 \ '-G '.s:AgFileFilter[l:type].' ' : ''
                 \ ).(a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str)
 
-    if exists('g:BMBPSign_Output')
+    if get(g:, 'Infowin_output', 0)
         let s:refDict = {'title': ' '.a:str, 'content': {},
                     \ 'hi': matchstr(a:str, '\v\S+$'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
@@ -357,45 +359,47 @@ function! misc#HEXCovent()
 endfunction
 
 
+function s:AdaptOneLineDisplay(list, cur, start, chars, width)
+    let l:str = join(a:list)
+    if strdisplaywidth(l:str) > a:width
+        let [l:start, l:chars] = [a:start, a:chars]
+        let l:B = strchars(join(a:list[:a:cur])) - 1
+        let l:A = l:B - strchars(a:list[a:cur]) + 1
+
+        if  l:A < l:start
+            let l:start = max([0, l:A - 1])
+            let l:chars = a:width
+
+            while strdisplaywidth(strcharpart(l:str, l:start, l:chars)) > a:width
+                let l:chars -= 1
+            endwhile
+        elseif strdisplaywidth(strcharpart(l:str, l:start, l:B - l:start + 1)) > a:width
+            let l:start = max([0, l:B - a:width + 1])
+            let l:chars = a:width
+
+            while strdisplaywidth(strcharpart(l:str, l:start, l:chars)) > a:width
+                let l:chars -= 1
+                let l:start += 1
+            endwhile
+        endif
+
+        let l:endSpace = repeat(' ', a:width - strdisplaywidth(
+                    \ strcharpart(l:str, l:start, l:chars)) - 1)
+
+        return [l:start, l:chars, l:endSpace]
+    endif
+
+    return [0, a:width, '']
+endfunction
+
 " Customize tabline {{{1
 let s:TabLineStart = 0
 let s:TabLineChars = &columns
 function! misc#TabLine()
-    let l:s = ''
-    let l:cur = tabpagenr() - 1
-    let l:num = tabpagenr('$')
+    let [l:s, l:cur, l:num] = ['', tabpagenr()-1, tabpagenr('$')]
     let l:tabList = map(range(l:num), "' '.misc#TabLabel(v:val+1).' '")
-    let l:str = join(l:tabList)
-    let l:width = &columns - 3
-
-    if strdisplaywidth(l:str) > l:width
-        let l:B = strchars(join(l:tabList[:l:cur])) - 1
-        let l:A = l:B - strchars(l:tabList[l:cur]) + 1
-
-        if  l:A < s:TabLineStart
-            let s:TabLineStart = l:A
-            let s:TabLineChars = l:width
-
-            while strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)) > l:width
-                let s:TabLineChars -= 1
-            endwhile
-        elseif strdisplaywidth(strcharpart(l:str, s:TabLineStart, l:B - s:TabLineStart + 1)) > l:width
-            let s:TabLineStart = max([0, l:B - l:width + 1])
-            let s:TabLineChars = l:width
-
-            while strdisplaywidth(strcharpart(l:str, s:TabLineStart, s:TabLineChars)) > l:width
-                let s:TabLineChars -= 1
-                let s:TabLineStart += 1
-            endwhile
-        endif
-
-        let l:endSpace = repeat(' ', l:width - strdisplaywidth(
-                    \ strcharpart(l:str, s:TabLineStart, s:TabLineChars)) - 1)
-    else
-        let s:TabLineStart = 0
-        let s:TabLineChars = l:width
-        let l:endSpace = ''
-    endif
+    let [s:TabLineStart, s:TabLineChars, l:endSpace] = s:AdaptOneLineDisplay(
+                \ l:tabList, l:cur, s:TabLineStart, s:TabLineChars, &columns - 3)
 
     for l:i in range(l:num)
         let l:chars = strchars(join(l:tabList[:l:i]))
@@ -543,50 +547,22 @@ function! s:BufHisEcho()
     " Readjusting position (Put the initial edited text first)
     let l:ind = index(w:bufHis.list, w:bufHis.init)
     let l:bufList = remove(l:bufList, l:ind, -1) + l:bufList
+    let [w:bufHis.start, w:bufHis.chars, l:endSpace] = s:AdaptOneLineDisplay(
+                \ l:bufList, len(l:bufList)-l:ind-1, w:bufHis.start, w:bufHis.chars, &columns-1)
 
+    " Cut out a section of l:str
     let l:str = join(l:bufList)
-    let l:width = &columns - 1
+    let l:allChars = strchars(l:str)
+    let l:str = strcharpart(l:str, w:bufHis.start, w:bufHis.chars).l:endSpace
 
-    " Make displayed width to adapt one line ↓↓↓↓↓
-    if strdisplaywidth(l:str) > l:width
-        let l:allChars = strchars(l:str)
-        let l:ind = len(l:bufList) - l:ind - 1
+    " Add prefix to head when not displayed completely
+    if w:bufHis.start > 0
+        let l:str = '<'.strcharpart(l:str, 1)
+    endif
 
-        " Current item start position: A, end point: B
-        let l:B = strchars(join(l:bufList[:l:ind])) - 1
-        let l:A = l:B - strchars(l:bufList[l:ind]) + 1
-
-        " Determine the start pos & chars of l:str to display
-        if l:A < w:bufHis.start
-            let w:bufHis.start = max([0, l:A - 1])
-            let w:bufHis.chars = l:width
-
-            while strdisplaywidth(strcharpart(l:str, w:bufHis.start, w:bufHis.chars)) > l:width
-                let w:bufHis.chars -= 1
-            endwhile
-        elseif strdisplaywidth(strcharpart(l:str, w:bufHis.start, l:B - w:bufHis.start + 1)) > l:width
-            let w:bufHis.start = max([0, l:B - l:width + 2])
-            let w:bufHis.chars = l:width
-
-            while strdisplaywidth(strcharpart(l:str, w:bufHis.start, w:bufHis.chars)) > l:width
-                let w:bufHis.chars -= 1
-                let w:bufHis.start += 1
-            endwhile
-        endif
-
-        " Cut out a section of l:str
-        let l:str = strcharpart(l:str, w:bufHis.start, w:bufHis.chars)
-        let l:str .= repeat(' ', l:width - strdisplaywidth(l:str))
-
-        " Add prefix to head when not displayed completely
-        if w:bufHis.start > 0
-            let l:str = '<'.strcharpart(l:str, 1)
-        endif
-
-        " Add suffix to tail when not displayed completely
-        if w:bufHis.start + w:bufHis.chars < l:allChars
-            let l:str = strcharpart(l:str, 0, strchars(l:str) - 1).'>'
-        endif
+    " Add suffix to tail when not displayed completely
+    if w:bufHis.start + w:bufHis.chars < l:allChars
+        let l:str = strcharpart(l:str, 0, strchars(l:str) - 1).'>'
     endif
 
     echo l:str
@@ -934,26 +910,52 @@ function! misc#ToggleBottomBar(winType, type)
     endif
 endfunction
 
+" Enviroment variables {{{1
+"
 
-" Env configure {{{1
-function! misc#Enviroment(config) abort
-    if empty(a:config)
-        echo get(g:, 'ENV', {})
-        return
+if !exists('g:ENV')
+    let g:ENV = {}
+endif
+
+function misc#EnvInitial()
+    if exists('g:env')
+        let g:ENV = extend(g:ENV, g:env, 'keep')
     endif
 
-    if !exists('g:ENV')
-        let g:ENV = {}
+    call extend(g:, filter(deepcopy(g:ENV), "v:key =~# '[A-Z]'"))
+endfunction
+
+" Env configure {{{1
+function! misc#EnvSet(config) abort
+    if empty(a:config)
+        echo g:ENV
+        return
     endif
 
     let l:str = []
     for l:item in split(a:config, '\v\s*;\s*')
         let l:list = split(l:item, '\v\s*\=\s*')
 
-        if len(l:list) == 1 && has_key(g:ENV, l:list[0])
-            let l:str += [l:list[0].'='.string(g:ENV[l:list[0]])]
+        " Delete key
+        if l:item =~# '\M=$'
+            if has_key(g:ENV, l:list[0])
+                unlet g:ENV[l:list[0]]
+            endif
+
+            if l:list[0][0] =~# '[A-Z]' && has_key(g:, l:list[0])
+                unlet g:[l:list[0]]
+            endif
+        elseif len(l:list) == 1
+            let l:Val = get(g:ENV, l:list[0], get(g:, l:list[0], ''))
+            let l:str += [l:list[0].'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
         elseif len(l:list) == 2
-            let g:ENV[l:list[0]] = l:list[1] =~ '\v^([[{]|function\()' ? eval(l:list[1]) : l:list[1]
+            let g:ENV[l:list[0]] = 
+                        \ l:list[1] =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
+                        \ eval(l:list[1]) : l:list[1]
+
+            if l:list[0][0] =~# '[A-Z]'
+                call extend(g:, {l:list[0]: g:ENV[l:list[0]]})
+            endif
         endif
     endfor
 
@@ -962,22 +964,29 @@ function! misc#Enviroment(config) abort
     endif
 endfunction
 
-function misc#CompleteENV(...)
-    return join(keys(get(g:, 'ENV', {})), "\n")
+function misc#CompleteEnv(L, C, P)
+    if a:C[:a:P] =~# '\v\=\s*$'
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
+        let l:val = get(g:ENV, l:key, get(g:, l:key, ''))
+        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+    endif
+
+    return join(filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
+                \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
 endfunction
 
 function! misc#TaskQueue(task) abort
     if empty(a:task)
-        echo get(get(g:, 'ENV', {}), 'task_queue', {})
+        echo get(g:ENV, 'task_queue', {})
         return
     endif
 
-    let l:task_queue = {}
+    let l:task_queue = get(g:ENV, 'task_queue', {})
     for l:item in split(a:task, '\v\s*;\s*')
         let l:list = split(l:item, '\v\s*\=\s*')
 
-        if len(l:list) == 1 && has_key(get(get(g:, 'ENV', {}), 'task_queue'), l:list[0])
-            let l:Task = g:ENV.task_queue[l:list[0]]
+        if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
+            let l:Task = l:task_queue[l:list[0]]
             let l:type = type(l:Task)
 
             if l:type == type(function('add'))
@@ -986,23 +995,26 @@ function! misc#TaskQueue(task) abort
                 call execute(l:Task, '')
             endif
         elseif len(l:list) == 2
-            let l:task_queue[l:list[0]] = l:list[1] =~ '\v^(\[|function\()' ? eval(l:list[1]) : l:list[1]
+            let l:task_queue[l:list[0]] =
+                        \ l:list[1] =~ '\v^(\[.*\]|func(tion|ref)\(.*\))$' ?
+                        \ eval(l:list[1]) : l:list[1]
+            let l:change = 1
         endif
     endfor
 
-    if !empty(l:task_queue)
-        if !exists('g:ENV')
-            let g:ENV = {'task_queue': {}}
-        elseif !has_key(g:ENV, 'task_queue')
-            let g:ENV.task_queue = {}
-        endif
-
-        call extend(g:ENV.task_queue, l:task_queue)
+    if exists('l:change')
+        call extend(g:ENV, {'task_queue': l:task_queue})
     endif
 endfunction
 
 function misc#CompleteTask(...)
-    return join(keys(get(get(g:, 'ENV', {}), 'task_queue', {})), "\n")
+    if a:C[:a:P] =~# '\v\=\s*$'
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
+        let l:val = get(get(g:ENV, 'task_queue', {}), l:key, '')
+        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+    endif
+
+    return join(keys(get(g:ENV, 'task_queue', {})), "\n")
 endfunction
 
 " radix {{{1
