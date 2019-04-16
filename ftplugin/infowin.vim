@@ -86,6 +86,7 @@ function <SID>Preview(flag)
     else
         exe 'belowright vsplit +'.l:lin.' '.l:file
         let w:infoWinPreview = 1
+        let w:buftype = 1
     endif
 
     if l:col > 1

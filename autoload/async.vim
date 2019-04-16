@@ -126,7 +126,6 @@ function! async#TermSwitch(...) abort
         let l:ind = index(l:termList, bufnr('%'))
         let l:ind = a:0 == 0 || a:1 == 'next' ?
                     \ (l:ind + 1) % len(l:termList) : l:ind - 1
-
         hide
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.l:termList[l:ind].'buffer'
         let l:buf = map(l:termList, "' '.bufname(v:val)")
@@ -139,9 +138,9 @@ endfunction
 " {'jobId': cmd}
 let s:asyncJob = {}
 let s:jobOption = {
-            \ 'in_io':  'null',
-            \ 'out_io': 'null',
-            \ 'err_io': 'null',
+            \ 'in_io':      'null',
+            \ 'out_io':     'null',
+            \ 'err_io':     'null',
             \ 'stoponexit': 'term'
             \ }
 
@@ -290,7 +289,7 @@ endfunction
 " === Script run/debug === {{{1
 let s:dbgShared = {}
 let s:dbg = {
-            \ 'id': 0, 'sign': {}, 'tempMsg': '', 'map': {
+            \ 'id': 0, 'tempMsg': '', 'map': {
             \ 'C': 'condition', 'D': 'disable',   'E':  'enable',
             \ 'B': 'clear',     'b': 'break',     'r':  'return',
             \ 'c': 'continue',  's': 'step',      'n':  'next',
@@ -368,7 +367,7 @@ endfunction
 
 
 function! async#ScriptRun(file) abort
-    let l:file = a:file ==# 'visual' ? expand('%') : a:file
+    let l:file = a:file ==# 'visual' ? expand('%:p') : a:file
     let l:interpreter = s:GetScriptInterpreter(l:file, 1)
 
     if empty(l:interpreter)
@@ -404,8 +403,9 @@ function! async#ScriptDbg(file, breakPoint) abort
         let l:dbg.id += 1
     endwhile
 
-    " Set sign id
-    let l:dbg.sign.id = (l:dbg.id + 1) * 10
+    " Configure sign
+    let l:dbg.sign = {'id': (l:dbg.id + 1) * 10,
+                \ 'file': -1, 'lin': 0}
 
     " Determinal dbg window height & side window width
     let l:height = get(g:, 'BottomWinHeight', 15) * 2 / 3
@@ -744,15 +744,10 @@ function! s:DbgMsgHandle(job, msg)
     " Line jump
     if exists('l:fileNr')
         call win_gotoid(t:dbg.srcWinId)
-
-        if expand('%') !~# l:fileNr[0]
-            silent! exe 'edit '.l:fileNr[0]
-        endif
-
-        if l:fileNr[1] != line('.')
-            call cursor(l:fileNr[1], 1)
-            call s:DbgSetSign(l:fileNr[0], l:fileNr[1])
-        endif
+        silent exe bufnr('%') == bufnr(l:fileNr[0]) ?
+                    \ 'normal '.l:fileNr[1].'gg0' :
+                    \ 'edit +'.l:fileNr[1].' '.l:fileNr[0]
+        call s:DbgSetSign(l:fileNr[0], l:fileNr[1])
     endif
 
     " Update call stack window
@@ -774,8 +769,12 @@ endfunction
 
 
 " Indicates the current debugging line
-function! s:DbgSetSign(file, line)
-    if has_key(t:dbg.sign, 'file')
+function! s:DbgSetSign(file, lin)
+    if bufnr(a:file) == bufnr(t:dbg.sign.file) && a:lin == t:dbg.sign.lin
+        return
+    endif
+
+    if t:dbg.sign.lin > 0
         exe 'sign unplace '.t:dbg.sign.id.' file='.t:dbg.sign.file
     endif
 
@@ -785,8 +784,9 @@ function! s:DbgSetSign(file, line)
         let t:dbg.sign.id += 1
     endwhile
 
-    exe 'sign place '.t:dbg.sign.id.' line='.a:line.' name=DBGCurrent'.' file='.a:file
+    exe 'sign place '.t:dbg.sign.id.' line='.a:lin.' name=DBGCurrent'.' file='.a:file
     let t:dbg.sign.file = a:file
+    let t:dbg.sign.lin = a:lin
 endfunction
 
 
@@ -822,26 +822,20 @@ endfunction
 function s:GetExecutableFile()
     let l:files = filter(glob('*', '', 1),
                 \ "!isdirectory(v:val) && executable('./'.v:val)")
-    let l:num = len(l:files)
+    let l:sel = 0
 
-    if l:num == 0
-        return ''
-    elseif l:num == 1
-        return fnameescape(l:files[0])
+    if len(l:files) > 1
+        let [l:i, l:str] = [0, "Selete target to debug: \n"]
+
+        while l:i < len(l:files)
+            let l:str .= printf("  %-2d:  %s\n", l:i, l:files[l:i])
+            let l:i += 1
+        endwhile
+
+        let l:sel = input(l:str.'!?: ')
     endif
 
-    let [l:i, l:str] = [0, "Selete target to debug: \n"]
-    for l:file in l:files
-        let l:str .= printf("  %-2d:  %s\n", l:i, l:file)
-        let l:i += 1
-    endfor
-
-    let l:sel = input(l:str.'!?: ')
-    if empty(l:sel)
-        return ''
-    endif
-
-    return fnameescape(l:files[l:sel])
+    return fnameescape(get(l:files, l:sel, ''))
 endfunction
 
 " Gdb tool： debug binary file
@@ -849,7 +843,7 @@ endfunction
 function! async#GdbStart(file, breakPoint) abort
     let l:file = filereadable(a:file) ? a:file : s:GetExecutableFile()
 
-    if empty(l:file)
+    if !filereadable(l:file)
         return
     elseif !exists(':Termdebug')
         packadd termdebug
@@ -857,7 +851,6 @@ function! async#GdbStart(file, breakPoint) abort
 
     " New tab to debug
     tabnew
-    let t:tab_lable = ' -- Debug --'
 
     if empty(a:breakPoint)
         exe 'silent Termdebug '.l:file
@@ -867,10 +860,12 @@ function! async#GdbStart(file, breakPoint) abort
         exe 'silent Termdebug -x '.l:tempFile.' '.l:file
     endif
 
+    let t:tab_lable = ' -- Debug --'
+    let t:task = function('term_sendkeys', [bufnr('%'), "q\ny\n"])
     " Gdb on exit
     autocmd BufUnload <buffer> call s:GdbOnExit()
-    let t:task = 'call term_sendkeys('.bufnr('%').",'q\ny\n')"
 endfunction
+
 
 function! s:GdbOnExit()
     if exists('t:tab_lable')

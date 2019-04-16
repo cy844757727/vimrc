@@ -153,7 +153,7 @@ function! misc#Ag(str, word) abort
         return
     endif
 
-    let l:type = a:str =~# '\v-\S+ ' ? 'none' : &filetype
+    let l:type = a:str =~# '\v -?-\S+' ? 'none' : &filetype
     " file filter and search string
     let l:cmd = 'ag --column --nocolor --nogroup '.(
                 \ has_key(s:AgFileFilter, l:type) ?
@@ -163,10 +163,11 @@ function! misc#Ag(str, word) abort
     if exists('g:BMBPSign_Output')
         let s:refDict = {'title': ' '.a:str, 'content': {},
                     \ 'hi': matchstr(a:str, '\v\S+$'), 'type': l:type}
-        let l:option = {'out_io': 'pipe', 'out_mode': 'nl',
+        call async#JobRun('!', l:cmd, {
+                    \ 'out_io': 'pipe', 'out_mode': 'nl',
                     \ 'out_cb': function('s:AgOnOut'),
-                    \ 'exit_cb': function('s:AgOnExit')}
-        call async#JobRun('!', l:cmd, l:option, {'flag': '[infowin]'})
+                    \ 'exit_cb': function('s:AgOnExit')
+                    \ }, {'flag': '[infowin]'})
     else
         call async#JobRunOut('!', l:cmd, {'title': ' '.a:str, 'efm': '%f:%l:%c:%m'})
     endif
@@ -203,7 +204,7 @@ function misc#SwitchToEmptyBuftype()
                 \ 'wincmd W' : 'wincmd w'
 
     let l:num = winnr('$')
-    while !empty(&buftype) && l:num > 0
+    while (!empty(&buftype) || exists('w:buftype')) && l:num > 0
         exe l:ex
         let l:num -= 1
     endwhile
@@ -217,12 +218,8 @@ function s:TabEvent(act)
         let s:preTabNr[s:preTabNr.cur] = tabpagenr()
         let s:preTabNr.cur = !s:preTabNr.cur
     elseif a:act == 'close'
-        try
-            exe s:preTabNr[s:preTabNr.cur].'tabnext'
-        catch 'E16'
-            $tabnext
-        endtry
-
+        exe s:preTabNr[s:preTabNr.cur] > tabpagenr('$') ? '$tabnext' :
+                    \ s:preTabNr[s:preTabNr.cur].'tabnext'
         let s:preTabNr[!s:preTabNr.cur] = s:preTabNr[s:preTabNr.cur]
     endif
 endfunction
@@ -754,16 +751,15 @@ function! misc#MsgFilter(...)
 endfunction
 
 
-function! misc#EditFile(file, ...)
+function! misc#EditFile(file, way)
     if !filereadable(a:file)
         return
     elseif !bufexists(a:file)
-        exe get(a:000, 0, 'edit').' '.a:file
+        exe a:way.' '.a:file
         return
     endif
 
     let l:file = fnamemodify(a:file, ':p')
-    let l:way = get(a:000, 0, 'edit')
 
     for l:tab in range(1, tabpagenr('$'))
         for l:win in range(1, tabpagewinnr(l:tab, '$'))
@@ -773,8 +769,8 @@ function! misc#EditFile(file, ...)
                 exe l:tab.'tabnext'
                 exe l:win.'wincmd w'
 
-                if l:file !~? expand('%') || l:way !=# 'edit'
-                    exe 'buffer '.matchstr(l:way, ' .*$').' '.l:file
+                if bufnr('%') != bufnr(l:file)
+                    exe 'buffer '.matchstr(a:way, '\v\S\zs .*$').' '.l:file
                 endif
 
                 return
@@ -782,8 +778,8 @@ function! misc#EditFile(file, ...)
         endfor
     endfor
 
-    if l:file !~? expand('%')
-        exe l:way.' '.a:file
+    if bufnr('%') != bufnr(l:file)
+        exe a:way.' '.a:file
     endif
 endfunction
 
@@ -799,6 +795,7 @@ function! misc#WinResize()
         let l:winnr = win_id2win(t:MaxmizeWin[2])
         exe l:winnr.'resize '.t:MaxmizeWin[0]
         exe 'vert '.l:winnr.'resize '.t:MaxmizeWin[1]
+
         if t:MaxmizeWin[2] == win_getid()
             unlet t:MaxmizeWin
             return
@@ -1052,7 +1049,6 @@ function! SwitchXPermission()
     call setfperm(l:node, strcharpart(l:perm, 0, 2).l:flag.
                 \ strcharpart(l:perm, 3, 2).l:flag.
                 \ strcharpart(l:perm, 6, 2).l:flag)
-
     call b:NERDTree.root.refresh()
     call b:NERDTree.render()
 endfunction
