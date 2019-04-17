@@ -6,10 +6,10 @@
 " Last Modified: 2019年01月06日 星期日 16时59分49秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_A_Async') || v:version < 800
+if exists('g:loaded_a_async') || v:version < 800
     finish
 endif
-let g:loaded_A_Async = 1
+let g:loaded_a_async = 1
 
 
 " === Embeded terminal === {{{1
@@ -25,7 +25,6 @@ let s:displayIcon = {
 " Default terminal type
 let s:termPrefix = '!Term'
 let s:shell = fnamemodify(&shell, ':t')
-let s:termDefaultName = s:termPrefix.': '.s:shell.' '
 let s:termType = extend([s:shell], get(g:, 'async_terminalType', []))
 
 " Default terminal option
@@ -38,7 +37,8 @@ let s:termOption = {
 
 function s:termAnalyzeCmd(cmd)
     let l:list = split(a:cmd, ' ')
-    let [l:cmd, l:name] = [s:shell, s:termDefaultName]
+    let l:cmd = get(get(g:, 'ENV', {}), 'shell', s:shell)
+    let l:name = s:termPrefix.': '.l:cmd.' '
 
     if !empty(l:list)
         if index(s:termType, l:list[0]) != -1
@@ -70,7 +70,7 @@ function! async#TermToggle(action, cmd) abort
 
     if l:winnr != -1 
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
-    elseif l:name ==# s:termDefaultName && l:other != -1 && empty(l:postCmd)
+    elseif l:cmd == get(get(g:, 'ENV', {}), 'shell', s:shell) && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
         exe l:other.'hide'
     elseif a:action !=# 'off'

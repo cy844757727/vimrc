@@ -45,24 +45,28 @@ set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 " Global enviroment config
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
-let g:SideWinMode = 0
+let g:SideWinMode = 1
 
 " Autocmd & command ===================== {{{1
-augroup UsrDefCmd
+augroup vimrc
     autocmd!
-"    autocmd QuickFixCmdPost * exe 'copen '.get(g:, 'BottomWinHeight', 15)
     autocmd BufRead,BufNewFile *.v,*.vh,*.vp,*.vt,*.vo,*.vg set filetype=verilog
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
+    autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
+    autocmd User WorkSpaceLoadPost exe 'Async! ctags -R -F .tags'
+    autocmd User WorkSpaceLoadPost call misc#EnvSet('-i')
+    autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
 
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
+command! -nargs=? ToggleSideWin :call misc#ToggleSideBar(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-args>)
-command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#TaskQueue(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#EnvTaskQueue(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
@@ -108,13 +112,17 @@ vnoremap <silent> \op <Esc>:exe 'Async xdg-open '.getreg('*')<CR>
 nnoremap <silent> \op :exe 'Async xdg-open '.expand('<cWORD>')<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
+vnoremap <silent> \t :call Vimrc_leader('LeaderfBufTagPattern '.getreg('*'))<CR>
 nnoremap <silent> \T :LeaderfTag<CR>
+vnoremap <silent> \T <Esc>:exe 'LeaderfTagPattern '.getreg('*')<CR>
 nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
+vnoremap <silent> \l :call Vimrc_leader('LeaderfLinePattern '.getreg('*'))<CR>
 nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
+vnoremap <silent> \L :call Vimrc_leader('LeaderfLineAllPattern '.getreg('*'))<CR>
 nnoremap <silent> \f :LeaderfBuffer<CR>
 nnoremap <silent> \F :LeaderfFile<CR>
 
-function! Vimrc_leader(cmd)
+function! Vimrc_leader(cmd) range
     let l:save_pos = getpos('.')
     exe a:cmd
     call setpos("''", l:save_pos)
@@ -253,7 +261,7 @@ let g:netrw_browse_split=4
 let g:netrw_altv=1
 let g:netrw_banner=0
 let g:netrw_liststyle=3
-let g:NERDTreeWinPos = 'left'
+let g:NERDTreeWinPos ='left'
 let g:NERDTreeWinSize=get(g:, 'SideWinWidth', 31)
 let g:NERDTreeStatusline=' פּ NERDTree'
 let g:NERDTreeAutoDeleteBuffer=1
@@ -285,7 +293,7 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 let g:snips_author = 'Cy <844757727@qq.com>'
 " === tagBar.vim === {{{1
 let g:tagbar_width=get(g:, 'SideWinWidth', 31)
-let g:tagbar_vertical= &lines/2 - 2
+let g:tagbar_vertical=&lines/2 - 2
 let g:tagbar_silent=1
 let g:tagbar_left=0
 "let g:tagbar_iconchars = ['●', '○']
@@ -362,16 +370,16 @@ let g:BMBPSign_SpecialBuf = {
 
 " SpecialBuf hanle
 function! Vimrc_Tagbar()
-    if g:tagbar_vertical == 0
-        TagbarOpen
-    elseif bufwinnr('NERD_tree') == -1
-        let l:temp = [g:tagbar_vertical, g:tagbar_left]
+    let l:mode = get(g:, 'SideWinMode', 1)
+
+    if bufwinnr('NERD_tree') == -1 || l:mode == 2 || l:mode == 3
         let g:tagbar_vertical = 0
-        let g:tagbar_left = g:NERDTreeWinPos == 'left'
+        let g:tagbar_left = l:mode % 2
         TagbarOpen
-        let [g:tagbar_vertical, g:tagbar_left] = l:temp
         wincmd W
     else
+        let g:tagbar_vertical = &lines % 2 -2
+        let g:tagbar_left = 0
         exe bufwinnr('NERD_tree').'wincmd w'
         TagbarOpen
         wincmd w
@@ -388,17 +396,6 @@ let g:BMBPSign_ProjectType = {
                 \ 'python':  '~/Documents/Python',
                 \ 'default': '~/Documents'
                 \ }
-
-let g:BMBPSign_PreSaveEventList = [
-            \ 'call PreSaveWorkSpace_Var()',
-            \ 'call misc#CleanBufferList()'
-            \ ]
-
-let g:BMBPSign_PostLoadEventList = [
-            \ 'Async! ctags -R -f .tags',
-            \ 'call PostLoadWorkSpace_Var()',
-            \ 'call misc#EnvInitial()'
-            \ ]
 
 function! PreSaveWorkSpace_Var()
     let g:TABVAR_MAXMIZEWIN = {}

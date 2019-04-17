@@ -5,37 +5,132 @@
 " Last Modified: 2019年01月07日 星期一 21时03分39秒
 " ==================================================
 
-if exists('g:loaded_A_Misc')
+if exists('g:loaded_a_misc')
     finish
 endif
-let g:loaded_A_Misc = 1
+let g:loaded_a_misc = 1
 
 
-augroup misc_autocmd
+augroup misc
     autocmd!
-    " Auto record buf history for each window
     autocmd BufEnter *[^0-9] call s:BufHisRecord()
     autocmd TabLeave * call s:TabEvent('leave')
     autocmd TabClosed * call s:TabEvent('close')
+    autocmd User WorkSpaceSavePre call s:CleanBufferList()
 augroup END
 
-"  Refresh NERTree
-function! s:UpdateNERTreeView()
-    let l:nerd = bufwinnr('NERD_tree')
 
-    if l:nerd != -1
-        let l:id = win_getid()
-        exe l:nerd.'wincmd w'
-        call b:NERDTree.root.refresh()
-        call b:NERDTree.render()
-        call win_gotoid(l:id)
+" === Enviroment variables {{{1
+" Could dynamic configure some behavior or action
+" Key with capital initials would creat or reset global variable
+" eg: {'Key': val} -> g:Key = val
+" Record enviroment variables (could be stored by viminfo)
+let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
+
+" Env configure
+function! misc#EnvSet(config) abort
+    if empty(a:config)
+        echo g:ENV
+        return
+    elseif a:config ==# '-i'
+        call extend(g:, filter(copy(g:ENV), "v:key =~# '[A-Z]'"))
+        return
+    endif
+
+    let l:str = []
+    for l:item in split(a:config, '\v\s*;\s*')
+        let l:list = split(l:item, '\v\s*\=\s*')
+
+        if l:item =~# '\M=$'
+            " Delete key
+            if has_key(g:ENV, l:list[0])
+                unlet g:ENV[l:list[0]]
+            endif
+
+            if l:list[0][0] =~# '[A-Z]' && has_key(g:, l:list[0])
+                unlet g:[l:list[0]]
+            endif
+        elseif len(l:list) == 1
+            " Add to display
+            let l:Val = get(g:ENV, l:list[0], get(g:, l:list[0], ''))
+            let l:str += [l:list[0].'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+        elseif len(l:list) == 2
+            " Add or modify
+            let g:ENV[l:list[0]] = 
+                        \ l:list[1] =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
+                        \ eval(l:list[1]) : l:list[1]
+
+            if l:list[0][0] =~# '[A-Z]'
+                call extend(g:, {l:list[0]: g:ENV[l:list[0]]})
+            endif
+        endif
+    endfor
+
+    if !empty(l:str)
+        echo join(l:str, "\n")
     endif
 endfunction
 
+function misc#CompleteEnv(L, C, P)
+    if a:C[:a:P] =~# '\v\=\s*$'
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
+        let l:val = get(g:ENV, l:key, get(g:, l:key, ''))
+        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+    endif
 
+    return join(filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
+                \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
+endfunction
+
+" Special variables in g:ENV (task_queue)
+function! misc#EnvTaskQueue(task) abort
+    if empty(a:task)
+        echo get(g:ENV, 'task_queue', {})
+        return
+    endif
+
+    let l:task_queue = get(g:ENV, 'task_queue', {})
+    for l:item in split(a:task, '\v\s*;\s*')
+        let l:list = split(l:item, '\v\s*\=\s*')
+
+        if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
+            let l:Task = l:task_queue[l:list[0]]
+            let l:type = type(l:Task)
+
+            if l:type == type(function('add'))
+                call l:Task()
+            elseif l:type == type('') || l:type == type([])
+                call execute(l:Task, '')
+            endif
+        elseif len(l:list) == 2
+            let l:task_queue[l:list[0]] =
+                        \ l:list[1] =~ '\v^(\[.*\]|func(tion|ref)\(.*\))$' ?
+                        \ eval(l:list[1]) : l:list[1]
+            let l:change = 1
+        endif
+    endfor
+
+    if exists('l:change')
+        call extend(g:ENV, {'task_queue': l:task_queue})
+    endif
+endfunction
+
+function misc#CompleteTask(...)
+    if a:C[:a:P] =~# '\v\=\s*$'
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
+        let l:val = get(get(g:ENV, 'task_queue', {}), l:key, '')
+        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+    endif
+
+    return join(keys(get(g:ENV, 'task_queue', {})), "\n")
+endfunction
+
+
+
+" === Multifunctional F5 key {{{1
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
-" Parameter value: task, run, debug, visual {{{1
+" Type: task, run, debug, visual ...
 function! misc#F5Function(type) range abort
     if a:type ==# 'task'
         call s:F5Function.task()
@@ -61,7 +156,7 @@ function s:F5Function.task()
                 \ exists('w:task') ? w:task :
                 \ exists('t:task') ? t:task :
                 \ exists('g:task') ? g:task :
-                \ get(get(g:, 'ENV', {}), 'task', '')
+                \ get(g:ENV, 'task', '')
     let l:type = type(l:Task)
 
     if l:type == type(function('add'))
@@ -135,7 +230,8 @@ function misc#CompleteF5(L, C, P)
 endfunction
 
 
-" Ag: silver-search tool {{{1
+" === ag tool: vim script implementation {{{1
+" Ag: silver-search tool
 let s:AgFileFilter = {
             \ 'vim': '\\.vim$|vimrc|gvimrc',
             \ 'python': '\\.py$',
@@ -200,6 +296,113 @@ function! s:AgOnOut(job, msg) abort
 endfunction
 
 
+" === Auto record file history in a window {{{1
+" BufEnter enent trigger (w:bufHis)
+function! s:BufHisRecord()
+    if !empty(&buftype) || expand('%') =~# '\v^/|^$'
+        return
+    endif
+
+    let l:name = expand('%:p')
+
+    if !exists('w:bufHis')
+        let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
+    elseif l:name != get(w:bufHis.list, -1, '')
+        " When existing, remove first
+        let l:ind = index(w:bufHis.list, l:name)
+        if l:ind != -1
+            call remove(w:bufHis.list, l:ind)
+        endif
+
+        " Put it to last position
+        let w:bufHis.list += [l:name]
+    endif
+endfunction
+
+
+function! misc#BufHisDel(...)
+    if !exists('w:bufHis') || len(w:bufHis.list) < 2
+        return
+    endif
+
+    let l:cwd = getcwd().'/'
+    let l:filter = join(map(copy(a:000), "'".l:cwd."'.bufname(v:val+0)"), '\|')
+    call filter(w:bufHis.list, "v:val !~# '".l:filter."'")
+endfunction
+
+
+function! misc#BufHisSwitch(action)
+    if !exists('w:bufHis') || len(get(w:bufHis, 'list', [])) < 2
+        return
+    endif
+
+    if a:action == 'next'
+        call add(w:bufHis.list, remove(w:bufHis.list, 0))
+    else
+        call insert(w:bufHis.list, remove(w:bufHis.list, -1))
+    endif
+
+    if bufexists(w:bufHis.list[-1])
+        silent update
+        silent exe 'buffer '.w:bufHis.list[-1]
+        call s:BufHisEcho()
+    else
+        " Discard invalid item
+        if w:bufHis.list[-1] == w:bufHis.init
+            let w:bufHis.init = w:bufHis.list[0]
+        endif
+
+        call remove(w:bufHis.list, -1)
+        call misc#BufHisSwitch(a:action)
+    endif
+endfunction
+
+
+function! s:BufHisEcho()
+    let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
+
+    " Mark out the current item
+    let l:bufList[-1] = '['.l:bufList[-1][1:-2].']'
+
+    " Readjusting position (Put the initial edited text first)
+    let l:ind = index(w:bufHis.list, w:bufHis.init)
+    let l:bufList = remove(l:bufList, l:ind, -1) + l:bufList
+    let [w:bufHis.start, w:bufHis.chars, l:endSpace] = s:AdaptOneLineDisplay(
+                \ l:bufList, len(l:bufList)-l:ind-1, w:bufHis.start, w:bufHis.chars, &columns-1)
+
+    " Cut out a section of l:str
+    let l:str = join(l:bufList)
+    let l:allChars = strchars(l:str)
+    let l:str = strcharpart(l:str, w:bufHis.start, w:bufHis.chars).l:endSpace
+
+    " Add prefix to head when not displayed completely
+    if w:bufHis.start > 0
+        let l:str = '<'.strcharpart(l:str, 1)
+    endif
+
+    " Add suffix to tail when not displayed completely
+    if w:bufHis.start + w:bufHis.chars < l:allChars
+        let l:str = strcharpart(l:str, 0, strchars(l:str) - 1).'>'
+    endif
+
+    echo l:str
+endfunction
+
+" === misc function implementation {{{1
+"  Refresh NERTree
+function! s:UpdateNERTreeView()
+    let l:nerd = bufwinnr('NERD_tree')
+
+    if l:nerd != -1
+        let l:id = win_getid()
+        exe l:nerd.'wincmd w'
+        call b:NERDTree.root.refresh()
+        call b:NERDTree.render()
+        call win_gotoid(l:id)
+    endif
+endfunction
+
+
 " Switch to buffer with empty buftype
 function misc#SwitchToEmptyBuftype()
     let l:ex = (index(['qf', 'infowin'], &ft) != -1 || bufname('%') =~# '\v^!Term') ?
@@ -214,6 +417,7 @@ function misc#SwitchToEmptyBuftype()
     return empty(&buftype)
 endfunction
 
+" tableave, tabclose event handle
 let s:preTabNr = {'0': 1, '1': 1, 'cur': 0}
 function s:TabEvent(act)
     if a:act == 'leave'
@@ -392,7 +596,7 @@ function s:AdaptOneLineDisplay(list, cur, start, chars, width)
     return [0, a:width, '']
 endfunction
 
-" Customize tabline {{{1
+" Customize tabline
 let s:TabLineStart = 0
 let s:TabLineChars = &columns
 function! misc#TabLine()
@@ -475,98 +679,6 @@ function! misc#FoldText()
     return ''.(v:foldend - v:foldstart + 1).' '.getline(v:foldstart)
 endfunction
 
-
-" a:1 if exists define the action
-" otherwise record the history to w:bufHis {{{1 
-function! s:BufHisRecord()
-    if !empty(&buftype) || expand('%') =~# '\v^/|^$'
-        return
-    endif
-
-    let l:name = expand('%:p')
-
-    if !exists('w:bufHis')
-        let w:bufHis = {'list': [l:name], 'init': l:name, 'start': 0, 'chars': -1}
-    elseif l:name != get(w:bufHis.list, -1, '')
-        " When existing, remove first
-        let l:ind = index(w:bufHis.list, l:name)
-        if l:ind != -1
-            call remove(w:bufHis.list, l:ind)
-        endif
-
-        " Put it to last position
-        let w:bufHis.list += [l:name]
-    endif
-endfunction
-
-
-function! misc#BufHisDel(...)
-    if !exists('w:bufHis') || len(w:bufHis.list) < 2
-        return
-    endif
-
-    let l:cwd = getcwd().'/'
-    let l:filter = join(map(copy(a:000), "'".l:cwd."'.bufname(v:val+0)"), '\|')
-    call filter(w:bufHis.list, "v:val !~# '".l:filter."'")
-endfunction
-
-
-function! misc#BufHisSwitch(action)
-    if !exists('w:bufHis') || len(get(w:bufHis, 'list', [])) < 2
-        return
-    endif
-
-    if a:action == 'next'
-        call add(w:bufHis.list, remove(w:bufHis.list, 0))
-    else
-        call insert(w:bufHis.list, remove(w:bufHis.list, -1))
-    endif
-
-    if bufexists(w:bufHis.list[-1])
-        silent update
-        silent exe 'buffer '.w:bufHis.list[-1]
-        call s:BufHisEcho()
-    else
-        " Discard invalid item
-        if w:bufHis.list[-1] == w:bufHis.init
-            let w:bufHis.init = w:bufHis.list[0]
-        endif
-
-        call remove(w:bufHis.list, -1)
-        call misc#BufHisSwitch(a:action)
-    endif
-endfunction
-
-
-function! s:BufHisEcho()
-    let l:bufList = map(copy(w:bufHis.list), "' '.bufnr(v:val).'-'.fnamemodify(v:val,':t').' '")
-
-    " Mark out the current item
-    let l:bufList[-1] = '['.l:bufList[-1][1:-2].']'
-
-    " Readjusting position (Put the initial edited text first)
-    let l:ind = index(w:bufHis.list, w:bufHis.init)
-    let l:bufList = remove(l:bufList, l:ind, -1) + l:bufList
-    let [w:bufHis.start, w:bufHis.chars, l:endSpace] = s:AdaptOneLineDisplay(
-                \ l:bufList, len(l:bufList)-l:ind-1, w:bufHis.start, w:bufHis.chars, &columns-1)
-
-    " Cut out a section of l:str
-    let l:str = join(l:bufList)
-    let l:allChars = strchars(l:str)
-    let l:str = strcharpart(l:str, w:bufHis.start, w:bufHis.chars).l:endSpace
-
-    " Add prefix to head when not displayed completely
-    if w:bufHis.start > 0
-        let l:str = '<'.strcharpart(l:str, 1)
-    endif
-
-    " Add suffix to tail when not displayed completely
-    if w:bufHis.start + w:bufHis.chars < l:allChars
-        let l:str = strcharpart(l:str, 0, strchars(l:str) - 1).'>'
-    endif
-
-    echo l:str
-endfunction
 
 
 function! misc#GetWebIcon(type, ...)
@@ -685,7 +797,7 @@ function! misc#Information(act) range
 endfunction
 
 
-function! misc#CleanBufferList()
+function! s:CleanBufferList()
     let l:nrs = []
 
     for l:tabnr in range(1, tabpagenr('$'))
@@ -760,7 +872,7 @@ function! misc#EditFile(file, way)
 endfunction
 
 
-" ############### 窗口相关 ######################################
+" === Window resize or sidebar, bottombar toggle {{{1
 " 最大化窗口/恢复
 function! misc#WinResize()
     if !empty(&buftype)
@@ -785,7 +897,7 @@ endfunction
 
 
 " Combine nerdtree & tagbar
-" Switch between the two {{{1
+" Switch between the two
 function! misc#ToggleSideBar(...)
     let l:obj = a:0 > 0 ? a:1 : 'toggle'
     let l:nerd = bufwinnr('NERD_tree') == -1 ? 0 : 1
@@ -798,24 +910,20 @@ function! misc#ToggleSideBar(...)
         call s:ToggleTagbar()
     elseif l:obj == 'all'
         if l:statue == 0
-            NERDTreeToggle
-            TagbarOpen
+            call s:ToggleNERDTree()
+            call s:ToggleTagbar()
         else
             TagbarClose
             NERDTreeClose
         endif
-    elseif g:tagbar_vertical > 0 || (g:tagbar_left != (g:NERDTreeWinPos == 'right'))
-        if l:statue == 0
-            call s:ToggleTagbar()
-        elseif l:statue == 1
-            NERDTreeClose
-            call s:ToggleTagbar()
-        elseif l:statue == 2
-            TagbarClose
-            NERDTreeToggle
-        else
-            TagbarClose
-        endif
+    elseif l:statue == 3
+        TagbarClose
+    elseif l:statue == 2
+        TagbarClose
+        call s:ToggleNERDTree()
+    elseif l:statue == 1
+        NERDTreeClose
+        call s:ToggleTagbar()
     else
         call s:ToggleTagbar()
     endif
@@ -824,48 +932,40 @@ endfunction
 
 " Toggle NERDTree window
 function! s:ToggleNERDTree()
+    let l:mode = get(g:, 'SideWinMode', 1)
+    let g:NERDTreeWinPos = l:mode > 2 ? 'right' : 'left'
+
     if bufwinnr('NERD_tree') != -1
         NERDTreeClose
-    elseif bufwinnr('Tagbar') != -1
-        if g:tagbar_vertical > 0 || (g:tagbar_left != (g:NERDTreeWinPos == 'right'))
-            TagbarClose
-        endif
-
+    elseif bufwinnr('Tagbar') == -1 || l:mode == 2 || l:mode == 3
         NERDTreeToggle
-
-        if g:tagbar_vertical > 0
-            TagbarOpen
-        endif
     else
+        TagbarClose
         NERDTreeToggle
+        let g:tagbar_vertical = &lines/2 - 2
+        let g:tagbar_left = 0
+        TagbarOpen
     endif
 endfunction
 
 
 "  Toggle TagBar window
 function! s:ToggleTagbar()
+    let l:mode = get(g:, 'SideWinMode', 1)
+
     if bufwinnr('Tagbar') != -1
         TagbarClose
-    elseif bufwinnr('NERD_tree') == -1
-        if g:tagbar_vertical == 0
-            TagbarOpen
-        else
-            let l:temp = [g:tagbar_vertical, g:tagbar_left]
-            let g:tagbar_vertical = 0
-            let g:tagbar_left = g:NERDTreeWinPos == 'left'
-            TagbarOpen
-            let [g:tagbar_vertical, g:tagbar_left] = l:temp
-        endif
-    elseif g:tagbar_vertical > 0
+    elseif bufwinnr('NERD_tree') == -1 || l:mode == 2 || l:mode == 3
+        let g:tagbar_vertical = 0
+        let g:tagbar_left = l:mode % 2
+        TagbarOpen
+    else
+        let g:tagbar_vertical = &lines/2 - 2
+        let g:tagbar_left = 0
         let l:id = win_getid()
         exe bufwinnr('NERD_tree').'wincmd w'
         TagbarOpen
         call win_gotoid(l:id)
-    else
-        if g:tagbar_left != (g:NERDTreeWinPos == 'right')
-            NERDTreeClose
-        endif
-        TagbarOpen
     endif
 endfunction
 
@@ -908,113 +1008,6 @@ function! misc#ToggleBottomBar(winType, type)
         call misc#ToggleBottomBar('only', 'terminal')
         call async#TermToggle('toggle', a:type)
     endif
-endfunction
-
-" Enviroment variables {{{1
-"
-
-if !exists('g:ENV')
-    let g:ENV = {}
-endif
-
-function misc#EnvInitial()
-    if exists('g:env')
-        let g:ENV = extend(g:ENV, g:env, 'keep')
-    endif
-
-    call extend(g:, filter(deepcopy(g:ENV), "v:key =~# '[A-Z]'"))
-endfunction
-
-" Env configure {{{1
-function! misc#EnvSet(config) abort
-    if empty(a:config)
-        echo g:ENV
-        return
-    endif
-
-    let l:str = []
-    for l:item in split(a:config, '\v\s*;\s*')
-        let l:list = split(l:item, '\v\s*\=\s*')
-
-        " Delete key
-        if l:item =~# '\M=$'
-            if has_key(g:ENV, l:list[0])
-                unlet g:ENV[l:list[0]]
-            endif
-
-            if l:list[0][0] =~# '[A-Z]' && has_key(g:, l:list[0])
-                unlet g:[l:list[0]]
-            endif
-        elseif len(l:list) == 1
-            let l:Val = get(g:ENV, l:list[0], get(g:, l:list[0], ''))
-            let l:str += [l:list[0].'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
-        elseif len(l:list) == 2
-            let g:ENV[l:list[0]] = 
-                        \ l:list[1] =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
-                        \ eval(l:list[1]) : l:list[1]
-
-            if l:list[0][0] =~# '[A-Z]'
-                call extend(g:, {l:list[0]: g:ENV[l:list[0]]})
-            endif
-        endif
-    endfor
-
-    if !empty(l:str)
-        echo join(l:str, "\n")
-    endif
-endfunction
-
-function misc#CompleteEnv(L, C, P)
-    if a:C[:a:P] =~# '\v\=\s*$'
-        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
-        let l:val = get(g:ENV, l:key, get(g:, l:key, ''))
-        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
-    endif
-
-    return join(filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
-                \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
-endfunction
-
-function! misc#TaskQueue(task) abort
-    if empty(a:task)
-        echo get(g:ENV, 'task_queue', {})
-        return
-    endif
-
-    let l:task_queue = get(g:ENV, 'task_queue', {})
-    for l:item in split(a:task, '\v\s*;\s*')
-        let l:list = split(l:item, '\v\s*\=\s*')
-
-        if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
-            let l:Task = l:task_queue[l:list[0]]
-            let l:type = type(l:Task)
-
-            if l:type == type(function('add'))
-                call l:Task()
-            elseif l:type == type('') || l:type == type([])
-                call execute(l:Task, '')
-            endif
-        elseif len(l:list) == 2
-            let l:task_queue[l:list[0]] =
-                        \ l:list[1] =~ '\v^(\[.*\]|func(tion|ref)\(.*\))$' ?
-                        \ eval(l:list[1]) : l:list[1]
-            let l:change = 1
-        endif
-    endfor
-
-    if exists('l:change')
-        call extend(g:ENV, {'task_queue': l:task_queue})
-    endif
-endfunction
-
-function misc#CompleteTask(...)
-    if a:C[:a:P] =~# '\v\=\s*$'
-        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
-        let l:val = get(get(g:ENV, 'task_queue', {}), l:key, '')
-        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
-    endif
-
-    return join(keys(get(g:ENV, 'task_queue', {})), "\n")
 endfunction
 
 " radix {{{1

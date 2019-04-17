@@ -56,8 +56,6 @@ else
 endif
 
 
-" TODO: event handle
-let s:signToggleEvent = get(g:, 'BMBPSign_ToggleEvent', {})
 " Default project type associate with specified path
 let s:projectType = extend(get(g:, 'BMBPSign_ProjectType', {}),
             \ {'default': $HOME.'/Documents/'}, 'keep')
@@ -601,10 +599,7 @@ endfunction
 " Content: session, viminfo
 " File Name: a:pre . s:sessionFile, a:pre . s:vimInfoFile
 function s:WorkSpaceSave(pre)
-    " Pre-save processing
-    if exists('g:BMBPSign_PreSaveEventList')
-        call execute(g:BMBPSign_PreSaveEventList)
-    endif
+    silent doautocmd User WorkSpaceSavePre
 
     set noautochdir
     let g:BMBPSign_Projectized = 1
@@ -648,10 +643,7 @@ function s:WorkSpaceSave(pre)
     endfor
     call s:ProjectManager(3, [fnamemodify(l:path, ':t'), l:type, l:path])
 
-    " Post-save processing
-    if exists('g:BMBPSign_PostSaveEventList')
-        call execute(g:BMBPSign_PostSaveEventList)
-    endif
+    silent doautocmd User WorkSpaceSavePost
 endfunction
 
 
@@ -659,10 +651,7 @@ endfunction
 " Context: session, viminfo
 " File Name: a:pre . s:sessionFile, a:pre . s:vimInfoFile
 function s:WorkSpaceLoad(pre)
-    " Pre-load processing
-    if exists('g:BMBPSign_PreLoadEventList')
-        call execute(g:BMBPSign_PreLoadEventList)
-    endif
+    silent doautocmd User WorkSpaceLoadPre
 
     " Empty workspace
     if exists('g:BMBPSign_Projectized')
@@ -692,10 +681,7 @@ function s:WorkSpaceLoad(pre)
         exe 'silent! source '.l:sessionFile
     endif
 
-    " Post-load processing
-    if exists('g:BMBPSign_PostLoadEventList')
-        call execute(g:BMBPSign_PostLoadEventList)
-    endif
+    silent doautocmd User WorkSpaceLoadPost
 endfunction
 
 
