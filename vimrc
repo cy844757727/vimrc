@@ -56,13 +56,12 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
-    autocmd User WorkSpaceLoadPost ATags
+    autocmd User WorkSpaceLoadPost call async#JobRun('!', 'ctags -R -f .tags', {}, {})
     autocmd User WorkSpaceLoadPost call misc#EnvSet('-i')
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
 
 command! Info :call misc#Information('detail')
-command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#CompleteSide ToggleSideWin :call misc#ToggleSideBar(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-args>)
@@ -76,7 +75,7 @@ command! TClose tabclose
 command! TQuit TClose
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
 command! Avdel :Async vdel -lib work -all
-command! -nargs=? -complete=tag Ag :call misc#Ag(<q-args>, '')
+command! -nargs=? -complete=tag Ag :call misc#Ag(<q-args>, 0)
 
 "快捷键映射===================== {{{1
 " 括号引号自动补全
@@ -127,8 +126,8 @@ function! Vimrc_leader(cmd) range
     call setpos("''", l:save_pos)
 endfunction
 
-nnoremap <silent> \ag :call misc#Ag(expand('<cword>'), 'word')<CR>
-vnoremap <silent> \ag :call misc#Ag(getreg('*'), '')<CR>
+nnoremap <silent> \ag :call misc#Ag(expand('<cword>'), 1)<CR>
+vnoremap <silent> \ag :call misc#Ag(getreg('*'), 0)<CR>
 nnoremap <silent> \=  :call misc#CodeFormat()<CR>
 vnoremap <silent> \=  :call misc#CodeFormat()<CR>
 nnoremap <silent> \q  :call misc#ReverseComment()<CR>
@@ -151,12 +150,12 @@ imap <C-h> <Esc><C-h>
 noremap <silent> <C-l>  :redraw!<CR>
 map! <C-l> <Esc><C-l>
 " Save & winresize & f5 function
-noremap <silent> <f3>   :call misc#SaveFile()<CR>
-noremap <silent> <f4>   :call misc#WinResize()<CR>
-nnoremap <silent> <f5>  :call misc#F5Function('run')<CR>
-vnoremap <silent> <f5>  :call misc#F5Function('visual')<CR>
-noremap <silent> <C-f5> :call misc#F5Function('debug')<CR>
-noremap <silent> <S-f5> :call misc#F5Function('task')<CR>
+noremap <silent> <f3>    :call misc#SaveFile()<CR>
+noremap <silent> <f4>    :call misc#WinResize()<CR>
+nnoremap <silent> <f5>   :call misc#F5Function('run')<CR>
+vnoremap <silent> <f5>   :call misc#F5Function('visual')<CR>
+noremap <silent> <C-f5>  :call misc#F5Function('debug')<CR>
+noremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
 vnoremap <silent> <S-f5> :call misc#F5Function('task')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>

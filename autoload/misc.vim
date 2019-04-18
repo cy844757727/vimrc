@@ -26,18 +26,36 @@ augroup END
 " eg: {'Key': val} -> g:Key = val
 " Record enviroment variables (could be stored by viminfo)
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
+lockvar! g:ENV
+
+" Parse option:
+" -i  initial global variables
+" -c  empty g:ENV
+function s:EnvOptionParse(opt)
+    if empty(a:opt)
+        echo g:ENV
+    elseif a:opt ==# '-i'
+        call extend(g:, filter(deepcopy(g:ENV), "v:key =~# '[A-Z]'"))
+    elseif a:opt ==# '-c'
+        unlockvar! g:ENV
+        let g:ENV = {}
+        lockvar! g:ENV
+    else
+        return 0
+    endif
+
+    return 1
+endfunction
 
 " Env configure
 function! misc#EnvSet(config) abort
-    if empty(a:config)
-        echo g:ENV
-        return
-    elseif a:config ==# '-i'
-        call extend(g:, filter(copy(g:ENV), "v:key =~# '[A-Z]'"))
+    if s:EnvOptionParse(a:config)
         return
     endif
 
     let l:str = []
+    unlockvar! g:ENV
+
     for l:item in split(a:config, '\v\s*;\s*')
         let l:list = split(l:item, '\v\s*\=\s*')
 
@@ -69,6 +87,8 @@ function! misc#EnvSet(config) abort
     if !empty(l:str)
         echo join(l:str, "\n")
     endif
+
+    lockvar! g:ENV
 endfunction
 
 function misc#CompleteEnv(L, C, P)
@@ -78,7 +98,7 @@ function misc#CompleteEnv(L, C, P)
         return a:L.(type(l:val) == type('') ? l:val : string(l:val))
     endif
 
-    return join(filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
+    return join(['-i', '-c'] + filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
                 \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
 endfunction
 
@@ -89,7 +109,7 @@ function! misc#EnvTaskQueue(task) abort
         return
     endif
 
-    let l:task_queue = get(g:ENV, 'task_queue', {})
+    let l:task_queue = copy(get(g:ENV, 'task_queue', {}))
     for l:item in split(a:task, '\v\s*;\s*')
         let l:list = split(l:item, '\v\s*\=\s*')
 
@@ -111,7 +131,9 @@ function! misc#EnvTaskQueue(task) abort
     endfor
 
     if exists('l:change')
+        unlockvar! g:ENV
         call extend(g:ENV, {'task_queue': l:task_queue})
+        lockvar! g:ENV
     endif
 endfunction
 
@@ -128,6 +150,10 @@ endfunction
 
 
 " === Multifunctional F5 key {{{1
+" Dict function
+" {'task', 'run', 'debug', 'visual'}
+let s:F5Function = {}
+
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
 " Type: task, run, debug, visual ...
@@ -146,9 +172,6 @@ function! misc#F5Function(type) range abort
         call s:F5Function[a:type]()
     endif
 endfunction
-
-" {'task', 'run', 'debug', 'visual'}
-let s:F5Function = {}
 
 " Task
 function s:F5Function.task()
@@ -256,7 +279,7 @@ function! misc#Ag(str, word) abort
     let l:cmd = 'ag --column --nocolor --nogroup '.(
                 \ has_key(s:AgFileFilter, l:type) ?
                 \ '-G '.s:AgFileFilter[l:type].' ' : ''
-                \ ).(a:word ==# 'word' ? '\\b'.a:str.'\\b' : a:str)
+                \ ).(a:word ? '\\b'.a:str.'\\b' : a:str)
 
     if get(g:, 'Infowin_output', 0)
         let s:refDict = {'title': ' '.a:str, 'content': {},
@@ -799,7 +822,6 @@ endfunction
 
 function! s:CleanBufferList()
     let l:nrs = []
-
     for l:tabnr in range(1, tabpagenr('$'))
         for l:winnr in range(1, tabpagewinnr(l:tabnr, '$'))
             let l:var = gettabwinvar(l:tabnr, l:winnr, 'bufHis', {})
@@ -810,14 +832,19 @@ function! s:CleanBufferList()
         endfor
     endfor
 
-    for l:str in split(execute('ls'), "\n")
-        let l:nr = matchstr(l:str, '\v^(\s*)\zs\d+\ze(\s+h?\s+")')
+    let l:bws = []
+    for l:str in filter(split(execute('ls'), "\n"), 'v:val =~ ''\v^\s*\d+\s+"''')
+        let l:nr = matchstr(l:str, '\v\d+')
 
-        if !empty(l:nr) && (index(l:nrs, l:nr + 0) == -1) && empty(
-                    \ matchlist(execute('sign place buffer='.l:nr), '\v\s+\S+\=BMBPSign'))
-            exe 'silent bw '.l:nr
+        if (index(l:nrs, l:nr + 0) == -1) && empty(matchlist(
+                    \ execute('sign place buffer='.l:nr), '\v\=BMBPSign'))
+            let l:bws += [l:nr]
         endif
     endfor
+
+    if !empty(l:bws)
+        silent! exe 'bw '.join(l:bws)
+    endif
 endfunction
 
 
@@ -934,6 +961,7 @@ endfunction
 function! s:ToggleNERDTree()
     let l:mode = get(g:, 'SideWinMode', 1)
     let g:NERDTreeWinPos = l:mode > 2 ? 'right' : 'left'
+    let g:NERDTreeWinSize = get(g:, 'SideWinWidth', 31)
 
     if bufwinnr('NERD_tree') != -1
         NERDTreeClose
@@ -952,6 +980,7 @@ endfunction
 "  Toggle TagBar window
 function! s:ToggleTagbar()
     let l:mode = get(g:, 'SideWinMode', 1)
+    let g:tagbar_width = get(g:, 'SideWinWidth', 31)
 
     if bufwinnr('Tagbar') != -1
         TagbarClose
