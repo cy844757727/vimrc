@@ -3,6 +3,10 @@
 "
 " Dict: 'title': '', 'content': {'file1': [], ...}, 'hi': '',
 "
+let s:bufnr = bufnr('infoWin')
+if getbufvar(s:bufnr, '&filetype') !=# 'infowin'
+    let s:bufnr = -1
+endif
 
 function! infoWin#Set(dict)
     if type(a:dict) != type({})
@@ -13,7 +17,7 @@ function! infoWin#Set(dict)
         call misc#ToggleBottomBar('only', 'infowin')
     endif
 
-    if !bufexists(get(s:, 'bufnr', -1))
+    if !bufexists(s:bufnr)
         call misc#SwitchToEmptyBuftype()
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
         let s:bufnr = bufnr('%')
@@ -54,7 +58,7 @@ function! s:Sum(list)
 endfunction
 
 function! infoWin#Toggle(act) abort
-    if bufwinnr(get(s:, 'bufnr', -1)) != -1
+    if bufwinnr(s:bufnr) != -1
         exe a:act == 'on' ? bufwinnr(s:bufnr).'wincmd w' : bufwinnr(s:bufnr).'hide'
     elseif a:act ==# 'off'
         return
@@ -70,11 +74,11 @@ function! infoWin#Toggle(act) abort
 endfunction
 
 function infoWin#IsVisible()
-    return bufwinnr(get(s:, 'bufnr', -1)) != -1
+    return bufwinnr(s:bufnr) != -1
 endfunction
 
 function infoWin#GetVal(list)
-    if !bufexists(get(s:, 'bufnr', -1))
+    if !bufexists(s:bufnr)
         return {}
     endif
 
@@ -85,7 +89,7 @@ function infoWin#GetVal(list)
         let l:dict[l:key] = get(l:infoWin, l:key, -1)
     endfor
 
-    return l:dict
+    return empty(l:dict) ? deepcopy(l:infoWin) : l:dict
 endfunction
 
 let s:indent = '  '

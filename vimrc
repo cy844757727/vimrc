@@ -16,7 +16,7 @@ set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
 set foldtext=misc#FoldText() tabline=%!misc#TabLine()
 set shortmess=aoOtTcF mousetime=1000 signcolumn=auto
 set tags+=./.tags,.tags bsdir=buffer mouse=a viminfo=
-set title titlestring=\ Vim winminheight=0 winminwidth=0
+set title titlestring=\ Vim winminheight=1 winminwidth=1
 set fillchars=fold:\ ,diff:\ ,vert:│
 set completeopt=menu,menuone,noinsert,preview,noselect
 set diffopt=vertical,filler,foldcolumn:0,context:5
@@ -46,6 +46,7 @@ set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 1
+let g:env = {'python': 'python3', 'ipython': 'ipython3'}
 
 " Autocmd & command ===================== {{{1
 augroup vimrc
@@ -56,7 +57,7 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
-    autocmd User WorkSpaceLoadPost call async#JobRun('!', 'ctags -R -f .tags', {}, {})
+    autocmd User WorkSpaceLoadPost call async#JobRun('!', 'ctags -R -f .tags', {}, {'flag': '[I]'})
     autocmd User WorkSpaceLoadPost call misc#EnvSet('-i')
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
@@ -68,7 +69,7 @@ command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-arg
 command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#EnvTaskQueue(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
-command! -nargs=* -range -complete=file Open :Async xdg-open <args>
+command! -nargs=* -bang -range -complete=file Open :Async<bang> xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
 command! TClose tabclose
@@ -103,9 +104,9 @@ map! <C-g> <Esc><C-g>
 vnoremap <silent> <C-g> :call misc#Information('visual')<CR>
 " External open
 nnoremap <silent> \cd :exe 'cd '.fnameescape(expand('%:h')).'\|pwd'<CR>
-nnoremap <silent> \od :Open .<CR>
-nnoremap <silent> \of :exe 'Open '.fnameescape(expand('%'))<CR>
-nnoremap <silent> \rf :exe 'Open '.fnameescape(expand('%:h'))<CR>
+nnoremap <silent> \od :Open! .<CR>
+nnoremap <silent> \of :exe 'Open! '.fnameescape(expand('%'))<CR>
+nnoremap <silent> \rf :exe 'Open! '.fnameescape(expand('%:h'))<CR>
 vnoremap <silent> \op <Esc>:exe 'Async xdg-open '.getreg('*')<CR>
 nnoremap <silent> \op :exe 'Async xdg-open '.expand('<cWORD>')<CR>
 " Leaderf.vim maping
@@ -189,7 +190,7 @@ noremap <silent> <S-f10>   :call misc#ToggleBottomBar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottomBar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottomBar('terminal', '')<CR>
 noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'jupyter-console')<CR>
-noremap <silent> <S-f12>   :call misc#ToggleBottomBar('terminal', 'python3')<CR>
+noremap <silent> <S-f12>   :call misc#ToggleBottomBar('terminal', 'python')<CR>
 noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'dc_shell')<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
@@ -211,7 +212,7 @@ tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottom
 tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','break')"])<CR>
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal', '')"])<CR>
 tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','jupyter-console')"])<CR>
-tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python3')"])<CR>
+tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
 
 " Window & tab switch

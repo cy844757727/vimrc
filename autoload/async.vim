@@ -11,6 +11,9 @@ if exists('g:loaded_a_async') || v:version < 800
 endif
 let g:loaded_a_async = 1
 
+if !exists('g:ENV')
+    let g:ENV = {}
+endif
 
 " === Embeded terminal === {{{1
 hi default AsyncDbgHl ctermfg=16 guifg=#8bebff
@@ -43,6 +46,11 @@ function s:termAnalyzeCmd(cmd)
     if !empty(l:list)
         if index(s:termType, l:list[0]) != -1
             let l:cmd = remove(l:list, 0)
+
+            if has_key(g:ENV, l:cmd)
+                let l:cmd = g:ENV[l:cmd]
+            endif
+
             let l:name = s:termPrefix . ': '.l:cmd.' '
         elseif l:list[0]
             let l:num = remove(l:list, 0) + 0
@@ -358,7 +366,7 @@ function s:GetScriptInterpreter(file, fullFlag)
 
         let l:interpreter = getbufvar(a:file, '&filetype')
 
-        if exists('g:ENV') && has_key(g:ENV, l:interpreter)
+        if has_key(g:ENV, l:interpreter)
             let l:interpreter = g:ENV[l:interpreter]
         endif
     endif

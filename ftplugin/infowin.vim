@@ -54,7 +54,7 @@ function! <SID>Open(way, mode) abort
     if a:mode =~# 'default' && exists('*misc#EditFile')
         call misc#EditFile(l:file, a:way.' +'.l:lin)
     else
-        exe l:file =~# expand('%') ?
+        exe bufnr(l:file) == bufnr('%') && a:way =~# 'edit' ?
                     \ 'normal '.l:lin.'ggzz' :
                     \ a:way.' +'.l:lin.' '.l:file
     endif
@@ -72,7 +72,7 @@ function <SID>Preview(flag)
     if !filereadable(l:file)
         return
     endif
-    
+
     let l:cur = winnr()
     if l:cur != winnr('$') && getwinvar(l:cur + 1, 'infoWinPreview', 0)
         if line('.') == s:currentLine && xor(s:auto, a:flag !=# 'auto')
