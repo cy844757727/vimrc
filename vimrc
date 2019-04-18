@@ -56,7 +56,7 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
-    autocmd User WorkSpaceLoadPost exe 'Async! ctags -R -F .tags'
+    autocmd User WorkSpaceLoadPost ATags
     autocmd User WorkSpaceLoadPost call misc#EnvSet('-i')
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
@@ -64,7 +64,7 @@ augroup END
 command! Info :call misc#Information('detail')
 command! Date :normal a<C-r>=strftime('%c')<Esc>
 command! ATags :Async! ctags -R -f .tags
-command! -nargs=? ToggleSideWin :call misc#ToggleSideBar(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteSide ToggleSideWin :call misc#ToggleSideBar(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#EnvTaskQueue(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
@@ -72,12 +72,10 @@ command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
 command! -nargs=* -range -complete=file Open :Async xdg-open <args>
 command! -nargs=? VResize :vertical resize <args>
 command! -nargs=* -range -addr=tabs -complete=file T :<line1>tabedit <args>
-command! -bar TClose :try|tabclose|catch|if &diff|qa|endif|endtry 
-command! -bar TQuit :try|tabclose|catch|if &diff|qa|endif|endtry 
+command! TClose tabclose
+command! TQuit TClose
 command! -nargs=+ DBufHis :call misc#BufHisDel(<f-args>)
-command! -nargs=* Amake :Async make <args>
 command! Avdel :Async vdel -lib work -all
-command! -nargs=+ -complete=file Arm :Async rm <args>
 command! -nargs=? -complete=tag Ag :call misc#Ag(<q-args>, '')
 
 "快捷键映射===================== {{{1
@@ -94,6 +92,7 @@ function! Vimrc_ClosePair(char)
     return getline('.')[col('.') - 1] == a:char ? "\<Right>" : a:char
 endfunction
 
+nnoremap \| :Async 
 noremap <silent> <C-j> :call misc#NextItem('next')<CR>
 noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
 map! <C-j> <Esc><C-j>

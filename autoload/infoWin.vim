@@ -38,7 +38,11 @@ function! infoWin#Set(dict)
     let b:infoWin.count += [line('$') - s:Sum(b:infoWin.count)]
     exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.line('$').
                 \ '%4(%)\ '.b:infoWin.count[-2].'\ \ '.b:infoWin.count[-1].'\ '
-    exe 'syn match InfoWinMatch /'.(has_key(a:dict, 'hi') ? a:dict.hi : '\v-^').'/'
+
+    if has_key(a:dict, 'hi')
+        call clearmatches()
+        call matchadd('InfoWinMatch', a:dict.hi)
+    endif
 endfunction
 
 function! s:Sum(list)

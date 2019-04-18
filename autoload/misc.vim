@@ -236,7 +236,7 @@ let s:AgFileFilter = {
             \ 'vim': '\\.vim$|vimrc|gvimrc',
             \ 'python': '\\.py$',
             \ 'c': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
-            \ 'cpp': '\\.(c|cpp|h|hpp)$|^c[^.]+$',
+            \ 'cpp': '\\.(c|cpp|h|hpp)$|^c\\w+$',
             \ 'perl': '\\.(pl|pm)$',
             \ 'verilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$',
             \ 'systemverilog': '\\.(v|vh|vp|vt|vo|vg|sv|svi|svh|svg|sva)$'
@@ -969,6 +969,9 @@ function! s:ToggleTagbar()
     endif
 endfunction
 
+function misc#CompleteSide(...)
+    return "Tagbar\nNERDTree\nall"
+endfunction
 
 "  Toggle bottom window (quickfix, terminal)
 let s:bottomBar = {

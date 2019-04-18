@@ -183,6 +183,7 @@ function! async#JobRun(bang, cmd, option, extra) abort
 
     let l:job = job_start(s:cmdExpand(a:cmd), l:option)
     let s:asyncJob[matchstr(l:job, '\d\+')] = extend(l:record, {'job': l:job})
+    redrawstatus!
 endfunction
 
 
@@ -229,7 +230,7 @@ function! s:JobOnExit(job, status)
     let l:job = s:asyncJob[l:id]
     unlet s:asyncJob[l:id]
     " Update statuline ↓↓↓
-    set laststatus=2
+    redrawstatus!
     echom get(l:job, 'head', 'Async: ').
                 \ l:job.cmd.' ['.(a:status ? ' '.a:status : '').']'
 

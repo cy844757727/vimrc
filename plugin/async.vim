@@ -23,26 +23,21 @@ command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, BMBPSign#Sig
 
 
 function! Async_CompleteTerm(L, C, P)
-    let l:ex = split(strpart(a:C, 0, a:P))
+    let l:ex = split(a:C[:a:P])
 
     for l:item in l:ex[1:]
         if executable(l:item)
-            return map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
+            return getcompletion(a:L.'*', 'file')
         endif
     endfor
 
-    let l:default = filter(copy(g:Async_TerminalType), "v:val =~ '^".a:L."'")
+    let l:default = filter(copy(g:async_terminalType), "v:val =~ '^".a:L."'")
     return  (!empty(l:default) ? l:default + ['|'] : []) + getcompletion(a:L.'*', 'shellcmd')
 endfunction
 
 
 function! Async_CompleteAsync(L, C, P)
-    let l:num = len(split(strpart(a:C, 0, a:P), '\v\s+'))
-
-    if l:num == 1 || (l:num == 2 && a:L != '')
-        return getcompletion(a:L.'*', 'shellcmd')
-    endif
-
-    return map(getcompletion(a:L.'*', 'file'), 'fnameescape(v:val)')
+    let l:num = len(split(a:C[:a:P], '\v\s+'))
+    return getcompletion(a:L.'*', l:num == 1 || (l:num == 2 && a:L != '') ? 'shellcmd' : 'file' )
 endfunction
 
