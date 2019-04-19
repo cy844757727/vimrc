@@ -123,7 +123,7 @@ endfunction
 
 function s:GetLine()
     let l:line = getline('.')
-    let l:indent = strdisplaywidth(matchstr(l:line, '\v^\s*'))
+    let l:indent = indent('.')
     let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,:]+\ze:'), ',\|:')
 
     if l:indent == 0 || empty(l:lin)

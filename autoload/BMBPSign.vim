@@ -5,10 +5,10 @@
 " Last Modified: 2019年01月15日 星期二 12时46分27秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_A_BMBPSign') || !has('signs')
+if exists('g:loaded_a_BMBPSign') || !has('signs')
     finish
 endif
-let g:loaded_A_BMBPSign = 1
+let g:loaded_a_BMBPSign = 1
 
 " sign highlight definition
 hi default BookMark    ctermfg=16 guifg=#CC7832
@@ -60,7 +60,7 @@ endif
 let s:projectType = extend(get(g:, 'BMBPSign_ProjectType', {}),
             \ {'default': $HOME.'/Documents/'}, 'keep')
 " For $HOME path substitute
-call map(s:projectType, "fnamemodify(v:val, ':p')")
+call map(s:projectType, 'fnamemodify(v:val, '':p'')')
 
 " Project record file defination
 let s:projectFile = get(g:, 'BMBPSign_ProjectFile',
@@ -69,9 +69,8 @@ let s:projectFile = get(g:, 'BMBPSign_ProjectFile',
             \ '/vimfiles/.projectitem'))
 
 " Default content to save
-let s:vimInfo = get(g:, 'BMBPSign_VimInfo', "'50,!,:100,/100,@100")
-let s:sessionOptions = get(g:, 'BMBPSign_SessionOption',
-            \ 'blank,buffers,curdir,folds,help,options,tabpages,winsize,terminal')
+let s:vimInfo = "'50,!,:100,/100,@100"
+let s:sessionOptions = 'blank,buffers,curdir,folds,help,localoptions,tabpages,winsize,terminal'
 
 " Sign type extendsion: customized
 for l:sign in get(g:, 'BMBPSign_TypeExtend', [])
@@ -998,7 +997,7 @@ function BMBPSign#SetQfList(...)
 
     if empty(l:types)
         return
-    elseif exists('g:Infowin_output')
+    elseif get(g:, 'Infowin_output', 0)
         cclose
         call s:InfoWinSet(a:1, l:types)
     else

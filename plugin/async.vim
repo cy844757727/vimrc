@@ -6,13 +6,25 @@
 " Last Modified: 2019年01月18日 星期五 15时04分00秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
-
 if exists('g:loaded_Async') || v:version < 800
   finish
 endif
 let g:loaded_Async = 1
 
 
+" Default terminal shell
+let g:Async_shell = fnamemodify(&shell, ':t')
+
+" Specify an interactive interpreter for a type 
+" When the filetype is different from the interpreter
+let g:Async_interactive = extend({'sh': g:Async_shell, 'ruby': 'irb'},
+            \ get(g:, 'Async_interactive', {}))
+
+" Support interactive shell (Do not occupy the default shell)
+let g:async_termType = get(g:, 'async_terminalType', [])
+
+
+" Command
 command -nargs=* -complete=customlist,Async_CompleteTerm TTerm :call async#TermToggle('toggle', <q-args>)
 command -nargs=* -complete=customlist,Async_CompleteTerm Term :call async#TermToggle('on', <q-args>)
 command -nargs=+ -complete=customlist,Async_CompleteTerm HTerm :call async#TermToggle('off', <q-args>)

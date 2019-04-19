@@ -7,18 +7,6 @@
 "    针对特殊buf需要处理的操作:dict (保存/加载 工作空间时)
 "    g:BMBPSign_SpecialBuf
 "
-"    保存工作空间前需要处理的语句:list
-"    g:BMBPSign_PreSaveEventList
-"
-"    保存工作空间后需要处理的语句:list
-"    g:BMBPSign_PostSaveEventList
-"
-"    加载工作空间前需要处理的语句:list
-"    g:BMBPSign_PreLoadEventList
-"
-"    加载工作空间后需要处理的语句:list
-"    g:BMBPSign_PostLoadEventList
-"
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 if exists('g:loaded_BMBPSign') || !has('signs')
     finish

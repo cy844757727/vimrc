@@ -2,7 +2,9 @@
 " Name:   
 " Author: CY <844757727@qq.com>
 """"""""""""""""""""""""""""""""""""""""""""""""""""
-if getline(1) =~ 'python3'
+let s:line = getline(1)
+if s:line =~# 'python3' || (s:line !~# '\v^#!'
+            \ && get(get(g:, 'ENV', get(g:, 'env', {})), 'python', '') =~# 'python3')
     let b:ale_python_pylint_executable = 'pylint3'
     let b:ale_echo_msg_format = '[%linter%3] %s [%severity%]'
 else
@@ -13,13 +15,28 @@ endif
 if exists('b:did_ftplugin_')
     finish
 endif
-
 let b:did_ftplugin_ = 1
 
 let b:ale_linters = ['pylint', 'pyflakes']
 let b:ale_fixers = ['autopep8']
 
-setlocal foldmethod=indent
+setlocal tabstop=4
+setlocal foldmethod=expr
+setlocal foldexpr=PythonFoldLevel(v:lnum)
+
+function! PythonFoldLevel(lnum)
+    let l:lnum = a:lnum
+    let l:line = getline(a:lnum)
+    let l:extra = l:line =~# '\v^[^#]*:\s*(#.*)?$'
+
+    while l:line !~ '\S' && l:lnum < line('$')
+        let l:lnum += 1
+        let l:line = getline(l:lnum)
+    endwhile
+
+    return indent(l:lnum) / 4 + l:extra
+endfunction
+
 
 function! s:ScriptRun()
     if exists('t:dbg')

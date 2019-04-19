@@ -46,7 +46,8 @@ set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 1
-let g:env = {'python': 'python3', 'ipython': 'ipython3'}
+let g:env = {'sh': fnamemodify(&shell, ':t'),
+            \ 'python': 'python3'}
 
 " Autocmd & command ===================== {{{1
 augroup vimrc

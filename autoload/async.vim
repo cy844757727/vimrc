@@ -12,7 +12,7 @@ endif
 let g:loaded_a_async = 1
 
 if !exists('g:ENV')
-    let g:ENV = {}
+    let g:ENV = get(g:, 'env', {})
 endif
 
 " === Embeded terminal === {{{1
@@ -25,10 +25,8 @@ let s:displayIcon = {
             \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
             \ }
 
-" Default terminal type
+" Default terminal prefix
 let s:termPrefix = '!Term'
-let s:shell = fnamemodify(&shell, ':t')
-let s:termType = extend([s:shell], get(g:, 'async_terminalType', []))
 
 " Default terminal option
 let s:termOption = {
@@ -40,21 +38,25 @@ let s:termOption = {
 
 function s:termAnalyzeCmd(cmd)
     let l:list = split(a:cmd, ' ')
-    let l:cmd = get(get(g:, 'ENV', {}), 'shell', s:shell)
+    let l:cmd = g:Async_shell
     let l:name = s:termPrefix.': '.l:cmd.' '
 
     if !empty(l:list)
-        if index(s:termType, l:list[0]) != -1
+        if index(g:async_termType + [l:cmd], l:list[0]) != -1
             let l:cmd = remove(l:list, 0)
-
-            if has_key(g:ENV, l:cmd)
-                let l:cmd = g:ENV[l:cmd]
-            endif
 
             let l:name = s:termPrefix . ': '.l:cmd.' '
         elseif l:list[0]
             let l:num = remove(l:list, 0) + 0
             let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
+        endif
+    endif
+
+    if has_key(g:ENV, l:cmd)
+        let l:cmd = g:ENV[l:cmd]
+
+        if !exists('l:num')
+            let l:name = s:termPrefix.': '.l:cmd.' '
         endif
     endif
 
@@ -78,7 +80,7 @@ function! async#TermToggle(action, cmd) abort
 
     if l:winnr != -1 
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
-    elseif l:cmd == get(get(g:, 'ENV', {}), 'shell', s:shell) && l:other != -1 && empty(l:postCmd)
+    elseif l:cmd == g:Async_shell && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
         exe l:other.'hide'
     elseif a:action !=# 'off'
@@ -340,11 +342,6 @@ function! s:dbg.sendCmd(cmd, args, ...) abort
 endfunction
 
 
-" Specify an interactive interpreter for a type
-let s:interactive = extend({'sh': s:shell, 'ruby': 'irb'},
-            \ get(g:, 'Async_interactive', {}))
-
-
 " Get the interpreter of the script from the first line (#!)
 function s:GetScriptInterpreter(file, fullFlag)
     if !filereadable(a:file)
@@ -387,7 +384,7 @@ function! async#ScriptRun(file) abort
         let l:cmd = 'clear'
         let l:postCmd = l:interpreter.' '.shellescape(l:file)
     elseif !empty(visualmode())
-        let l:cmd = get(s:interactive, l:interpreter, l:interpreter)
+        let l:cmd = get(g:Async_interactive, l:interpreter, l:interpreter)
         let l:postCmd = join(filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'"), "\n")."\n"
     else
         return

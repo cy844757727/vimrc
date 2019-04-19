@@ -26,61 +26,33 @@ augroup END
 " eg: {'Key': val} -> g:Key = val
 " Record enviroment variables (could be stored by viminfo)
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
+let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
 lockvar! g:ENV
+lockvar! g:ENV_DEFAULT
 
-" Parse option:
-" -i  initial global variables
-" -c  empty g:ENV
-function s:EnvOptionParse(opt)
-    if empty(a:opt)
-        echo g:ENV
-    elseif a:opt ==# '-i'
-        call extend(g:, filter(deepcopy(g:ENV), "v:key =~# '[A-Z]'"))
-    elseif a:opt ==# '-c'
-        unlockvar! g:ENV
-        let g:ENV = {}
-        lockvar! g:ENV
-    else
-        return 0
-    endif
-
-    return 1
-endfunction
-
-" Env configure
+" Environment configure
+" Entries are segmented by semicolons,
+" keys and values are linked by equal signs.
 function! misc#EnvSet(config) abort
-    if s:EnvOptionParse(a:config)
+    if s:EnvParse(a:config)
         return
     endif
 
     let l:str = []
     unlockvar! g:ENV
+    unlockvar! g:ENV_DEFAULT
 
     for l:item in split(a:config, '\v\s*;\s*')
         let l:list = split(l:item, '\v\s*\=\s*')
 
-        if l:item =~# '\M=$'
-            " Delete key
-            if has_key(g:ENV, l:list[0])
-                unlet g:ENV[l:list[0]]
-            endif
-
-            if l:list[0][0] =~# '[A-Z]' && has_key(g:, l:list[0])
-                unlet g:[l:list[0]]
-            endif
+        if empty(l:list)
+            continue
+        elseif l:item =~# '\M=$'
+            call s:EnvRemove(l:list[0])
         elseif len(l:list) == 1
-            " Add to display
-            let l:Val = get(g:ENV, l:list[0], get(g:, l:list[0], ''))
-            let l:str += [l:list[0].'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+            let l:str += s:EnvPrint(l:list[0])
         elseif len(l:list) == 2
-            " Add or modify
-            let g:ENV[l:list[0]] = 
-                        \ l:list[1] =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
-                        \ eval(l:list[1]) : l:list[1]
-
-            if l:list[0][0] =~# '[A-Z]'
-                call extend(g:, {l:list[0]: g:ENV[l:list[0]]})
-            endif
+            call s:EnvAdd(l:list[0], l:list[1])
         endif
     endfor
 
@@ -89,16 +61,150 @@ function! misc#EnvSet(config) abort
     endif
 
     lockvar! g:ENV
+    lockvar! g:ENV_DEFAULT
 endfunction
+
+
+" Parse option:
+" -i  initial global variables
+" -c  empty g:ENV
+function s:EnvParse(opt)
+    if empty(a:opt)
+        echo g:ENV
+    elseif a:opt ==# '-i'
+        " Initial environment
+        for [l:key, l:Val] in items(g:ENV)
+            if l:key[0] =~# '[A-Z]'
+                let g:[l:key] = l:Val
+            elseif l:key[0] =~# '[&$]'
+                exe 'let '.l:key.'='.string(l:Val)
+            endif
+        endfor
+    elseif a:opt ==# '-c'
+        unlockvar! g:ENV
+        unlockvar! g:ENV_DEFAULT
+
+        " Recovery environment
+        for l:key in keys(g:ENV)
+            if has_key(g:ENV_DEFAULT, l:key)
+                if l:key[0] =~# '[&$]'
+                    exe 'let '.l:key.'='.string(g:ENV_DEFAULT[l:key])
+                else
+                    let g:[l:key] = g:ENV_DEFAULT[l:key]
+                endif
+            elseif l:key =~# '^[A-Z]'
+                unlet! g:[l:key]
+            endif
+        endfor
+
+        let g:ENV = get(g:, 'env', {})
+        let g:ENV_DEFAULT = {}
+        lockvar! g:ENV
+        lockvar! g:ENV_DEFAULT
+    elseif a:opt ==# '-p'
+        let l:str = []
+        for [l:key, l:Val] in items(g:ENV)
+            let l:str += [l:key.'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+        endfor
+        echo join(l:str, "\n")
+    elseif a:opt ==# '-r'
+        unlockvar! g:ENV
+        call extend(g:ENV, get(g:, 'env', {}))
+        lockvar! g:ENV
+    else
+        return 0
+    endif
+
+    return 1
+endfunction
+
+
+function s:EnvRemove(key)
+    if !has_key(g:ENV, a:key)
+        return
+    endif
+
+    " Delete key
+    unlet g:ENV[a:key]
+
+    if has_key(g:ENV_DEFAULT, a:key)
+        if a:key =~# '^[&$]'
+            exe 'let '.a:key.'='.string(g:ENV_DEFAULT[a:key])
+        else
+            let g:[a:key] = g:ENV_DEFAULT[a:key]
+        endif
+
+        unlet g:ENV_DEFAULT[a:key]
+    elseif a:key =~# '^[A-Z]'
+        unlet! g:[a:key]
+    elseif a:key =~# '^[$]'
+        exe 'let '.a:key.'='''''
+    endif
+endfunction
+
+
+function s:EnvAdd(key, Val)
+    try
+        let g:ENV[a:key] = 
+                    \ a:Val =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
+                    \ eval(a:Val) : a:Val
+    catch
+        echohl Error | echo v:exception | echohl None
+        return
+    endtry
+
+    if a:key =~# '^[A-Z]'
+        if has_key(g:, a:key)
+            let g:ENV_DEFAULT[a:key] = g:[a:key]
+        endif
+
+        let g:[a:key] = g:ENV[a:key]
+    elseif a:key[0] ==# '&' && exists(a:key)
+        let g:ENV_DEFAULT[a:key] = eval(a:key)
+
+        try
+            exe 'let '.a:key.'='.string(g:ENV[a:key])
+        catch
+            unlet g:ENV[a:key]
+            unlet g:ENV_DEFAULT[a:key]
+            echohl Error |echo v:exception | echohl None
+        endtry
+    elseif a:key[0] ==# '$'
+        if exists(a:key)
+            let g:ENV_DEFAULT[a:key] = eval(a:key)
+        endif
+
+        exe 'let '.a:key.'='.string(a:Val)
+    endif
+endfunction
+
+
+function s:EnvPrint(key)
+    let l:Val = has_key(g:ENV, a:key) ? g:ENV[a:key] :
+                \ has_key(g:, a:key) ? g:[a:key] : 
+                \ a:key[0] =~# '[&$]' && exists(a:key) ? eval(a:key) : ''
+
+    return [a:key.'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+endfunction
+
 
 function misc#CompleteEnv(L, C, P)
     if a:C[:a:P] =~# '\v\=\s*$'
         let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
-        let l:val = get(g:ENV, l:key, get(g:, l:key, ''))
+        let l:val = l:key =~# '^[&$]' ? eval(l:key) :
+                    \ get(g:ENV, l:key, get(g:, l:key, ''))
         return a:L.(type(l:val) == type('') ? l:val : string(l:val))
     endif
 
-    return join(['-i', '-c'] + filter(keys(g:ENV), "v:val[0] =~# '[a-z]'") + 
+    if a:L =~# '^[&]'
+        return join(map(getcompletion('', 'option'), '''&''.v:val'), "\n")
+    endif
+
+    if a:L =~# '^[$]'
+        return join(map(getcompletion('', 'environment'), '''$''.v:val'), "\n")
+    endif
+
+    return join(['-i', '-c'] + filter(keys(g:ENV), "v:val[0] !~# '[A-Z]'") + 
                 \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
 endfunction
 
@@ -283,7 +389,7 @@ function! misc#Ag(str, word) abort
 
     if get(g:, 'Infowin_output', 0)
         let s:refDict = {'title': ' '.a:str, 'content': {},
-                    \ 'hi': matchstr(a:str, '\v\S+$'), 'type': l:type}
+                    \ 'hi': '\v'.substitute(a:str, '\\\\', '\', 'g'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
                     \ 'out_io': 'pipe', 'out_mode': 'nl',
                     \ 'out_cb': function('s:AgOnOut'),
