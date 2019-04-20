@@ -268,14 +268,21 @@ function! misc#EnvTaskQueue(task) abort
         return
     endif
 
-    let l:task_queue = copy(get(g:ENV, 'task_queue', {}))
+    unlockvar! g:ENV
+    if !has_key(g:ENV, 'task_queue')
+        let g:ENV.task_queue = {}
+    endif
 
     if l:type == type('')
         for l:item in split(a:task, '\v\s*;\s*')
             let l:list = split(l:item, '\v\s*\=\s*')
 
-            if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
-                let l:Task = l:task_queue[l:list[0]]
+            if empty(l:list)
+                continue
+            elseif l:item =~# '\M=$'
+                unlet! g:ENV.task_queue[l:list[0]]
+            elseif len(l:list) == 1 && has_key(g:ENV.task_queue, l:list[0])
+                let l:Task = g:ENV.task_queue[l:list[0]]
                 let l:type = type(l:Task)
 
                 if l:type == type(function('add'))
@@ -284,20 +291,14 @@ function! misc#EnvTaskQueue(task) abort
                     call execute(l:Task, '')
                 endif
             elseif len(l:list) == 2
-                let l:task_queue[l:list[0]] = eval(l:list[1])
-                let l:change = 1
+                let g:ENV.task_queue[l:list[0]] = eval(l:list[1])
             endif
         endfor
     elseif l:type == type({})
-        call extend(l:task_queue, a:task)
-        let l:change = 1
+        call extend(g:ENV.task_queue, a:task)
     endif
 
-    if exists('l:change')
-        unlockvar! g:ENV
-        call extend(g:ENV, {'task_queue': l:task_queue})
-        lockvar! g:ENV
-    endif
+    lockvar! g:ENV
 endfunction
 
 
