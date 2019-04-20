@@ -28,16 +28,17 @@ augroup END
 " Key started with '$' mean environment variable
 " Could be stored by viminfo
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
-let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {'global': {}, 'option': {}, 'environment': {}, 'none': {}})
+let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
+let g:ENV_NONE = get(g:, 'ENV_NONE', {})
 " none: {'global': 'g', 'option': 'o', 'environment': 'e'}
-lockvar! g:ENV g:ENV_DEFAULT
+lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
 
 
 " Environment configure
 " Entries are segmented by semicolons,
 " keys and values are linked by equal signs.
 function! misc#EnvSet(config) abort
-    unlockvar! g:ENV g:ENV_DEFAULT
+    unlockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
     let l:type = type(a:config)
 
     if l:type == type('') && !s:EnvParse(a:config)
@@ -66,7 +67,7 @@ function! misc#EnvSet(config) abort
         call s:EnvAdd(a:config)
     endif
 
-    lockvar! g:ENV g:ENV_DEFAULT
+    lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
 endfunction
 
 
@@ -78,7 +79,7 @@ function s:EnvParse(opt)
     if empty(a:opt)
         echo g:ENV
     elseif a:opt ==# '-d'
-        echo g:ENV_DEFAULT
+        echo 'Default:' g:ENV_DEFAULT "\n---\nNone:" g:ENV_NONE
     elseif a:opt ==# '-i'
         " Initialize environment
         for [l:key, l:Val] in items(g:ENV)
@@ -88,27 +89,29 @@ function s:EnvParse(opt)
                 exe 'let &g:'.l:key[1:].'='.string(l:Val)
             elseif l:key[0] ==# '$'
                 exe 'let '.l:key.'='.string(l:Val)
+            elseif l:key[0] ==# ':'
+                exe 'command! '.l:key[1:].' :'.l:Val
             endif
         endfor
     elseif a:opt ==# '-c'
         " Recovery environment
-        call extend(g:, g:ENV_DEFAULT.global)
-
-        for [l:key, l:val] in items(g:ENV_DEFAULT.option)
-            exe 'let &g:'.l:key[1:].'='.string(l:val)
+        for [l:key, l:Val] in items(g:ENV_DEFAULT)
+            if l:key[0] =~# '[A-Z]'
+                let g:[l:key] = l:Val
+            elseif l:key[0] ==# '&'
+                exe 'let &g:'.l:key[1:].'='.string(l:Val)
+            elseif l:key[0] ==# '$'
+                exe 'let '.l:key.'='.string(l:Val)
+            endif
         endfor
 
-        for [l:key, l:val] in items(g:ENV_DEFAULT.environment)
-            exe 'let '.l:key.'='.string(l:val)
-        endfor
-
-        for [l:key, l:val] in items(g:ENV_DEFAULT.none)
+        for [l:key, l:val] in items(g:ENV_NONE)
             exe l:val ==# 'g' ? 'unlet! g:'.l:key :
-                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' : ''
+                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' :
+                        \ l:val ==# 'c' ? 'delcommand '.l:key[1:] : ''
         endfor
 
-        let [g:ENV, g:ENV_DEFAULT] = [get(g:, 'env', {}),
-                    \ {'global': {}, 'option': {}, 'environment': {}, 'none': {}}]
+        let [g:ENV, g:ENV_DEFAULT, g:ENV_NONE] = [get(g:, 'env', {}), {}, {}]
     elseif a:opt ==# '-p'
         " Pretty print
         let l:str = []
@@ -137,16 +140,20 @@ function s:EnvRemove(keys)
         " Delete key
         unlet g:ENV[l:key]
 
-        if has_key(g:ENV_DEFAULT.global, l:key)
-            let g:[l:key] = remove(g:ENV_DEFAULT.global, l:key)
-        elseif has_key(g:ENV_DEFAULT.option, l:key)
-            exe 'let &g:'.l:key[1:].'='.string(remove(g:ENV_DEFAULT.option, l:key))
-        elseif has_key(g:ENV_DEFAULT.environment, l:key)
-            exe 'let '.l:key.'='.string(remove(g:ENV_DEFAULT.environment, l:key))
-        elseif has_key(g:ENV_DEFAULT.none, l:key)
-            let l:val = remove(g:ENV_DEFAULT.none, l:key)
+        if has_key(g:ENV_DEFAULT, l:key)
+            let l:Val = remove(g:ENV_DEFAULT, l:key)
+            if l:key[0] =~# '[A-Z]'
+                let g:[l:key] = l:Val
+            elseif l:key[0] ==# '&'
+                exe 'let &g:'.l:key[1:].'='.string(l:Val)
+            elseif l:key[0] ==# '$'
+                exe 'let '.l:key.'='.string(l:Val)
+            endif
+        elseif has_key(g:ENV_NONE, l:key)
+            let l:val = remove(g:ENV_NONE, l:key)
             exe l:val ==# 'g' ? 'unlet! g:'.l:key :
-                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' : ''
+                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' :
+                        \ l:val ==# 'c' ? 'delcommand '.l:key[1:] : ''
         endif
     endfor
 endfunction
@@ -156,49 +163,46 @@ endfunction
 function s:EnvAdd(dict)
     for [l:key, l:val] in items(a:dict)
         try
-            let g:ENV[l:key] = eval(l:val)
-        catch
-            echohl Error | echo v:exception | echohl None
-            return
-        endtry
+            let l:tmp = {}
+            let l:tmp.ENV = eval(l:val)
 
-        if l:key[0] =~# '[A-Z]'
-            " Global var
-            if !has_key(g:, l:key)
-                let g:ENV_DEFAULT.none[l:key] = 'g'
-            elseif !has_key(g:ENV_DEFAULT.none, l:key) && !has_key(g:ENV_DEFAULT.global, l:key)
-                let g:ENV_DEFAULT.global[l:key] = g:[l:key]
-            endif
+            if l:key[0] =~# '[A-Z]'
+                " Global var
+                if !has_key(g:, l:key)
+                    let l:tmp.ENV_NONE = 'g'
+                elseif !has_key(g:ENV_NONE, l:key) && !has_key(g:ENV_DEFAULT, l:key)
+                    let l:tmp.ENV_DEFAULT = g:[l:key]
+                endif
 
-            let g:[l:key] = g:ENV[l:key]
-        elseif l:key[0] ==# '&'
-            " vim option
-            try
-                if !has_key(g:ENV_DEFAULT.option, l:key)
-                    let g:ENV_DEFAULT.option[l:key] = eval(l:key)
+                let g:[l:key] = l:tmp.ENV
+            elseif l:key[0] ==# '&'
+                " vim option
+                if !has_key(g:ENV_DEFAULT, l:key)
+                    let l:tmp.ENV_DEFAULT = eval(l:key)
                 endif
 
                 exe 'let &g:'.l:key[1:].'='.l:val
-            catch
-                unlet g:ENV[l:key]
-                echohl Error |echo v:exception | echohl None
-            endtry
-        elseif l:key[0] ==# '$'
-            " Environment var
-            if type(g:ENV[l:key]) != type('')
-                unlet g:ENV[l:key]
-                echohl Error |echo 'ERROR: string required!' | echohl None
-                return
+            elseif l:key[0] ==# '$'
+                " Environment var
+                if !exists(l:key) || empty(eval(l:key))
+                    let l:tmp.ENV_NONE = 'e'
+                elseif !has_key(g:ENV_NONE, l:key) && !has_key(g:ENV_DEFAULT, l:key)
+                    let l:tmp.ENV_DEFAULT = eval(l:key)
+                endif
+
+                exe 'let '.l:key.'='.l:val
+            elseif l:key[0] ==# ':'
+                let l:bang = has_key(g:ENV, l:key) ? '!' : ''
+                exe 'command'.l:bang.' '.l:key[1:].' :'.l:tmp.ENV
+                let l:tmp.ENV_NONE = 'c'
             endif
 
-            if !exists(l:key)
-                let g:ENV_DEFAULT.none[l:key] = 'e'
-            elseif !has_key(g:ENV_DEFAULT.none, l:key) && !has_key(g:ENV_DEFAULT.environment, l:key)
-                let g:ENV_DEFAULT.environment[l:key] = eval(l:key)
-            endif
-
-            exe 'let '.l:key.'='.l:val
-        endif
+            for l:item in keys(l:tmp)
+                let g:[l:item][l:key] = l:tmp[l:item]
+            endfor
+        catch
+            echohl Error | echo v:exception | echohl None
+        endtry
     endfor
 endfunction
 
@@ -210,7 +214,6 @@ function s:EnvPrint(keys)
         let l:val = has_key(g:ENV, l:key) ? string(g:ENV[l:key]) :
                     \ has_key(g:, l:key) ? string(g:[l:key]) : 
                     \ l:key[0] =~# '[&$]' && exists(l:key) ? string(eval(l:key)) : ''
-
         let l:str += [l:key.'='.l:val]
     endfor
 
