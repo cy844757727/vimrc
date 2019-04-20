@@ -667,10 +667,12 @@ function s:WorkSpaceLoad(pre)
 
     " Load viminfo
     if filereadable(l:vimInfoFile)
+        silent doautocmd User ViminfoLoadPre
         let l:temp = &viminfo
         exe 'set viminfo='.s:vimInfo
         exe 'silent! rviminfo! '.l:vimInfoFile
         exe 'set viminfo='.l:temp
+        silent doautocmd User ViminfoLoadPost
     endif
 
     exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')

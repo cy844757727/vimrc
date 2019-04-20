@@ -47,7 +47,7 @@ let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 1
 let g:env = {'sh': fnamemodify(&shell, ':t'),
-            \ 'python': 'python3'}
+            \ 'python': 'python3', 'task': ''}
 
 " Autocmd & command ===================== {{{1
 augroup vimrc
@@ -158,12 +158,13 @@ nnoremap <silent> <f5>   :call misc#F5Function('run')<CR>
 vnoremap <silent> <f5>   :call misc#F5Function('visual')<CR>
 noremap <silent> <C-f5>  :call misc#F5Function('debug')<CR>
 noremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
-vnoremap <silent> <S-f5> :call misc#F5Function('task')<CR>
+noremap <silent> <C-S-f5> :call misc#F5Function('task_queue')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
-"map! <f5> <Esc><f5>
+imap <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
-map! <C-S-f5> <Esc><S-f5>
+map! <S-f5> <Esc><S-f5>
+map! <C-S-f5> <Esc><C-S-f5>
 " BMBPSign.vim: bookmark, breakpoint
 noremap <silent> <f6>     :call BMBPSign#SignToggle('break')<CR>
 noremap <silent> <C-f6>   :call BMBPSign#SignToggle('tbreak')<CR>

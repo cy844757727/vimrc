@@ -20,97 +20,105 @@ augroup misc
 augroup END
 
 
-" === Enviroment variables {{{1
-" Could dynamic configure some behavior or action
+" === Environment variables {{{1
+" Dynamic config some behavior or action
 " Key with capital initials would creat or reset global variable
 " eg: {'Key': val} -> g:Key = val
-" Record enviroment variables (could be stored by viminfo)
+" Key started with '&' mean vim option
+" Key started with '$' mean environment variable
+" Could be stored by viminfo
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
-let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
-lockvar! g:ENV
-lockvar! g:ENV_DEFAULT
+let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {'global': {}, 'option': {}, 'environment': {}, 'none': {}})
+" none: {'global': 'g', 'option': 'o', 'environment': 'e'}
+lockvar! g:ENV g:ENV_DEFAULT
+
 
 " Environment configure
 " Entries are segmented by semicolons,
 " keys and values are linked by equal signs.
 function! misc#EnvSet(config) abort
-    if s:EnvParse(a:config)
-        return
+    unlockvar! g:ENV g:ENV_DEFAULT
+    let l:type = type(a:config)
+
+    if l:type == type('') && !s:EnvParse(a:config)
+        let [l:remove, l:add, l:print] = [[], {}, []]
+
+        for l:item in split(a:config, '\v\s*;\s*')
+            let l:list = split(l:item, '\v\s*\=\s*')
+
+            if empty(l:list)
+                continue
+            elseif l:item =~# '\M=$'
+                let l:remove += [l:list[0]]
+            elseif len(l:list) == 1
+                let l:print += [l:list[0]]
+            elseif len(l:list) == 2
+                let l:add[l:list[0]] = l:list[1]
+            endif
+        endfor
+
+        call s:EnvRemove(l:remove)
+        call s:EnvAdd(l:add)
+        call s:EnvPrint(l:print)
+    elseif l:type == type([])
+        call s:EnvRemove(a:config)
+    elseif l:type == type({})
+        call s:EnvAdd(a:config)
     endif
 
-    let l:str = []
-    unlockvar! g:ENV
-    unlockvar! g:ENV_DEFAULT
-
-    for l:item in split(a:config, '\v\s*;\s*')
-        let l:list = split(l:item, '\v\s*\=\s*')
-
-        if empty(l:list)
-            continue
-        elseif l:item =~# '\M=$'
-            call s:EnvRemove(l:list[0])
-        elseif len(l:list) == 1
-            let l:str += s:EnvPrint(l:list[0])
-        elseif len(l:list) == 2
-            call s:EnvAdd(l:list[0], l:list[1])
-        endif
-    endfor
-
-    if !empty(l:str)
-        echo join(l:str, "\n")
-    endif
-
-    lockvar! g:ENV
-    lockvar! g:ENV_DEFAULT
+    lockvar! g:ENV g:ENV_DEFAULT
 endfunction
 
 
 " Parse option:
-" -i  initial global variables
-" -c  empty g:ENV
+" -i  initial global variables, options, envirenments
+" -c  empty g:ENV            -p  pretty print
+" -r  resert to g:env
 function s:EnvParse(opt)
     if empty(a:opt)
         echo g:ENV
+    elseif a:opt ==# '-d'
+        echo g:ENV_DEFAULT
     elseif a:opt ==# '-i'
-        " Initial environment
+        " Initialize environment
         for [l:key, l:Val] in items(g:ENV)
             if l:key[0] =~# '[A-Z]'
                 let g:[l:key] = l:Val
-            elseif l:key[0] =~# '[&$]'
+            elseif l:key[0] ==# '&'
+                exe 'let &g:'.l:key[1:].'='.string(l:Val)
+            elseif l:key[0] ==# '$'
                 exe 'let '.l:key.'='.string(l:Val)
             endif
         endfor
     elseif a:opt ==# '-c'
-        unlockvar! g:ENV
-        unlockvar! g:ENV_DEFAULT
-
         " Recovery environment
-        for l:key in keys(g:ENV)
-            if has_key(g:ENV_DEFAULT, l:key)
-                if l:key[0] =~# '[&$]'
-                    exe 'let '.l:key.'='.string(g:ENV_DEFAULT[l:key])
-                else
-                    let g:[l:key] = g:ENV_DEFAULT[l:key]
-                endif
-            elseif l:key =~# '^[A-Z]'
-                unlet! g:[l:key]
-            endif
+        call extend(g:, g:ENV_DEFAULT.global)
+
+        for [l:key, l:val] in items(g:ENV_DEFAULT.option)
+            exe 'let &g:'.l:key[1:].'='.string(l:val)
         endfor
 
-        let g:ENV = get(g:, 'env', {})
-        let g:ENV_DEFAULT = {}
-        lockvar! g:ENV
-        lockvar! g:ENV_DEFAULT
+        for [l:key, l:val] in items(g:ENV_DEFAULT.environment)
+            exe 'let '.l:key.'='.string(l:val)
+        endfor
+
+        for [l:key, l:val] in items(g:ENV_DEFAULT.none)
+            exe l:val ==# 'g' ? 'unlet! g:'.l:key :
+                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' : ''
+        endfor
+
+        let [g:ENV, g:ENV_DEFAULT] = [get(g:, 'env', {}),
+                    \ {'global': {}, 'option': {}, 'environment': {}, 'none': {}}]
     elseif a:opt ==# '-p'
+        " Pretty print
         let l:str = []
         for [l:key, l:Val] in items(g:ENV)
-            let l:str += [l:key.'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+            let l:str += [l:key.'='.string(l:Val)]
         endfor
         echo join(l:str, "\n")
     elseif a:opt ==# '-r'
-        unlockvar! g:ENV
+        " Resert
         call extend(g:ENV, get(g:, 'env', {}))
-        lockvar! g:ENV
     else
         return 0
     endif
@@ -119,122 +127,171 @@ function s:EnvParse(opt)
 endfunction
 
 
-function s:EnvRemove(key)
-    if !has_key(g:ENV, a:key)
-        return
-    endif
-
-    " Delete key
-    unlet g:ENV[a:key]
-
-    if has_key(g:ENV_DEFAULT, a:key)
-        if a:key =~# '^[&$]'
-            exe 'let '.a:key.'='.string(g:ENV_DEFAULT[a:key])
-        else
-            let g:[a:key] = g:ENV_DEFAULT[a:key]
+" Remove key (g:ENV)
+function s:EnvRemove(keys)
+    for l:key in a:keys
+        if !has_key(g:ENV, l:key)
+            continue
         endif
 
-        unlet g:ENV_DEFAULT[a:key]
-    elseif a:key =~# '^[A-Z]'
-        unlet! g:[a:key]
-    elseif a:key =~# '^[$]'
-        exe 'let '.a:key.'='''''
-    endif
+        " Delete key
+        unlet g:ENV[l:key]
+
+        if has_key(g:ENV_DEFAULT.global, l:key)
+            let g:[l:key] = remove(g:ENV_DEFAULT.global, l:key)
+        elseif has_key(g:ENV_DEFAULT.option, l:key)
+            exe 'let &g:'.l:key[1:].'='.string(remove(g:ENV_DEFAULT.option, l:key))
+        elseif has_key(g:ENV_DEFAULT.environment, l:key)
+            exe 'let '.l:key.'='.string(remove(g:ENV_DEFAULT.environment, l:key))
+        elseif has_key(g:ENV_DEFAULT.none, l:key)
+            let l:val = remove(g:ENV_DEFAULT.none, l:key)
+            exe l:val ==# 'g' ? 'unlet! g:'.l:key :
+                        \ l:val ==# 'e' ? 'let '.l:key.'=''''' : ''
+        endif
+    endfor
 endfunction
 
 
-function s:EnvAdd(key, Val)
-    try
-        let g:ENV[a:key] = 
-                    \ a:Val =~# '\v^([[{].*[]}]|func(tion|ref)\(.*\)|[0-9.]+)$' ?
-                    \ eval(a:Val) : a:Val
-    catch
-        echohl Error | echo v:exception | echohl None
-        return
-    endtry
-
-    if a:key =~# '^[A-Z]'
-        if has_key(g:, a:key)
-            let g:ENV_DEFAULT[a:key] = g:[a:key]
-        endif
-
-        let g:[a:key] = g:ENV[a:key]
-    elseif a:key[0] ==# '&' && exists(a:key)
-        let g:ENV_DEFAULT[a:key] = eval(a:key)
-
+" Add or modify item (g:ENV)
+function s:EnvAdd(dict)
+    for [l:key, l:val] in items(a:dict)
         try
-            exe 'let '.a:key.'='.string(g:ENV[a:key])
+            let g:ENV[l:key] = eval(l:val)
         catch
-            unlet g:ENV[a:key]
-            unlet g:ENV_DEFAULT[a:key]
-            echohl Error |echo v:exception | echohl None
+            echohl Error | echo v:exception | echohl None
+            return
         endtry
-    elseif a:key[0] ==# '$'
-        if exists(a:key)
-            let g:ENV_DEFAULT[a:key] = eval(a:key)
-        endif
 
-        exe 'let '.a:key.'='.string(a:Val)
-    endif
+        if l:key[0] =~# '[A-Z]'
+            " Global var
+            if !has_key(g:, l:key)
+                let g:ENV_DEFAULT.none[l:key] = 'g'
+            elseif !has_key(g:ENV_DEFAULT.none, l:key) && !has_key(g:ENV_DEFAULT.global, l:key)
+                let g:ENV_DEFAULT.global[l:key] = g:[l:key]
+            endif
+
+            let g:[l:key] = g:ENV[l:key]
+        elseif l:key[0] ==# '&'
+            " vim option
+            try
+                if !has_key(g:ENV_DEFAULT.option, l:key)
+                    let g:ENV_DEFAULT.option[l:key] = eval(l:key)
+                endif
+
+                exe 'let &g:'.l:key[1:].'='.l:val
+            catch
+                unlet g:ENV[l:key]
+                echohl Error |echo v:exception | echohl None
+            endtry
+        elseif l:key[0] ==# '$'
+            " Environment var
+            if type(g:ENV[l:key]) != type('')
+                unlet g:ENV[l:key]
+                echohl Error |echo 'ERROR: string required!' | echohl None
+                return
+            endif
+
+            if !exists(l:key)
+                let g:ENV_DEFAULT.none[l:key] = 'e'
+            elseif !has_key(g:ENV_DEFAULT.none, l:key) && !has_key(g:ENV_DEFAULT.environment, l:key)
+                let g:ENV_DEFAULT.environment[l:key] = eval(l:key)
+            endif
+
+            exe 'let '.l:key.'='.l:val
+        endif
+    endfor
 endfunction
 
 
-function s:EnvPrint(key)
-    let l:Val = has_key(g:ENV, a:key) ? g:ENV[a:key] :
-                \ has_key(g:, a:key) ? g:[a:key] : 
-                \ a:key[0] =~# '[&$]' && exists(a:key) ? eval(a:key) : ''
+" Pretty print, format string
+function s:EnvPrint(keys)
+    let l:str = []
+    for l:key in a:keys
+        let l:val = has_key(g:ENV, l:key) ? string(g:ENV[l:key]) :
+                    \ has_key(g:, l:key) ? string(g:[l:key]) : 
+                    \ l:key[0] =~# '[&$]' && exists(l:key) ? string(eval(l:key)) : ''
 
-    return [a:key.'='.(type(l:Val) == type('') ? l:Val : string(l:Val))]
+        let l:str += [l:key.'='.l:val]
+    endfor
+
+    if !empty(l:str)
+        echo join(l:str, "\n")
+    endif
 endfunction
 
 
 function misc#CompleteEnv(L, C, P)
     if a:C[:a:P] =~# '\v\=\s*$'
-        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
-        let l:val = l:key =~# '^[&$]' ? eval(l:key) :
-                    \ get(g:ENV, l:key, get(g:, l:key, ''))
-        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+        " Get value
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze(\s*\=\s*)$')
+        let l:val = has_key(g:ENV, l:key) ? string(g:ENV[l:key]) :
+                    \ has_key(g:, l:key) ? string(g:[l:key]) :
+                    \ l:key[0] =~# '[&$]' && exists(l:key) ? string(eval(l:key)) : ''
+        return a:L.l:val
     endif
 
+    " Match key, global var
+    if a:C[:a:P] =~# '\v[^= ]\s+\w*$'
+        return join(['-i', '-c', '-p'] + keys(g:ENV) + 
+                    \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
+    endif
+
+    " Match option
     if a:L =~# '^[&]'
         return join(map(getcompletion('', 'option'), '''&''.v:val'), "\n")
     endif
 
+    " Match environment var
     if a:L =~# '^[$]'
         return join(map(getcompletion('', 'environment'), '''$''.v:val'), "\n")
     endif
 
-    return join(['-i', '-c'] + filter(keys(g:ENV), "v:val[0] !~# '[A-Z]'") + 
-                \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
+    " Match specific var
+    if a:L =~# '^[bwtg]:'
+        return join(map(keys(eval(a:L[:1])), ''''.a:L[:1].'''.v:val'), "\n")
+    endif
+
+    " Match function
+    return join(getcompletion('', 'function'), "\n")
 endfunction
+
 
 " Special variables in g:ENV (task_queue)
 function! misc#EnvTaskQueue(task) abort
+    let l:type = type(a:task)
+
     if empty(a:task)
         echo get(g:ENV, 'task_queue', {})
+        return
+    elseif l:type == type('') && a:task ==# '-s'
+        call s:TaskQueueSelect()
         return
     endif
 
     let l:task_queue = copy(get(g:ENV, 'task_queue', {}))
-    for l:item in split(a:task, '\v\s*;\s*')
-        let l:list = split(l:item, '\v\s*\=\s*')
 
-        if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
-            let l:Task = l:task_queue[l:list[0]]
-            let l:type = type(l:Task)
+    if l:type == type('')
+        for l:item in split(a:task, '\v\s*;\s*')
+            let l:list = split(l:item, '\v\s*\=\s*')
 
-            if l:type == type(function('add'))
-                call l:Task()
-            elseif l:type == type('') || l:type == type([])
-                call execute(l:Task, '')
+            if len(l:list) == 1 && has_key(l:task_queue, l:list[0])
+                let l:Task = l:task_queue[l:list[0]]
+                let l:type = type(l:Task)
+
+                if l:type == type(function('add'))
+                    call l:Task()
+                elseif l:type == type('') || l:type == type([])
+                    call execute(l:Task, '')
+                endif
+            elseif len(l:list) == 2
+                let l:task_queue[l:list[0]] = eval(l:list[1])
+                let l:change = 1
             endif
-        elseif len(l:list) == 2
-            let l:task_queue[l:list[0]] =
-                        \ l:list[1] =~ '\v^(\[.*\]|func(tion|ref)\(.*\))$' ?
-                        \ eval(l:list[1]) : l:list[1]
-            let l:change = 1
-        endif
-    endfor
+        endfor
+    elseif l:type == type({})
+        call extend(l:task_queue, a:task)
+        let l:change = 1
+    endif
 
     if exists('l:change')
         unlockvar! g:ENV
@@ -243,14 +300,38 @@ function! misc#EnvTaskQueue(task) abort
     endif
 endfunction
 
-function misc#CompleteTask(...)
-    if a:C[:a:P] =~# '\v\=\s*$'
-        let l:key = matchstr(a:C[:a:P], '\v\S+\ze[ =]+$')
-        let l:val = get(get(g:ENV, 'task_queue', {}), l:key, '')
-        return a:L.(type(l:val) == type('') ? l:val : string(l:val))
+
+function s:TaskQueueSelect()
+    let [l:i, l:prompt, l:menu] = [1, 'Select one ...', {}]
+    for [l:key, l:Val] in items(get(g:ENV, 'task_queue', {}))
+        let l:prompt .= "\n".printf('  %2d:  %-15s  %s', l:i, l:key, string(l:Val))
+        let l:menu[l:i] = l:Val
+        let l:i += 1
+    endfor
+
+    if empty(l:menu)
+        return
     endif
 
-    return join(keys(get(g:ENV, 'task_queue', {})), "\n")
+    let l:Task = get(l:menu, input(l:prompt."\n!?: "), 0)
+    let l:type = type(l:Task)
+
+    if l:type == type('') || l:type == type([])
+        call execute(l:Task, '')
+    elseif l:type == type(function('add'))
+        call l:Task()
+    endif
+endfunction
+
+
+function misc#CompleteTask(L, C, P)
+    if a:C[:a:P] =~# '\v\=\s*$'
+        let l:key = matchstr(a:C[:a:P], '\v\S+\ze(\s*\=\s*)$')
+        let l:val = has_key(get(g:ENV, 'task_queue', {}), l:key) ? string(g:ENV.task_queue[l:key]) : ''
+        return a:L.l:val
+    endif
+
+    return join(['-s'] + keys(get(g:ENV, 'task_queue', {})), "\n")
 endfunction
 
 
@@ -262,22 +343,20 @@ let s:F5Function = {}
 
 " diffupdate in diffmode
 " Compile c/cpp/verilog, Run  & debug script language ...
-" Type: task, run, debug, visual ...
+" Type: task, task_queue, run, debug, visual ...
 function! misc#F5Function(type) range abort
-    if a:type ==# 'task'
-        call s:F5Function.task()
+    if a:type =~# 'task' && has_key(s:F5Function, a:type)
+        call s:F5Function[a:type]()
     elseif &diff
         diffupdate
     elseif exists('t:git_tabpageManager')
         call git#Refresh()
-    elseif !misc#SwitchToEmptyBuftype()
-        return
-    endif
-
-    if has_key(s:F5Function, a:type)
+    elseif misc#SwitchToEmptyBuftype() && has_key(s:F5Function, a:type)
         call s:F5Function[a:type]()
     endif
 endfunction
+
+let s:F5Function.task_queue = function('s:TaskQueueSelect')
 
 " Task
 function s:F5Function.task()
@@ -355,7 +434,7 @@ function s:F5Function.visual()
 endfunction
 
 function misc#CompleteF5(L, C, P)
-    return join(keys(s:F5Function))
+    return join(keys(s:F5Function), "\n")
 endfunction
 
 
