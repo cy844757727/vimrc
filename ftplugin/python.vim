@@ -44,10 +44,6 @@ function! s:ScriptRun()
         return
     endif
 
-    if empty(visualmode())
-        return
-    endif
-
     if executable('jupyter-console')
         let l:cmd = 'jupyter-console'
     elseif executable('ipython3')
@@ -56,7 +52,15 @@ function! s:ScriptRun()
         return
     endif
 
-    let l:lines = filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'")
+    let [l:lin1, l:lin2] = mode() =~? '\vv|'."\<C-v>" ?
+                \ [line('''<'), line('''>')] :
+                \ [search('^#%%', 'bnW'), search('^#%%', 'nW')]
+
+    if !l:lin1 || !l:lin2
+        return
+    endif
+
+    let l:lines = filter(getline(l:lin1, l:lin2), "v:val =~ '\\S'")
     let l:postCmd = join(['%%capture vim'] + l:lines + ['', ''], "\n")
 
     if l:lines[-1] =~# '^\s'
@@ -71,5 +75,5 @@ function! s:ScriptRun()
 endfunction
 
 let b:task = function('s:ScriptRun')
-" 
+ 
 "let b:ale_lint_on_text_changed = 'always'

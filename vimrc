@@ -94,10 +94,14 @@ function! Vimrc_ClosePair(char)
 endfunction
 
 nnoremap \| :Async 
+vnoremap \| <Esc>:Asyncrun 
 noremap <silent> <C-j> :call misc#NextItem('next')<CR>
 noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
 map! <C-j> <Esc><C-j>
 map! <C-k> <Esc><C-k>
+
+vnoremap <silent> f <Esc>:call misc#VerticalFind('')<CR>
+vnoremap <silent> F <Esc>:call misc#VerticalFind('b')<CR>
 
 inoremap <C-\> <Esc>o
 nnoremap <silent> <C-g> :call misc#Information('simple')<CR>
@@ -157,13 +161,14 @@ noremap <silent> <f4>    :call misc#WinResize()<CR>
 nnoremap <silent> <f5>   :call misc#F5Function('run')<CR>
 vnoremap <silent> <f5>   :call misc#F5Function('visual')<CR>
 noremap <silent> <C-f5>  :call misc#F5Function('debug')<CR>
-noremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
+nnoremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
+vnoremap <silent> <S-f5>  :call misc#F5Function('task_visual')<CR>
 noremap <silent> <C-S-f5> :call misc#F5Function('task_queue')<CR>
 map! <f3> <Esc><f3>
 map! <f4> <Esc><f4>
 imap <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
-map! <S-f5> <Esc><S-f5>
+imap <S-f5> <Esc><S-f5>
 map! <C-S-f5> <Esc><C-S-f5>
 " BMBPSign.vim: bookmark, breakpoint
 noremap <silent> <f6>     :call BMBPSign#SignToggle('break')<CR>

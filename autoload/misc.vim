@@ -30,8 +30,8 @@ augroup END
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
 let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
 let g:ENV_NONE = get(g:, 'ENV_NONE', {})
-" none: 'global': 'g', 'option': 'o', 'environment': 'e', 'command': 'c',
-" 'nnoremap': 'm'
+" none: 'global': 'g', 'option': 'o', 'environment': 'e',
+" 'command': 'c', 'nnoremap': 'm'
 lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
 
 
@@ -217,7 +217,7 @@ function s:EnvPrint(keys)
     let l:str = []
     for l:key in a:keys
         let l:val = has_key(g:ENV, l:key) ? string(g:ENV[l:key]) :
-                    \ has_key(g:, l:key) ? string(g:[l:key]) : 
+                    \ has_key(g:, l:key)  ? string(g:[l:key]) :
                     \ l:key[0] =~# '[&$]' && exists(l:key) ? string(eval(l:key)) : ''
         let l:str += [l:key.'='.l:val]
     endfor
@@ -233,14 +233,14 @@ function misc#CompleteEnv(L, C, P)
         " Get value
         let l:key = matchstr(a:C[:a:P], '\v\S+\ze(\s*\=\s*)$')
         let l:val = has_key(g:ENV, l:key) ? string(g:ENV[l:key]) :
-                    \ has_key(g:, l:key) ? string(g:[l:key]) :
-                    \ l:key[0] ==# '\' ? string(maparg(l:key, 'n')) :
+                    \ has_key(g:, l:key)  ? string(g:[l:key]) :
+                    \ l:key[0] ==# '\'    ? string(maparg(l:key, 'n')) :
                     \ l:key[0] =~# '[&$]' && exists(l:key) ? string(eval(l:key)) : ''
         return a:L.l:val
     endif
 
     " Match key, global var
-    if a:C[:a:P] =~# '\v[^= ]\s+\w*$'
+    if a:C[:a:P] =~# '\v(^\w+|;)\zs\s+[^=;]*$'
         return join(['-i', '-c', '-p'] + keys(g:ENV) + 
                     \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
     endif
@@ -343,13 +343,34 @@ endfunction
 
 
 function misc#CompleteTask(L, C, P)
+    let l:task_queue = get(g:ENV, 'task_queue', {})
+
     if a:C[:a:P] =~# '\v\=\s*$'
         let l:key = matchstr(a:C[:a:P], '\v\S+\ze(\s*\=\s*)$')
-        let l:val = has_key(get(g:ENV, 'task_queue', {}), l:key) ? string(g:ENV.task_queue[l:key]) : ''
-        return a:L.l:val
+        return a:L.(has_key(l:task_queue, l:key) ? string(l:task_queue[l:key]) : '')
     endif
 
-    return join(['-s'] + keys(get(g:ENV, 'task_queue', {})), "\n")
+    " Match key
+    if a:C[:a:P] =~# '\v(^\w+|;)\zs\s+[^=;]*$'
+        return join(['-s'] + keys(l:task_queue), "\n")
+    endif
+
+    " Match option
+    if a:L =~# '^[&]'
+        return join(map(getcompletion('', 'option'), '''&''.v:val'), "\n")
+    endif
+
+    " Match environment var
+    if a:L =~# '^[$]'
+        return join(map(getcompletion('', 'environment'), '''$''.v:val'), "\n")
+    endif
+
+    " Match specific var
+    if a:L =~# '^[bwtg]:'
+        return join(map(keys(eval(a:L[:1])), ''''.a:L[:1].'''.v:val'), "\n")
+    endif
+
+    return join(getcompletion('', 'command'), "\n")
 endfunction
 
 
@@ -374,10 +395,9 @@ function! misc#F5Function(type) range abort
     endif
 endfunction
 
-let s:F5Function.task_queue = function('s:TaskQueueSelect')
 
 " Task
-function s:F5Function.task()
+function s:F5Function.task(...)
     let l:Task = exists('b:task') ? b:task :
                 \ exists('w:task') ? w:task :
                 \ exists('t:task') ? t:task :
@@ -385,12 +405,21 @@ function s:F5Function.task()
                 \ get(g:ENV, 'task', '')
     let l:type = type(l:Task)
 
+    if a:0 > 0 && a:1  ==# 'visual'
+        exe 'normal '.visualmode()
+    endif
+
     if l:type == type(function('add'))
         call l:Task()
     elseif l:type == type('') || l:type == type([])
         call execute(l:Task, '')
     endif
+
+    normal \<Esc>
 endfunction
+
+let s:F5Function.task_queue = function('s:TaskQueueSelect')
+let s:F5Function.task_visual = {-> s:F5Function.task('visual')}
 
 " Run
 function s:F5Function.run()
@@ -402,14 +431,12 @@ function s:F5Function.run()
     elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
         call misc#ToggleBottomBar('only', 'terminal')
         call async#ScriptRun(expand('%'))
-    elseif !empty(glob('[mM]ake[fF]ile'))
-        let l:ex = 'Asyncrun! make'
-    elseif &ft ==# 'c'
-        let l:ex = 'Asyncrun! gcc -Wall -O0 -g3 % -o %<'
-    elseif &ft ==# 'cpp'
-        let l:ex = 'Asyncrun! g++ -Wall -O0 -g3 % -o %<'
     elseif &filetype ==# 'vim'
         source %
+    else
+        let l:ex = !empty(glob('[mM]ake[fF]ile')) ? 'Asyncrun! make' :
+                    \ &ft ==# 'c'   ? 'Asyncrun! gcc -Wall -O0 -g3 % -o %<' :
+                    \ &ft ==# 'cpp' ? 'Asyncrun! g++ -Wall -O0 -g3 % -o %<' : ''
     endif
 
     if exists('l:ex')
@@ -614,7 +641,41 @@ function! s:BufHisEcho()
     echo l:str
 endfunction
 
+
 " === misc function implementation {{{1
+function misc#VerticalFind(flag)
+    let l:pos = getpos('.')
+    let l:posP = getpos('''')
+    let l:str = ''
+    let l:cur = []
+    normal j
+
+    while 1
+        let l:char = getchar()
+
+        if nr2char(l:char) ==# "\<CR>"
+            break
+        elseif nr2char(l:char) ==# "\<Esc>"
+            call setpos('.', l:pos)
+            call setpos('''''', l:posP)
+            return
+        elseif l:char ==# "\<BS>"
+            let l:str = l:str[:-2]
+            silent! call setpos('.', remove(l:cur, -1))
+        else
+            let l:str .= nr2char(l:char)
+            let l:cur += [getpos('.')]
+            call search(l:str, a:flag.'W')
+        endif
+
+        redraw
+        echo l:str
+    endwhile
+
+    call setpos('''''', l:pos)
+endfunction
+
+
 "  Refresh NERTree
 function! s:UpdateNERTreeView()
     let l:nerd = bufwinnr('NERD_tree')
