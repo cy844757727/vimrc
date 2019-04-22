@@ -64,6 +64,7 @@ augroup vimrc
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
 
+
 command! Info :call misc#Information('detail')
 command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#CompleteSide ToggleSideWin :call misc#ToggleSideBar(<q-args>)
@@ -154,14 +155,12 @@ nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 
-noremap <silent> <C-l>  :redraw!<CR>
-map! <C-l> <Esc><C-l>
 " Save & winresize & f5 function
-noremap <silent> <f3>    :call misc#SaveFile()<CR>
-noremap <silent> <f4>    :call misc#WinResize()<CR>
-nnoremap <silent> <f5>   :call misc#F5Function('run')<CR>
-vnoremap <silent> <f5>   :call misc#F5Function('visual')<CR>
-noremap <silent> <C-f5>  :call misc#F5Function('debug')<CR>
+noremap <silent> <f3>     :call misc#SaveFile()<CR>
+noremap <silent> <f4>     :call misc#WinResize()<CR>
+nnoremap <silent> <f5>    :call misc#F5Function('run')<CR>
+vnoremap <silent> <f5>    :call misc#F5Function('visual')<CR>
+noremap <silent> <C-f5>   :call misc#F5Function('debug')<CR>
 nnoremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
 vnoremap <silent> <S-f5>  :call misc#F5Function('task_visual')<CR>
 noremap <silent> <C-S-f5> :call misc#F5Function('task_queue')<CR>

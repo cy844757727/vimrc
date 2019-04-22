@@ -32,7 +32,7 @@ let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
 let g:ENV_NONE = get(g:, 'ENV_NONE', {})
 " none: 'global': 'g', 'option': 'o', 'environment': 'e',
 " 'command': 'c', 'nnoremap': 'm'
-" Do not lock at the beginning, the loading order (enent: load viminfo) will affect the results.
+" Do not lock at the beginning, the loading order (event: load viminfo) will affect the results.
 " When loading this plugin before loading viminfo file
 "lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
 
@@ -167,8 +167,7 @@ endfunction
 function s:EnvAdd(dict)
     for [l:key, l:val] in items(a:dict)
         try
-            let l:tmp = {}
-            let l:tmp.ENV = eval(l:val)
+            let l:tmp = {'ENV': eval(l:val)}
 
             if l:key[0] =~# '[A-Z]'
                 " Global var
@@ -385,7 +384,7 @@ endfunction
 
 " === Multifunctional F5 key {{{1
 " Dict function
-" {'task', 'run', 'debug', 'visual'}
+" 'task', 'run', 'debug', 'visual', 'task_queue', 'task_visual'
 let s:F5Function = {}
 
 " diffupdate in diffmode

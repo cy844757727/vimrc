@@ -664,6 +664,7 @@ function s:WorkSpaceLoad(pre)
     let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
+    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Load viminfo
     if filereadable(l:vimInfoFile)
@@ -674,8 +675,6 @@ function s:WorkSpaceLoad(pre)
         exe 'set viminfo='.l:temp
         silent doautocmd User VimInfoLoadPost
     endif
-
-    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Load session
     if filereadable(l:sessionFile)
