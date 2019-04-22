@@ -58,8 +58,9 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
-    autocmd User WorkSpaceLoadPost call async#JobRun('!', 'ctags -R -f .tags', {}, {'flag': '[I]'})
-    autocmd User WorkSpaceLoadPost call misc#EnvSet('-i')
+    autocmd User WorkSpaceLoadPre call async#JobRun('!', 'ctags -R -f .tags', {}, {'flag': '[I]'})
+    autocmd User VimInfoLoadPre call misc#EnvUnlock()
+    autocmd User VimInfoLoadPost call misc#EnvSet('-i')
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
 
@@ -370,7 +371,7 @@ let g:Infowin_output = 1
 
 " === BMBPSign.vim === {{{1
 let g:BMBPSign_SpecialBuf = {
-            \ 'NERD_tree': 'bw|NERDTree',
+            \ 'NERD_tree': 'bw|call Vimrc_Nerd()',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
             \ }
 
@@ -382,7 +383,7 @@ function! Vimrc_Tagbar()
         let g:tagbar_vertical = 0
         let g:tagbar_left = l:mode % 2
         TagbarOpen
-        wincmd W
+        exe 'wincmd '.(g:tagbar_left ? 'W' : 'w')
     else
         let g:tagbar_vertical = &lines % 2 -2
         let g:tagbar_left = 0
@@ -390,6 +391,11 @@ function! Vimrc_Tagbar()
         TagbarOpen
         wincmd w
     endif
+endfunction
+
+function! Vimrc_Nerd()
+    let g:NERDTreeWinPos = get(g:, 'SideWinMode', 1) > 2 ? 'right' : 'left'
+    NERDTree
 endfunction
 
 let g:BMBPSign_ProjectType = {

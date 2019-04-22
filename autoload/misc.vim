@@ -32,8 +32,14 @@ let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
 let g:ENV_NONE = get(g:, 'ENV_NONE', {})
 " none: 'global': 'g', 'option': 'o', 'environment': 'e',
 " 'command': 'c', 'nnoremap': 'm'
-lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
+" Do not lock at the beginning, the loading order (enent: load viminfo) will affect the results.
+" When loading this plugin before loading viminfo file
+"lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
 
+" Unlock g:ENV... before load viminfo file
+function misc#EnvUnlock()
+    unlockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
+endfunction
 
 " Environment configure
 " Entries are segmented by semicolons,
@@ -101,7 +107,9 @@ endfunction
 " -r  resert to g:env
 function s:EnvParse(opt)
     if empty(a:opt)
-        echo g:ENV
+        echo filter(deepcopy(g:ENV), 'v:key[0] !=# ''.''')
+    elseif a:opt ==# '-h'
+        echo filter(deepcopy(g:ENV), 'v:key[0] ==# ''.''')
     elseif a:opt ==# '-d'
         echo 'Default:' g:ENV_DEFAULT "\n---\nNone:" g:ENV_NONE
     elseif a:opt ==# '-i'
@@ -239,12 +247,6 @@ function misc#CompleteEnv(L, C, P)
         return a:L.l:val
     endif
 
-    " Match key, global var
-    if a:C[:a:P] =~# '\v(^\w+|;)\zs\s+[^=;]*$'
-        return join(['-i', '-c', '-p'] + keys(g:ENV) + 
-                    \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
-    endif
-
     " Match option
     if a:L =~# '^[&]'
         return join(map(getcompletion('', 'option'), '''&''.v:val'), "\n")
@@ -253,6 +255,12 @@ function misc#CompleteEnv(L, C, P)
     " Match environment var
     if a:L =~# '^[$]'
         return join(map(getcompletion('', 'environment'), '''$''.v:val'), "\n")
+    endif
+
+    " Match key, global var
+    if a:C[:a:P] =~# '\v(^\w+|;)\zs\s+[^=;]*$'
+        return join(['-i', '-c', '-p'] + filter(keys(g:ENV), 'v:val[0] !=# ''.''') + 
+                    \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
     endif
 
     " Match specific var

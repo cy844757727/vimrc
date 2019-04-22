@@ -7,6 +7,14 @@
 "    针对特殊buf需要处理的操作:dict (保存/加载 工作空间时)
 "    g:BMBPSign_SpecialBuf
 "
+"    Enent:
+"       WorkSpaceSavePre:    before save workspace
+"       WorkSpaceSavePost:   after save workspace
+"       WorkSpaceLoadPre:    before load workspace
+"       VimInfoLoadPre:      before load viminfo file
+"       VimInfoLoadPost:     after load viminfo file
+"       WorkSpaceLoadPost:   after load workspace
+"
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 if exists('g:loaded_BMBPSign') || !has('signs')
     finish
