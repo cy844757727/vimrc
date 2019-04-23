@@ -274,11 +274,8 @@ endfunction
 
 " FUNCTION: s:UI._indentLevelFor(line) {{{1
 function! s:UI._indentLevelFor(line)
-    if empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') && g:WebDevIconsUnicodeDecorateFolderNodes == 0)
-        let line = '  ' . a:line
-    else
-        let line = a:line
-    endif
+    let l:line = empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') 
+                \ && g:WebDevIconsUnicodeDecorateFolderNodes == 0) ? '  '.a:line : a:line
 
     " have to do this work around because match() returns bytes, not chars
     let numLeadBytes = match(line, '\M\[^ '.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.']')

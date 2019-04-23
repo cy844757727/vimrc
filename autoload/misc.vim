@@ -546,7 +546,7 @@ function! s:AgOnOut(job, msg) abort
         let s:refDict.content[l:file] = []
     endif
 
-    let s:refDict.content[l:file] += [printf('%-10s %s', l:list[2].':'.l:list[3].':', trim(l:list[4]))]
+    let s:refDict.content[l:file] += [printf('%-5s %3s  %s', l:list[2].':', l:list[3].':', trim(l:list[4]))]
 endfunction
 
 

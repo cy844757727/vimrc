@@ -9,6 +9,8 @@ if exists('b:did_ftplugin_')
 endif
 let b:did_ftplugin_ = 1
 
+setlocal foldmethod=indent
+setlocal shiftwidth=2
 setlocal nonu nowrap buftype=nofile nobuflisted foldcolumn=0 foldmethod=indent
 
 nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>

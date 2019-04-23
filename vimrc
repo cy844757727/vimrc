@@ -284,11 +284,8 @@ let g:WebDevIconsUnicodeDecorateFolderNodes = 0
 "
 " ===== Modify NERDtree plugin: ~/.vim/lib/nerdtree/ui.vim  line:277 ================
 " ===== To add extra indent for normal file (cause reduce whitespace: above)=======
-"    if empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') && g:WebDevIconsUnicodeDecorateFolderNodes == 0)
-"        let line = '  ' . a:line
-"    else
-"        let line = a:line
-"    endif
+"    let l:line = empty(matchstr(a:line, '/$')) && (exists('g:WebDevIconsUnicodeDecorateFolderNodes') 
+"                \ && g:WebDevIconsUnicodeDecorateFolderNodes == 0) ? '  '.a:line : a:line
 " ===== change a:line to line below ===============================================
 " =================================================================================
 

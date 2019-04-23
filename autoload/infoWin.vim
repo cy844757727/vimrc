@@ -124,7 +124,7 @@ endfunction
 function s:GetLine()
     let l:line = getline('.')
     let l:indent = indent('.')
-    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,:]+\ze:'), ',\|:')
+    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,: ]+\ze:'), '\s*[,:]\s*')
 
     if l:indent == 0 || empty(l:lin)
         return [-1, -1, -1]

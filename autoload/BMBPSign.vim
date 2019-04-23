@@ -481,6 +481,7 @@ function s:ProjectSwitch(sel)
     " Put item first
     call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
+    exe 'set titlestring=\ \ '.matchstr(s:projectItem[0], '\v^\w+')
 endfunction
 
 
@@ -604,7 +605,6 @@ function s:WorkSpaceSave(pre)
     let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
-    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Save session
     let l:temp = &sessionoptions
@@ -664,7 +664,6 @@ function s:WorkSpaceLoad(pre)
     let g:BMBPSign_Projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
-    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
 
     " Load viminfo
     if filereadable(l:vimInfoFile)
