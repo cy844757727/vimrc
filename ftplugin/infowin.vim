@@ -106,10 +106,13 @@ function s:PreviewAuto()
     if !filereadable(l:file)
         return
     endif
-    
+
     wincmd w
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
-    exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex : 'edit +normal\ '.l:ex.' '.l:file
+    " Auto preview, add 'filetype detect' to avoid no syntax highlight
+    " when editing a new file which is not in buffer list
+    exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex :
+                \ 'edit +'.(bufexists(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
     redraw | wincmd W
 endfunction
 
