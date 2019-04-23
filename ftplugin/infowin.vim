@@ -9,9 +9,8 @@ if exists('b:did_ftplugin_')
 endif
 let b:did_ftplugin_ = 1
 
-setlocal foldmethod=indent
-setlocal shiftwidth=2
-setlocal nonu nowrap buftype=nofile nobuflisted foldcolumn=0 foldmethod=indent
+setlocal foldcolumn=0 foldmethod=indent foldminlines=0
+setlocal nonu nowrap buftype=nofile nobuflisted shiftwidth=1
 
 nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> <2-leftmouse> :call <SID>Open('edit', 'keep')<CR>
@@ -30,6 +29,7 @@ nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
 " Determine auto preview
+
 let s:auto = 0
 
 augroup InfoWin_
@@ -38,9 +38,10 @@ augroup InfoWin_
     autocmd CursorMoved <buffer> if s:auto|call s:PreviewAuto()|endif
 augroup END
 
+
 function! <SID>MaxMin()
-    exe 'resize '.(winheight(0) != get(g:, 'BottomWinHeight', 15) ?
-                \ get(g:, 'BottomWinHeight', 15) : '')
+    let l:height = get(g:, 'BottomWinHeight', 15)
+    exe 'resize '.(winheight(0) != l:height ? l:height : '')
 endfunction
 
 
@@ -52,17 +53,13 @@ function! <SID>Open(way, mode) abort
     endif
 
     exe a:mode =~# 'keep' ? 'wincmd W' : 'quit'
+    let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
 
     if a:mode =~# 'default' && exists('*misc#EditFile')
-        call misc#EditFile(l:file, a:way.' +'.l:lin)
+        call misc#EditFile(l:file, a:way.' +normal\ '.l:ex)
     else
         exe bufnr(l:file) == bufnr('%') && a:way =~# 'edit' ?
-                    \ 'normal '.l:lin.'ggzz' :
-                    \ a:way.' +'.l:lin.' '.l:file
-    endif
-
-    if l:col > 1
-        exe 'normal 0'.(l:col-1).'l'
+                    \ 'normal '.l:ex : a:way.' +normal\ '.l:ex.' '.l:file
     endif
 endfunction
 
@@ -76,6 +73,8 @@ function <SID>Preview(flag)
     endif
 
     let l:cur = winnr()
+    let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
+
     if l:cur != winnr('$') && getwinvar(l:cur + 1, 'infoWinPreview', 0)
         if line('.') == s:currentLine && xor(s:auto, a:flag !=# 'auto')
             exe (l:cur+1).'close'
@@ -83,48 +82,35 @@ function <SID>Preview(flag)
         endif
 
         wincmd w
-        exe l:file =~# bufname('%') ? 'normal '.l:lin.'ggzz' :
-                    \ 'edit +'.l:lin.' '.l:file
+        exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex : 'edit +normal\ '.l:ex.' '.l:file
     else
-        exe 'belowright vsplit +'.l:lin.' '.l:file
-        let w:infoWinPreview = 1
-        let w:buftype = 1
+        exe 'belowright vsplit +normal\ '.l:ex.' '.l:file
+        let [w:infoWinPreview, w:buftype] = [1, 1]
         setlocal statusline=\ 﩮%f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)%4P\ 
     endif
 
-    if l:col > 1
-        exe 'normal 0'.(l:col-1).'l'
-    endif
-
-    wincmd W
-    let s:currentLine = line('.')
-    let s:auto = a:flag ==# 'auto' ? 1 : 0
+    redraw | wincmd W
+    let [s:currentLine, s:auto] = [line('.'), a:flag ==# 'auto' ? 1 : 0]
 endfunction
 
 
 function s:PreviewAuto()
     let l:cur = winnr()
-    if line('.') == s:currentLine || l:cur == winnr('$') ||
-                \ !getwinvar(l:cur + 1, 'infoWinPreview', 0)
+    if line('.') == s:currentLine || !getwinvar(l:cur + 1, 'infoWinPreview', 0)
         return
     endif
 
+    let s:currentLine = line('.')
     let [l:file, l:lin, l:col] = b:infoWin.getline()
 
     if !filereadable(l:file)
         return
     endif
     
-    let s:currentLine = line('.')
     wincmd w
-    exe l:file =~# bufname('%') ? 'normal '.l:lin.'ggzz' :
-                \ 'edit +'.l:lin.' '.l:file
-
-    if l:col > 1
-        exe 'normal 0'.(l:col-1).'l'
-    endif
-
-    wincmd W
+    let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
+    exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex : 'edit +normal\ '.l:ex.' '.l:file
+    redraw | wincmd W
 endfunction
 
 

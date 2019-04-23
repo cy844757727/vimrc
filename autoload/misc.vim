@@ -119,7 +119,7 @@ function s:EnvParse(opt)
         call s:EnvVimSet(g:ENV_DEFAULT)
         " Delete environment
         call s:EnvVimDelete(g:ENV_NONE)
-        call extend(filter(g:ENV, 'v:key[0] =~# ''.'''), get(g:, 'env', {}))
+        call extend(filter(g:ENV, 'v:key[0] ==# ''.'''), get(g:, 'env', {}))
         let [g:ENV_DEFAULT, g:ENV_NONE] = [{}, {}]
     elseif a:opt ==# '-p'
         call s:EnvPrint(filter(keys(g:ENV), 'v:val[0] !=# ''.'''))
@@ -420,7 +420,7 @@ function s:F5Function.task(...)
 endfunction
 
 let s:F5Function.task_queue = function('s:TaskQueueSelect')
-let s:F5Function.task_visual = {-> s:F5Function.task('visual')}
+let s:F5Function.task_visual = function(s:F5Function.task, ['visual'])
 
 " Run
 function s:F5Function.run()
@@ -1151,7 +1151,7 @@ function! misc#EditFile(file, way)
                 let l:op = matchstr(a:way, '\v\+.*$')
 
                 if bufnr('%') != bufnr(l:file) || !empty(l:op)
-                    exe 'buffer '.l:op.' '.l:file
+                    exe 'edit '.l:op.' '.l:file
                 endif
 
                 return

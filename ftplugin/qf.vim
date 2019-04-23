@@ -19,8 +19,8 @@ nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
 nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
 function! <SID>MaxMin()
-    exe 'resize '.(winheight(0) != get(g:, 'BottomWinHeight', 15) ?
-                \ get(g:, 'BottomWinHeight', 15) : '')
+    let l:height = get(g:, 'BottomWinHeight', 15)
+    exe 'resize '.(winheight(0) != l:height ? l:height : '')
 endfunction
 
 function! <SID>Open(way, mode) abort

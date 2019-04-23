@@ -401,8 +401,6 @@ endfunction
 " New project & save workspace or modify current project
 function s:ProjectNew(name, type, path) abort
     set noautochdir
-    let g:BMBPSign_Projectized = 1
-
     " path -> absolute path | Default
     let l:type = a:type ==# '.' ? 'undef' : a:type
     let l:path = a:path ==# '.' ? getcwd() : a:path
@@ -434,7 +432,10 @@ function s:ProjectNew(name, type, path) abort
         silent %bwipeout
     endif
 
-    exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
+    if get(g:, 'BMBPSign_Projectized', 0)
+        let g:BMBPSign_Projectized = 1
+        exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
+    endif
 endfunction
 
 
@@ -442,6 +443,7 @@ endfunction
 function s:ProjectSwitch(sel)
     set noautochdir
     let l:path = split(s:projectItem[a:sel])[-1]
+    exe 'set titlestring=\ \ '.matchstr(s:projectItem[a:sel], '\v^\w+')
 
     " Do not load twice
     if l:path ==# getcwd() && exists('g:BMBPSign_Projectized')
@@ -481,7 +483,6 @@ function s:ProjectSwitch(sel)
     " Put item first
     call insert(s:projectItem, remove(s:projectItem, a:sel))
     call writefile(s:projectItem, s:projectFile)
-    exe 'set titlestring=\ \ '.matchstr(s:projectItem[0], '\v^\w+')
 endfunction
 
 
@@ -509,26 +510,22 @@ endfunction
 
 
 function s:ProjectMenu()
-    let [l:page, l:tip, l:err, l:mode] = [0, '!?:', '', 's']
+    let [l:page, l:tip, l:err, l:mode, l:loop] = [0, '!?:', '', 's', 1]
     let l:modeTip = {'s': '!?:', 'd': 'Deletion:', 'm': 'Modification:'}
+    let l:operator = {'p': 'let l:page+=1', 'P': 'let l:page-=1',
+                \ 'q': 'let l:loop=0', 'Q': 'qall', "\<Esc>": 'let l:loop=0'}
 
-    while 1
+    while l:loop
         " Disply UI
         let l:page = s:ProjectUI(l:page, l:err.l:tip)
         let l:char = nr2char(getchar())
         let l:err = ''
 
         " options & Mode selection
-        if l:char ==# 'p'
-            let l:page += 1
-        elseif l:char ==# 'P'
-            let l:page -= 1
+        if has_key(l:operator, l:char)
+            exe l:operator[l:char]
         elseif has_key(l:modeTip, l:char)
             let [l:tip, l:mode] = [l:modeTip[l:char], l:char]
-        elseif l:char ==# 'q' || l:char == "\<Esc>"
-            break
-        elseif l:char ==# 'Q'
-            qall
         elseif l:char =~# '\v[0-9 ]'
             " Specific operation
             let l:sel = l:char + l:page * 10
@@ -537,7 +534,7 @@ function s:ProjectMenu()
                 let l:err = 'Out of range! '
             elseif l:mode ==# 's'   " select
                 call s:ProjectSwitch(l:sel)
-                break
+                let l:loop=0
             elseif l:mode ==# 'd'   " delete
                 call remove(s:projectItem, l:sel)
                 call writefile(s:projectItem, s:projectFile)
@@ -561,7 +558,7 @@ function s:ProjectMenu()
 
             if l:argc == 2 || l:argc == 3
                 call s:ProjectManager(l:argc, l:argv)
-                break
+                let l:loop=0
             else
                 let l:err = 'Wrong Argument, Reselect. '
             endif
@@ -571,8 +568,6 @@ function s:ProjectMenu()
 
         redraw!
     endwhile
-
-    redraw!
 endfunction
 
 
@@ -591,7 +586,9 @@ function s:ProjectManager(argc, argv)
         call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2])
     endif
 
-    echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
+    if get(g:, 'BMBPSign_Projectized', 0)
+        echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
+    endif
 endfunction
 
 
