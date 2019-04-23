@@ -113,23 +113,17 @@ function s:EnvParse(opt)
     elseif a:opt ==# '-d'
         echo 'Default:' g:ENV_DEFAULT "\n---\nNone:" g:ENV_NONE
     elseif a:opt ==# '-i'
-        " Initialize environment
         call s:EnvVimSet(g:ENV)
     elseif a:opt ==# '-c'
         " Recovery environment
         call s:EnvVimSet(g:ENV_DEFAULT)
         " Delete environment
         call s:EnvVimDelete(g:ENV_NONE)
-        let [g:ENV, g:ENV_DEFAULT, g:ENV_NONE] = [get(g:, 'env', {}), {}, {}]
+        call extend(filter(g:ENV, 'v:key[0] =~# ''.'''), get(g:, 'env', {}))
+        let [g:ENV_DEFAULT, g:ENV_NONE] = [{}, {}]
     elseif a:opt ==# '-p'
-        " Pretty print
-        let l:str = []
-        for [l:key, l:Val] in items(g:ENV)
-            let l:str += [l:key.'='.string(l:Val)]
-        endfor
-        echo join(l:str, "\n")
+        call s:EnvPrint(filter(keys(g:ENV), 'v:val[0] !=# ''.'''))
     elseif a:opt ==# '-r'
-        " Resert
         call extend(g:ENV, get(g:, 'env', {}))
     else
         return 0
@@ -277,8 +271,8 @@ function! misc#EnvTaskQueue(task) abort
     unlockvar! g:ENV
     let l:type = type(a:task)
 
-    if !has_key(g:ENV, 'task_queue')
-        let g:ENV.task_queue = {}
+    if !has_key(g:ENV, '.task_queue')
+        let g:ENV['.task_queue'] = {}
     endif
 
     if l:type == type('') && !s:TaskQueueParse(a:task)
@@ -288,9 +282,9 @@ function! misc#EnvTaskQueue(task) abort
             if empty(l:list)
                 continue
             elseif l:item =~# '\M=$'
-                unlet! g:ENV.task_queue[l:list[0]]
-            elseif len(l:list) == 1 && has_key(g:ENV.task_queue, l:list[0])
-                let l:Task = g:ENV.task_queue[l:list[0]]
+                unlet! g:ENV['.task_queue'][l:list[0]]
+            elseif len(l:list) == 1 && has_key(g:ENV['.task_queue'], l:list[0])
+                let l:Task = g:ENV['.task_queue'][l:list[0]]
                 let l:type = type(l:Task)
 
                 if l:type == type(function('add'))
@@ -299,11 +293,11 @@ function! misc#EnvTaskQueue(task) abort
                     call execute(l:Task, '')
                 endif
             elseif len(l:list) == 2
-                let g:ENV.task_queue[l:list[0]] = eval(l:list[1])
+                let g:ENV['.task_queue'][l:list[0]] = eval(l:list[1])
             endif
         endfor
     elseif l:type == type({})
-        call extend(g:ENV.task_queue, a:task)
+        call extend(g:ENV['.task_queue'], a:task)
     endif
 
     lockvar! g:ENV
@@ -312,11 +306,11 @@ endfunction
 
 function s:TaskQueueParse(opt)
     if empty(a:opt)
-        echo g:ENV.task_queue
+        echo g:ENV['.task_queue']
     elseif a:opt ==# '-s'
         call s:TaskQueueSelect()
     elseif a:opt ==# '-c'
-        unlet! g:ENV.task_queue
+        unlet! g:ENV['.task_queue']
     else
         return 0
     endif
@@ -327,7 +321,7 @@ endfunction
 
 function s:TaskQueueSelect()
     let [l:i, l:prompt, l:menu] = [1, 'Select one ...', {}]
-    for [l:key, l:Val] in items(get(g:ENV, 'task_queue', {}))
+    for [l:key, l:Val] in items(get(g:ENV, '.task_queue', {}))
         let l:prompt .= "\n".printf('  %2d:  %-15s  %s', l:i, l:key, string(l:Val))
         let l:menu[l:i] = l:Val
         let l:i += 1
@@ -350,7 +344,7 @@ endfunction
 
 
 function misc#CompleteTask(L, C, P)
-    let l:task_queue = get(g:ENV, 'task_queue', {})
+    let l:task_queue = get(g:ENV, '.task_queue', {})
 
     if a:C[:a:P] =~# '\v\=\s*$'
         let l:key = matchstr(a:C[:a:P], '\v\S+\ze(\s*\=\s*)$')
@@ -1154,9 +1148,10 @@ function! misc#EditFile(file, way)
             if index(l:var.list, l:file) != -1
                 exe l:tab.'tabnext'
                 exe l:win.'wincmd w'
+                let l:op = matchstr(a:way, '\v\+.*$')
 
-                if bufnr('%') != bufnr(l:file)
-                    exe 'buffer '.matchstr(a:way, '\v\S\zs .*$').' '.l:file
+                if bufnr('%') != bufnr(l:file) || !empty(l:op)
+                    exe 'buffer '.l:op.' '.l:file
                 endif
 
                 return

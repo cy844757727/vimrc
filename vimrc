@@ -47,7 +47,7 @@ let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 1
 let g:env = {'sh': fnamemodify(&shell, ':t'),
-            \ 'python': 'python3', 'task': ''}
+            \ 'python': 'python3'}
 
 " Autocmd & command ===================== {{{1
 augroup vimrc
@@ -101,9 +101,6 @@ noremap <silent> <C-j> :call misc#NextItem('next')<CR>
 noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
 map! <C-j> <Esc><C-j>
 map! <C-k> <Esc><C-k>
-
-vnoremap <silent> f <Esc>:call misc#VerticalFind('')<CR>
-vnoremap <silent> F <Esc>:call misc#VerticalFind('b')<CR>
 
 inoremap <C-\> <Esc>o
 nnoremap <silent> <C-g> :call misc#Information('simple')<CR>
