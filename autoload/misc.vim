@@ -406,8 +406,8 @@ function s:F5Function.task(...)
                 \ get(g:ENV, 'task', '')
     let l:type = type(l:Task)
 
-    if a:0 > 0 && a:1  ==# 'visual'
-        exe 'normal '.visualmode()
+    if a:0 > 0 && a:1 ==# 'visual'
+        normal gv
     endif
 
     if l:type == type(function('add'))

@@ -40,7 +40,6 @@ function s:termAnalyzeCmd(cmd)
     if !empty(l:list)
         if index(g:async_termType + [l:cmd], l:list[0]) != -1
             let l:cmd = remove(l:list, 0)
-
             let l:name = s:termPrefix . ': '.l:cmd.' '
         elseif l:list[0]
             let l:num = remove(l:list, 0) + 0
@@ -233,9 +232,7 @@ endfunction
 
 function! s:JobOnExit(job, status)
     let l:id = matchstr(a:job, '\d\+')
-    let l:job = s:asyncJob[l:id]
-    unlet s:asyncJob[l:id]
-    " Update statuline ↓↓↓
+    let l:job = remove(s:asyncJob, l:id)
     redrawstatus!
     echom get(l:job, 'head', 'Async: ').
                 \ l:job.cmd.' ['.(a:status ? ' '.a:status : '').']'

@@ -16,13 +16,13 @@ hi default TodoList    ctermfg=16 guifg=#619FC6
 hi default BreakPoint  ctermfg=16 guifg=#DE3D3B
 
 " Sign name rule: 'BMBPSign' . type [. 'Attr']
-sign define BMBPSignbook text= texthl=BookMark
-sign define BMBPSigntodo text= texthl=TodoList
-sign define BMBPSignbreak text= texthl=BreakPoint
-sign define BMBPSigntbreak text= texthl=BreakPoint
-sign define BMBPSignbookAttr text=. texthl=BookMark
-sign define BMBPSigntodoAttr text=. texthl=TodoList
-sign define BMBPSignbreakAttr text=. texthl=BreakPoint
+sign define BMBPSignbook       text=  texthl=BookMark
+sign define BMBPSigntodo       text=  texthl=TodoList
+sign define BMBPSignbreak      text=  texthl=BreakPoint
+sign define BMBPSigntbreak     text=  texthl=BreakPoint
+sign define BMBPSignbookAttr   text=. texthl=BookMark
+sign define BMBPSigntodoAttr   text=. texthl=TodoList
+sign define BMBPSignbreakAttr  text=. texthl=BreakPoint
 sign define BMBPSigntbreakAttr text=. texthl=BreakPoint
 
 " SignVec Record
@@ -46,11 +46,11 @@ let s:signId = {}
 
 " Default File name
 if has('unix') || has('mac')
-    let s:signFile = '.signrecord'
+    let s:signFile    = '.signrecord'
     let s:sessionFile = '.session'
     let s:vimInfoFile = '.viminfo'
 else
-    let s:signFile = '_signrecord'
+    let s:signFile    = '_signrecord'
     let s:sessionFile = '_session'
     let s:vimInfoFile = '_viminfo'
 endif
