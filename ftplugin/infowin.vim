@@ -52,7 +52,7 @@ function! <SID>Open(way, mode) abort
         return
     endif
 
-    exe a:mode =~# 'keep' ? 'wincmd W' : 'quit'
+    exe a:mode =~# 'keep' ? 'wincmd W' : 'hide'
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
 
     if a:mode =~# 'default' && exists('*misc#EditFile')
@@ -109,7 +109,7 @@ function s:PreviewAuto()
 
     wincmd w
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
-    " Auto preview, add 'filetype detect' to avoid no syntax highlight
+    " Auto preview: add 'filetype detect' to avoid no syntax highlight
     " when editing a new file which is not in buffer list
     exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex :
                 \ 'edit +'.(bufexists(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
@@ -118,8 +118,7 @@ endfunction
 
 
 function s:PreviewClose()
-    let s:auto = 0
-    let l:i = winnr('$')
+    let [s:auto, l:i] = [0, winnr('$')]
 
     while l:i > 0
         if getwinvar(l:i, 'infoWinPreview', 0)

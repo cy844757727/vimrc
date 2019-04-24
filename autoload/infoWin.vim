@@ -30,12 +30,11 @@ function! infoWin#Set(dict)
 
     setlocal winfixheight noreadonly modifiable
     let s:indent = get(a:dict, 'indent', '  ')
-    let b:infoWin = {
-                \ 'title': get(a:dict, 'title', '[InfoWin]'),
-                \ 'type': get(a:dict, 'type', ''),
-                \ 'count': [], 'path': getcwd(), 'bufnr': s:bufnr,
-                \ 'getline': get(a:dict, 'getline', function('s:GetLine'))
-                \ }
+    let b:infoWin = {'count': [], 'bufnr': s:bufnr,
+                \ 'title':   get(a:dict, 'title', '[InfoWin]'),
+                \ 'type':    get(a:dict, 'type', ''),
+                \ 'path':    get(a:dict, 'path', getcwd()),
+                \ 'getline': get(a:dict, 'getline', function('s:GetLine'))}
     edit!
     call setline(1, s:DisplayStr(a:dict.content, ''))
     setlocal readonly nomodifiable filetype=infowin
@@ -132,7 +131,8 @@ function s:GetLine()
 
     let [l:lin, l:col] = len(l:lin) == 1 ? [l:lin[0], -1] : l:lin
     let l:nr = search('\v^\s{,'.(l:indent-1).'}\S', 'bnW')
+    let l:file = (!&autochdir && getcwd() ==# b:infoWin.path ? '' : b:infoWin.path.'/').trim(getline(l:nr))
 
-    return l:nr ? [b:infoWin.path.'/'.trim(getline(l:nr)), l:lin, l:col] : [-1, -1, -1]
+    return l:nr ? [l:file , l:lin, l:col] : [-1, -1, -1]
 endfunction
 
