@@ -513,7 +513,7 @@ function! misc#Ag(str, word) abort
                 \ ).(a:word ? '\\b'.a:str.'\\b' : a:str)
 
     if get(g:, 'Infowin_output', 0)
-        let s:refDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(), 'block': 0,
+        let s:refDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(),
                     \ 'hi': '\v'.substitute(a:str, '\\\\', '\', 'g'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
                     \ 'out_io': 'pipe', 'out_mode': 'nl',
@@ -529,37 +529,15 @@ function s:AgOnExit(...)
     call infoWin#Set(s:refDict)
 endfunction
 
-let s:blockComment = {'python': ['\v^\s*"""', '\v"""\s*$'],
-            \ 'c': ['\v\s*/\*', '\v\*/\s*$'],
-            \ 'cpp': ['\v\s*/\*', '\v\*/\s*$']}
 function! s:AgOnOut(job, msg) abort
-"    if s:refDict.block
-"        return
-"    endif
-
-"    if has_key(s:blockComment, s:refDict.type)
-"        if a:msg =~# s:blockComment[s:refDict.type][0]
-"            let s:refDict.block = 1
-"        endif
-"
-"        if a:msg =~# s:blockComment[s:refDict.type][1]
-"            let s:refDict.block = 0
-"            return
-"        endif
-"
-"        if s:refDict.block
-"           return
-"        endif
-"    endif
-
     let l:list = matchlist(a:msg, '\v^([^:]+):(\d+):(\d+):(.*)$')
     let l:file = fnamemodify(l:list[1], ':.')
 
-    " Skip comment string
+    " Skip line comment string
     if has_key(s:commentChar, s:refDict.type)
-        let l:ind = matchstrpos(l:list[4], s:commentChar[s:refDict.type])[2]
+        let l:ind = matchstrpos(l:list[4], s:commentChar[s:refDict.type])[1] + 1
 
-        if l:ind == 1 || (l:ind != -1 && l:ind < l:list[3] && s:refDict.type !=# 'vim')
+        if l:ind > 0 && l:ind < l:list[3] && s:refDict.type !=# 'vim'
             return
         endif
     endif
