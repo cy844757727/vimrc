@@ -513,7 +513,7 @@ function! misc#Ag(str, word) abort
                 \ ).(a:word ? '\\b'.a:str.'\\b' : a:str)
 
     if get(g:, 'Infowin_output', 0)
-        let s:refDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(),
+        let s:infoDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(),
                     \ 'hi': '\v'.substitute(a:str, '\\\\', '\', 'g'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
                     \ 'out_io': 'pipe', 'out_mode': 'nl',
@@ -526,7 +526,7 @@ function! misc#Ag(str, word) abort
 endfunction
 
 function s:AgOnExit(...)
-    call infoWin#Set(s:refDict)
+    call infoWin#Set(s:infoDict)
 endfunction
 
 function! s:AgOnOut(job, msg) abort
@@ -534,19 +534,19 @@ function! s:AgOnOut(job, msg) abort
     let l:file = fnamemodify(l:list[1], ':.')
 
     " Skip line comment string
-    if has_key(s:commentChar, s:refDict.type)
-        let l:ind = matchstrpos(l:list[4], s:commentChar[s:refDict.type])[1] + 1
+    if has_key(s:commentChar, s:infoDict.type)
+        let l:ind = matchstrpos(l:list[4], s:commentChar[s:infoDict.type])[1] + 1
 
-        if l:ind > 0 && l:ind < l:list[3] && s:refDict.type !=# 'vim'
+        if l:ind > 0 && l:ind < l:list[3] && s:infoDict.type !=# 'vim'
             return
         endif
     endif
 
-    if !has_key(s:refDict.content, l:file)
-        let s:refDict.content[l:file] = []
+    if !has_key(s:infoDict.content, l:file)
+        let s:infoDict.content[l:file] = []
     endif
 
-    let s:refDict.content[l:file] += [printf('%-5s %3s  %s', l:list[2].':', l:list[3].':', trim(l:list[4]))]
+    let s:infoDict.content[l:file] += [printf('%-5s %3s  %s', l:list[2].':', l:list[3].':', trim(l:list[4]))]
 endfunction
 
 

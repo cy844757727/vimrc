@@ -45,6 +45,7 @@ function! infoWin#Set(dict)
     if has_key(a:dict, 'hi')
         call clearmatches()
         call matchadd('InfoWinMatch', a:dict.hi)
+        let b:infoWin.hi = a:dict.hi
     endif
 endfunction
 
@@ -69,6 +70,10 @@ function! infoWin#Toggle(act) abort
     else
         call misc#SwitchToEmptyBuftype()
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
+
+        if has_key(b:infoWin, 'hi')
+            call matchadd('InfoWinMatch', b:infoWin.hi)
+        endif
     endif
 endfunction
 

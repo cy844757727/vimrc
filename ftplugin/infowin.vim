@@ -28,13 +28,13 @@ nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
-" Determine auto preview
-
 let s:auto = 0
+let t:infowin_winid = win_getid(winnr()-1)
 
 augroup InfoWin_
     autocmd!
     autocmd BufWinLeave <buffer> call s:PreviewClose()
+    autocmd BufWinEnter <buffer> let t:infowin_winid = win_getid(winnr()-1)
     autocmd CursorMoved <buffer> if s:auto|call s:PreviewAuto()|endif
 augroup END
 
@@ -52,7 +52,14 @@ function! <SID>Open(way, mode) abort
         return
     endif
 
-    exe a:mode =~# 'keep' ? 'wincmd W' : 'hide'
+    if a:mode !=# 'keep'
+        hide
+    endif
+
+    if !win_gotoid(get(t:, 'infowin_winid', -1))
+        wincmd W
+    endif
+
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
 
     if a:mode =~# 'default' && exists('*misc#EditFile')

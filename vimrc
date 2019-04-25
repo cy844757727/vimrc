@@ -38,7 +38,7 @@ set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 set laststatus=2
 set statusline=\ %{misc#GetWebIcon('head')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(%)
-set statusline+=%{misc#GetWebIcon('filetype')}\ %Y
+set statusline+=%{get(iconicFont#filetype,&ft,'')}\ %Y
 set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc}
 set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
