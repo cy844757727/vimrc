@@ -949,10 +949,11 @@ function! misc#TabLabel(n, ...)
 
     " Append the buffer name
     let l:name = fnamemodify(bufname(l:buflist[l:winnr]), ':t')
+    let l:ft = getbufvar(l:buflist[l:winnr], '&ft')
 
     " Append the glyph & modify name
-    let l:lable = gettabvar(a:n, 'tab_lable',
-                \ misc#GetWebIcon('filetype', l:name).' '.l:name.' '.l:modFlag)
+    let l:lable = gettabvar(a:n, 'tab_lable', iconicFont#icon(empty(l:ft) ?
+                \ matchstr(l:name, '\v\w*$') : l:ft).' '.l:name.' '.l:modFlag)
 
     " Cut out a section of lable
     return 
@@ -967,36 +968,6 @@ function! misc#FoldText()
     return ''.(v:foldend - v:foldstart + 1).' '.getline(v:foldstart)
 endfunction
 
-
-
-function! misc#GetWebIcon(type, ...)
-    let l:file = a:0 > 0 ? a:1 : expand('%')
-
-    if a:type == 'head'
-        return
-                    \ l:file =~ '^!'                      ? 'ﲵ' :
-                    \ getbufvar(l:file, '&bt') ==# 'help' ? '' :
-                    \ exists('g:BMBPSign_Projectized')    ? '' : ''
-    elseif !empty(getbufvar(l:file, '&bt'))
-        return ''
-    elseif a:type == 'fileformat'
-        return getbufvar(l:file, '&binary') ? '' :
-                    \ WebDevIconsGetFileFormatSymbol()
-    elseif a:type == 'filetype'
-        let l:tfile = fnamemodify(l:file, ':t')
-        let l:extend = fnamemodify(l:file, ':e')
-
-        if empty(l:extend) && l:tfile !~# '^\.' && bufexists(l:file)
-            let l:file .= '.'.getbufvar(l:file, '&filetype')
-        elseif getbufvar(l:file, '&buftype') == 'help'
-            return ''
-        endif
-
-        return WebDevIconsGetFileTypeSymbol(l:file)
-    endif
-
-    return ''
-endfunction
 
 
 " Return linter status & job status

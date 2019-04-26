@@ -36,10 +36,10 @@ set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
-set statusline=\ %{misc#GetWebIcon('head')}\ %f%m%r%h%w%<%=
+set statusline=\ %{iconicFont#icon(&bt,exists('g:BMBPSign_Projectized')?'':'')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(%)
-set statusline+=%{get(iconicFont#filetype,&ft,'')}\ %Y
-set statusline+=\ %{misc#GetWebIcon('fileformat')}\ %{&fenc}
+set statusline+=%{iconicFont#icon(empty(&ft)?expand('%:e'):&ft,'')}\ %Y
+set statusline+=\ %{&binary?'':iconicFont#icon(&ff)}\ %{&fenc}
 set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 
 " Global enviroment config
