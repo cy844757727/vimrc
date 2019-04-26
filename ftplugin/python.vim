@@ -56,8 +56,8 @@ function! s:ScriptRun()
                 \ [line('''<'), line('''>')] :
                 \ [search('^#%%', 'bnW'), search('^#%%', 'nW')]
 
-    if !l:lin1 || !l:lin2
-        return
+    if !l:lin2
+        let l:lin2 = line('$')
     endif
 
     let l:lines = filter(getline(l:lin1, l:lin2), "v:val =~ '\\S'")
