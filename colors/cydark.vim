@@ -147,7 +147,7 @@ hi! link Title Conditional
 " infoWin.vim
 call s:HI('InfoWinMatch', ['#c9a936'])
 
-" BMBPSign.vim
+" Sign.vim
 call s:HI('BookMark', ['#cc7832'])
 call s:HI('TodoList', ['#619fc6'])
 call s:HI('BreakPoint', ['#de3d3b'])

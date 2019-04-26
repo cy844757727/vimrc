@@ -2,7 +2,6 @@
 " File: misc.vim
 " Author: Cy <844757727@qq.com>
 " Description: Miscellaneous function
-" Last Modified: 2019年01月07日 星期一 21时03分39秒
 " ==================================================
 
 if exists('g:loaded_a_misc')
@@ -449,7 +448,7 @@ endfunction
 " Debug
 function s:F5Function.debug()
     update
-    let l:breakPoint = BMBPSign#SignRecord('break', 'tbreak')
+    let l:breakPoint = sign#Record('break', 'tbreak')
 
     if index(['sh', 'python', 'perl'], &ft) != -1
         call async#ScriptDbg(expand('%'), l:breakPoint)
@@ -1073,7 +1072,7 @@ function! s:CleanBufferList()
         let l:nr = matchstr(l:str, '\v\d+')
 
         if (index(l:nrs, l:nr + 0) == -1) && empty(matchlist(
-                    \ execute('sign place buffer='.l:nr), '\v\=BMBPSign'))
+                    \ execute('sign place buffer='.l:nr), '\v\=sign'))
             let l:bws += [l:nr]
         endif
     endfor
@@ -1261,11 +1260,11 @@ function! misc#ToggleBottomBar(winType, type)
         call async#TermToggle('off', '')
 
         if a:type == 'book'
-            call BMBPSign#SetQfList(' BookMark', 'book')
+            call sign#SetQfList(' BookMark', 'book')
         elseif a:type == 'break'
-            call BMBPSign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
+            call sign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
         elseif a:type == 'todo'
-            call BMBPSign#SetQfList(' TodoList', 'todo')
+            call sign#SetQfList(' TodoList', 'todo')
         elseif getqflist({'winid': 1}).winid != 0
             cclose
         elseif infoWin#IsVisible()
@@ -1329,7 +1328,7 @@ endfunction
 
 
 function! DebugFile(node)
-    call async#GdbStart(a:node.path.str(), BMBPSign#SignRecord('break', 'tbreak'))
+    call async#GdbStart(a:node.path.str(), sign#Record('break', 'tbreak'))
 endfunction
 
 

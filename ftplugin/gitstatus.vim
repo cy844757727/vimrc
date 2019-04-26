@@ -9,7 +9,7 @@ let b:did_ftplugin = 1
 let b:curL = -1
 let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
-setlocal buftype=nofile
+setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
 setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
 
 nnoremap <buffer> <space> :echo getline('.')<CR>

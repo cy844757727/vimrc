@@ -36,7 +36,7 @@ set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
-set statusline=\ %{iconicFont#icon(&bt,exists('g:BMBPSign_Projectized')?'':'')}\ %f%m%r%h%w%<%=
+set statusline=\ %{iconicFont#icon(&bt,get(g:,'sign_projectized',0)?'':'')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(%)
 set statusline+=%{iconicFont#icon(empty(&ft)?expand('%:e'):&ft,'')}\ %Y
 set statusline+=\ %{&binary?'':iconicFont#icon(&ff)}\ %{&fenc}
@@ -167,15 +167,15 @@ imap <f5> <Esc><f5>
 map! <C-f5> <Esc><C-f5>
 imap <S-f5> <Esc><S-f5>
 map! <C-S-f5> <Esc><C-S-f5>
-" BMBPSign.vim: bookmark, breakpoint
-noremap <silent> <f6>     :call BMBPSign#SignToggle('break')<CR>
-noremap <silent> <C-f6>   :call BMBPSign#SignToggle('tbreak')<CR>
-noremap <silent> <f7>     :call BMBPSign#SignToggle('book')<CR>
-noremap <silent> <C-f7>   :call BMBPSign#SignToggle('todo')<CR>
-noremap <silent> <C-Down> :call BMBPSign#SignJump('book', 'next')<CR>
-noremap <silent> <C-Up>   :call BMBPSign#SignJump('book', 'previous')<CR>
-noremap <silent> \m       :call BMBPSign#SignClear('book')<CR>
-noremap <silent> \b       :call BMBPSign#SignClear('break', 'tbreak')<CR>
+" sign.vim: bookmark, breakpoint
+noremap <silent> <f6>     :call sign#Toggle('break')<CR>
+noremap <silent> <C-f6>   :call sign#Toggle('tbreak')<CR>
+noremap <silent> <f7>     :call sign#Toggle('book')<CR>
+noremap <silent> <C-f7>   :call sign#Toggle('todo')<CR>
+noremap <silent> <C-Down> :call sign#Jump('book', 'next')<CR>
+noremap <silent> <C-Up>   :call sign#Jump('book', 'previous')<CR>
+noremap <silent> \m       :call sign#Clear('book')<CR>
+noremap <silent> \b       :call sign#Clear('break', 'tbreak')<CR>
 map! <f6> <Esc><f6>
 map! <C-f6> <Esc><C-f6>
 map! <f7> <Esc><f7>
@@ -362,8 +362,8 @@ let g:ale_set_quickfix = 1
 " === infowin.vim === {{{1
 let g:Infowin_output = 1
 
-" === BMBPSign.vim === {{{1
-let g:BMBPSign_SpecialBuf = {
+" === sign.vim === {{{1
+let g:sign_specialBuf = {
             \ 'NERD_tree': 'bw|call Vimrc_Nerd()',
             \ '__Tagbar': 'bw|call Vimrc_Tagbar()'
             \ }
@@ -391,7 +391,7 @@ function! Vimrc_Nerd()
     NERDTree
 endfunction
 
-let g:BMBPSign_ProjectType = {
+let g:sign_projectType = {
                 \ 'c':       '~/Documents/WorkSpace',
                 \ 'cpp':     '~/Documents/WorkSpace',
                 \ 'fpga':    '~/Documents/Altera',

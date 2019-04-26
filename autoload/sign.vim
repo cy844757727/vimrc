@@ -1,34 +1,33 @@
 """"""""""""""""""""""""""""""""""""""""""""""
-" File: BMBPSign.vim
+" File: sign.vim
 " Author: Cy <844757727@qq.com>
 " Description: BookMark_TodoList_BreakPoint_ProjectManager
-" Last Modified: 2019年01月15日 星期二 12时46分27秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_a_BMBPSign') || !has('signs')
+if exists('g:loaded_a_sign') || !has('signs')
     finish
 endif
-let g:loaded_a_BMBPSign = 1
+let g:loaded_a_sign = 1
 
 " sign highlight definition
 hi default BookMark    ctermfg=16 guifg=#CC7832
 hi default TodoList    ctermfg=16 guifg=#619FC6
 hi default BreakPoint  ctermfg=16 guifg=#DE3D3B
 
-" Sign name rule: 'BMBPSign' . type [. 'Attr']
-sign define BMBPSignbook       text=  texthl=BookMark
-sign define BMBPSigntodo       text=  texthl=TodoList
-sign define BMBPSignbreak      text=  texthl=BreakPoint
-sign define BMBPSigntbreak     text=  texthl=BreakPoint
-sign define BMBPSignbookAttr   text=. texthl=BookMark
-sign define BMBPSigntodoAttr   text=. texthl=TodoList
-sign define BMBPSignbreakAttr  text=. texthl=BreakPoint
-sign define BMBPSigntbreakAttr text=. texthl=BreakPoint
+" Sign name rule: 'sign' . type [. 'Attr']
+sign define Signbook       text=  texthl=BookMark
+sign define Signtodo       text=  texthl=TodoList
+sign define Signbreak      text=  texthl=BreakPoint
+sign define Signtbreak     text=  texthl=BreakPoint
+sign define SignbookAttr   text=. texthl=BookMark
+sign define SigntodoAttr   text=. texthl=TodoList
+sign define SignbreakAttr  text=. texthl=BreakPoint
+sign define SigntbreakAttr text=. texthl=BreakPoint
 
 " SignVec Record
 " Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
 " Content: 'type': [{'id': ..., 'file': ..., 'attr': ...}]
-let s:signDefHead = 'BMBPSign'
+let s:defPrefix = 'Sign'
 let s:signVec = {
             \ 'book':   [],
             \ 'todo':   [],
@@ -57,13 +56,13 @@ endif
 
 
 " Default project type associate with specified path
-let s:projectType = extend(get(g:, 'BMBPSign_ProjectType', {}),
-            \ {'default': $HOME.'/Documents/'}, 'keep')
-" For $HOME path substitute
+let s:projectType = extend({'default': '~/Documents/'},
+            \ get(g:, 'sign_projectType', {}))
+" For $HOME path substitute (using full path)
 call map(s:projectType, 'fnamemodify(v:val, '':p'')')
 
 " Project record file defination
-let s:projectFile = get(g:, 'BMBPSign_ProjectFile',
+let s:projectFile = get(g:, 'sign_projectFile',
             \ $HOME.(has('unix') || has('mac') ?
             \ '/.vim/.projectitem' :
             \ '/vimfiles/.projectitem'))
@@ -73,12 +72,12 @@ let s:vimInfo = "'50,!,:100,/100,@100"
 let s:sessionOptions = 'blank,buffers,curdir,folds,help,localoptions,tabpages,winsize,terminal'
 
 " Sign type extendsion: customized
-for l:sign in get(g:, 'BMBPSign_TypeExtend', [])
+for l:sign in get(g:, 'sign_typeExtend', [])
     try
         let l:type = l:sign.type
-        let l:name = s:signDefHead.l:type
+        let l:name = s:defPrefix.l:type
         let l:text = get(l:sign, 'text', '')
-        let l:texthl = get(l:sign, 'texthl', 'BMBPSignHl')
+        let l:texthl = get(l:sign, 'texthl', 'signHl')
         let l:linehl = get(l:sign, 'linehl', 'Normal')
         let l:textAttr = get(l:sign, 'textAttr', strpart(l:text.'.'), 0, 2)
         let l:texthlAttr = get(l:sign, 'texthl', l:texthlAttr)
@@ -98,11 +97,11 @@ endfor
 " Attr: Additional attribute
 " Skip: Whether to unset if sign existing (set 1 for merging: forbiden unset)
 function s:SignToggle(file, line, type, attr, skip)
-    let l:def = s:signDefHead.a:type.(empty(a:attr) ? '' : 'Attr')
+    let l:def = s:defPrefix.a:type.(empty(a:attr) ? '' : 'Attr')
     let l:vec = s:signVec[a:type]
     let l:signPlace = execute('sign place file='.a:file)
     let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)  \S+\='.l:def)
-    let g:BMBPSign_SignSetFlag = 1
+    let g:sign_signSetFlag = 1
 
     if empty(l:id)
         " Plus first, ensure id global uniqueness
@@ -204,7 +203,7 @@ function s:SignClear(types)
         endfor
 
         " Empty vec
-        call filter(l:vec, "v:val.attr =~? '\\v&keep'")
+        call filter(l:vec, 'v:val.attr =~? ''\v&keep''')
     endfor
 endfunction
 
@@ -215,19 +214,17 @@ endfunction
 " Signs that have not been cleared are merged
 " Pre: file prefix: does not contain points and underscores
 function s:SignLoad(signFile, types)
-    " Read sign file
-    let l:signList = readfile(a:signFile)
-
-    " Clear sign of types
+    " Clear signs of a:types before loading
     if !empty(a:types)
         call s:SignClear(a:types)
     endif
 
     " Load sign
     let l:types = []
-    for l:str in l:signList
+    for l:str in readfile(a:signFile)
         try
-            let [l:type, l:file, l:line] = split(l:str, '\v[ :]+')[0:2]
+            let [l:type, l:file, l:line, l:attr] =
+                        \ matchlist(l:str, '\v^(\w+)\s*(.*):(\d+)\s*(.*)$')[1:4]
             let l:types += [l:type]
         catch
             " Ignore damaged item
@@ -240,7 +237,6 @@ function s:SignLoad(signFile, types)
             exe 'silent badd ' . l:file
         endif
 
-        let l:attr = matchstr(l:str, '\v(:\d+\s+)\zs.*$')
         call s:SignToggle(l:file, l:line, l:type, l:attr, 1)
     endfor
 
@@ -254,15 +250,15 @@ endfunction
 " File Name: a:pre . s:signFile
 " Types -> list
 function s:SignSave(signFile, types)
-    " Get all valid BMBPSign of types
+    " Get all valid sign of types
     " Content: 'id': lineNr
-    let l:signs = {}
-    let l:def = s:signDefHead.'('.join(a:types, '|').')'
+    let l:signIdLin = {}
+    let l:def = s:defPrefix.'('.join(a:types, '|').')'
     for l:item in split(execute('sign place'), "\n")
         let l:match = matchlist(l:item, '\v    \S+\=(\d+)  id\=(\d+)  \S+\='.l:def)
 
         if !empty(l:match)
-            let l:signs[l:match[2]] = l:match[1]
+            let l:signIdLin[l:match[2]] = l:match[1]
         endif
     endfor
 
@@ -270,25 +266,17 @@ function s:SignSave(signFile, types)
     let l:content = []
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
-            if !has_key(l:signs, l:sign.id)
-                " Ignore invalid data
-                continue
-            endif
-
-            let l:line = l:signs[l:sign.id]
-            let l:content += [l:type.' '.l:sign.file.':'.l:line]
-
-            if !empty(l:sign.attr)
-                let l:content[-1] .= '  '.l:sign.attr
+            if has_key(l:signIdLin, l:sign.id)
+                let l:content += [l:type.' '.l:sign.file.':'.l:signIdLin[l:sign.id].' '.l:sign.attr]
             endif
         endfor
     endfor
 
     " Udate signFile
-    if !empty(l:content)
-        call writefile(l:content, a:signFile)
-    else
+    if empty(l:content)
         call delete(a:signFile)
+    else
+        call writefile(l:content, a:signFile)
     endif
 endfunction
 
@@ -311,7 +299,7 @@ function s:SignFilter(types, file, lin, attrs)
     for l:type in a:types
         for l:sign in s:signVec[l:type]
             let l:list = matchlist(l:signPlace, '\v    \S+\=(\d+)  id\='.
-                        \ l:sign.id.'  \S+\='.s:signDefHead)
+                        \ l:sign.id.'  \S+\='.s:defPrefix)
 
             if !empty(l:list) && l:list[1] =~? a:lin &&
                         \ (empty(a:attrs) || s:StrMatch(l:sign.attr, a:attrs))
@@ -357,7 +345,7 @@ function s:SignAddAttr(types, file, lin, attrs)
     if xor(empty(l:val.sign.attr), len(l:arg) == 1)
         exe 'sign unplace '.l:val.sign.id.' file='.l:val.sign.file
         exe 'sign place '.l:val.sign.id.' line='.l:val.lin.
-                    \ ' name='.s:signDefHead.l:val.type.(len(l:arg) > 1 ? 'Attr' : '').
+                    \ ' name='.s:defPrefix.l:val.type.(len(l:arg) > 1 ? 'Attr' : '').
                     \ ' file='.l:val.sign.file
     endif
 
@@ -432,8 +420,8 @@ function s:ProjectNew(name, type, path) abort
         silent %bwipeout
     endif
 
-    if get(g:, 'BMBPSign_Projectized', 0)
-        let g:BMBPSign_Projectized = 1
+    if get(g:, 'sign_projectized', 0)
+        let g:sign_projectized = 1
         exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
     endif
 endfunction
@@ -446,17 +434,17 @@ function s:ProjectSwitch(sel)
     exe 'set titlestring=\ \ '.matchstr(s:projectItem[a:sel], '\v^\w+')
 
     " Do not load twice
-    if l:path ==# getcwd() && exists('g:BMBPSign_Projectized')
+    if l:path ==# getcwd() && get(g:, 'sign_projectized', 0)
         return
     endif
 
     if l:path !=# getcwd()
         " Save current workspace
-        if exists('g:BMBPSign_SignSetFlag')
+        if get(g:, 'sign_signSetFlag', 0)
             call s:SignSave(s:signFile, keys(s:signVec))
         endif
 
-        if exists('g:BMBPSign_Projectized')
+        if get(g:, 'sign_projectized', 0)
             silent call s:WorkSpaceSave('')
         endif
 
@@ -466,13 +454,7 @@ function s:ProjectSwitch(sel)
         silent! %bwipeout
     endif
 
-    if exists('g:BMBPSign_SignSetFlag')
-        unlet g:BMBPSign_SignSetFlag
-    endif
-
-    if exists('g:BMBPSign_Projectized')
-        unlet g:BMBPSign_Projectized
-    endif
+    unlet! g:sign_signSetFlag g:sign_projectized
 
     " Load target sign & workspace
     if filereadable(s:signFile)
@@ -586,7 +568,7 @@ function s:ProjectManager(argc, argv)
         call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2])
     endif
 
-    if get(g:, 'BMBPSign_Projectized', 0)
+    if get(g:, 'sign_projectized', 0)
         echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
     endif
 endfunction
@@ -599,7 +581,7 @@ function s:WorkSpaceSave(pre)
     silent doautocmd User WorkSpaceSavePre
 
     set noautochdir
-    let g:BMBPSign_Projectized = 1
+    let g:sign_projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
 
@@ -616,8 +598,8 @@ function s:WorkSpaceSave(pre)
     exe 'set viminfo='.l:temp
 
     " For special buf situation(modify session file)
-    if exists('g:BMBPSign_SpecialBuf') && executable('sed')
-        for l:item in items(g:BMBPSign_SpecialBuf)
+    if exists('g:sign_specialBuf') && executable('sed')
+        for l:item in items(g:sign_specialBuf)
             call system("sed -i 's/^file ".l:item[0].".*$/".l:item[1]."/' ".l:sessionFile)
         endfor
     endif
@@ -650,7 +632,7 @@ function s:WorkSpaceLoad(pre)
     silent doautocmd User WorkSpaceLoadPre
 
     " Empty workspace
-    if exists('g:BMBPSign_Projectized')
+    if get(g:, 'sign_projectized', 0)
         silent wall
         call s:SignSave(s:signFile, keys(s:signVec))
         silent %bwipeout!
@@ -658,7 +640,7 @@ function s:WorkSpaceLoad(pre)
     endif
 
     set noautochdir
-    let g:BMBPSign_Projectized = 1
+    let g:sign_projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
 
@@ -691,7 +673,7 @@ function s:QfListSet(title, types)
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace,
-                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:defPrefix)
 
             if empty(l:line) || !filereadable(l:sign.file)
                 continue
@@ -729,7 +711,7 @@ function s:InfoWinSet(title, types)
     for l:type in a:types
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace,
-                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+                        \ '\v    \S+\=(\d+)  id\='.l:sign.id.'  \S+\='.s:defPrefix)
 
             if empty(l:line) || !filereadable(l:sign.file)
                 continue
@@ -768,13 +750,13 @@ endfunction
 
 
 " == Global def =================================== {{{1
-function BMBPSign#Project(...)
+function sign#Project(...)
     call s:ProjectManager(a:0, a:000)
 endfunction
 
 
 " Toggle sign of a type
-function BMBPSign#SignToggle(...)
+function sign#Toggle(...)
     let [l:type, l:file, l:lins, l:attr] = exists('t:dbg') ? 
                 \ ['break', t:dbg.sign.file, [], ''] :
                 \ ['book', expand('%:p'), [], '']
@@ -812,7 +794,7 @@ function BMBPSign#SignToggle(...)
 endfunction
 
 
-function BMBPSign#SignJump(...)
+function sign#Jump(...)
     let [l:types, l:action, l:id, l:attrs, l:file] = [[], '', '', [], '']
 
     for l:i in range(len(a:000))
@@ -843,7 +825,7 @@ endfunction
 
 " Cancel sign of types | ids or delete sign file
 " Pre: file prefix: does not contain points and underscores
-function BMBPSign#SignClear(...)
+function sign#Clear(...)
     let [l:types, l:ids, l:pres] = [[], [], []]
 
     if a:0 == 0
@@ -881,7 +863,7 @@ endfunction
 
 " Save sign to file, Can specify types to save
 " Default saving none
-function BMBPSign#SignSave(...)
+function sign#Save(...)
     let [l:pre, l:types] = ['', []]
 
     for l:arg in a:000
@@ -902,7 +884,7 @@ endfunction
 
 " Load sign from file, Can specify types to clear first
 " Default clearing none
-function BMBPSign#SignLoad(...)
+function sign#Load(...)
     let [l:pre, l:types] = ['', []]
 
     for l:arg in a:000
@@ -924,7 +906,7 @@ endfunction
 
 
 " Append attribution to sign
-function BMBPSign#SignAddAttr(...)
+function sign#AddAttr(...)
     let [l:types, l:file, l:lin, l:attrs] = [[], '', '', []]
 
     for l:i in range(len(a:000))
@@ -952,14 +934,14 @@ function BMBPSign#SignAddAttr(...)
 endfunction
 
 
-function BMBPSign#WorkSpaceSave(...)
+function sign#WorkSpaceSave(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call s:WorkSpaceSave(l:pre)
     call s:SignSave(l:pre . s:signFile, keys(s:signVec))
 endfunction
 
 
-function BMBPSign#WorkSpaceLoad(...)
+function sign#WorkSpaceLoad(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
 
     if !empty(l:pre)
@@ -972,19 +954,19 @@ function BMBPSign#WorkSpaceLoad(...)
 endfunction
 
 
-function BMBPSign#WorkSpaceClear(...)
+function sign#WorkSpaceClear(...)
     let l:pre = a:0 > 0 ? matchstr(a:1, '^[^_.]*') : ''
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
 
-    if empty(l:pre) && exists('g:BMBPSign_Projectized')
-        unlet g:BMBPSign_Projectized
+    if empty(l:pre) && get(g:, 'sign_projectized', 0)
+        unlet! g:sign_projectized
     endif
 endfunction
 
 
 " Set QuickFix window with qfList
-function BMBPSign#SetQfList(...)
+function sign#SetQfList(...)
     if a:0 == 0
         return
     endif
@@ -1009,7 +991,7 @@ function BMBPSign#SetQfList(...)
 endfunction
 
 
-function BMBPSign#SignTypeList()
+function sign#TypeList()
     return keys(s:signVec)
 endfunction
 
@@ -1017,7 +999,7 @@ endfunction
 " Api: Get sign record info for other purpose
 " like breakpoint for debug (format similar to s:SignSave())
 " Return list
-function BMBPSign#SignRecord(...)
+function sign#Record(...)
     let l:signRecord = []
     let l:signPlace = execute('sign place')
 
@@ -1025,14 +1007,10 @@ function BMBPSign#SignRecord(...)
     for l:type in a:000
         for l:sign in get(s:signVec, l:type, [])
             let l:line = matchlist(l:signPlace, '\v    \S+\=(\d+)'.
-                        \ '  id\='.l:sign.id.'  \S+\='.s:signDefHead)
+                        \ '  id\='.l:sign.id.'  \S+\='.s:defPrefix)
 
             if !empty(l:line)
-                let l:signRecord += [l:type.' '.l:sign.file.':'.l:line[1]]
-
-                if !empty(l:sign.attr)
-                    let l:signRecord[-1] .= ' '.l:sign.attr
-                endif
+                let l:signRecord += [l:type.' '.l:sign.file.':'.l:line[1].' '.l:sign.attr]
             endif
         endfor
     endfor

@@ -149,7 +149,7 @@ hi! link Label Conditional
 " infoWin.vim
 hi! link InfoWinMatch Search
 
-" BMBPSign.vim
+" sign.vim
 call s:HI('BookMark', ['#cc7832'])
 call s:HI('TodoList', ['#619fc6'])
 call s:HI('BreakPoint', ['#de3d3b'])

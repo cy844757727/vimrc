@@ -71,7 +71,11 @@ function! <SID>Open(way, mode) abort
 endfunction
 
 
+" Recording for auto preview or open/close window
 let s:currentLine = 0
+" Preview window statusline
+let s:statusline = ' 﩮%f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)%4P '
+
 function <SID>Preview(flag)
     let [l:file, l:lin, l:col] = b:infoWin.getline()
 
@@ -89,11 +93,17 @@ function <SID>Preview(flag)
         endif
 
         wincmd w
-        exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex : 'edit +normal\ '.l:ex.' '.l:file
+
+        if bufnr(l:file) == bufnr('%')
+            exe 'normal '.l:ex
+        else
+            exe 'update|edit +'.'normal\ '.l:ex.' '.l:file
+            let &l:statusline = s:statusline
+        endif
     else
         exe 'belowright vsplit +normal\ '.l:ex.' '.l:file
         let [w:infoWinPreview, w:buftype] = [1, 1]
-        setlocal statusline=\ 﩮%f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)%4P\ 
+        let &l:statusline = s:statusline
     endif
 
     redraw | wincmd W
@@ -116,10 +126,16 @@ function s:PreviewAuto()
 
     wincmd w
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
-    " Auto preview: add 'filetype detect' to avoid no syntax highlight
-    " when editing a new file which is not in buffer list
-    exe bufnr(l:file) == bufnr('%') ? 'normal '.l:ex :
-                \ 'edit +'.(bufexists(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
+
+    if bufnr(l:file) == bufnr('%')
+        exe 'normal '.l:ex
+    else
+        " Auto preview: add 'filetype detect' to avoid no syntax highlight
+        " when editing a new file which is not in buffer list
+        exe 'update|edit +'.(bufexists(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
+        let &l:statusline = s:statusline
+    endif
+
     redraw | wincmd W
 endfunction
 
