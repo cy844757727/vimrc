@@ -79,7 +79,7 @@ endfunction
 function s:VimEnterEvent()
     " Stop load twice when signs already exists
     " Occurs after loading the project
-    if get(g:, 'sign_signSetFlag', 0)
+    if get(g:, 'Sign_signSetFlag', 0)
         return
     endif
 
@@ -92,13 +92,13 @@ endfunction
 
 " AutoCmd for VimLeave event
 " For saving | updating signFile
-" And save workspace when set g:sign_projectized
+" And save workspace when set g:Sign_projectized
 function s:VimLeaveEvent()
-    if get(g:, 'sign_signSetFlag', 0)
+    if get(g:, 'Sign_signSetFlag', 0)
         call sign#Save()
     endif
 
-    if get(g:, 'sign_projectized', 0)
+    if get(g:, 'Sign_projectized', 0)
         call sign#WorkSpaceSave()
     endif
 endfunction

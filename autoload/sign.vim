@@ -28,12 +28,8 @@ sign define SigntbreakAttr text=. texthl=BreakPoint
 " Bookmark: book    " TodoList: todo    " BreakPoint: break, tbreak
 " Content: 'type': [{'id': ..., 'file': ..., 'attr': ...}]
 let s:defPrefix = 'Sign'
-let s:signVec = {
-            \ 'book':   [],
-            \ 'todo':   [],
-            \ 'break':  [],
-            \ 'tbreak': []
-            \ }
+let s:signVec = {'book': [], 'todo': [], 'break': [], 'tbreak': []}
+let s:icon = {'book': '', 'todo': '', 'break': '', 'tbreak': ''}
 
 let s:newSignId = 0
 " Type grouping for qflist
@@ -101,7 +97,7 @@ function s:SignToggle(file, line, type, attr, skip)
     let l:vec = s:signVec[a:type]
     let l:signPlace = execute('sign place file='.a:file)
     let l:id = matchlist(l:signPlace, '\v    \S+\='.a:line.'  id\=(\d+)  \S+\='.l:def)
-    let g:sign_signSetFlag = 1
+    let g:Sign_signSetFlag = 1
 
     if empty(l:id)
         " Plus first, ensure id global uniqueness
@@ -420,8 +416,8 @@ function s:ProjectNew(name, type, path) abort
         silent %bwipeout
     endif
 
-    if get(g:, 'sign_projectized', 0)
-        let g:sign_projectized = 1
+    if get(g:, 'Sign_projectized', 0)
+        let g:Sign_projectized = 1
         exe 'set titlestring=\ \ '.fnamemodify(getcwd(), ':t')
     endif
 endfunction
@@ -434,17 +430,17 @@ function s:ProjectSwitch(sel)
     exe 'set titlestring=\ \ '.matchstr(s:projectItem[a:sel], '\v^\w+')
 
     " Do not load twice
-    if l:path ==# getcwd() && get(g:, 'sign_projectized', 0)
+    if l:path ==# getcwd() && get(g:, 'Sign_projectized', 0)
         return
     endif
 
     if l:path !=# getcwd()
         " Save current workspace
-        if get(g:, 'sign_signSetFlag', 0)
+        if get(g:, 'Sign_signSetFlag', 0)
             call s:SignSave(s:signFile, keys(s:signVec))
         endif
 
-        if get(g:, 'sign_projectized', 0)
+        if get(g:, 'Sign_projectized', 0)
             silent call s:WorkSpaceSave('')
         endif
 
@@ -454,7 +450,7 @@ function s:ProjectSwitch(sel)
         silent! %bwipeout
     endif
 
-    unlet! g:sign_signSetFlag g:sign_projectized
+    unlet! g:Sign_signSetFlag g:Sign_projectized
 
     " Load target sign & workspace
     if filereadable(s:signFile)
@@ -568,7 +564,7 @@ function s:ProjectManager(argc, argv)
         call s:ProjectNew(a:argv[0], a:argv[1], a:argv[2])
     endif
 
-    if get(g:, 'sign_projectized', 0)
+    if get(g:, 'Sign_projectized', 0)
         echo substitute(s:projectItem[0], ' '.$HOME, ' ~', '')
     endif
 endfunction
@@ -581,7 +577,7 @@ function s:WorkSpaceSave(pre)
     silent doautocmd User WorkSpaceSavePre
 
     set noautochdir
-    let g:sign_projectized = 1
+    let g:Sign_projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
 
@@ -632,7 +628,7 @@ function s:WorkSpaceLoad(pre)
     silent doautocmd User WorkSpaceLoadPre
 
     " Empty workspace
-    if get(g:, 'sign_projectized', 0)
+    if get(g:, 'Sign_projectized', 0)
         silent wall
         call s:SignSave(s:signFile, keys(s:signVec))
         silent %bwipeout!
@@ -640,7 +636,7 @@ function s:WorkSpaceLoad(pre)
     endif
 
     set noautochdir
-    let g:sign_projectized = 1
+    let g:Sign_projectized = 1
     let l:sessionFile = a:pre.s:sessionFile
     let l:vimInfoFile = a:pre.s:vimInfoFile
 
@@ -728,7 +724,7 @@ function s:InfoWinSet(title, types)
                         \ printf('%-5s %s   %s', l:line[1].':', (trim(executable('sed') ? 
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
                         \ getbufline(l:sign.file, l:line[1])[0])),
-                        \ '['.l:sign.id.(empty(l:sign.attr) ? '' : ',  '.l:sign.attr).']')
+                        \ '['.s:icon[l:type].' '.l:sign.id.(empty(l:sign.attr) ? '' : ':  '.l:sign.attr).']')
                         \ ]
         endfor
     endfor
@@ -959,8 +955,8 @@ function sign#WorkSpaceClear(...)
     call delete(l:pre . s:sessionFile)
     call delete(l:pre . s:vimInfoFile)
 
-    if empty(l:pre) && get(g:, 'sign_projectized', 0)
-        unlet! g:sign_projectized
+    if empty(l:pre) && get(g:, 'Sign_projectized', 0)
+        unlet! g:Sign_projectized
     endif
 endfunction
 

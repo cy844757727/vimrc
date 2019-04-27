@@ -3,7 +3,7 @@
 "
 " Dict: 'title': '', 'content': {'file1': [], ...}, 'hi': '',
 "
-let s:bufnr = bufnr('infoWin')
+let s:bufnr = bufnr('^__infoWin__$')
 if getbufvar(s:bufnr, '&filetype') !=# 'infowin'
     let s:bufnr = -1
 endif
@@ -19,7 +19,7 @@ function! infoWin#Set(dict)
 
     if !bufexists(s:bufnr)
         call misc#SwitchToEmptyBuftype()
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new __infoWin__'
         let s:bufnr = bufnr('%')
     elseif bufwinnr(s:bufnr) != -1
         exe bufwinnr(s:bufnr).'wincmd w'
@@ -64,7 +64,7 @@ function! infoWin#Toggle(act) abort
         return
     elseif !bufexists(get(s:, 'bufnr', -1))
         call misc#SwitchToEmptyBuftype()
-        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new infoWin'
+        exe 'belowright '.get(g:, 'BottomWinHeight', 15).'new __infoWin__'
         setlocal winfixheight readonly nomodifiable filetype=infowin statusline=\ [InfoWin]
         let s:bufnr = bufnr('%')
     else
@@ -78,7 +78,7 @@ function! infoWin#Toggle(act) abort
 endfunction
 
 function infoWin#IsVisible()
-    return bufwinnr(s:bufnr) != -1
+    return max[bufwinnr(s:bufnr), 0]
 endfunction
 
 function infoWin#GetVal(list)

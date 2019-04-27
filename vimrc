@@ -36,7 +36,7 @@ set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
-set statusline=\ %{iconicFont#icon(&bt,get(g:,'sign_projectized',0)?'':'')}\ %f%m%r%h%w%<%=
+set statusline=\ %{iconicFont#icon(&bt,get(g:,'Sign_projectized',0)?'':'')}\ %f%m%r%h%w%<%=
 set statusline+=%{misc#StatuslineExtra()}%3(%)
 set statusline+=%{iconicFont#icon(empty(&ft)?expand('%:e'):&ft,'')}\ %Y
 set statusline+=\ %{&binary?'':iconicFont#icon(&ff)}\ %{&fenc}
@@ -174,8 +174,6 @@ noremap <silent> <f7>     :call sign#Toggle('book')<CR>
 noremap <silent> <C-f7>   :call sign#Toggle('todo')<CR>
 noremap <silent> <C-Down> :call sign#Jump('book', 'next')<CR>
 noremap <silent> <C-Up>   :call sign#Jump('book', 'previous')<CR>
-noremap <silent> \m       :call sign#Clear('book')<CR>
-noremap <silent> \b       :call sign#Clear('break', 'tbreak')<CR>
 map! <f6> <Esc><f6>
 map! <C-f6> <Esc><C-f6>
 map! <f7> <Esc><f7>

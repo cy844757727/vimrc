@@ -1279,7 +1279,7 @@ function! misc#ToggleBottomBar(winType, type)
 endfunction
 
 " radix {{{1
-function s:Num2Radix(list, radix, map, prefix) abort
+function s:NumberBaseConversion(list, radix, map, prefix) abort
     let l:out = []
     for l:num in type(a:list) == type([]) ? a:list : [a:list]
         let l:str = ''
@@ -1297,16 +1297,16 @@ function s:Num2Radix(list, radix, map, prefix) abort
 endfunction
 
 function misc#Hex(list, ...)
-    return s:Num2Radix(a:list, 16,
+    return s:NumberBaseConversion(a:list, 16,
                 \ {'10': 'a', '11': 'b', '12': 'c', '13': 'd', '14': 'e', '15': 'f'}, get(a:000, 0, ''))
 endfunction
 
 function misc#Bin(list, ...)
-    return s:Num2Radix(a:list, 2, {}, get(a:000, 0, ''))
+    return s:NumberBaseConversion(a:list, 2, {}, get(a:000, 0, ''))
 endfunction
 
 function misc#Oct(list, ...)
-    return s:Num2Radix(a:list, 8, {}, get(a:000, 0, ''))
+    return s:NumberBaseConversion(a:list, 8, {}, get(a:000, 0, ''))
 endfunction
 
 " #################################################################### {{{1
