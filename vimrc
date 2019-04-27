@@ -208,6 +208,7 @@ map! <C-f12> <Esc><C-f12>
 map! <S-f12> <Esc><S-f12>
 map! <C-S-f12> <Esc><C-S-f12>
 " Terminal map
+tnoremap <silent> <f4> <C-w>N:call execute(['norm a', 'call misc#WinResize()'])<CR>
 tnoremap <silent> <f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix', '')"])<CR>
 tnoremap <silent> <C-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','book')"])<CR>
 tnoremap <silent> <S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('quickfix','todo')"])<CR>
@@ -358,7 +359,7 @@ let g:ale_set_loclist = 0
 let g:ale_set_quickfix = 1
 
 " === infowin.vim === {{{1
-let g:Infowin_output = 1
+let g:InfoWin_output = 1
 
 " === sign.vim === {{{1
 let g:sign_specialBuf = {

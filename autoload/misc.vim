@@ -390,7 +390,7 @@ function! misc#F5Function(type) range abort
         diffupdate
     elseif exists('t:git_tabpageManager')
         call git#Refresh()
-    elseif misc#SwitchToEmptyBuftype() && has_key(s:F5Function, a:type)
+    elseif has_key(s:F5Function, a:type) && misc#SwitchToEmptyBuftype()
         call s:F5Function[a:type]()
     endif
 endfunction
@@ -497,7 +497,7 @@ let s:AgFileFilter = {
 
 function! misc#Ag(str, word) abort
     if a:str !~ '\S'
-        if exists('g:Infowin_output')
+        if exists('g:InfoWin_output')
             call infoWin#Toggle('toggle')
         endif
 
@@ -511,7 +511,7 @@ function! misc#Ag(str, word) abort
                 \ '-G '.s:AgFileFilter[l:type].' ' : ''
                 \ ).(a:word ? '\\b'.a:str.'\\b' : a:str)
 
-    if get(g:, 'Infowin_output', 0)
+    if get(g:, 'InfoWin_output', 0)
         let s:infoDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(),
                     \ 'hi': '\v'.substitute(a:str, '\\\\', '\', 'g'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
@@ -1138,24 +1138,35 @@ endfunction
 " === Window resize or sidebar, bottombar toggle {{{1
 " 最大化窗口/恢复
 function! misc#WinResize()
-    if !empty(&buftype)
-        return
-    endif
-
-    if exists('t:MaxmizeWin')
-        let l:winnr = win_id2win(t:MaxmizeWin[2])
-        exe l:winnr.'resize '.t:MaxmizeWin[0]
-        exe 'vert '.l:winnr.'resize '.t:MaxmizeWin[1]
-
-        if t:MaxmizeWin[2] == win_getid()
-            unlet t:MaxmizeWin
-            return
+    if &filetype ==# 'tagbar'
+        normal x
+    elseif &filetype ==# 'nerdtree'
+        normal A
+    elseif &buftype ==# 'terminal'
+        let l:height = get(g:, 'BottomWinHeight', 15)
+        exe 'resize '.(winheight(0) != l:height ? l:height : '')
+    elseif exists('b:WinResize')
+        if type(b:WinResize) == type(function('add'))
+            call b:WinResize()
+        else
+            call execute(b:WinResize)
         endif
-    endif
+    elseif empty(&buftype)
+        if exists('t:MaxmizeWin')
+            let l:winnr = win_id2win(t:MaxmizeWin[2])
+            exe l:winnr.'resize '.t:MaxmizeWin[0]
+            exe 'vert '.l:winnr.'resize '.t:MaxmizeWin[1]
 
-    let t:MaxmizeWin = [winheight(0), winwidth(0), win_getid()]
-    exe 'resize '.max([float2nr(0.8 * &lines), t:MaxmizeWin[0]])
-    exe 'vert resize '.max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
+            if t:MaxmizeWin[2] == win_getid()
+                unlet t:MaxmizeWin
+                return
+            endif
+        endif
+
+        let t:MaxmizeWin = [winheight(0), winwidth(0), win_getid()]
+        exe 'resize '.max([float2nr(0.8 * &lines), t:MaxmizeWin[0]])
+        exe 'vert resize '.max([float2nr(0.8 * &columns), t:MaxmizeWin[1]])
+    endif
 endfunction
 
 
@@ -1279,7 +1290,7 @@ function! misc#ToggleBottomBar(winType, type)
 endfunction
 
 " radix {{{1
-function s:NumberBaseConversion(list, radix, map, prefix) abort
+function s:NumBaseConvert(list, radix, map, prefix) abort
     let l:out = []
     for l:num in type(a:list) == type([]) ? a:list : [a:list]
         let l:str = ''
@@ -1297,16 +1308,16 @@ function s:NumberBaseConversion(list, radix, map, prefix) abort
 endfunction
 
 function misc#Hex(list, ...)
-    return s:NumberBaseConversion(a:list, 16,
-                \ {'10': 'a', '11': 'b', '12': 'c', '13': 'd', '14': 'e', '15': 'f'}, get(a:000, 0, ''))
+    return s:NumBaseConvert(a:list, 16, {'10': 'a', '11': 'b', '12': 'c',
+                \ '13': 'd', '14': 'e', '15': 'f'}, get(a:000, 0, '0x'))
 endfunction
 
 function misc#Bin(list, ...)
-    return s:NumberBaseConversion(a:list, 2, {}, get(a:000, 0, ''))
+    return s:NumBaseConvert(a:list, 2, {}, get(a:000, 0, '0b'))
 endfunction
 
 function misc#Oct(list, ...)
-    return s:NumberBaseConversion(a:list, 8, {}, get(a:000, 0, ''))
+    return s:NumBaseConvert(a:list, 8, {}, get(a:000, 0, '0'))
 endfunction
 
 " #################################################################### {{{1
@@ -1342,7 +1353,7 @@ call NERDTreeAddKeyMap({
             \ 'key': 'dbg',
             \ 'callback': 'DebugFile',
             \ 'quickhelpText': 'Debug file by gdb tool',
-            \ 'scope': 'Node'
+            \ 'scope': 'FileNode'
             \ })
 
 " vim: foldmethod=marker

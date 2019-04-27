@@ -16,12 +16,13 @@ nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'default')<CR>
 nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'big')<CR>
 nnoremap <silent> <buffer> e :call <SID>Open('edit', 'default')<CR>
 nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
-nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
-function! <SID>MaxMin()
+function! s:MaxMin()
     let l:height = get(g:, 'BottomWinHeight', 15)
     exe 'resize '.(winheight(0) != l:height ? l:height : '')
 endfunction
+
+let b:WinResize = function('s:MaxMin')
 
 function! <SID>Open(way, mode) abort
     let l:match = split(matchstr(getline('.'), '\v^[^|]+\|[^|]*\|'), '\v[ |]+')

@@ -71,14 +71,14 @@ function! infoWin#Toggle(act) abort
         call misc#SwitchToEmptyBuftype()
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
 
-        if has_key(b:infoWin, 'hi')
+        if has_key(get(b:, 'infoWin', {}), 'hi')
             call matchadd('InfoWinMatch', b:infoWin.hi)
         endif
     endif
 endfunction
 
 function infoWin#IsVisible()
-    return max[bufwinnr(s:bufnr), 0]
+    return max([bufwinnr(s:bufnr), 0])
 endfunction
 
 function infoWin#GetVal(list)

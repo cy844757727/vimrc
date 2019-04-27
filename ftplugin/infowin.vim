@@ -26,7 +26,6 @@ nnoremap <silent> <buffer> p :call <SID>Preview('noauto')<CR>
 nnoremap <silent> <buffer> P :call <SID>Preview('auto')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
-nnoremap <silent> <buffer> <C-w>_ :call <SID>MaxMin()<CR>
 
 let s:auto = 0
 let t:infowin_winid = win_getid(winnr()-1)
@@ -39,11 +38,12 @@ augroup InfoWin_
 augroup END
 
 
-function! <SID>MaxMin()
+function! s:MaxMin()
     let l:height = get(g:, 'BottomWinHeight', 15)
     exe 'resize '.(winheight(0) != l:height ? l:height : '')
 endfunction
 
+let b:WinResize = function('s:MaxMin')
 
 function! <SID>Open(way, mode) abort
     let [l:file, l:lin, l:col] = b:infoWin.getline()

@@ -972,7 +972,7 @@ function sign#SetQfList(...)
 
     if empty(l:types)
         return
-    elseif get(g:, 'Infowin_output', 0)
+    elseif get(g:, 'InfoWin_output', 0)
         cclose
         call s:InfoWinSet(a:1, l:types)
     else
