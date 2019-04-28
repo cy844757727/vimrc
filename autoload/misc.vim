@@ -989,7 +989,7 @@ function! misc#StatuslineExtra() abort
         let l:list += [' '.l:all_non_errors]
     endif
 
-    if l:jobs > 0
+    if l:jobs > 0 && !exists('w:buftype')
         let l:list += ['& '.l:jobs]
     endif
 

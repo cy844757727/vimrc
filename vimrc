@@ -1,6 +1,6 @@
 " Basic configure ======================
 " """"""""""""""""""""""""""""""""""""""""""""
-" The following four lines are placed at the front 
+" The following four lines are placed at the front
 " so that there is no flash at startup
 syntax on
 set termguicolors
@@ -36,8 +36,8 @@ set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
-set statusline=\ %{iconicFont#icon(&bt,get(g:,'Sign_projectized',0)?'':'')}\ %f%m%r%h%w%<%=
-set statusline+=%{misc#StatuslineExtra()}%3(%)
+set statusline=\ %{iconicFont#icon(&bt,get(g:,'Sign_projectized',0)?'':&key?'':'')}
+set statusline+=\ %f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)
 set statusline+=%{iconicFont#icon(empty(&ft)?expand('%:e'):&ft,'')}\ %Y
 set statusline+=\ %{&binary?'':iconicFont#icon(&ff)}\ %{&fenc}
 set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
@@ -456,18 +456,18 @@ endfunction
 " === webdevicons.vim === {{{1
 " Extended icon
 let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
-            \ 'v':     '', 'vh':   '', 'vp':   '', 'vt':   '',
-            \ 'vg':    '', 'vo':   '', 'vhdl': '', 'vhd':  '',
-            \ 'sv':    '', 'svi':  '', 'svh':  '', 'svp':  '',
-            \ 'sva':   '',
-            \ 'mp3':   '', 'aac':  '', 'flac': '', 'ape':  '',
-            \ 'ogg':   '', 'mp4':  '', 'avi':  '', 'mkv':  '',
-            \ 'jar':   '', 'zip':  '', 'rar':  '', 'gzip': '',
-            \ 'gz':    '', '7z':   '', 'tar':  '',
-            \ 'xls':   '', 'xlsx': '', 'doc':  '', 'docx': '',
-            \ 'ppt':   '', 'pptx': '', 'text': '', 'pdf':  '',
-            \ 'iso':   '', 'git':  '', 'help': '',
-            \ 'tags':  '', 'tag':  ''
+            \ 'v':    '', 'vh':   '', 'vp':   '', 'vt':   '',
+            \ 'vg':   '', 'vo':   '', 'vhdl': '', 'vhd':  '',
+            \ 'sv':   '', 'svi':  '', 'svh':  '', 'svp':  '',
+            \ 'sva':  '',
+            \ 'mp3':  '', 'aac':  '', 'flac': '', 'ape':  '',
+            \ 'ogg':  '', 'mp4':  '', 'avi':  '', 'mkv':  '',
+            \ 'jar':  '', 'zip':  '', 'rar':  '', 'gzip': '',
+            \ 'gz':   '', '7z':   '', 'tar':  '',
+            \ 'xls':  '', 'xlsx': '', 'doc':  '', 'docx': '',
+            \ 'ppt':  '', 'pptx': '', 'text': '', 'pdf':  '',
+            \ 'iso':  '', 'git':  '', 'help': '',
+            \ 'tags': '', 'tag':  ''
             \ }
 
 let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
