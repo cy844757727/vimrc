@@ -36,7 +36,7 @@ set encoding=utf-8 fileformats=unix,dos,mac
 set fileencodings=utf-8,gb18030,gbk,gb2312,big5,ucs-bom,shift-jis,utf-16,latin1
 " Statusline config
 set laststatus=2
-set statusline=\ %{iconicFont#icon(&bt,get(g:,'Sign_projectized',0)?'':&key?'':'')}
+set statusline=\ %{iconicFont#icon(&bt,get(g:,'Sign_projectized',0)?'':empty(&key)?'':'')}
 set statusline+=\ %f%m%r%h%w%<%=%{misc#StatuslineExtra()}%3(%)
 set statusline+=%{iconicFont#icon(empty(&ft)?expand('%:e'):&ft,'')}\ %Y
 set statusline+=\ %{&binary?'':iconicFont#icon(&ff)}\ %{&fenc}

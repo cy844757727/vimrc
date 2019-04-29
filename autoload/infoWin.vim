@@ -42,9 +42,13 @@ function! infoWin#Set(dict)
     exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.line('$').
                 \ '%4(%)\ '.b:infoWin.count[-2].'\ \ '.b:infoWin.count[-1].'\ '
 
+    if has_key(b:infoWin, 'matchId')
+        call matchdelete(b:infoWin.matchId)
+        unlet b:infoWin.matchId b:infoWin.hi
+    endif
+
     if has_key(a:dict, 'hi')
-        call clearmatches()
-        call matchadd('InfoWinMatch', a:dict.hi)
+        let b:infoWin.matchId = matchadd('InfoWinMatch', a:dict.hi)
         let b:infoWin.hi = a:dict.hi
     endif
 endfunction
