@@ -69,7 +69,7 @@ function! Sign_CompleteType(L, C, P)
 endfunction
 
 function! Sign_CompleteTypeFile(L, C, P)
-    return Sign_CompleteSignFile(a:L, a:C, a:P).
+    return Sign_CompleteFile(a:L, a:C, a:P).
                 \ "\n|\n".
                 \ Sign_CompleteType(a:L, a:C, a:P)
 endfunction

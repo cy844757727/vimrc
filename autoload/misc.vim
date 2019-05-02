@@ -92,7 +92,7 @@ endfunction
 " Delete vim global var, environment, command
 function s:EnvVimDelete(dict)
     for [l:key, l:val] in items(g:ENV_NONE)
-        exe 
+        exe
                     \ l:val ==# 'g' ? 'unlet! g:'.l:key :
                     \ l:val ==# 'e' ? 'let '.l:key.'=''''' :
                     \ l:val ==# 'm' ? 'nunmap '.l:key :
@@ -251,7 +251,7 @@ function misc#CompleteEnv(L, C, P)
 
     " Match key, global var
     if a:C[:a:P] =~# '\v(^\w+|;)\zs\s+[^=;]*$'
-        return join(['-i', '-c', '-p'] + filter(keys(g:ENV), 'v:val[0] !=# ''.''') + 
+        return join(['-i', '-c', '-p'] + filter(keys(g:ENV), 'v:val[0] !=# ''.''') +
                     \ filter(keys(g:), "v:val[0] =~# '[A-Z]'"), "\n")
     endif
 
@@ -552,7 +552,7 @@ endfunction
 " === Auto record file history in a window {{{1
 " BufEnter enent trigger (w:bufHis)
 function! s:BufHisRecord()
-    if !empty(&buftype) || expand('%') =~# '\v^/|^$'
+    if !empty(&buftype) || expand('%') =~# '\v^/|^$' || exists('w:buftype')
         return
     endif
 
@@ -955,7 +955,7 @@ function! misc#TabLabel(n, ...)
                 \ matchstr(l:name, '\v\w*$') : l:ft).' '.l:name.' '.l:modFlag)
 
     " Cut out a section of lable
-    return 
+    return
                 \ a:0 == 0 ? l:lable :
                 \ a:1 >= 0 ? strcharpart(l:lable, 0, a:1) :
                 \ strcharpart(l:lable, a:1)
@@ -1045,6 +1045,7 @@ function! misc#Information(act) range
                     \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
                     \ '  '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
     elseif a:act ==# 'visual'
+"        normal \<Esc>
         exe 'normal '.visualmode()
         redraw
         echo 'Lines: '.(a:lastline-a:firstline+1).'/'.l:lines.'   '.
@@ -1276,7 +1277,7 @@ function! misc#ToggleBottomBar(winType, type)
             call sign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
         elseif a:type == 'todo'
             call sign#SetQfList(' TodoList', 'todo')
-        elseif getqflist({'winid': 1}).winid != 0
+        elseif get(getqflist({'winid': 1}), 'winid', 0) != 0
             cclose
         elseif infoWin#IsVisible()
             call infoWin#Toggle('off')

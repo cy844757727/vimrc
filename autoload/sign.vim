@@ -678,7 +678,7 @@ function s:QfListSet(title, types)
             endif
 
             let l:text = '['.l:sign.id.':'.l:type.(empty(l:sign.attr) ? '' : ':'.l:sign.attr).'] '.(
-                        \ executable('sed') ? 
+                        \ executable('sed') ?
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
                         \ getbufline(l:sign.file, l:line[1])[0]
                         \ )
@@ -721,7 +721,7 @@ function s:InfoWinSet(title, types)
             endif
 
             let l:dict.content[l:file] += [
-                        \ printf('%-5s %s   %s', l:line[1].':', (trim(executable('sed') ? 
+                        \ printf('%-5s %s   %s', l:line[1].':', (trim(executable('sed') ?
                         \ system('sed -n '.l:line[1].'p '.l:sign.file)[:-2] :
                         \ getbufline(l:sign.file, l:line[1])[0])),
                         \ '['.s:icon[l:type].' '.l:sign.id.(empty(l:sign.attr) ? '' : ':  '.l:sign.attr).']')
@@ -753,7 +753,7 @@ endfunction
 
 " Toggle sign of a type
 function sign#Toggle(...)
-    let [l:type, l:file, l:lins, l:attr] = exists('t:dbg') ? 
+    let [l:type, l:file, l:lins, l:attr] = exists('t:dbg') ?
                 \ ['break', t:dbg.sign.file, [], ''] :
                 \ ['book', expand('%:p'), [], '']
 

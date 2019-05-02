@@ -217,7 +217,7 @@ let s:menuUI2 = "** Git Menu:\n".
             \ "    (m)erge branch         <git merge>\n".
             \ "    (r)ebase branch        <git rebash>\n".
             \ "    (d)iff tool            <git difftool -y>\n".
-            \ "    (M)erge tool           <git mergetool -y>\n" 
+            \ "    (M)erge tool           <git mergetool -y>\n"
 
 let s:sep = repeat('=', 50)
 let s:menu2 = {'a': {

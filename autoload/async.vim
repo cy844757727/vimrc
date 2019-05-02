@@ -69,10 +69,10 @@ function! async#TermToggle(action, cmd) abort
     endif
 
     let [l:cmd, l:name, l:postCmd] = s:termAnalyzeCmd(a:cmd)
-    let [l:winnr, l:bufnr, l:other] = 
+    let [l:winnr, l:bufnr, l:other] =
                 \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
 
-    if l:winnr != -1 
+    if l:winnr != -1
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
     elseif l:cmd == g:Async_shell && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
@@ -194,7 +194,7 @@ endfunction
 " With Quickfix output
 function! async#JobRunOut(bang, cmd, extra) abort
     let l:extra = extend({'title': 'Async: '.a:cmd, 'flag': '[qf]'}, a:extra)
-    call setqflist([], 'r', {'lines': [], 'title': l:extra.title}) 
+    call setqflist([], 'r', {'lines': [], 'title': l:extra.title})
     call async#JobRun(a:bang, a:cmd, {
                 \ 'out_io': 'pipe', 'err_io': 'pipe',
                 \ 'callback': function('s:JobCallBack', [get(l:extra, 'efm', &efm)]),
@@ -563,7 +563,7 @@ function <SID>DbgHelpDoc()
     for [l:key, l:action] in items(t:dbg.map)
         let l:s .= printf('%-15s', l:key.':'.l:action).(l:i % 3 ? '' : "\n  ")
         let l:i += 1
-    endfor 
+    endfor
 
     echo l:s
 endfunction
@@ -797,7 +797,7 @@ function! <SID>DbgVarDispaly()
 endfunction
 
 
-" 
+"
 function! s:DbgOnExit(job, status)
     if has_key(t:dbg.sign, 'file')
         exe 'sign unplace '.t:dbg.sign.id.' file='.t:dbg.sign.file

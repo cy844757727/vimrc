@@ -104,7 +104,7 @@ let s:indent = '  '
 function! s:DisplayStr(content, indent) abort
     let l:list = []
     let l:level = strdisplaywidth(a:indent) / strdisplaywidth(s:indent)
-    
+
     " Data statistics
     if l:level > len(b:infoWin.count) - 1
         let b:infoWin.count += [len(keys(a:content))]

@@ -78,9 +78,9 @@ function! iconicFont#icon(key, ...)
 
     return
                 \ get(s:fileformat, a:key,
-                \ get(s:buftype, a:key, 
-                \ get(s:filetype, a:key, 
-                \ get(s:extension, a:key, 
+                \ get(s:buftype, a:key,
+                \ get(s:filetype, a:key,
+                \ get(s:extension, a:key,
                 \ get(a:000, 0, '')))))
 endfunction
 
