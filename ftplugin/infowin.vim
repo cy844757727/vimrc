@@ -132,7 +132,7 @@ function s:PreviewAuto()
     else
         " Auto preview: add 'filetype detect' to avoid no syntax highlight
         " when editing a new file which is not in buffer list
-        exe 'update|edit +'.(bufexists(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
+        exe 'update|edit +'.(bufloaded(l:file) ?  '' : 'filetype\ detect|').'normal\ '.l:ex.' '.l:file
         let &l:statusline = s:statusline
     endif
 

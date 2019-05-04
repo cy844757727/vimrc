@@ -29,7 +29,7 @@ augroup END
 let g:ENV = extend(get(g:, 'ENV', {}), get(g:, 'env', {}), 'keep')
 let g:ENV_DEFAULT = get(g:, 'ENV_DEFAULT', {})
 let g:ENV_NONE = get(g:, 'ENV_NONE', {})
-" none: 'global': 'g', 'option': 'o', 'environment': 'e',
+" 'global': 'g', 'option': 'o', 'environment': 'e',
 " 'command': 'c', 'nnoremap': 'm'
 " Do not lock at the beginning, the loading order (event: load viminfo) will affect the results.
 " When loading this plugin before loading viminfo file
@@ -48,7 +48,7 @@ function! misc#EnvSet(config) abort
     let l:type = type(a:config)
 
     if l:type == type('') && !s:EnvParse(a:config)
-        let [l:remove, l:add, l:print] = [[], {}, []]
+        let l:print = []
 
         for l:item in split(a:config, '\v\s*;\s*')
             let l:list = split(l:item, '\v\s*\=\s*')
@@ -56,21 +56,23 @@ function! misc#EnvSet(config) abort
             if empty(l:list)
                 continue
             elseif l:item =~# '\M=$'
-                let l:remove += [l:list[0]]
+                call s:EnvRemove(l:list[0])
             elseif len(l:list) == 1
                 let l:print += [l:list[0]]
             elseif len(l:list) == 2
-                let l:add[l:list[0]] = l:list[1]
+                call s:EnvAdd(l:list[0], l:list[1])
             endif
         endfor
 
-        call s:EnvRemove(l:remove)
-        call s:EnvAdd(l:add)
         call s:EnvPrint(l:print)
     elseif l:type == type([])
-        call s:EnvRemove(a:config)
+        for l:key in a:config
+            call s:EnvRemove(l:key)
+        endfor
     elseif l:type == type({})
-        call s:EnvAdd(a:config)
+        for [l:key, l:Val] in items(a:config)
+            call s:EnvAdd(l:key, l:Val)
+        endfor
     endif
 
     lockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
@@ -78,26 +80,22 @@ endfunction
 
 
 " Set vim global var, option, environment, command
-function s:EnvVimSet(dict)
-    for [l:key, l:Val] in items(a:dict)
-        exe
-                    \ l:key[0] =~# '[A-Z]' ? 'let g:'.l:key.'='.string(l:Val) :
-                    \ l:key[0] ==# '&'     ? 'let &g:'.l:key[1:].'='.string(l:Val) :
-                    \ l:key[0] ==# '$'     ? 'let '.l:key.'='.string(l:Val) :
-                    \ l:key[0] ==# '\'     ? 'nnoremap '.l:key.' '.l:Val :
-                    \ l:key[0] ==# ':'     ? 'command! '.l:key[1:].' '.l:Val : ''
-    endfor
+function s:EnvVimSet(key, Val)
+    exe
+                \ a:key[0] =~# '[A-Z]' ? 'let g:'.a:key.'='.string(a:Val) :
+                \ a:key[0] ==# '&'     ? 'let &g:'.a:key[1:].'='.string(a:Val) :
+                \ a:key[0] ==# '$'     ? 'let '.a:key.'='.string(a:Val) :
+                \ a:key[0] ==# '\'     ? 'nnoremap '.a:key.' '.a:Val.'<CR>' :
+                \ a:key[0] ==# ':'     ? 'command! '.a:key[1:].' '.a:Val : ''
 endfunction
 
 " Delete vim global var, environment, command
-function s:EnvVimDelete(dict)
-    for [l:key, l:val] in items(g:ENV_NONE)
-        exe
-                    \ l:val ==# 'g' ? 'unlet! g:'.l:key :
-                    \ l:val ==# 'e' ? 'let '.l:key.'=''''' :
-                    \ l:val ==# 'm' ? 'nunmap '.l:key :
-                    \ l:val ==# 'c' ? 'delcommand '.l:key[1:] : ''
-    endfor
+function s:EnvVimDelete(key, Val)
+    exe
+                \ a:Val ==# 'g' ? 'unlet! g:'.a:key :
+                \ a:Val ==# 'e' ? 'let '.a:key.'=''''' :
+                \ a:Val ==# 'm' ? 'nunmap '.a:key :
+                \ a:Val ==# 'c' ? 'delcommand '.a:key[1:] : ''
 endfunction
 
 " Parse option:
@@ -112,12 +110,18 @@ function s:EnvParse(opt)
     elseif a:opt ==# '-d'
         echo 'Default:' g:ENV_DEFAULT "\n---\nNone:" g:ENV_NONE
     elseif a:opt ==# '-i'
-        call s:EnvVimSet(g:ENV)
+        for [l:key, l:Val] in items(g:ENV)
+            call s:EnvVimSet(l:key, l:Val)
+        endfor
     elseif a:opt ==# '-c'
         " Recovery environment
-        call s:EnvVimSet(g:ENV_DEFAULT)
+        for [l:key, l:Val] in items(g:ENV_DEFAULT)
+            call s:EnvVimSet(l:key, l:Val)
+        endfor
         " Delete environment
-        call s:EnvVimDelete(g:ENV_NONE)
+        for [l:key, l:Val] in items(g:ENV_DEFAULT)
+            call s:EnvVimDelete(l:key, l:Val)
+        endfor
         call extend(filter(g:ENV, 'v:key[0] ==# ''.'''), get(g:, 'env', {}))
         let [g:ENV_DEFAULT, g:ENV_NONE] = [{}, {}]
     elseif a:opt ==# '-p'
@@ -133,82 +137,72 @@ endfunction
 
 
 " Remove key (g:ENV)
-function s:EnvRemove(keys)
-    let [l:default, l:delete] = [{}, {}]
+function s:EnvRemove(key)
+    if !has_key(g:ENV, a:key)
+        return
+    endif
 
-    for l:key in a:keys
-        if !has_key(g:ENV, l:key)
-            continue
-        endif
+    " Delete key
+    unlet g:ENV[a:key]
 
-        " Delete key
-        unlet g:ENV[l:key]
-
-        if has_key(g:ENV_DEFAULT, l:key)
-            let l:default[l:key] = remove(g:ENV_DEFAULT, l:key)
-        elseif has_key(g:ENV_NONE, l:key)
-            let l:delete[l:key] = remove(g:ENV_NONE, l:key)
-        endif
-    endfor
-
-    call s:EnvVimSet(l:default)
-    call s:EnvVimDelete(l:delete)
+    if has_key(g:ENV_DEFAULT, a:key)
+        call s:EnvVimSet(a:key, remove(g:ENV_DEFAULT, a:key))
+    elseif has_key(g:ENV_NONE, a:key)
+        call s:EnvVimDelete(a:key, remove(g:ENV_NONE, a:key))
+    endif
 endfunction
 
 
 " Add or modify item (g:ENV)
-function s:EnvAdd(dict)
-    for [l:key, l:val] in items(a:dict)
-        try
-            let l:tmp = {'ENV': eval(l:val)}
+function s:EnvAdd(key, Val)
+    try
+        let l:tmp = {'ENV': eval(a:Val)}
 
-            if l:key[0] =~# '[A-Z]'
-                " Global var
-                if !has_key(g:, l:key)
-                    let l:tmp.ENV_NONE = 'g'
-                elseif !has_key(g:ENV_NONE, l:key) && !has_key(g:ENV_DEFAULT, l:key)
-                    let l:tmp.ENV_DEFAULT = g:[l:key]
-                endif
-
-                let g:[l:key] = l:tmp.ENV
-            elseif l:key[0] ==# '&'
-                " vim option
-                if !has_key(g:ENV_DEFAULT, l:key)
-                    let l:tmp.ENV_DEFAULT = eval(l:key)
-                endif
-
-                exe 'let &g:'.l:key[1:].'='.l:val
-            elseif l:key[0] ==# '$'
-                " Environment var
-                if empty(eval(l:key))
-                    let l:tmp.ENV_NONE = 'e'
-                elseif !has_key(g:ENV_NONE, l:key) && !has_key(g:ENV_DEFAULT, l:key)
-                    let l:tmp.ENV_DEFAULT = eval(l:key)
-                endif
-
-                exe 'let '.l:key.'='.l:val
-            elseif l:key[0] ==# ':'
-                " Command
-                let l:bang = has_key(g:ENV, l:key) ? '!' : ''
-                exe 'command'.l:bang.' '.l:key[1:].' '.l:tmp.ENV
-                let l:tmp.ENV_NONE = 'c'
-            elseif l:key[0] ==# '\'
-                " Maping
-                if empty(maparg(l:key, 'n')) || has_key(g:ENV, l:key)
-                    exe 'nnoremap '.l:key.' '.l:tmp.ENV
-                    let l:tmp.ENV_NONE = 'm'
-                else
-                    unlet! l:tmp.ENV
-                endif
+        if a:key[0] =~# '[A-Z]'
+            " Global var
+            if !has_key(g:, a:key)
+                let l:tmp.ENV_NONE = 'g'
+            elseif !has_key(g:ENV_NONE, a:key) && !has_key(g:ENV_DEFAULT, a:key)
+                let l:tmp.ENV_DEFAULT = g:[a:key]
+            endif
+        elseif a:key[0] ==# '&'
+            " vim option
+            if !has_key(g:ENV_DEFAULT, a:key)
+                let l:tmp.ENV_DEFAULT = eval(a:key)
+            endif
+        elseif a:key[0] ==# '$'
+            " Environment var
+            if empty(eval(a:key))
+                let l:tmp.ENV_NONE = 'e'
+            elseif !has_key(g:ENV_NONE, a:key) && !has_key(g:ENV_DEFAULT, a:key)
+                let l:tmp.ENV_DEFAULT = eval(a:key)
+            endif
+        elseif a:key[0] ==# ':'
+            " Command
+            if exists(a:key) == 2 && !has_key(g:ENV, a:key)
+                throw 'Error: command exists!'
             endif
 
-            for l:item in keys(l:tmp)
-                let g:[l:item][l:key] = l:tmp[l:item]
-            endfor
-        catch
-            echohl Error | echo v:exception | echohl None
-        endtry
-    endfor
+            let l:tmp.ENV_NONE = 'c'
+        elseif a:key[0] ==# '\'
+            " Maping
+            if !empty(maparg(a:key, 'n')) && !has_key(g:ENV, a:key)
+                throw 'Error: maping exists!'
+            endif
+
+            let l:tmp.ENV_NONE = 'm'
+        endif
+
+        if len(l:tmp) > 1
+            call s:EnvVimSet(a:key, l:tmp.ENV)
+        endif
+
+        for [l:key, l:Val] in items(l:tmp)
+            let g:[l:key][a:key] = l:Val
+        endfor
+    catch
+        echohl Error | echo v:exception | echohl None
+    endtry
 endfunction
 
 
@@ -463,6 +457,7 @@ function s:F5Function.debug()
         endfor
 
         debug source %
+
     endif
 endfunction
 
@@ -645,7 +640,7 @@ endfunction
 " === misc function implementation {{{1
 function misc#VerticalFind(flag)
     let l:pos = getpos('.')
-    let l:posP = getpos('''')
+    let l:posP = getpos('''''')
     let l:str = ''
     let l:cur = []
     normal j
@@ -663,7 +658,10 @@ function misc#VerticalFind(flag)
             let l:str = l:str[:-2]
             silent! call setpos('.', remove(l:cur, -1))
         else
-            let l:str .= nr2char(l:char)
+            if nr2char(l:char) !=# ';'
+                let l:str .= nr2char(l:char)
+            endif
+
             let l:cur += [getpos('.')]
             call search(l:str, a:flag.'W')
         endif
@@ -747,8 +745,8 @@ function! misc#CodeFormat() range
 
         " Use external tools & Config cmd
         " Tools: clang-format, autopep8, perltidy, shfmt
-    elseif index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format-7')
-        let l:formatEx = l:range."!clang-format-7 -style='{IndentWidth: 4}'"
+    elseif index(['c', 'cpp', 'java', 'javascript'], &ft) != -1 && executable('clang-format')
+        let l:formatEx = l:range."!clang-format -style='{IndentWidth: 4}'"
     elseif &filetype ==# 'python' && executable('yapf') && executable('yapf3')
         let l:formatEx = l:range.(getline(1) =~# 'python3' ? '!yapf3' : '!yapf')
     elseif &filetype ==# 'perl' && executable('perltidy')
@@ -777,7 +775,7 @@ let s:commentChar = {
             \ 'vim': '"'
             \ }
 
-"  Toggle comment
+" Toggle comment
 function! misc#ReverseComment() range
     if has_key(s:commentChar, &ft)
         let l:pos = getpos('.')
@@ -1045,7 +1043,6 @@ function! misc#Information(act) range
                     \ '  '.l:lines.'L, '.l:count.words.'W, '.l:count.chars.'C, '.l:count.bytes.'B'."\n".
                     \ '  '.matchstr(system('ls -lh '.expand('%:S')), '\v.*\d+:\d+')
     elseif a:act ==# 'visual'
-"        normal \<Esc>
         exe 'normal '.visualmode()
         redraw
         echo 'Lines: '.(a:lastline-a:firstline+1).'/'.l:lines.'   '.

@@ -6,7 +6,7 @@
 " Last Modified: 2019年01月18日 星期五 15时04分00秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_Async') || v:version < 800
+if exists('g:loaded_a_async') || !has('job') || !has('terminal')
   finish
 endif
 let g:loaded_Async = 1

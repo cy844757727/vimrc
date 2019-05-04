@@ -5,7 +5,7 @@
 "              run or debug script language
 """"""""""""""""""""""""""""""""""""""""""""""
 
-if exists('g:loaded_a_async') || v:version < 800
+if exists('g:loaded_a_async') || !has('job') || !has('terminal')
     finish
 endif
 let g:loaded_a_async = 1
