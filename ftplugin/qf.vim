@@ -8,14 +8,14 @@ endif
 let b:did_ftplugin_ = 1
 setlocal winfixheight nowrap
 
-nnoremap <silent> <buffer> t :call <SID>Open('tabedit', 'default')<CR>
-nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'big')<CR>
-nnoremap <silent> <buffer> s :call <SID>Open('bel split', 'default')<CR>
-nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'big')<CR>
-nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'default')<CR>
-nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'big')<CR>
-nnoremap <silent> <buffer> e :call <SID>Open('edit', 'default')<CR>
-nnoremap <silent> <buffer> E :call <SID>Open('edit', 'big')<CR>
+nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'default')<CR>
+nnoremap <silent> <buffer> t :call <SID>Open('tabedit', 'force')<CR>
+nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'default')<CR>
+nnoremap <silent> <buffer> s :call <SID>Open('bel split', 'force')<CR>
+nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'default')<CR>
+nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'force')<CR>
+nnoremap <silent> <buffer> E :call <SID>Open('edit', 'default')<CR>
+nnoremap <silent> <buffer> e :call <SID>Open('edit', 'force')<CR>
 
 function! s:MaxMin()
     let l:height = get(g:, 'BottomWinHeight', 15)

@@ -14,20 +14,21 @@ setlocal nonu nowrap buftype=nofile nobuflisted shiftwidth=1
 
 nnoremap <silent> <buffer> <CR> :call <SID>Open('edit', 'keep')<CR>
 nnoremap <silent> <buffer> <2-leftmouse> :call <SID>Open('edit', 'keep')<CR>
-nnoremap <silent> <buffer> t :call <SID>Open('tabedit', 'default')<CR>
-nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'force')<CR>
-nnoremap <silent> <buffer> s :call <SID>Open('bel split', 'default')<CR>
-nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'force')<CR>
-nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'default')<CR>
-nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'force')<CR>
-nnoremap <silent> <buffer> e :call <SID>Open('edit', 'default')<CR>
-nnoremap <silent> <buffer> E :call <SID>Open('edit', 'force')<CR>
+nnoremap <silent> <buffer> T :call <SID>Open('tabedit', 'default')<CR>
+nnoremap <silent> <buffer> t :call <SID>Open('tabedit', 'force')<CR>
+nnoremap <silent> <buffer> S :call <SID>Open('bel split', 'default')<CR>
+nnoremap <silent> <buffer> s :call <SID>Open('bel split', 'force')<CR>
+nnoremap <silent> <buffer> V :call <SID>Open('bel vsplit', 'default')<CR>
+nnoremap <silent> <buffer> v :call <SID>Open('bel vsplit', 'force')<CR>
+nnoremap <silent> <buffer> E :call <SID>Open('edit', 'default')<CR>
+nnoremap <silent> <buffer> e :call <SID>Open('edit', 'force')<CR>
 nnoremap <silent> <buffer> p :call <SID>Preview('noauto')<CR>
 nnoremap <silent> <buffer> P :call <SID>Preview('auto')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 
 let s:auto = 0
+" Record source window id
 let t:infowin_winid = win_getid(winnr()-1)
 
 augroup InfoWin_
@@ -56,6 +57,7 @@ function! <SID>Open(way, mode) abort
         hide
     endif
 
+    " Consider window position reshaping
     if !win_gotoid(get(t:, 'infowin_winid', -1))
         wincmd W
     endif
