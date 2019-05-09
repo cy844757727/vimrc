@@ -1,7 +1,7 @@
 "
 "
 "
-syn match InfoWinFile /^\S\+$/
+syn match InfoWinFile /^\S\+.*$/
 syn match InfoWinLineNr /^\s\+\d\+:/ nextgroup=InfoWinColumnNr
 syn match InfoWinColumnNr /\s\+\d\+:\ze / contained
 "syn match InfoWinLineMatch /\v-^/

@@ -30,7 +30,7 @@ function! infoWin#Set(dict)
 
     setlocal winfixheight noreadonly modifiable
     let s:indent = get(a:dict, 'indent', '  ')
-    let b:infoWin = {'count': [], 'bufnr': s:bufnr,
+    let b:infoWin = {'count': [], 'bufnr': s:bufnr, 'files': {},
                 \ 'title':   get(a:dict, 'title', '[InfoWin]'),
                 \ 'type':    get(a:dict, 'type', ''),
                 \ 'path':    get(a:dict, 'path', getcwd()),
@@ -39,8 +39,8 @@ function! infoWin#Set(dict)
     call setline(1, s:DisplayStr(a:dict.content, ''))
     setlocal readonly nomodifiable filetype=infowin
     let b:infoWin.count += [line('$') - s:Sum(b:infoWin.count)]
-    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).'%=\ %l/'.line('$').
-                \ '%4(%)\ '.b:infoWin.count[-2].'\ \ '.b:infoWin.count[-1].'\ '
+    exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).
+                \ '%=%{infoWin#Statistic()}'.'%7P\ '
 
     if has_key(b:infoWin, 'matchId')
         call matchdelete(b:infoWin.matchId)
@@ -52,6 +52,20 @@ function! infoWin#Set(dict)
         let b:infoWin.hi = a:dict.hi
     endif
 endfunction
+
+
+function! infoWin#Statistic()
+    if !exists('b:infoWin')
+        return ''
+    endif
+
+    let l:start = search('^\S', 'bcnW')
+    let l:end = search('^\S', 'nW')
+    let l:end = l:end ? l:end : line('$') + 1
+    let l:ind = b:infoWin.files[getline(l:start)]
+    return ' '.l:ind.'/'.b:infoWin.count[-2].'  '.(l:end-l:start-1).'/'.b:infoWin.count[-1].' '
+endfunction
+
 
 function! s:Sum(list)
     let l:sum = 0
@@ -104,6 +118,7 @@ let s:indent = '  '
 function! s:DisplayStr(content, indent) abort
     let l:list = []
     let l:level = strdisplaywidth(a:indent) / strdisplaywidth(s:indent)
+    let l:number = 1
 
     " Data statistics
     if l:level > len(b:infoWin.count) - 1
@@ -114,6 +129,11 @@ function! s:DisplayStr(content, indent) abort
 
     for [l:key, l:val] in items(a:content)
         let l:list += [a:indent.l:key]
+
+        if l:level == 0
+            let b:infoWin.files[l:key] = l:number
+            let l:number += 1
+        endif
 
         let l:type = type(l:val)
         if l:type == type({})

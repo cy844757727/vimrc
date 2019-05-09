@@ -507,7 +507,7 @@ function! misc#Ag(str, word) abort
                 \ ).(a:word ? '\\b'.a:str.'\\b' : a:str)
 
     if get(g:, 'InfoWin_output', 0)
-        let s:infoDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(),
+        let s:infoDict = {'title': ' '.a:str, 'content': {}, 'path': getcwd(), 'number': 1,
                     \ 'hi': '\v'.substitute(a:str, '\\\\', '\', 'g'), 'type': l:type}
         call async#JobRun('!', l:cmd, {
                     \ 'out_io': 'pipe', 'out_mode': 'nl',
