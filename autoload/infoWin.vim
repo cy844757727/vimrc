@@ -28,6 +28,10 @@ function! infoWin#Set(dict)
         exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
     endif
 
+    if exists('b:infoWin') && has_key(b:infoWin, 'matchId')
+        silent! call matchdelete(b:infoWin.matchId)
+    endif
+
     setlocal winfixheight noreadonly modifiable
     let s:indent = get(a:dict, 'indent', '  ')
     let b:infoWin = {'count': [], 'bufnr': s:bufnr, 'files': {},
@@ -41,11 +45,6 @@ function! infoWin#Set(dict)
     let b:infoWin.count += [line('$') - s:Sum(b:infoWin.count)]
     exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).
                 \ '%=%{infoWin#Statistic()}'.'%7P\ '
-
-    if has_key(b:infoWin, 'matchId')
-        call matchdelete(b:infoWin.matchId)
-        unlet b:infoWin.matchId b:infoWin.hi
-    endif
 
     if has_key(a:dict, 'hi')
         let b:infoWin.matchId = matchadd('InfoWinMatch', a:dict.hi)
@@ -90,7 +89,7 @@ function! infoWin#Toggle(act) abort
         silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split +'.s:bufnr.'buffer'
 
         if has_key(get(b:, 'infoWin', {}), 'hi')
-            call matchadd('InfoWinMatch', b:infoWin.hi)
+            let b:infoWin.matchId = matchadd('InfoWinMatch', b:infoWin.hi)
         endif
     endif
 endfunction

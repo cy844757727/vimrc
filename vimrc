@@ -18,7 +18,7 @@ set shortmess=aoOtTcF mousetime=1000 signcolumn=auto
 set tags+=./.tags,.tags bsdir=buffer mouse=a viminfo=
 set title titlestring=\ Vim winminheight=1 winminwidth=1
 set fillchars=fold:\ ,diff:\ ,vert:│
-set completeopt=menu,menuone,noinsert,preview,noselect
+set completeopt=menu,menuone,noinsert,noselect
 set diffopt=vertical,filler,foldcolumn:0,context:5
 " gcc/g++
 set errorformat=%E%f:%l:%c:\ error:\ %m
