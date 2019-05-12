@@ -84,7 +84,7 @@ function! async#TermToggle(action, cmd) abort
         endif
 
         " Skip window containing buf with nonempty buftype
-        if exists('misc#SwitchToEmptyBuftype')
+        if exists('*misc#SwitchToEmptyBuftype')
             call misc#SwitchToEmptyBuftype()
         endif
 

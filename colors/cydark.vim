@@ -65,6 +65,8 @@ function! s:HI(group, ...)
                 \ (a:0 > 3 ? ' guisp='.a:4[0] : '')
 endfunction
 
+" Config terminal color
+"let g:terminal_ansi_colors = []
 
 " === Normal text ===
 call s:HI('Normal', s:fg, s:bg)

@@ -50,6 +50,8 @@ function! s:ClearAutocmd()
     endif
 endfunction
 
+" Config terminal color
+"let g:terminal_ansi_colors = []
 
 " Highlighting Function
 " Args: group, fg, bg, gui/cterm, guisp

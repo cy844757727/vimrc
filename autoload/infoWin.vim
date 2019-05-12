@@ -8,11 +8,7 @@ if getbufvar(s:bufnr, '&filetype') !=# 'infowin'
     let s:bufnr = -1
 endif
 
-function! infoWin#Set(dict)
-    if type(a:dict) != type({})
-        return
-    endif
-
+function! infoWin#Set(dict) abort
     if exists('*misc#ToggleBottomBar')
         call misc#ToggleBottomBar('only', 'infowin')
     endif
@@ -53,7 +49,7 @@ function! infoWin#Set(dict)
 endfunction
 
 
-function! infoWin#Statistic()
+function! infoWin#Statistic() abort
     if !exists('b:infoWin')
         return ''
     endif
