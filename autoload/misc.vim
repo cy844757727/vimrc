@@ -520,7 +520,9 @@ function! misc#Ag(str, word) abort
 endfunction
 
 function s:AgOnExit(...)
-    call infoWin#Set(s:infoDict)
+    if !empty(s:infoDict.content)
+        call infoWin#Set(s:infoDict)
+    endif
 endfunction
 
 function! s:AgOnOut(job, msg) abort

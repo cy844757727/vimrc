@@ -24,6 +24,33 @@ setlocal tabstop=4
 setlocal foldmethod=expr
 setlocal foldexpr=PythonFoldLevel(v:lnum)
 
+nnoremap <silent> <buffer> \] :call <SID>python_jump_end('normal', ']]', 'bW')<CR>
+xnoremap <silent> <buffer> \] <Esc>:call <SID>python_jump_end('visual', ']]', 'bW')<CR>
+nnoremap <silent> <buffer> \[ :call <SID>python_jump_end('normal', '[[', 'bW')<CR>
+xnoremap <silent> <buffer> \[ <Esc>:call <SID>python_jump_end('visual', '[[', 'bW')<CR>
+
+
+function <SID>python_jump_end(mode, ex, flag)
+    let l:lin = line('.')
+
+    if a:mode ==# 'visual'
+        normal! gv
+    endif
+
+    exe 'normal '.a:ex
+    let l:indent = indent('.') + 1
+    let l:linN = search('\v^\s{'.l:indent.',}\S', a:flag.'n')
+
+    if l:lin == l:linN
+        exe 'normal '.a:ex
+        let l:indent = indent('.') + 1
+        call search('\v^\s{'.l:indent.',}\S', a:flag)
+    else
+        exe 'normal '.l:linN.'gg'
+    endif
+endfunction
+
+
 function! PythonFoldLevel(lnum)
     let l:lnum = a:lnum
     let l:line = getline(a:lnum)

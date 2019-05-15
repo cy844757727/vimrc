@@ -138,8 +138,6 @@ vnoremap <silent> \=  :call misc#CodeFormat()<CR>
 nnoremap <silent> \q  :call misc#ReverseComment()<CR>
 vnoremap <silent> \q  :call misc#ReverseComment()<CR>
 nnoremap <silent> \h  :call misc#HEXCovent()<CR>
-nnoremap <silent> \]  :tag<CR>
-nnoremap <silent> \[  :pop<CR>
 " ctrl-\ ctrl-n : switch to terminal-normal
 
 nnoremap <C-@> :Ydc<CR>
