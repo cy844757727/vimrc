@@ -1271,11 +1271,11 @@ function! misc#ToggleBottomBar(winType, type)
         call async#TermToggle('off', '')
 
         if a:type == 'book'
-            call sign#SetQfList(' BookMark', 'book')
+            call sign#SetQfList(' BookMark', ['book'])
         elseif a:type == 'break'
-            call sign#SetQfList('ךּ BreakPoint', 'break', 'tbreak')
+            call sign#SetQfList('ךּ BreakPoint', ['break', 'tbreak'])
         elseif a:type == 'todo'
-            call sign#SetQfList(' TodoList', 'todo')
+            call sign#SetQfList(' TodoList', ['todo'])
         elseif get(getqflist({'winid': 1}), 'winid', 0) != 0
             cclose
         elseif infoWin#IsVisible()

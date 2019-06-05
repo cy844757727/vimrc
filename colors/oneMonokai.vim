@@ -3,7 +3,6 @@
 " Author: Cy <844757727@qq.com>
 " Description: dark colorscheme reference from One Monokai Theme (Joshua Azemoh)
 "              https://marketplace.visualstudio.com/items?itemName=azemoh.theme-onedark
-" Last Modified: 2019年01月06日 星期日 17时18分25秒
 " =================================================
 
 if !has('gui_running') && (!has('termguicolors') || !&termguicolors)

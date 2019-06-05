@@ -30,7 +30,7 @@ nnoremap <silent> <buffer> \[ :call <SID>python_jump_end('normal', '[[', 'bW')<C
 xnoremap <silent> <buffer> \[ <Esc>:call <SID>python_jump_end('visual', '[[', 'bW')<CR>
 
 
-function <SID>python_jump_end(mode, ex, flag)
+function! <SID>python_jump_end(mode, ex, flag)
     let l:lin = line('.')
 
     if a:mode ==# 'visual'

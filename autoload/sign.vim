@@ -33,7 +33,7 @@ let s:icon = {'book': '', 'todo': '', 'break': '', 'tbreak': ''}
 
 let s:newSignId = 0
 " Type grouping for qflist
-" Quickfix window autoupdating depends on it
+" Quickfix window auto updating depends on it
 let s:typesGroup = {}
 " Sign id record
 " Content: 'id': ['type', 'file']
@@ -962,27 +962,21 @@ endfunction
 
 
 " Set QuickFix window with qfList
-function sign#SetQfList(...)
-    if a:0 == 0
-        return
-    endif
-
-    let l:group = tolower(a:1)
-    let l:types = a:0 > 1 ? a:000[1:] : get(s:typesGroup, l:group, [])
-
-    if empty(l:types)
+function sign#SetQfList(title, types)
+    if empty(a:types)
         return
     elseif get(g:, 'InfoWin_output', 0)
         cclose
-        call s:InfoWinSet(a:1, l:types)
+        call s:InfoWinSet(a:title, a:types)
     else
-        call s:QfListSet(a:1, l:types)
+        call s:QfListSet(a:title, a:types)
         exe 'copen '.get(g:, 'BottomWinHeight', 15)
         setlocal nowrap
-    endif
 
-    if !has_key(s:typesGroup, l:group) && a:0 > 1
-        let s:typesGroup[l:group] = a:000[1:]
+        let l:group = tolower(a:title)
+        if !has_key(s:typesGroup, l:group)
+            let s:typesGroup[l:group] = a:types
+        endif
     endif
 endfunction
 

@@ -2,7 +2,6 @@
 " File: cydark.vim
 " Author: Cy <844757727@qq.com>
 " Description: dark colorscheme
-" Last Modified: 2019年02月17日 星期日 17时49分26秒
 " =================================================
 
 if !has('gui_running') && (!has('termguicolors') || !&termguicolors)

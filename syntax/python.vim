@@ -1,7 +1,6 @@
 " File: python.vim
 " Author: cy
 " Description: extend python syntax
-" Last Modified: 2019年01月06日 星期日 16时42分26秒
 
 syn cluster pythonDS contains=pythonString,pythonRawString,pythonQuotes,pythonbuiltin,
             \ pythonrepeat,pythonOperator,pythonConditional,pythonNumber,pythonEscape

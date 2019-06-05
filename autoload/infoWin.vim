@@ -29,14 +29,15 @@ function! infoWin#Set(dict) abort
     endif
 
     setlocal winfixheight noreadonly modifiable
-    let s:indent = get(a:dict, 'indent', '  ')
-    let b:infoWin = {'count': [], 'bufnr': s:bufnr, 'files': {},
+    let b:infoWin = {'count': [], 'bufnr': s:bufnr, 'files': {}, 'filesnum': 0,
+                \ 'indent': get(a:dict, 'indent', 2),
+                \ 'filelevel': get(a:dict, 'filelevel', 0),
                 \ 'title':   get(a:dict, 'title', '[InfoWin]'),
                 \ 'type':    get(a:dict, 'type', ''),
                 \ 'path':    get(a:dict, 'path', getcwd()),
-                \ 'getline': get(a:dict, 'getline', function('s:GetLine'))}
+                \ 'getline': function('s:GetLine')}
     edit!
-    call setline(1, s:DisplayStr(a:dict.content, ''))
+    call setline(1, s:DisplayStr(a:dict.content, 0))
     setlocal readonly nomodifiable filetype=infowin
     let b:infoWin.count += [line('$') - s:Sum(b:infoWin.count)]
     exe 'setlocal statusline=\ '.fnameescape(b:infoWin.title).
@@ -55,10 +56,9 @@ function! infoWin#Statistic() abort
     endif
 
     let l:start = search('^\S', 'bcnW')
-    let l:end = search('^\S', 'nW')
-    let l:end = l:end ? l:end : line('$') + 1
-    let l:ind = b:infoWin.files[getline(l:start)]
-    return ' '.l:ind.'/'.b:infoWin.count[-2].'  '.(l:end-l:start-1).'/'.b:infoWin.count[-1].' '
+    let [l:ind, l:num] = b:infoWin.files[getline(l:start)]
+    return ' '.l:ind.'/'.b:infoWin.count[b:infoWin.filelevel].
+                \ '  '.l:num.'/'.b:infoWin.count[b:infoWin.filelevel+1].' '
 endfunction
 
 
@@ -72,7 +72,7 @@ endfunction
 
 function! infoWin#Toggle(act) abort
     if bufwinnr(s:bufnr) != -1
-        exe a:act == 'on' ? bufwinnr(s:bufnr).'wincmd w' : bufwinnr(s:bufnr).'hide'
+        exe bufwinnr(s:bufnr).(a:act ==# 'on' ? 'wincmd w' : 'hide')
     elseif a:act ==# 'off'
         return
     elseif !bufexists(get(s:, 'bufnr', -1))
@@ -109,34 +109,34 @@ function infoWin#GetVal(list)
     return empty(l:dict) ? deepcopy(l:infoWin) : l:dict
 endfunction
 
-let s:indent = '  '
-function! s:DisplayStr(content, indent) abort
+
+function! s:DisplayStr(content, level) abort
     let l:list = []
-    let l:level = strdisplaywidth(a:indent) / strdisplaywidth(s:indent)
-    let l:number = 1
+    let l:prefixKey = repeat(' ', a:level * b:infoWin.indent)
+    let l:prefixVal = l:prefixKey. repeat(' ', b:infoWin.indent)
 
     " Data statistics
-    if l:level > len(b:infoWin.count) - 1
+    if a:level > len(b:infoWin.count) - 1
         let b:infoWin.count += [len(keys(a:content))]
     else
         let b:infoWin.count[l:level] += len(keys(a:content))
     endif
 
     for [l:key, l:val] in items(a:content)
-        let l:list += [a:indent.l:key]
+        let l:list += [l:prefixKey.l:key]
 
-        if l:level == 0
-            let b:infoWin.files[l:key] = l:number
-            let l:number += 1
+        if a:level == b:infoWin.filelevel
+            let b:infoWin.filesnum += 1
+            let b:infoWin.files[l:key] = [b:infoWin.filesnum, len(l:val)]
         endif
 
         let l:type = type(l:val)
         if l:type == type({})
-            let l:list +=  s:DisplayStr(l:val, a:indent.s:indent)
+            let l:list +=  s:DisplayStr(l:val, a:level + 1)
         elseif l:type == type([])
-            let l:list += map(l:val, "'".a:indent.s:indent."'.v:val")
+            let l:list += map(l:val, "'".l:prefixVal."'.v:val")
         elseif l:type == type('')
-            let l:list += [a:indent.s:indent.l:val]
+            let l:list += [l:prefixVal.l:val]
         endif
     endfor
 
@@ -147,9 +147,9 @@ endfunction
 function s:GetLine()
     let l:line = getline('.')
     let l:indent = indent('.')
-    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9,: ]+\ze:'), '\s*[,:]\s*')
+    let l:lin = split(matchstr(l:line, '\v^\s+\zs[0-9: ]+\ze:'), '\s*:\s*')
 
-    if l:indent == 0 || empty(l:lin)
+    if empty(l:lin)
         return [-1, -1, -1]
     endif
 

@@ -38,6 +38,9 @@ augroup InfoWin_
     autocmd CursorMoved <buffer> if s:auto|call s:PreviewAuto()|endif
 augroup END
 
+command! -nargs=1 -buffer FilesDo :call s:FilesDo(<q-args>)
+command! -nargs=1 -buffer ItemsDo :call s:ItemsDo(<q-args>)
+command! -nargs=1 -buffer ItemsDoAll :call s:ItemsDoAll(<q-args>)
 
 function! s:MaxMin()
     let l:height = get(g:, 'BottomWinHeight', 15)
@@ -153,5 +156,50 @@ function s:PreviewClose()
 
         let l:i -= 1
     endwhile
+endfunction
+
+
+function s:FilesDo(Ex)
+    let l:files = keys(b:infoWin.files)
+    belowright vsplit
+
+    for l:file in l:files
+        exe 'edit '.l:file
+        exe a:Ex
+        silent update
+    endfor
+
+    close
+endfunction
+
+
+function s:ItemsDo(Ex) abort
+    let l:start = search('\v^\s{'.(b:infoWin.filelevel*b:infoWin.indent).'}\S', 'bcnW')
+
+    if l:start == -1
+        return
+    endif
+
+    let l:file = getline(l:start)
+    let l:lines = getline(l:start + 1, l:start + b:infoWin.files[l:file][1])
+    exe 'belowright vsplit '.(!&autochdir && getcwd() ==# b:infoWin.path ? '' : b:infoWin.path.'/').trim(l:file)
+
+    for l:line in l:lines
+        let l:pos = split(matchstr(l:line, '\v^\s+\zs[0-9: ]+\ze:'), '\s*:\s*')
+        call cursor(len(l:pos) == 1 ? l:pos + [1] : l:pos)
+        exe a:Ex
+    endfor
+
+    silent update
+    close
+endfunction
+
+
+function s:ItemsDoAll(Ex)
+    normal gg0
+    for l:file in keys(b:infoWin.files)
+        call search('\v^\s*'.l:file, 'c')
+        call s:ItemsDo(a:Ex)
+    endfor
 endfunction
 
