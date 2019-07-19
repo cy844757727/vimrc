@@ -56,6 +56,9 @@ function! infoWin#Statistic() abort
     endif
 
     let l:start = search('^\S', 'bcnW')
+    if l:start == 0
+        return ''
+    endif
     let [l:ind, l:num] = b:infoWin.files[getline(l:start)]
     return ' '.l:ind.'/'.b:infoWin.count[b:infoWin.filelevel].
                 \ '  '.l:num.'/'.b:infoWin.count[b:infoWin.filelevel+1].' '

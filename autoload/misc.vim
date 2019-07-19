@@ -457,7 +457,6 @@ function s:F5Function.debug()
         endfor
 
         debug source %
-
     endif
 endfunction
 

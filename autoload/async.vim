@@ -46,14 +46,14 @@ function s:termAnalyzeCmd(cmd)
         endif
     endif
 
-    if exists('g:ENV') && has_key(g:ENV, l:cmd)
-        let l:cmd = g:ENV[l:cmd]
-
-        if !exists('l:num')
-            let l:name = s:termPrefix.': '.l:cmd.' '
-        endif
-    endif
-
+"    if exists('g:ENV') && has_key(g:ENV, l:cmd)
+"        let l:cmd = g:ENV[l:cmd]
+"
+"        if !exists('l:num')
+"            let l:name = s:termPrefix.': '.l:cmd.' '
+"        endif
+"    endif
+"
     return [l:cmd, l:name, s:cmdExpand(l:list)]
 endfunction
 

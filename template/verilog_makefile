@@ -1,0 +1,38 @@
+#
+top_module = 
+filelist = filelist.f
+
+# option configure
+opt_vcs = -full64 -ssf *.novf
+
+
+.PYTHON: main dbg vcs verdi dve spy
+
+main: vcs verdi
+dbg: verdi
+
+vcs:
+	@echo "compile ..."
+	vcs $(opt_vcs) -f $(filelist)
+	@echo "compile done ..."
+
+verdi:
+	@echo "launch verdi ..."
+	verdi -f $(filelist) -top $(top_module)
+	@echo "done"
+
+dve:
+	@echo "launch dve ..."
+	./simv -gui
+	@echo "done ..."
+
+spy:
+	@echo "launch spyglass ..."
+	spyglass -f $(filelist)
+	@echo "done ..."
+
+clean:
+	@echo "clean up ..."
+	-rm -rf *.novf *.log
+
+

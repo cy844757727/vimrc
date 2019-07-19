@@ -408,9 +408,9 @@ function s:ProjectNew(name, type, path) abort
 
     " cd path
     if l:path !=# getcwd()
-        if !isdirectory(l:path)
+"        if !isdirectory(l:path)
             call mkdir(l:path, 'p')
-        endif
+"        endif
 
         exe 'silent cd '.l:path
         silent %bwipeout

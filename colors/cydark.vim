@@ -23,17 +23,18 @@ let g:colors_name = 'cydark'
 let s:none  = ['NONE', 'NONE']
 let s:white = ['#ffffff', 231]
 let s:black = ['#000000',  16]
-let s:fg    = ['#c5c5bf', 251]
-let s:bg    = ['#282828', 234]
-let s:bg1   = ['#333333', 236]  " Statuslinunc pmenu
-let s:gray  = ['#353535', 236]  " search visual
+let s:fg    = ['#cfcfca', 251]
+let s:bg    = ['#252c31', 234]
+"let s:bg    = ['#282828', 234]
+let s:bg1   = ['#444c51', 236]  " Statuslinunc pmenu
+let s:gray  = ['#3f4b52', 236]  " search visual
 let s:red   = ['#e44442']       " error errorsign
 
 
 " Different highlight for statusline between insertion mode and others
 augroup Color_statusline_cydark
     autocmd!
-    autocmd InsertEnter * :hi statusline guibg=#5d0fa2
+    autocmd InsertEnter * :hi statusline guibg=#5f3f9f
     autocmd InsertLeave * :hi statusline guibg=#005880
     autocmd ColorScheme * :call s:ClearAutocmd()
 augroup END
@@ -80,10 +81,10 @@ call s:HI('Error', s:white, ['#b53030', 124])
 call s:HI('Visual', s:none, s:gray)
 call s:HI('Search', s:none, s:gray)
 call s:HI('InSearch', s:none, s:none, 'reverse')
-call s:HI('CursorLine', s:none, ['#303030', 235])
+call s:HI('CursorLine', s:none, ['#2e373b', 235])
 call s:HI('StatusLine', ['#dfdfdf'], ['#005880', 24])
 call s:HI('StatusLineNC', s:none, s:bg1, 'bold')
-call s:HI('LineNr', ['#4a4a4a', 239])
+call s:HI('LineNr', ['#656c71', 239])
 call s:HI('Directory', ['#60c0d0'])
 call s:HI('WildMenu', s:black, ['#d8dd41'])
 call s:HI('Todo', ['#b5d5b5'], s:none, 'italic')
@@ -94,10 +95,10 @@ call s:HI('FoldColumn', ['#c7ad57'])
 hi! link CursorLineNr LineNr
 hi! link qfLineNr Function
 " === TabLine ===
-call s:HI('TabLine', s:none, ['#444444', 238])
+call s:HI('TabLine', s:none, ['#444C51'])
 call s:HI('TabLinesel', s:none, s:none, 'bold')
 call s:HI('TabLineFill', s:none)
-call s:HI('TabLineSeparator', s:bg, ['#444444', 238])
+call s:HI('TabLineSeparator', s:bg, ['#444C51', 238])
 
 " === Diff ===
 call s:HI('DiffAdd', s:none, ['#192020'])

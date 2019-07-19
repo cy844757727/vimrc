@@ -1,5 +1,5 @@
-colorscheme cydark
-set guifont=DejaVuSansMono\ Nerd\ Font\ Mono\ 11
+"colorscheme cydark
+"set guifont=DejaVuSansMono\ Nerd\ Font\ Mono\ 11
 set guioptions-=m
 set guioptions-=T
 set guioptions-=r
