@@ -387,7 +387,8 @@ function s:ProjectNew(name, type, path) abort
     set noautochdir
     " path -> absolute path | Default
     let l:type = a:type ==# '.' ? 'undef' : a:type
-    let l:path = a:path ==# '.' ? getcwd() : a:path
+    let l:path = a:path ==# '.' ? getcwd() : fnamemodify(a:path, ':p')
+    let l:path = substitute(l:path, '/$', '', '')
 
     " Whether it already exists
     for l:i in range(len(s:projectItem))

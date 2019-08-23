@@ -106,7 +106,9 @@ function <SID>CheckOutFile()
         else
             wincmd w
             silent edit!
+            set modifiable
             call setline(1, git#FormatStatus())
+            set nomodifiable
             wincmd W
         endif
     endif

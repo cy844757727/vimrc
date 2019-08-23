@@ -11,11 +11,36 @@ endif
 
 let g:colors_name = "codeschool"
 
-hi SignColumn guibg=NONE
-hi EndOfBuffer guifg=#252c31
-hi TabLine cterm=NONE gui=NONE guifg=NONE guibg=#575E61
-hi TabLineSel gui=bold guifg=NONE guibg=NONE
-hi TabLineFill cterm=NONE ctermbg=NONE guibg=NONE gui=NONE
+let s:none  = ['NONE', 'NONE']
+let s:white = ['#ffffff', 231]
+let s:black = ['#000000',  16]
+let s:fg    = ['#e0e0e0', 231]
+let s:bg    = ['#252c31', 16]
+
+function! s:HI(group, ...)
+    let l:fg = a:0 > 0 ? a:1 : s:none
+    let l:bg = a:0 > 1 ? a:2 : s:none
+    let l:em = a:0 > 2 ? a:3 : 'NONE'
+
+    exe 'hi '.a:group.
+                \ ' guifg='.l:fg[0].' ctermfg='.get(l:fg, 1, 'NONE').
+                \ ' guibg='.l:bg[0].' ctermbg='.get(l:bg, 1, 'NONE').
+                \ ' gui='.l:em.' cterm='.l:em.
+                \ (a:0 > 3 ? ' guisp='.a:4[0] : '')
+endfunction
+
+call s:HI('Normal', s:fg, s:bg)
+call s:HI('NonText')
+call s:HI('SignColumn')
+call s:HI('QuickFixLine')
+call s:HI('EndOfBuffer', s:bg)
+call s:HI('VertSplit', s:bg)
+
+call s:HI('TabLine', s:none, ['#575e61'])
+call s:HI('TabLinesel', s:none, s:none, 'bold')
+call s:HI('TabLineFill', s:none)
+call s:HI('TabLineSeparator', s:bg, ['#575e61'])
+
 hi ALEErrorSign guifg=#e44442
 hi ALEWarningSign guifg=#da9020
 
@@ -35,8 +60,8 @@ hi IncSearch ctermfg=16 ctermbg=107 cterm=NONE guifg=#182227 guibg=#8bb664 gui=N
 hi Search ctermfg=NONE ctermbg=NONE cterm=underline guifg=NONE guibg=NONE gui=underline
 hi Directory ctermfg=68 ctermbg=NONE cterm=NONE guifg=#3c98d9 guibg=NONE gui=NONE
 hi Folded ctermfg=247 ctermbg=16 cterm=NONE guifg=#9a9a9a guibg=#182227 gui=NONE
+hi FoldColumn guibg=#252c31 guifg=#252c31
 
-hi Normal ctermfg=231 ctermbg=16 cterm=NONE guifg=#e0e0e0 guibg=#252c31 gui=NONE
 hi Boolean ctermfg=68 ctermbg=NONE cterm=NONE guifg=#3c98d9 guibg=NONE gui=NONE
 hi Character ctermfg=68 ctermbg=NONE cterm=NONE guifg=#3c98d9 guibg=NONE gui=NONE
 hi Comment ctermfg=247 ctermbg=NONE cterm=NONE guifg=#9a9a9a guibg=NONE gui=italic

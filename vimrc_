@@ -2,6 +2,7 @@
 " """"""""""""""""""""""""""""""""""""""""""""
 " The following four lines are placed at the front
 " so that there is no flash at startup
+set shell=/usr/bin/env\ bash
 syntax on
 set termguicolors
 colorscheme codeschool

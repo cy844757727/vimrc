@@ -125,7 +125,8 @@ endfunction
 function <SID>CheckOutFile()
     let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
     let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-    if len(l:file) == 2 && l:lin != 0 && line('.') > l:lin && input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
+    if len(l:file) == 2 && l:lin != 0 && line('.') > l:lin &&
+                \ input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
         redraw!
         call s:MsgHandle(system('git checkout -- ' . l:file[1]))
     else

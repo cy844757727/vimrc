@@ -112,6 +112,7 @@ function s:EnvParse(opt)
     elseif a:opt ==# '-i'
         for [l:key, l:Val] in items(g:ENV)
             call s:EnvVimSet(l:key, l:Val)
+            call extend(g:ENV, get(g, 'env', {}), 'keep')
         endfor
     elseif a:opt ==# '-c'
         " Recovery environment
