@@ -114,6 +114,13 @@ nnoremap <silent> \of :exe 'Open! '.fnameescape(expand('%'))<CR>
 nnoremap <silent> \rf :exe 'Open! '.fnameescape(expand('%:h'))<CR>
 vnoremap <silent> \op <Esc>:exe 'Async xdg-open '.getreg('*')<CR>
 nnoremap <silent> \op :exe 'Async xdg-open '.expand('<cWORD>')<CR>
+" ctrlp
+"nnoremap <silent> \t :CtrlPBufTag<CR>
+"nnoremap <silent> \T :CtrlpTag<CR>
+"nnoremap <silent> \l :CtrlpLine %<CR>
+"nnoremap <silent> \L :CtrlpLine<CR>
+"nnoremap <silent> \F :CtrlpBuffer<CR>
+"nnoremap <silent> \f :CtrlP<CR>
 " Leaderf.vim maping
 nnoremap <silent> \t :call Vimrc_leader('LeaderfBufTag')<CR>
 vnoremap <silent> \t :call Vimrc_leader('LeaderfBufTagPattern '.getreg('*'))<CR>
@@ -123,8 +130,8 @@ nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
 vnoremap <silent> \l :call Vimrc_leader('LeaderfLinePattern '.getreg('*'))<CR>
 nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
 vnoremap <silent> \L :call Vimrc_leader('LeaderfLineAllPattern '.getreg('*'))<CR>
-nnoremap <silent> \f :LeaderfBuffer<CR>
-nnoremap <silent> \F :LeaderfFile<CR>
+nnoremap <silent> \F :LeaderfBuffer<CR>
+nnoremap <silent> \f :LeaderfFile<CR>
 
 function! Vimrc_leader(cmd) range
     let l:save_pos = getpos('.')
@@ -246,9 +253,6 @@ map! <C-right> <Esc><C-right>
 " Termdebug
 let g:termdebug_wide = 1
 " Plugin Configure ======================
-" === leaderf.vim === {{{1
-let g:Lf_DefaultMode = 'NameOnly'
-
 " === async.vim === {{{1
 let g:async_termType = [
             \ 'python3',  'python2',  'python',
@@ -256,6 +260,35 @@ let g:async_termType = [
             \ 'dc_shell', 'jupyter-console'
             \ ]
 
+" === CtrlP ============ {{{1
+let g:ctrlp_extensions = ['tag', 'buffertag', 'dir', 'line']
+let g:ctrlp_match_window = 'bottom,order:ttb,min:15,max:15,results:30'
+let g:ctrlp_working_path_mode = 'rw'
+let g:ctrlp_root_markers = ['.svn', '.git']
+let g:ctrlp_custom_ignore = {
+            \ 'dir': '\v[\/].(git|hg|svn)$',
+            \ 'file': '\v\.(session|viminfo|tags|signrecord)',
+            \ 'link': 'SOME_BAD_SYMBOLIC_LINKS'
+            \ }
+
+" === Leaderf =========={{{1
+let g:Lf_DefaultMode = 'NameOnly'
+let g:Lf_WildIgnore = {
+            \ 'dir': ['.svn', '.git', '.hg'],
+            \ 'file': ['*.bak', '*.o', '*.so', '*.py[co]']
+            \ }
+let g:Lf_PreviewResult = {
+        \ 'File': 0,
+        \ 'Buffer': 0,
+        \ 'Mru': 0,
+        \ 'Tag': 0,
+        \ 'BufTag': 1,
+        \ 'Function': 1,
+        \ 'Line': 0,
+        \ 'Colorscheme': 0
+        \}
+let g:Lf_WorkingDirectoryMode = 'Ac'
+let g:Lf_RootMarkers = ['.git', '.svn', '.hg']
 " === Netrw-NERDTree === {{{1
 let g:netrw_dirhistmax=0
 let g:netrw_browse_split=4
