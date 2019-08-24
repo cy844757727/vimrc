@@ -9,6 +9,7 @@ if exists("syntax_on")
   syntax reset
 endif
 
+set t_Co=256
 let g:colors_name = "codeschool"
 
 let s:none  = ['NONE', 'NONE']
@@ -29,12 +30,16 @@ function! s:HI(group, ...)
                 \ (a:0 > 3 ? ' guisp='.a:4[0] : '')
 endfunction
 
+" === Normal text ===
 call s:HI('Normal', s:fg, s:bg)
-call s:HI('NonText')
+
+" === Misc highlight ===
 call s:HI('SignColumn')
 call s:HI('QuickFixLine')
-call s:HI('EndOfBuffer', s:bg)
 call s:HI('VertSplit', s:bg)
+call s:HI('EndOfBuffer', s:bg)
+call s:HI('Error', s:white, ['#b53030', 124])
+call s:HI('Visual', s:none, ['#3f4b52', 59])
 
 call s:HI('TabLine', s:none, ['#575e61'])
 call s:HI('TabLinesel', s:none, s:none, 'bold')
@@ -45,7 +50,6 @@ hi ALEErrorSign guifg=#e44442
 hi ALEWarningSign guifg=#da9020
 
 hi Cursor ctermfg=16 ctermbg=145 cterm=NONE guifg=#182227 guibg=#9ea7a6 gui=NONE
-hi Visual ctermfg=NONE ctermbg=59 cterm=NONE guifg=NONE guibg=#3f4b52 gui=NONE
 hi CursorLine ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE
 hi CursorColumn ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE
 hi ColorColumn ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE

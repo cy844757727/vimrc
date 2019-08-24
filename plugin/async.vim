@@ -21,7 +21,7 @@ let g:Async_interactive = extend({'sh': g:Async_shell, 'ruby': 'irb'},
             \ get(g:, 'Async_interactive', {}))
 
 " Support interactive shell (Do not occupy the default shell)
-let g:async_termType = get(g:, 'async_terminalType', [])
+let g:async_termType = get(g:, 'async_termType', [])
 
 
 " Command

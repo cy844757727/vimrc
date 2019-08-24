@@ -2,16 +2,16 @@
 " """"""""""""""""""""""""""""""""""""""""""""
 " The following four lines are placed at the front
 " so that there is no flash at startup
+set nocompatible
 set shell=/usr/bin/env\ bash
 syntax on
 set termguicolors
 colorscheme codeschool
 filetype plugin indent on
 " set default options
-set nocompatible number noshowcmd splitright wildmenu ruler wrap
+set number noshowcmd splitright wildmenu ruler wrap smartindent
 set autoread autoindent autochdir noswapfile nobackup confirm
 set hlsearch ignorecase incsearch cursorline smarttab nospell
-set smartindent
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
 set foldcolumn=0 foldminlines=10 foldlevel=99 foldnestmax=3
 set foldtext=misc#FoldText() tabline=%!misc#TabLine()
@@ -47,8 +47,7 @@ set statusline+=\ %3(%)%5(%l%):%-5(%c%V%)\ %4P%(\ %)
 let g:BottomWinHeight = 15
 let g:SideWinWidth = 31
 let g:SideWinMode = 1
-let g:env = {'sh': fnamemodify(&shell, ':t'),
-            \ 'python': 'python3'}
+let g:env = {'&autochdir': 0}
 
 " Autocmd & command ===================== {{{1
 augroup vimrc
@@ -58,6 +57,7 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
+	autocmd VimEnter * set nocp
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
     autocmd User WorkSpaceLoadPre call async#JobRun('!', 'ctags -R -f .tags', {}, {'flag': '[I]'})
     autocmd User VimInfoLoadPre call misc#EnvUnlock()
@@ -224,9 +224,15 @@ tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottom
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python3')"])<CR>
 tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
 
+noremap <silent> <C-HOME> :1tabnext<CR>
+noremap <silent> <C-END> :$tabnext<CR>
+map! <silent> <Esc><C-HOME> :1tabnext<CR>
+map! <silent> <Esc><C-END> :$tabnext<CR>
 " Window & tab switch
 tnoremap <silent> <C-PageUp>   <C-w>N:call execute(['normal a', 'tabnext'])<CR>
 tnoremap <silent> <C-PageDown> <C-w>N:call execute(['normal a', 'tabprevious'])<CR>
+tnoremap <silent> <C-HOME>   <C-w>N:call execute(['normal a', '1tabnext'])<CR>
+tnoremap <silent> <C-END> <C-w>N:call execute(['normal a', '$tabnext'])<CR>
 tnoremap <silent> <C-Up>   <C-w>N:call execute(['normal a', 'wincmd W'])<CR>
 tnoremap <silent> <C-Down> <C-w>N:call execute(['normal a', 'wincmd w'])<CR>
 noremap  <silent> <C-Up>   :wincmd W<CR>
