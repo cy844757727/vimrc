@@ -22,6 +22,7 @@ let s:displayIcon = {
 
 " Default terminal prefix
 let s:termPrefix = '!Term'
+let s:defaultTermName = s:termPrefix . ': '.g:Async_shell.' '
 
 " Default terminal option
 let s:termOption = {
@@ -34,7 +35,7 @@ let s:termOption = {
 function s:termAnalyzeCmd(cmd)
     let l:list = split(a:cmd, ' ')
     let l:cmd = g:Async_shell
-    let l:name = s:termPrefix.': '.l:cmd.' '
+    let l:name = s:defaultTermName
 
     if !empty(l:list)
         if index(g:async_termType + [l:cmd], l:list[0]) != -1
@@ -74,7 +75,8 @@ function! async#TermToggle(action, cmd) abort
 
     if l:winnr != -1
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
-    elseif l:cmd == g:Async_shell && l:other != -1 && empty(l:postCmd)
+"    elseif l:cmd == g:Async_shell && l:other != -1 && empty(l:postCmd)
+    elseif l:name  == s:defaultTermName  && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
         exe l:other.'hide'
     elseif a:action !=# 'off'

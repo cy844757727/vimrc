@@ -549,7 +549,8 @@ endfunction
 " === Auto record file history in a window {{{1
 " BufEnter enent trigger (w:bufHis)
 function! s:BufHisRecord()
-    if !empty(&buftype) || expand('%') =~# '\v^/|^$' || exists('w:buftype')
+    " Use relative path %:. , dont record outer (cwd) file
+    if !empty(&buftype) || expand('%:.') =~# '\v^/|^$' || exists('w:buftype')
         return
     endif
 

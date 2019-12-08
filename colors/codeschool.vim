@@ -48,12 +48,16 @@ call s:HI('TabLineSeparator', s:bg, ['#575e61'])
 
 hi ALEErrorSign guifg=#e44442
 hi ALEWarningSign guifg=#da9020
+hi ALEWarning guifg=NONE guibg=NONE
+hi ALEError guifg=NONE guibg=NONE
+hi link TagbarKind Number
 
 hi Cursor ctermfg=16 ctermbg=145 cterm=NONE guifg=#182227 guibg=#9ea7a6 gui=NONE
 hi CursorLine ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE
+hi CursorLineNr cterm=NONE  gui=NONE
 hi CursorColumn ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE
 hi ColorColumn ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#2e373b gui=NONE
-hi LineNr ctermfg=102 ctermbg=23 cterm=NONE guifg=#84898c guibg=#2a343a gui=NONE
+hi LineNr term=NONE ctermfg=102 ctermbg=23 cterm=NONE guifg=#84898c guibg=#2a343a gui=NONE
 hi VertSplit ctermfg=59 ctermbg=59 cterm=NONE guifg=#252c31 guibg=#252c31 gui=NONE
 hi MatchParen ctermfg=180 ctermbg=NONE cterm=underline guifg=#dda790 guibg=NONE gui=underline
 hi StatusLine ctermfg=231 ctermbg=59 cterm=bold guifg=#f0f0f0 guibg=#675e71 gui=bold
@@ -76,11 +80,12 @@ hi DiffAdd ctermfg=231 ctermbg=64 cterm=bold guifg=#f0f0f0 guibg=#43820d gui=bol
 hi DiffDelete ctermfg=88 ctermbg=NONE cterm=NONE guifg=#880708 guibg=NONE gui=NONE
 hi DiffChange ctermfg=231 ctermbg=23 cterm=NONE guifg=#f0f0f0 guibg=#1c3657 gui=NONE
 hi DiffText ctermfg=231 ctermbg=24 cterm=bold guifg=#f0f0f0 guibg=#204a87 gui=bold
-hi ErrorMsg ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
+hi ErrorMsg ctermfg=231 ctermbg=124 cterm=NONE guifg=#ffffff guibg=#b53030 gui=NONE
 hi WarningMsg ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
 hi Float ctermfg=68 ctermbg=NONE cterm=NONE guifg=#3c98d9 guibg=NONE gui=NONE
 hi Function ctermfg=153 ctermbg=NONE cterm=NONE guifg=#bcdbff guibg=NONE gui=NONE
 hi Identifier ctermfg=113 ctermbg=NONE cterm=NONE guifg=#99cf50 guibg=NONE gui=NONE
+"hi Identifier ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
 hi Keyword ctermfg=180 ctermbg=NONE cterm=NONE guifg=#dda790 guibg=NONE gui=NONE
 hi Label ctermfg=107 ctermbg=NONE cterm=NONE guifg=#8bb664 guibg=NONE gui=NONE
 hi NonText ctermfg=59 ctermbg=17 cterm=NONE guifg=#414e58 guibg=#232c31 gui=NONE

@@ -9,6 +9,7 @@ let g:loaded_GIT_Manager = 1
 
 command! -nargs=+ -complete=customlist,GIT_CompleteGit Git :echo system('git ' . "<args>")
 command! -nargs=* -complete=customlist,GIT_CompleteGit Gdiff :call git#Diff(<q-args>)
+command! GitManager :call git#Toggle()
 
 
 augroup Git_manager

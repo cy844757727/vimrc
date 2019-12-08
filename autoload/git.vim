@@ -92,7 +92,7 @@ function! git#FormatStatus()
         endif
     endfor
 
-    if l:status[-1] !~ '\S'
+    if !empty(l:status) && l:status[-1] !~ '\S'
         call remove(l:status, -1)
     endif
 
