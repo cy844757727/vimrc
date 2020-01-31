@@ -164,7 +164,7 @@ function <SID>Merge_Rebase_Branch(flag)
     let l:lineInfo = s:GetCurLinInfo()
 
     if l:lineInfo[0] ==# 'L' && l:lineInfo[1] !=# '*'
-        let l:op = (a:flag % 2 ? 'merge ' : 'rebase ').(a:flag > 2 ? '--continue' : l:lineInfo)
+        let l:op = (a:flag % 2 ? 'merge ' : 'rebase ').(a:flag > 2 ? '--continue' : l:lineInfo[1])
         let l:msg =  system('git ' . l:op)
 
         if l:msg !~ 'error:\|fatal:'
