@@ -158,11 +158,7 @@ function! <SID>DeleteItem(...)
     if l:fileInfo[0] ==# 'U'
         let l:msg = system('rm ' . l:fileInfo[-1])
     else
-        let l:msg = system(
-                    \ 'git rm ' . (a:0 > 0 ? '-f' : '') .
-                    \ (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') .
-                    \ ' -- ' . l:fileInfo[-1]
-                    \ )
+        let l:msg = system('git rm --cached -- ' . l:fileInfo[-1])
     endif
 
     redraw!

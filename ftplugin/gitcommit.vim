@@ -19,6 +19,7 @@ setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> \d :call <SID>DelFile()<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
@@ -95,6 +96,26 @@ function <SID>EditFile()
     endif
 endfunction
 
+
+function <SID>DelFile()
+    let l:file = getline('.')
+    if l:file =~ '^diff --git ' && input('Confirm remove file from repository(yes/no): ') == 'yes'
+    	let l:file = matchstr(l:file, '\v(diff --\w* (a/)?)\zs\S+')
+        let l:msg = system('git rm --cached -- ' . l:file)
+        if l:msg =~ 'error:\|fatal:'
+            echo l:msg
+        else
+            wincmd w
+            silent edit!
+            set modifiable
+            call setline(1, git#FormatStatus())
+            set nomodifiable
+            wincmd W
+        endif
+    endif
+endfunction
+
+
 function <SID>CheckOutFile()
     let l:file = getline('.')
     if l:file =~ '^diff --git ' && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
@@ -113,6 +134,7 @@ function <SID>CheckOutFile()
         endif
     endif
 endfunction
+
 
 function <SID>HelpDoc()
     echo
