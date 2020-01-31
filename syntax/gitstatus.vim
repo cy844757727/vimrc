@@ -3,7 +3,7 @@
 "
 "
 syn match GITStatus /^Staged:\|^Untracked:\|^WorkSpace:/
-syn match GITBranchCurrent /^## \S\+/
+syn match GITBranchCurrentStatue /^##.*/
 
 hi link GITStatus   Statement
-hi link GITBranchCurrent constant
+hi link GITBranchCurrentStatue constant

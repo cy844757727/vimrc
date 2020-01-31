@@ -75,7 +75,11 @@ function <SID>FileDiff()
     if l:file =~ '^diff --git '
     	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))
-        exec '!git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
+        if exists('g:Git_GuiDiffTool')
+            exec 'Async! git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
+        else
+            exec '!git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
+        endif
     endif
 endfunction
 
@@ -142,6 +146,7 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    <spcae>: code fold | unfold    (za)\n" .
                 \ "    d:       diff file             (git difftool -y)\n" .
+                \ "    \\d:      diff file             (git rm --cached )\n" .
                 \ "    e:       edit file\n" .
                 \ "    \\co:     checkout file         (git checkout hash --)\n" .
                 \ "    1234:    jump to 1234 wimdow"

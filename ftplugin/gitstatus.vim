@@ -30,10 +30,10 @@ nnoremap <buffer> <silent> 2 :2wincmd w<CR>
 nnoremap <buffer> <silent> 3 :3wincmd w<CR>
 nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
-"augroup Git_status
-"	autocmd!
-"	autocmd CursorMoved <buffer> call s:cursorJump()
-"augroup END
+augroup Git_status
+	autocmd!
+	autocmd CursorMoved <buffer> call s:cursorJump()
+augroup END
 
 if exists('*<SID>FileDiff')
     finish
@@ -97,7 +97,11 @@ function <SID>FileDiff()
     let l:fileInfo = s:GetCurLinInfo()
 
     if l:fileInfo[1] ==# 'M'
-        exec 'Async! git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
+        if exists('g:Git_GuiDiffTool')
+            exec 'Async! git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
+        else
+            exec '!git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
+        endif
     endif
 endfunction
 
