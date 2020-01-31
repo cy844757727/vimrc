@@ -82,35 +82,43 @@ function! git#FormatCommit(hash)
 endfunction
 
 
+
 function! git#FormatStatus()
-    let l:status = filter(systemlist('git status'), "v:val !~ '^\\s*[（(]'")
-
-    for l:i in range(len(l:status))
-        if l:status[l:i] =~ '\v^\s+'
-            let l:list = split(l:status[l:i])
-            let l:status[l:i] = printf('    %-10S  %s', l:list[0], join(l:list[1:]))
-        endif
-    endfor
-
-    if !empty(l:status) && l:status[-1] !~ '\S'
-        call remove(l:status, -1)
+    let l:status = systemlist('git status -bs')
+    if len(l:status) == 1
+        return l:status
     endif
 
-    return l:status
-endfunction
+    let l:staged = ['', 'Staged:', '']
+    let l:workspace = ['', 'WorkSpace:', '']
+    let l:untracked = ['', 'Untracked:', '']
 
-function! git#FormatStatusN()
-    let l:status = filter(systemlist('git status'), "v:val !~ '^\\s*[（(]'")
+    for l:item in l:status[1:]
+        if l:item[0] =~# '[MADRCU]'
+            let l:staged += ['    '.l:item[0].'  '.l:item[3:]]
+        endif
 
-    for l:i in range(len(l:status))
-        if l:status[l:i] =~ '\v^\s+'
-            let l:list = split(l:status[l:i])
-            let l:status[l:i] = printf('    %-10S  %s', l:list[0], join(l:list[1:]))
+        if l:item[1] =~# '[MADRCU]'
+            let l:workspace += ['    '.l:item[1].'  '.l:item[3:]]
+        endif
+
+        if l:item[0:1] ==# '??'
+            let l:untracked += ['    '.l:item[3:]]
         endif
     endfor
 
-    if !empty(l:status) && l:status[-1] !~ '\S'
-        call remove(l:status, -1)
+    let l:status = [l:status[0]]
+
+    if len(l:staged) > 3
+        let l:status += l:staged
+    endif
+
+    if len(l:workspace) > 3
+        let l:status += l:workspace
+    endif
+
+    if len(l:untracked) > 3
+        let l:status += l:untracked
     endif
 
     return l:status

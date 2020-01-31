@@ -58,6 +58,7 @@ function s:termAnalyzeCmd(cmd)
     return [l:cmd, l:name, s:cmdExpand(l:list)]
 endfunction
 
+
 " Switch embedded terminal {{{2
 " Args: action, cmd, postCmd
 " Action: on, off, toggle (default: toggle)

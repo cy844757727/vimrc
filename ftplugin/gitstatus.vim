@@ -30,14 +30,32 @@ nnoremap <buffer> <silent> 2 :2wincmd w<CR>
 nnoremap <buffer> <silent> 3 :3wincmd w<CR>
 nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
-augroup Git_status
-	autocmd!
-	autocmd CursorMoved <buffer> call s:cursorJump()
-augroup END
+"augroup Git_status
+"	autocmd!
+"	autocmd CursorMoved <buffer> call s:cursorJump()
+"augroup END
 
 if exists('*<SID>FileDiff')
     finish
 endif
+
+
+function s:GetCurLinInfo()
+    let l:line = getline('.')
+
+    if l:line !~# '^ '
+        return ['', '']
+    endif
+
+    let l:lin = search('^\w\+:$', 'bn')
+
+    if l:lin == 0
+        return ['', '']
+    endif
+    
+    return [getline(l:lin)[0]] + split(l:line)
+endfunction
+
 
 function s:Refresh()
     setlocal noreadonly modifiable
@@ -57,12 +75,8 @@ function s:MsgHandle(msg)
 endfunction
 
 function <SID>EditFile()
-    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    if len(l:file) == 1
-        let l:file = l:file[0]
-    elseif len(l:file) == 2
-        let l:file = l:file[1]
-    else
+    let l:file = s:GetCurLinInfo()[-1]
+    if !filereadable(l:file)
         return
     endif
 
@@ -72,89 +86,89 @@ function <SID>EditFile()
         let l:winId = win_findbuf(bufnr(l:file))
         if l:winId != []
             call win_gotoid(l:winId[0])
-        elseif filereadable(l:file)
+        else
             exec '-tabedit ' . l:file
         endif
     endif
 endfunction
 
+
 function <SID>FileDiff()
-    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    if len(l:file) == 2
-        let l:sign = split(system("git status -s -- " . l:file[1]))[0]
-        if l:sign =~ 'M'
-            let l:lin = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
-            let l:flag = (l:lin == 0) || (line('.') < l:lin) ? ' -y --cached ' : ' -y '
-"            exec '!git difftool' . l:flag . l:file[1]
-            exec 'Async git difftool' . l:flag . l:file[1]
-        endif
+    let l:fileInfo = s:GetCurLinInfo()
+
+    if l:fileInfo[1] ==# 'M'
+        exec 'Async! git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
     endif
 endfunction
+
 
 function <SID>CancelStaged(...)
 	let l:msg = 'none'
     if a:0 > 0
         let l:msg = system('git reset HEAD')
     else
-        let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-        let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-        if len(l:file) == 2 && (l:lin == 0 || line('.') < l:lin)
-            let l:msg = system("git reset HEAD -- " . l:file[1])
+        let l:fileInfo = s:GetCurLinInfo()
+
+        if l:fileInfo[0] ==# 'S'
+            let l:msg = system("git reset HEAD -- " . l:fileInfo[-1])
         endif
     endif
     call s:MsgHandle(l:msg)
 endfunction
+
 
 function <SID>AddFile(...)
 	let l:msg = 'none'
     if a:0 > 0
         let l:msg = system('git add .')
     else
-    	let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    	if len(l:file) == 1
-            let l:msg = system('git add -- ' . l:file[0])
-        elseif len(l:file) == 2
-            let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-            if l:lin != 0 && line('.') > l:lin
-                let l:msg = system('git add -- ' . l:file[1])
-            endif
+        let l:fileInfo = s:GetCurLinInfo()
+
+        if l:fileInfo[0] =~# '[WU]'
+            let l:msg = system('git add -- ' . l:fileInfo[-1])
         endif
     endif
     call s:MsgHandle(l:msg)
 endfunction
 
+
 function <SID>CheckOutFile()
-    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    let l:lin = search('^尚未暂存以备提交的变更\|Changes not staged for commit', 'n')
-    if len(l:file) == 2 && l:lin != 0 && line('.') > l:lin &&
-                \ input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
-        redraw!
-        call s:MsgHandle(system('git checkout -- ' . l:file[1]))
-    else
+    let l:fileInfo = s:GetCurLinInfo()
+
+    if l:fileInfo[0] =~# '[SW]'
+        if input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
+            call s:MsgHandle(system('git checkout -- ' . l:fileInfo[-1]))
+        endif
         redraw!
     endif
 endfunction
 
+
 function! <SID>DeleteItem(...)
-    let l:file = split(matchstr(getline('.'), '^\s\+.*$'))
-    let l:msg = 'none'
+    let l:fileInfo = s:GetCurLinInfo()
+    if empty(l:fileInfo[0])
+        return
+    endif
+
     if input('Confirm the deletion(yes/no): ') != 'yes'
         redraw!
         return
-    elseif len(l:file) == 1
-        let l:msg = system('rm ' . l:file[0])
-    else
-        let l:pre = a:0 > 0 ? '-f ' : ''
-        let l:linN = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
-        if l:linN != 0 && line('.') > l:linN
-            let l:msg = system('git rm ' . l:pre . '-- ' . l:file[-1])
-        else
-            let l:msg = system('git rm ' . l:pre . '--cached -- ' . l:file[-1])
-        endif
     endif
+
+    if l:fileInfo[0] ==# 'U'
+        let l:msg = system('rm ' . l:fileInfo[-1])
+    else
+        let l:msg = system(
+                    \ 'git rm ' . (a:0 > 0 ? '-f' : '') .
+                    \ (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') .
+                    \ ' -- ' . l:fileInfo[-1]
+                    \ )
+    endif
+
     redraw!
     call s:MsgHandle(l:msg)
 endfunction
+
 
 function s:cursorJump()
     if b:curL != line('.')
@@ -169,6 +183,7 @@ function s:cursorJump()
         let b:curL = line('.')
     endif
 endfunction
+
 
 function <SID>HelpDoc()
     echo
