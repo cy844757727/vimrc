@@ -19,6 +19,7 @@ setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> D :call <SID>FileDiff(1)<CR>
 nnoremap <buffer> <silent> \d :call <SID>DelFile()<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
@@ -70,16 +71,14 @@ function! Git_MyCommitFoldInfo()
     return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '
 endfunction
 
-function <SID>FileDiff()
+function <SID>FileDiff(...)
     let l:file = getline('.')
     if l:file =~ '^diff --git '
     	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
         let l:hash = split(getline(1))
-        if exists('g:Git_GuiDiffTool')
-            exec 'Async! git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
-        else
-            exec '!git difftool -y ' . l:hash[3] . ' ' . l:hash[1] . ' -- ' . l:file
-        endif
+        exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
+                    \ 'git difftool -y ' . (a:0 == 0 ? l:hash[3] : '') .
+                    \ ' ' . l:hash[1] . ' -- ' . l:file
     endif
 endfunction
 
@@ -146,6 +145,7 @@ function <SID>HelpDoc()
                 \ "==================================================\n" .
                 \ "    <spcae>: code fold | unfold    (za)\n" .
                 \ "    d:       diff file             (git difftool -y)\n" .
+                \ "    D:       diff file             (git difftool -y, workspace)\n" .
                 \ "    \\d:      diff file             (git rm --cached )\n" .
                 \ "    e:       edit file\n" .
                 \ "    \\co:     checkout file         (git checkout hash --)\n" .

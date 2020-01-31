@@ -10,7 +10,8 @@ let g:loaded_A_GIT_Manager = 1
 
 function! git#Diff(arg) abort
     if isdirectory('.git')
-        exe '!git difftool -y '.(empty(a:arg) ? expand('%') : a:arg)
+        exe (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
+                    \ 'git difftool -y '.(empty(a:arg) ? expand('%') : a:arg)
     elseif !empty(a:arg)
         exe '!vim -d '.a:arg.' '.expand('%')
     endif

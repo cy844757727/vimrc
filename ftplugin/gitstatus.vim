@@ -42,17 +42,15 @@ endif
 
 function s:GetCurLinInfo()
     let l:line = getline('.')
-
-    if l:line !~# '^ '
+    if l:line !~# '^\s\+\S'
         return ['', '']
     endif
 
     let l:lin = search('^\w\+:$', 'bn')
-
     if l:lin == 0
         return ['', '']
     endif
-    
+
     return [getline(l:lin)[0]] + split(l:line)
 endfunction
 
@@ -97,11 +95,10 @@ function <SID>FileDiff()
     let l:fileInfo = s:GetCurLinInfo()
 
     if l:fileInfo[1] ==# 'M'
-        if exists('g:Git_GuiDiffTool')
-            exec 'Async! git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
-        else
-            exec '!git difftool -y' . (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') . l:fileInfo[-1]
-        endif
+        exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
+                    \ 'git difftool -y ' .
+                    \ (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') .
+                    \ l:fileInfo[-1]
     endif
 endfunction
 
