@@ -201,6 +201,7 @@ function s:cursorJump()
     endif
 endfunction
 
+
 function <SID>HelpDoc()
     echo
                 \ "Git branch quick help !?\n" .
