@@ -111,7 +111,7 @@ endfunction
 function <SID>CheckOutNewBranck()
     let l:lineInfo = s:GetCurLinInfo()
 
-    if l:lineInfo[0] ==# 'L'
+    if l:lineInfo[0] =~# '[LT]'
         if l:lineInfo[1] ==# '*'
             call remove(l:lineInfo, 1)
         endif
