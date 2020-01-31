@@ -99,6 +99,23 @@ function! git#FormatStatus()
     return l:status
 endfunction
 
+function! git#FormatStatusN()
+    let l:status = filter(systemlist('git status'), "v:val !~ '^\\s*[（(]'")
+
+    for l:i in range(len(l:status))
+        if l:status[l:i] =~ '\v^\s+'
+            let l:list = split(l:status[l:i])
+            let l:status[l:i] = printf('    %-10S  %s', l:list[0], join(l:list[1:]))
+        endif
+    endfor
+
+    if !empty(l:status) && l:status[-1] !~ '\S'
+        call remove(l:status, -1)
+    endif
+
+    return l:status
+endfunction
+
 
 function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)

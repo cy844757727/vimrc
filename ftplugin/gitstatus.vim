@@ -85,7 +85,8 @@ function <SID>FileDiff()
         if l:sign =~ 'M'
             let l:lin = search('^尚未暂存以备提交的变更\|^Changes not staged for commit', 'n')
             let l:flag = (l:lin == 0) || (line('.') < l:lin) ? ' -y --cached ' : ' -y '
-            exec '!git difftool' . l:flag . l:file[1]
+"            exec '!git difftool' . l:flag . l:file[1]
+            exec 'Async git difftool' . l:flag . l:file[1]
         endif
     endif
 endfunction
