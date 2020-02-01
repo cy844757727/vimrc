@@ -12,6 +12,7 @@ setlocal buftype=nofile
 setlocal statusline=%2(\ %)\ Log%=%2(\ %)
 let b:statuslineBase = '%2( %) Log%=%2( %)'
 
+nnoremap <buffer> <silent> <space> :echo matchstr(getline('.'), ' .*$')<CR>
 nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> c :call <SID>RefreshCommitA()<CR>
 nnoremap <buffer> <silent> C :call <SID>RefreshCommitA(1)<CR>

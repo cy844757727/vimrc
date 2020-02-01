@@ -211,6 +211,7 @@ function <SID>HelpDoc()
                 \ "    a:       add file               (git add)\n" .
                 \ "    A:       add all file           (git add .)\n" .
                 \ "    e:       edit file              (new tabpage)\n" .
+                \ "    \\l:      file log               (git rm)\n" .
                 \ "    \\d:      delete file            (git rm)\n" .
                 \ "    \\D:      delete file            (git rm -f)\n" .
                 \ "    \\co:     checkout file          (git checkout --)\n" .

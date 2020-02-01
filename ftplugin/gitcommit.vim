@@ -9,12 +9,7 @@ let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
 setlocal buftype=nofile
-setlocal foldcolumn=0
-setlocal foldlevel=0
-setlocal foldmethod=marker
-setlocal foldmarker={[(<{,}>)]}
 setlocal foldminlines=1
-setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 let b:statuslineBase = '%2( %) Commit%=%2( %)'
 
@@ -42,53 +37,37 @@ if exists('*Git_MyCommitFoldInfo')
     finish
 endif
 
-function! Git_MyCommitFoldInfo()
-    let l:line = getline(v:foldstart)
-    let l:mode = getline(v:foldstart + 1)
-    let l:file = matchstr(l:line, '\v(diff --\w* (a/)?)\zs\S*')
-
-    if l:mode =~ 'index '
-        let l:mode = getline(v:foldstart + 2)
+function s:GetCurLinInfo()
+    let l:line = getline('.')
+    if l:line !~# '^>    '
+        return ['', '', '']
     endif
 
-    let l:cc = l:line =~ ' --cc \| --combined ' ? ' .' : '  '
-
-    if l:mode =~ '^--- '
-        let l:file = l:cc.'● '.l:file
-    elseif l:mode =~ 'new file mode'
-        let l:file = l:cc.' '.l:file
-    elseif l:mode =~ 'deleted file mode'
-        let l:file = l:cc.' '.l:file
-    elseif l:mode =~ 'old mode '
-        let l:file = '   '.l:file
-    elseif l:mode =~ 'rename from'
-        let l:file = '   '.l:file.'   '.matchstr(l:line, '\v( b/)\zs\S*')
-    elseif l:mode =~ 'copy from '
-        let l:file = '   '.l:file.'   '.matchstr(l:line, '\v( b/)\zs\S*')
-    elseif l:mode =~ 'Binary files '
-        let l:file = '   '.l:file
-    else
-        let l:file  = '    '.l:line
+    let l:lin = search('^commit ', 'bn')
+    if l:lin == 0
+        return ['', '', '']
     endif
 
-    return ' '.printf('%-5d', v:foldend - v:foldstart + 1).l:file.'  '
+    let l:hash = split(getline(l:lin))
+    return [l:hash[1], l:hash[3]] + split(l:line)[1:]
 endfunction
+
 
 function <SID>FileDiff(...)
-    let l:file = getline('.')
-    if l:file =~ '^diff --git '
-    	let l:file = matchstr(l:file, '\( a/\)\zs\S\+')
-        let l:hash = split(getline(1))
+    let l:fileInfo = s:GetCurLinInfo()
+
+    if l:fileInfo[2] ==# 'M'
         exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
-                    \ 'git difftool -y ' . (a:0 == 0 ? l:hash[3] : '') .
-                    \ ' ' . l:hash[1] . ' -- ' . l:file
+                    \ 'git difftool -y ' . (a:0 == 0 ? l:fileInfo[1] : '') .
+                    \ ' ' . l:fileInfo[0] . ' -- ' . l:fileInfo[-1]
     endif
 endfunction
 
+
 function <SID>EditFile()
-    let l:file = getline('.')
-    if l:file =~ '^diff --\w* '
-    	let l:file = matchstr(l:file, '\v(diff --\w* (a/)?)\zs\S+')
+    let l:file = s:GetCurLinInfo()[-1]
+
+    if filereadable(l:file)
         if exists('*misc#EditFile')
             call misc#EditFile(l:file, '-tabedit')
         else
@@ -104,18 +83,18 @@ endfunction
 
 
 function <SID>DelFile()
-    let l:file = getline('.')
-    if l:file =~ '^diff --git ' && input('Confirm remove file from repository(yes/no): ') == 'yes'
-    	let l:file = matchstr(l:file, '\v(diff --\w* (a/)?)\zs\S+')
+    let l:file = s:GetCurLinInfo()[-1]
+
+    if filereadable(l:file) && input('Confirm remove file from repository(yes/no): ') == 'yes'
         let l:msg = system('git rm --cached -- ' . l:file)
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             wincmd w
             silent edit!
-            set modifiable
+            setlocal modifiable
             call setline(1, git#FormatStatus())
-            set nomodifiable
+            setlocal nomodifiable
             wincmd W
         endif
     endif
@@ -123,11 +102,10 @@ endfunction
 
 
 function <SID>CheckOutFile(...)
-    let l:file = getline('.')
-    if l:file =~ '^diff --git ' && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
-    	let l:file = matchstr(l:file, '\v( a/)\zs\S+')
-        let l:hash = split(getline(1))
-        let l:msg = system('git checkout ' . (a:0 == 0 ? l:hash[1] : l:hash[3]) . ' -- ' . l:file)
+    let l:fileInfo = s:GetCurLinInfo()
+
+    if !empty(l:fileInfo[0]) && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
+        let l:msg = system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:fileInfo[1]) . ' -- ' . l:fileInfo[-1])
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
@@ -143,10 +121,9 @@ endfunction
 
 
 function <SID>FileLog()
-    let l:file = getline('.')
-    if l:file =~ '^diff --git '
-    	let l:file = matchstr(l:file, '\v( a/)\zs\S+')
-        let l:hash = split(getline(1))[1]
+    let l:file = s:GetCurLinInfo()[-1]
+
+    if !empty(l:file)
         wincmd W
         silent edit!
         setlocal modifiable

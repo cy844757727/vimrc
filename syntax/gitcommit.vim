@@ -55,6 +55,9 @@ syn region gitEmail matchgroup=gitEmailDelimiter start=/</ end=/>/ keepend oneli
 
 syn match  gitNotesHeader /^Notes:\ze\n    /
 
+"syn match gitfilelist /^>    .*$/
+"hi def link gitfilelist          Folded
+
 hi def link gitDateHeader        gitIdentityHeader
 hi def link gitIdentityHeader    gitIdentityKeyword
 hi def link gitIdentityKeyword   Label

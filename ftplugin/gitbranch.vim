@@ -187,13 +187,13 @@ function s:cursorJump()
             endif
         endwhile
         let b:curL = line('.')
-        let l:lin = search('^Tag:', 'n')
-        if l:lin != 0 && b:curL > l:lin
-            let l:msg = systemlist('git show ' . getline('.') . "|sed '/^diff --\\w/s/$/ {[(<{1/'")
+        let l:lineInfo = s:GetCurLinInfo()
+        if l:lineInfo[0] ==# 'T'
+            let l:target = getline('.')
             2wincmd w
             setlocal noreadonly modifiable
             silent edit!
-            call setline(1, l:msg)
+            call setline(1, git#FormatCommit(l:target))
             set filetype=gitcommit
             set nobuflisted
             setlocal readonly nomodifiable
