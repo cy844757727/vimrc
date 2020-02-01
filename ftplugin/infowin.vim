@@ -35,7 +35,6 @@ augroup InfoWin_
     autocmd!
     autocmd BufWinLeave <buffer> call s:PreviewClose()
     autocmd BufWinEnter <buffer> let t:infowin_winid = win_getid(winnr()-1)
-    autocmd CursorMoved <buffer> if s:auto|call s:PreviewAuto()|endif
 augroup END
 
 command! -nargs=1 -buffer FilesDo :call s:FilesDo(<q-args>)
@@ -112,7 +111,12 @@ function <SID>Preview(flag)
     endif
 
     redraw | wincmd W
-    let [s:currentLine, s:auto] = [line('.'), a:flag ==# 'auto' ? 1 : 0]
+    let s:currentLine = line('.')
+    if a:flag ==# 'auto'
+        autocmd InfoWin_ CursorMoved <buffer> call s:PreviewAuto()
+    elseif exists('#InfoWin_#CursorMoved#<buffer>')
+        autocmd! InfoWin_ CursorMoved <buffer>
+    endif
 endfunction
 
 

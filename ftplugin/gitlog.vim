@@ -10,8 +10,11 @@ let b:curL = -1
 
 setlocal buftype=nofile
 setlocal statusline=%2(\ %)\ Log%=%2(\ %)
+let b:statuslineBase = '%2( %) Log%=%2( %)'
 
 nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
+nnoremap <buffer> <silent> c :call <SID>RefreshCommitA()<CR>
+nnoremap <buffer> <silent> C :call <SID>RefreshCommitA(1)<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
@@ -23,14 +26,36 @@ nnoremap <buffer> <silent> 2 :2wincmd w<CR>
 nnoremap <buffer> <silent> 3 :3wincmd w<CR>
 nnoremap <buffer> <silent> 4 :4wincmd w<CR>
 
-augroup Git_log
-	autocmd!
-	autocmd CursorMoved <buffer> call s:RefreshCommit()
-augroup END
 
 if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
+
+command -nargs=1 -complete=file -buffer  Log :call s:LogTarget(<q-args>)
+
+augroup Git_log
+augroup END
+
+function <SID>RefreshCommitA(...)
+    call s:RefreshCommit()
+
+    if a:0 > 0
+        autocmd Git_log CursorMoved <buffer> call s:RefreshCommit()
+    elseif exists('#Git_log#CursorMoved#<buffer>')
+        autocmd! Git_log CursorMoved <buffer>
+    endif
+endfunction
+
+function s:LogTarget(target)
+    if filereadable(a:target)
+        silent edit!
+        setlocal modifiable
+        call setline(1, git#FormatLog(a:target))
+        let l:list = split(b:statuslineBase, '%=')
+        let &l:statusline = l:list[0] . ' -- ' . a:target . '%=' . l:list[1]
+        setlocal nomodifiable
+    endif
+endfunction
 
 function s:RefreshCommit()
     let l:hash = matchstr(getline('.'), '\w\{7}')

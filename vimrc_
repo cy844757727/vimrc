@@ -523,4 +523,5 @@ let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
 
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 
+set tw=0
 " vim:foldmethod=marker

@@ -18,8 +18,8 @@ function! git#Diff(arg) abort
 endfunction
 
 
-function! git#FormatLog()
-    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s'")
+function! git#FormatLog(target)
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . a:target)
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 
     for l:str in l:log
@@ -108,21 +108,10 @@ function! git#FormatStatus()
         endif
     endfor
 
-    let l:status = [l:status[0]]
-
-    if len(l:staged) > 3
-        let l:status += l:staged
-    endif
-
-    if len(l:workspace) > 3
-        let l:status += l:workspace
-    endif
-
-    if len(l:untracked) > 3
-        let l:status += l:untracked
-    endif
-
-    return l:status
+    return [l:status[0]] +
+                \ (len(l:staged)    > 3 ? l:staged    : []) +
+                \ (len(l:workspace) > 3 ? l:workspace : []) +
+                \ (len(l:untracked) > 3 ? l:untracked : [])
 endfunction
 
 
@@ -132,7 +121,8 @@ function! s:TabPage()
 
     silent $tabnew .Git_log
     setlocal noreadonly modifiable
-    call setline(1, git#FormatLog())
+    call setline(1, git#FormatLog(''))
+    let &l:statusline = b:statuslineBase
     setlocal readonly nomodifiable
     setlocal nonu nospell nowrap foldcolumn=0
 
@@ -202,8 +192,9 @@ function! git#Refresh()
         setlocal noreadonly modifiable
         let l:pos = getpos('.')
         silent edit!
-        call setline(1, git#FormatLog())
+        call setline(1, git#FormatLog(''))
         call setpos('.', l:pos)
+        let &l:statusline = b:statuslineBase
         setlocal readonly nomodifiable
 
         exe l:winnr.'wincmd w'

@@ -11,6 +11,7 @@ let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
 setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
+let b:statuslineBase = '%2( %)ﰧ Status%=%2( %)'
 
 nnoremap <buffer> <space> :echo getline('.')<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
@@ -20,6 +21,7 @@ nnoremap <buffer> <silent> a :call <SID>AddFile()<CR>
 nnoremap <buffer> <silent> A :call <SID>AddFile(1)<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
+nnoremap <buffer> <silent> \l :call <SID>FileLog()<CR>
 nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
@@ -164,6 +166,22 @@ function! <SID>DeleteItem(...)
 
     redraw!
     call s:MsgHandle(l:msg)
+endfunction
+
+
+function <SID>FileLog()
+    let l:fileInfo = s:GetCurLinInfo()
+
+    if l:fileInfo[0] =~# '[SW]'
+        1wincmd w
+        silent edit!
+        setlocal modifiable
+        call setline(1, git#FormatLog(l:fileInfo[-1]))
+        let l:list = split(b:statuslineBase, '%=')
+        let &l:statusline = l:list[0] . ' -- ' . l:fileInfo[-1] . '%=' . l:list[1]
+        let b:target = l:fileInfo[-1]
+        setlocal nomodifiable
+    endif
 endfunction
 
 

@@ -16,13 +16,16 @@ setlocal foldmarker={[(<{,}>)]}
 setlocal foldminlines=1
 setlocal foldtext=Git_MyCommitFoldInfo()
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
+let b:statuslineBase = '%2( %) Commit%=%2( %)'
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> D :call <SID>FileDiff(1)<CR>
 nnoremap <buffer> <silent> \d :call <SID>DelFile()<CR>
+nnoremap <buffer> <silent> \l :call <SID>FileLog()<CR>
 nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
+nnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(1)<CR>
 nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
 nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
@@ -119,22 +122,39 @@ function <SID>DelFile()
 endfunction
 
 
-function <SID>CheckOutFile()
+function <SID>CheckOutFile(...)
     let l:file = getline('.')
     if l:file =~ '^diff --git ' && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
     	let l:file = matchstr(l:file, '\v( a/)\zs\S+')
-        let l:hash = split(getline(1))[1]
-        let l:msg = system("git checkout " . l:hash . ' -- ' . l:file)
+        let l:hash = split(getline(1))
+        let l:msg = system('git checkout ' . (a:0 == 0 ? l:hash[1] : l:hash[3]) . ' -- ' . l:file)
         if l:msg =~ 'error:\|fatal:'
             echo l:msg
         else
             wincmd w
             silent edit!
-            set modifiable
+            setlocal modifiable
             call setline(1, git#FormatStatus())
-            set nomodifiable
+            setlocal nomodifiable
             wincmd W
         endif
+    endif
+endfunction
+
+
+function <SID>FileLog()
+    let l:file = getline('.')
+    if l:file =~ '^diff --git '
+    	let l:file = matchstr(l:file, '\v( a/)\zs\S+')
+        let l:hash = split(getline(1))[1]
+        wincmd W
+        silent edit!
+        setlocal modifiable
+        call setline(1, git#FormatLog(l:file))
+        let l:list = split(b:statuslineBase, '%=')
+        let &l:statusline = l:list[0] . ' -- ' . l:file . '%=' . l:list[1]
+        let b:target = l:file
+        setlocal nomodifiable
     endif
 endfunction
 
@@ -146,9 +166,11 @@ function <SID>HelpDoc()
                 \ "    <spcae>: code fold | unfold    (za)\n" .
                 \ "    d:       diff file             (git difftool -y)\n" .
                 \ "    D:       diff file             (git difftool -y, workspace)\n" .
-                \ "    \\d:      diff file             (git rm --cached )\n" .
+                \ "    \\l:      file log             (git log --oneline -- file)\n" .
+                \ "    \\d:      del file             (git rm --cached )\n" .
                 \ "    e:       edit file\n" .
                 \ "    \\co:     checkout file         (git checkout hash --)\n" .
+                \ "    \\CO:     checkout file         (git checkout prehash --)\n" .
                 \ "    1234:    jump to 1234 wimdow"
 endfunction
 
