@@ -3,7 +3,6 @@
 " Author: Cy <844757727@qq.com>
 " Description: Asynchronous job & embedded terminal manager
 "              run & debug script language
-" Last Modified: 2019年01月18日 星期五 15时04分00秒
 """"""""""""""""""""""""""""""""""""""""""""""
 
 if exists('g:loaded_a_async') || !has('job') || !has('terminal')

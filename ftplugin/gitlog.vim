@@ -17,6 +17,7 @@ nnoremap <buffer> <silent> t :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> c :call <SID>RefreshCommitA()<CR>
 nnoremap <buffer> <silent> C :call <SID>RefreshCommitA(1)<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
+nnoremap <buffer> <silent> \l :Log<CR>
 nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
 nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
