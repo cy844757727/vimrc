@@ -193,7 +193,8 @@ function s:cursorJump()
             2wincmd w
             setlocal noreadonly modifiable
             silent edit!
-            call setline(1, git#FormatCommit(l:target))
+            call setline(1, systemlist('git show --raw ' . l:target . '|sed "s/^:.*\.\.\.\s*/>    /"'))
+"            call setline(1, git#FormatCommit(l:target))
             set filetype=gitcommit
             set nobuflisted
             setlocal readonly nomodifiable

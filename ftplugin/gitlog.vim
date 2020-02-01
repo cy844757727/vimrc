@@ -32,7 +32,7 @@ if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
 
-command -nargs=1 -complete=file -buffer Log :call s:LogTarget(<q-args>)
+command -nargs=? -complete=file -buffer Log :call s:LogTarget(<q-args>)
 
 augroup Git_log
 augroup END
@@ -48,7 +48,7 @@ function <SID>RefreshCommitA(...)
 endfunction
 
 function s:LogTarget(target)
-    if filereadable(a:target)
+    if empty(a:target) || filereadable(a:target)
         silent edit!
         setlocal modifiable
         call setline(1, git#FormatLog(a:target))

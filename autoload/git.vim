@@ -68,19 +68,15 @@ endfunction
 
 
 function! git#FormatCommit(hash)
-    let l:commitInfo = systemlist(
-                \ "git show --pretty='".
+    return systemlist(
+                \ 'git show --raw --pretty="'.
                 \ 'commit %H ... %p%n'.
                 \ 'Author:  %an  <%ae>%n'.
                 \ 'Date:    %ad%n'.
                 \ '%D%n%n'.
-                \ '         %s'.
-                \ "' -s ".a:hash
+                \ '         %s" '.
+                \ a:hash . ' | sed "s/^:.*\.\.\.\s*/>    /"'
                 \ )
-    let l:filelist = map(systemlist(
-                \ 'git show --pretty="" --name-status ' . a:hash
-                \ ), "'>    '.v:val")
-    return l:commitInfo + [''] + l:filelist
 endfunction
 
 
