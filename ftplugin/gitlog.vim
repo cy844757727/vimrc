@@ -31,7 +31,7 @@ if exists('*<SID>Reset_Revert_Commit')
     finish
 endif
 
-command -nargs=1 -complete=file -buffer  Log :call s:LogTarget(<q-args>)
+command -nargs=1 -complete=file -buffer Log :call s:LogTarget(<q-args>)
 
 augroup Git_log
 augroup END
