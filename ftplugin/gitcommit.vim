@@ -12,21 +12,21 @@ setlocal buftype=nofile
 setlocal foldminlines=1
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
-nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
-nnoremap <buffer> <silent> d       :call <SID>FileDiff()<CR>
-nnoremap <buffer> <silent> D       :call <SID>FileDiff(1)<CR>
-nnoremap <buffer> <silent> \d      :call <SID>DelFile()<CR>
-nnoremap <buffer> <silent> \l      :call <SID>FileLog()<CR>
-nnoremap <buffer> <silent> e       :call <SID>EditFile()<CR>
-nnoremap <buffer> <silent> \co     :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> \CO     :call <SID>CheckOutFile(1)<CR>
-nnoremap <buffer> <silent> m       :call git#Menu(1)<CR>
-nnoremap <buffer> <silent> M       :call git#Menu(0)<CR>
-nnoremap <buffer> <silent> ?       :call <SID>HelpDoc()<CR>
-nnoremap <buffer> <silent> 1       :1wincmd w<CR>
-nnoremap <buffer> <silent> 2       :2wincmd w<CR>
-nnoremap <buffer> <silent> 3       :3wincmd w<CR>
-nnoremap <buffer> <silent> 4       :4wincmd w<CR>
+nnoremap <buffer> <Space>      :silent! normal za<CR>
+nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> D   :call <SID>FileDiff(1)<CR>
+nnoremap <buffer> <silent> \d  :call <SID>DelFile()<CR>
+nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
+nnoremap <buffer> <silent> e   :call <SID>EditFile()<CR>
+nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
+nnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(1)<CR>
+nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M   :call git#Menu(0)<CR>
+nnoremap <buffer> <silent> ?   :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1   :1wincmd w<CR>
+nnoremap <buffer> <silent> 2   :2wincmd w<CR>
+nnoremap <buffer> <silent> 3   :3wincmd w<CR>
+nnoremap <buffer> <silent> 4   :4wincmd w<CR>
 
 "augroup Git_commit
 "	autocmd!
