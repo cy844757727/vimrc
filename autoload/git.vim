@@ -17,8 +17,10 @@ function! git#Diff(arg) abort
     endif
 endfunction
 
-
-function! git#FormatLog(target)
+" 
+"
+"
+function! s:FormatLog(target)
     let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . a:target)
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 
@@ -44,8 +46,10 @@ function! git#FormatLog(target)
     return l:log
 endfunction
 
-
-function! git#FormatBranch()
+"
+"
+"
+function! s:FormatBranch()
     let l:content = ['Local:', ''] + map(systemlist('git branch -v'), "'    '.v:val")
     let l:remote = map(systemlist('git remote -v'), "'    '.v:val")
     let l:tag = map(systemlist('git tag|sort -nr'), "'    '.v:val")
@@ -66,8 +70,10 @@ function! git#FormatBranch()
     return l:content
 endfunction
 
-
-function! git#FormatCommit(hash)
+"
+"
+"
+function! s:FormatCommit(hash)
     return systemlist(
                 \ 'git show --raw --pretty="'.
                 \ 'commit %H ... %p%n'.
@@ -79,9 +85,10 @@ function! git#FormatCommit(hash)
                 \ )
 endfunction
 
-
-
-function! git#FormatStatus()
+"
+"
+"
+function! s:FormatStatus()
     let l:status = systemlist('git status -bs')
     if len(l:status) == 1
         return l:status
@@ -111,39 +118,36 @@ function! git#FormatStatus()
                 \ (len(l:untracked) > 3 ? l:untracked : [])
 endfunction
 
-
+"
+"
+"
 function! s:TabPage()
     let l:col = float2nr(0.4 * &columns)
     let l:lin = float2nr(0.4 * &lines)
 
     silent $tabnew .Git_log
     setlocal noreadonly modifiable
-    call setline(1, git#FormatLog(''))
-    let &l:statusline = b:statuslineBase
+    call setline(1, s:FormatLog(''))
     setlocal readonly nomodifiable
-    setlocal nonu nospell nowrap foldcolumn=0
 
     exe 'silent belowright '.l:col.'vnew .Git_status'
     setlocal noreadonly modifiable
-    call setline(1, git#FormatStatus())
-    call search('^\(\s\+\)\zs\S')
+    call setline(1, s:FormatStatus())
     setlocal readonly nomodifiable
-    setlocal winfixwidth nospell nonu foldcolumn=0
+    call search('^\s')
 
     exe 'silent belowright '.l:lin.'new .Git_branch'
     setlocal noreadonly modifiable
-    call setline(1, git#FormatBranch())
-    call search('^\([ *]\+\)\zs\w')
+    call setline(1, s:FormatBranch())
     setlocal readonly nomodifiable
-    setlocal winfixheight nospell nonu nowrap foldcolumn=0
+    call search('^\s')
 
     1wincmd w
     exe 'silent belowright '.l:lin.'new .Git_commit'
     setlocal noreadonly modifiable
-    call setline(1, git#FormatCommit('HEAD'))
+    call setline(1, s:FormatCommit('HEAD'))
     setlocal readonly nomodifiable
-    setlocal winfixheight nospell nonu foldcolumn=0
-    normal zj
+    call search('^>')
 
     3wincmd w
     let t:tab_lable = ' Git-Manager'
@@ -157,7 +161,8 @@ function! git#Toggle()
     else
         try
             exe win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0].'tabnext'
-            call git#Refresh()
+            let t:git_tabpageManager = 1
+            call git#Refresh('all')
         catch
             call s:TabPage()
         endtry
@@ -165,38 +170,66 @@ function! git#Toggle()
 endfunction
 
 
-function! git#Refresh()
-    if bufwinnr('.Git_log') != -1
-        let l:winnr = winnr()
+function git#Refresh(target, ...)
+    if !exists('t:git_tabpageManager')
+        return
+    endif
 
-        4wincmd w
-        setlocal noreadonly modifiable
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, git#FormatBranch())
-        call setpos('.', l:pos)
-        setlocal readonly nomodifiable
+    let l:winnr = winnr()
 
-        wincmd W
-        setlocal noreadonly modifiable
-        let l:pos = getpos('.')
-        silent edit!
-        call setline(1, git#FormatStatus())
-        call setpos('.', l:pos)
-        setlocal readonly nomodifiable
-
+    if a:target ==# 'all' || a:target ==# 'log'
         1wincmd w
-        setlocal noreadonly modifiable
         let l:pos = getpos('.')
+        setlocal noreadonly modifiable
         silent edit!
-        call setline(1, git#FormatLog(''))
-        call setpos('.', l:pos)
-        let &l:statusline = b:statuslineBase
+        call setline(1, s:FormatLog(a:0 ==0 ? '' : a:1))
         setlocal readonly nomodifiable
+        call setpos('.', l:pos)
+        let &l:statusline = '%2( %) Log'.(a:0 == 0 || empty(a:1) ? '' : ' -- '.a:1).'%=%2( %)'
+    endif
 
-        exe l:winnr.'wincmd w'
-        let t:tab_lable = ' Git-Manager'
-        let t:git_tabpageManager = 1
+    if a:target ==# 'all' || a:target ==# 'commit'
+        2wincmd w
+        setlocal noreadonly modifiable
+        silent edit!
+        call setline(1, s:FormatCommit(a:0 == 0 ? 'HEAD' : a:1))
+        setlocal nobuflisted readonly nomodifiable
+        call search('^>')
+    endif
+
+    if a:target ==# 'all' || a:target ==# 'status'
+        3wincmd w
+        let l:pos = getpos('.')
+        setlocal noreadonly modifiable
+        silent edit!
+        call setline(1, s:FormatStatus())
+        setlocal readonly nomodifiable
+        call setpos('.', l:pos)
+    endif
+
+    if a:target ==# 'all' || a:target ==# 'branch'
+        4wincmd w
+        let l:pos = getpos('.')
+        setlocal noreadonly modifiable
+        silent edit!
+        call setline(1, s:FormatBranch())
+        setlocal readonly nomodifiable
+        call setpos('.', l:pos)
+    endif
+
+    exec l:winnr . 'wincmd w'
+    let t:tab_lable = ' Git-Manager'
+    let t:git_tabpageManager = 1
+endfunction
+
+
+function! git#MsgHandle(msg, target)
+    if a:msg =~ 'error:\|fatal'
+        echo a:msg
+        return 1
+    elseif a:msg !=# 'NONE'
+        call git#Refresh(a:target)
+        return 0
     endif
 endfunction
 
@@ -302,7 +335,7 @@ function! git#Menu(menu)
     if !exists('l:msg')
         return
     elseif l:msg !~ '\verror:|fatal:'
-        call git#Refresh()
+        call git#Refresh('all')
     endif
 
     redraw

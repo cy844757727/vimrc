@@ -384,7 +384,7 @@ function! misc#F5Function(type) range abort
     elseif &diff
         diffupdate
     elseif exists('t:git_tabpageManager')
-        call git#Refresh()
+        call git#Refresh('all')
     elseif has_key(s:F5Function, a:type) && misc#SwitchToEmptyBuftype()
         call s:F5Function[a:type]()
     endif

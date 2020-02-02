@@ -11,23 +11,24 @@ let b:ale_enabled = 0
 setlocal buftype=nofile
 setlocal foldminlines=1
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
-let b:statuslineBase = '%2( %) Commit%=%2( %)'
+setlocal winfixheight nospell nonu foldcolumn=0
+"let b:statuslineBase = '%2( %) Commit%=%2( %)'
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
-nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
-nnoremap <buffer> <silent> D :call <SID>FileDiff(1)<CR>
-nnoremap <buffer> <silent> \d :call <SID>DelFile()<CR>
-nnoremap <buffer> <silent> \l :call <SID>FileLog()<CR>
-nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
-nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(1)<CR>
-nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
-nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
-nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
-nnoremap <buffer> <silent> 1 :1wincmd w<CR>
-nnoremap <buffer> <silent> 2 :2wincmd w<CR>
-nnoremap <buffer> <silent> 3 :3wincmd w<CR>
-nnoremap <buffer> <silent> 4 :4wincmd w<CR>
+nnoremap <buffer> <silent> d       :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> D       :call <SID>FileDiff(1)<CR>
+nnoremap <buffer> <silent> \d      :call <SID>DelFile()<CR>
+nnoremap <buffer> <silent> \l      :call <SID>FileLog()<CR>
+nnoremap <buffer> <silent> e       :call <SID>EditFile()<CR>
+nnoremap <buffer> <silent> \co     :call <SID>CheckOutFile()<CR>
+nnoremap <buffer> <silent> \CO     :call <SID>CheckOutFile(1)<CR>
+nnoremap <buffer> <silent> m       :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M       :call git#Menu(0)<CR>
+nnoremap <buffer> <silent> ?       :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1       :1wincmd w<CR>
+nnoremap <buffer> <silent> 2       :2wincmd w<CR>
+nnoremap <buffer> <silent> 3       :3wincmd w<CR>
+nnoremap <buffer> <silent> 4       :4wincmd w<CR>
 
 "augroup Git_commit
 "	autocmd!
@@ -86,17 +87,7 @@ function <SID>DelFile()
     let l:file = s:GetCurLinInfo()[-1]
 
     if filereadable(l:file) && input('Confirm remove file from repository(yes/no): ') == 'yes'
-        let l:msg = system('git rm --cached -- ' . l:file)
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            wincmd w
-            silent edit!
-            setlocal modifiable
-            call setline(1, git#FormatStatus())
-            setlocal nomodifiable
-            wincmd W
-        endif
+        call git#MsgHandle(system('git rm --cached -- ' . l:file), 'status')
     endif
 endfunction
 
@@ -105,17 +96,7 @@ function <SID>CheckOutFile(...)
     let l:fileInfo = s:GetCurLinInfo()
 
     if !empty(l:fileInfo[0]) && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
-        let l:msg = system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:fileInfo[1]) . ' -- ' . l:fileInfo[-1])
-        if l:msg =~ 'error:\|fatal:'
-            echo l:msg
-        else
-            wincmd w
-            silent edit!
-            setlocal modifiable
-            call setline(1, git#FormatStatus())
-            setlocal nomodifiable
-            wincmd W
-        endif
+        call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:fileInfo[1]) . ' -- ' . l:fileInfo[-1]), 'status')
     endif
 endfunction
 
@@ -124,14 +105,8 @@ function <SID>FileLog()
     let l:file = s:GetCurLinInfo()[-1]
 
     if !empty(l:file)
-        wincmd W
-        silent edit!
-        setlocal modifiable
-        call setline(1, git#FormatLog(l:file))
-        let l:list = split(b:statuslineBase, '%=')
-        let &l:statusline = l:list[0] . ' -- ' . l:file . '%=' . l:list[1]
-        let b:target = l:file
-        setlocal nomodifiable
+        call git#Refresh('log', l:file)
+        1wincmd w
     endif
 endfunction
 

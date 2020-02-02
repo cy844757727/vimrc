@@ -7,30 +7,29 @@ if exists("b:did_ftplugin")
 endif
 let b:did_ftplugin = 1
 let b:curL = -1
-let b:currentDir = substitute(getcwd(), '^/\w*/\w*', '~', '')
 
 setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
 setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
-let b:statuslineBase = '%2( %)ﰧ Status%=%2( %)'
+setlocal winfixwidth nospell nonu foldcolumn=0
 
-nnoremap <buffer> <space> :echo getline('.')<CR>
-nnoremap <buffer> <silent> d :call <SID>FileDiff()<CR>
-nnoremap <buffer> <silent> r :call <SID>CancelStaged()<CR>
-nnoremap <buffer> <silent> R :call <SID>CancelStaged(1)<CR>
-nnoremap <buffer> <silent> a :call <SID>AddFile()<CR>
-nnoremap <buffer> <silent> A :call <SID>AddFile(1)<CR>
-nnoremap <buffer> <silent> e :call <SID>EditFile()<CR>
-nnoremap <buffer> <silent> \d :call <SID>DeleteItem()<CR>
-nnoremap <buffer> <silent> \l :call <SID>FileLog()<CR>
-nnoremap <buffer> <silent> \D :call <SID>DeleteItem(1)<CR>
+nnoremap <buffer> <space>      :echo getline('.')<CR>
+nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
+nnoremap <buffer> <silent> r   :call <SID>CancelStaged()<CR>
+nnoremap <buffer> <silent> R   :call <SID>CancelStaged(1)<CR>
+nnoremap <buffer> <silent> a   :call <SID>AddFile()<CR>
+nnoremap <buffer> <silent> A   :call <SID>AddFile(1)<CR>
+nnoremap <buffer> <silent> e   :call <SID>EditFile()<CR>
+nnoremap <buffer> <silent> \d  :call <SID>DeleteItem()<CR>
+nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
+nnoremap <buffer> <silent> \D  :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
-nnoremap <buffer> <silent> m :call git#Menu(1)<CR>
-nnoremap <buffer> <silent> M :call git#Menu(0)<CR>
-nnoremap <buffer> <silent> ? :call <SID>HelpDoc()<CR>
-nnoremap <buffer> <silent> 1 :1wincmd w<CR>
-nnoremap <buffer> <silent> 2 :2wincmd w<CR>
-nnoremap <buffer> <silent> 3 :3wincmd w<CR>
-nnoremap <buffer> <silent> 4 :4wincmd w<CR>
+nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
+nnoremap <buffer> <silent> M   :call git#Menu(0)<CR>
+nnoremap <buffer> <silent> ?   :call <SID>HelpDoc()<CR>
+nnoremap <buffer> <silent> 1   :1wincmd w<CR>
+nnoremap <buffer> <silent> 2   :2wincmd w<CR>
+nnoremap <buffer> <silent> 3   :3wincmd w<CR>
+nnoremap <buffer> <silent> 4   :4wincmd w<CR>
 
 augroup Git_status
 	autocmd!
@@ -56,23 +55,6 @@ function s:GetCurLinInfo()
     return [getline(l:lin)[0]] + split(l:line)
 endfunction
 
-
-function s:Refresh()
-    setlocal noreadonly modifiable
-    let l:pos = getpos('.')
-    silent edit!
-    call setline(1, git#FormatStatus())
-    call setpos('.', l:pos)
-    setlocal readonly nomodifiable
-endfunction
-
-function s:MsgHandle(msg)
-    if a:msg =~ 'error:\|fatal'
-        echo a:msg
-    elseif a:msg != 'none'
-        call s:Refresh()
-    endif
-endfunction
 
 function <SID>EditFile()
     let l:file = s:GetCurLinInfo()[-1]
@@ -106,7 +88,7 @@ endfunction
 
 
 function <SID>CancelStaged(...)
-	let l:msg = 'none'
+	let l:msg = 'NONE'
     if a:0 > 0
         let l:msg = system('git reset HEAD')
     else
@@ -116,12 +98,12 @@ function <SID>CancelStaged(...)
             let l:msg = system("git reset HEAD -- " . l:fileInfo[-1])
         endif
     endif
-    call s:MsgHandle(l:msg)
+    call git#MsgHandle(l:msg, 'status')
 endfunction
 
 
 function <SID>AddFile(...)
-	let l:msg = 'none'
+	let l:msg = 'NONE'
     if a:0 > 0
         let l:msg = system('git add .')
     else
@@ -131,7 +113,7 @@ function <SID>AddFile(...)
             let l:msg = system('git add -- ' . l:fileInfo[-1])
         endif
     endif
-    call s:MsgHandle(l:msg)
+    call git#MsgHandle(l:msg, 'status')
 endfunction
 
 
@@ -140,7 +122,7 @@ function <SID>CheckOutFile()
 
     if l:fileInfo[0] =~# '[SW]'
         if input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
-            call s:MsgHandle(system('git checkout -- ' . l:fileInfo[-1]))
+            call git#MsgHandle(system('git checkout -- ' . l:fileInfo[-1]), 'status')
         endif
         redraw!
     endif
@@ -158,14 +140,7 @@ function! <SID>DeleteItem(...)
         return
     endif
 
-    if l:fileInfo[0] ==# 'U'
-        let l:msg = system('rm ' . l:fileInfo[-1])
-    else
-        let l:msg = system('git rm --cached -- ' . l:fileInfo[-1])
-    endif
-
-    redraw!
-    call s:MsgHandle(l:msg)
+    call git#MsgHandle(system((l:fileInfo[0] ==# 'U' ? 'rm ' : 'git rm --cached -- ') . l:fileInfo[-1]), 'status')
 endfunction
 
 
@@ -173,14 +148,8 @@ function <SID>FileLog()
     let l:fileInfo = s:GetCurLinInfo()
 
     if l:fileInfo[0] =~# '[SW]'
+        call git#Refresh('log', l:fileInfo[-1])
         1wincmd w
-        silent edit!
-        setlocal modifiable
-        call setline(1, git#FormatLog(l:fileInfo[-1]))
-        let l:list = split(b:statuslineBase, '%=')
-        let &l:statusline = l:list[0] . ' -- ' . l:fileInfo[-1] . '%=' . l:list[1]
-        let b:target = l:fileInfo[-1]
-        setlocal nomodifiable
     endif
 endfunction
 
