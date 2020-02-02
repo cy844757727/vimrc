@@ -42,10 +42,25 @@ function <SID>RefreshCommitA(...)
     call s:RefreshCommit()
 
     if a:0 > 0
-        autocmd Git_log CursorMoved <buffer> call s:RefreshCommit()|wincmd w|set ft=gitcommit|wincmd W
+        autocmd Git_log CursorMoved <buffer> call s:CursorMoved()
     elseif exists('#Git_log#CursorMoved#<buffer>')
         autocmd! Git_log CursorMoved <buffer>
     endif
+endfunction
+
+
+let s:curL = 0
+function s:CursorMoved()
+    let l:lin = line('.')
+
+    if l:lin != s:curL
+        call s:RefreshCommit()
+        wincmd w
+        set ft=gitcommit
+        wincmd W
+    endif
+
+    let s:curL = l:lin
 endfunction
 
 

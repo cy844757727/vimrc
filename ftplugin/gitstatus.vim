@@ -87,42 +87,30 @@ endfunction
 
 
 function <SID>CancelStaged(...)
-	let l:msg = 'NONE'
-    if a:0 > 0
-        let l:msg = system('git reset HEAD')
-    else
-        let l:fileInfo = s:GetCurLinInfo()
+    let l:fileInfo = s:GetCurLinInfo()
 
-        if l:fileInfo[0] ==# 'S'
-            let l:msg = system("git reset HEAD -- " . l:fileInfo[-1])
-        endif
+    if a:0 != 0 || l:fileInfo[0] ==# 'S'
+        call git#MsgHandle(system('git reset HEAD' . (a:0 == 0 ? ' -- '.l:fileInfo[-1] : '')), 'status')
     endif
-    call git#MsgHandle(l:msg, 'status')
 endfunction
 
 
 function <SID>AddFile(...)
-	let l:msg = 'NONE'
-    if a:0 > 0
-        let l:msg = system('git add .')
-    else
-        let l:fileInfo = s:GetCurLinInfo()
+    let l:fileInfo = s:GetCurLinInfo()
 
-        if l:fileInfo[0] =~# '[WU]'
-            let l:msg = system('git add -- ' . l:fileInfo[-1])
-        endif
+    if a:0 != 0 || l:fileInfo[0] =~# '[WU]'
+        call git#MsgHandle(system('git add' . (a:0 == 0 ? ' -- '.l:fileInfo[-1] : ' .')), 'status')
     endif
-    call git#MsgHandle(l:msg, 'status')
 endfunction
 
 
 function <SID>CheckOutFile()
     let l:fileInfo = s:GetCurLinInfo()
 
-    if l:fileInfo[0] =~# '[SW]'
-        if input('Confirm discarding changes in working directory(yes/no): ') == 'yes'
-            call git#MsgHandle(system('git checkout -- ' . l:fileInfo[-1]), 'status')
-        endif
+    if l:fileInfo[0] =~# '[SW]' && input('Confirm discarding changes in working directory(yes/no): ') ==# 'yes'
+        redraw!
+        call git#MsgHandle(system('git checkout -- ' . l:fileInfo[-1]), 'status')
+    else
         redraw!
     endif
 endfunction
@@ -134,12 +122,14 @@ function! <SID>DeleteItem(...)
         return
     endif
 
-    if input('Confirm the deletion(yes/no): ') != 'yes'
+    if input('Confirm the deletion(yes/no): ') ==# 'yes'
         redraw!
-        return
+        call git#MsgHandle(system(
+                    \ (l:fileInfo[0] ==# 'U' ? 'rm ' : 'git rm --cached -- ') . l:fileInfo[-1]), 'status')
+    else
+        redraw!
     endif
 
-    call git#MsgHandle(system((l:fileInfo[0] ==# 'U' ? 'rm ' : 'git rm --cached -- ') . l:fileInfo[-1]), 'status')
 endfunction
 
 
@@ -154,17 +144,22 @@ endfunction
 
 
 function s:cursorJump()
-    if b:curL != line('.')
-        let l:end = line('$')
-        let l:op = b:curL - line('.') == 1 ? 'k' : 'j'
-        while line('.') != l:end && getline('.') !~ '^\s\+\S'
-            exec 'normal ' . l:op
-            if line('.') == 1
-                let l:op = 'j'
-            endif
-        endwhile
-        let b:curL = line('.')
+    let l:lin = line('.')
+
+    if b:curL == l:lin
+        return
     endif
+
+    let l:end = line('$')
+    let l:op = b:curL > l:lin ? 'k' : 'j'
+    while line('.') != l:end && getline('.') !~ '^\s\+\S'
+        exec 'normal ' . l:op
+        if line('.') == 1
+            let l:op = 'j'
+        endif
+    endwhile
+
+    let b:curL = line('.')
 endfunction
 
 

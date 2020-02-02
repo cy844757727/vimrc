@@ -129,7 +129,7 @@ function! s:TabPage()
     setlocal noreadonly modifiable
     call setline(1, s:FormatLog(''))
     setlocal readonly nomodifiable
-    setlocal nonu nospell nowrap foldcolumn=0
+    setlocal nonu nospell nowrap foldcolumn=0 " local to window
 
     exe 'silent belowright '.l:col.'vnew .Git_status'
     setlocal noreadonly modifiable
@@ -231,10 +231,10 @@ function! git#MsgHandle(msg, target)
     if a:msg =~ 'error:\|fatal'
         echo a:msg
         return 1
-    elseif a:msg !=# 'NONE'
-        call git#Refresh(a:target)
-        return 0
     endif
+
+    call git#Refresh(a:target)
+    return 0
 endfunction
 
 
@@ -300,6 +300,7 @@ function! git#Menu(menu)
     let l:char = nr2char(getchar())
     redraw!
 
+    let l:msg = 'NONE'
     if has_key(l:menu, l:char)
         let l:item = l:menu[l:char]
         echo get(l:item, 'tip', '')
@@ -336,14 +337,9 @@ function! git#Menu(menu)
         endif
     endif
 
-    if !exists('l:msg')
-        return
-    elseif l:msg !~ '\verror:|fatal:'
-        call git#Refresh('all')
+    if l:msg !=# 'NONE' && !git#MsgHandle(l:msg, 'all')
+        echo l:msg
     endif
-
-    redraw
-    echo l:msg
 endfunction
 
 

@@ -106,8 +106,8 @@ function <SID>DeleteItem(...)
         redraw!
         return
     endif
-
     redraw!
+
 
     if l:lineInfo[0] ==# 'T'
         let l:msg = system('git tag -d '.l:lineInfo[1])
@@ -137,29 +137,33 @@ endfunction
 
 
 function s:cursorJump()
-    if b:curL != line('.')
-        let l:end = line('$')
-        let l:op = b:curL - line('.') == 1 ? 'k' : 'j'
-        while line('.') != l:end && getline('.') !~ '^\s\+\S'
-            exec 'normal ' . l:op
-            if line('.') == 1
-                let l:op = 'j'
-            endif
-        endwhile
-        let b:curL = line('.')
-        let l:lineInfo = s:GetCurLinInfo()
-        if l:lineInfo[0] ==# 'T'
-            let l:target = getline('.')
-            2wincmd w
-            setlocal noreadonly modifiable
-            silent edit!
-            call setline(1, systemlist('git show --raw ' . l:target . '|sed "s/^:.*\.\.\.\s*/>    /"'))
-            set filetype=gitcommit
-            set nobuflisted
-            setlocal readonly nomodifiable
-            4wincmd w
-        endif
+    let l:lin = line('.')
+
+    if b:curL == l:lin
+        return
     endif
+
+    let l:end = line('$')
+    let l:op = b:curL > l:lin ? 'k' : 'j'
+    while line('.') != l:end && getline('.') !~ '^\s\+\S'
+        exec 'normal ' . l:op
+        if line('.') == 1
+            let l:op = 'j'
+        endif
+    endwhile
+
+    let l:lineInfo = s:GetCurLinInfo()
+    if l:lineInfo[0] ==# 'T'
+        2wincmd w
+        setlocal noreadonly modifiable
+        silent edit!
+        call setline(1, systemlist('git show --raw ' . l:lineInfo[-1] . '|sed "s/^:.*\.\.\.\s*/>    /"'))
+        set filetype=gitcommit
+        setlocal nobuflisted readonly nomodifiable
+        4wincmd w
+    endif
+
+    let b:curL = line('.')
 endfunction
 
 
