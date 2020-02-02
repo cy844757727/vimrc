@@ -11,7 +11,6 @@ let b:curL = -1
 setlocal buftype=nofile
 setlocal tabstop=1
 setlocal statusline=%2(\ %)\ Branch%=%2(\ %)
-setlocal winfixheight nospell nonu nowrap foldcolumn=0
 
 nnoremap <buffer> <space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> a   :call <SID>ApplyStash()<CR>

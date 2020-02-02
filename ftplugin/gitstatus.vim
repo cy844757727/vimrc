@@ -10,7 +10,6 @@ let b:curL = -1
 
 setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
 setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
-setlocal winfixwidth nospell nonu foldcolumn=0
 
 nnoremap <buffer> <space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>

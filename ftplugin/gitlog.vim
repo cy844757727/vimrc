@@ -10,7 +10,6 @@ let b:curL = -1
 
 setlocal buftype=nofile
 setlocal statusline=%2(\ %)\ Log%=%2(\ %)
-setlocal nonu nospell nowrap foldcolumn=0
 
 nnoremap <buffer> <silent> <space> :echo matchstr(getline('.'), ' .*$')<CR>
 nnoremap <buffer> <silent> t       :call <SID>TagCommit()<CR>

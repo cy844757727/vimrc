@@ -11,8 +11,6 @@ let b:ale_enabled = 0
 setlocal buftype=nofile
 setlocal foldminlines=1
 setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
-setlocal winfixheight nospell nonu foldcolumn=0
-"let b:statuslineBase = '%2( %) Commit%=%2( %)'
 
 nnoremap <buffer> <silent> <Space> :silent! normal za<CR>
 nnoremap <buffer> <silent> d       :call <SID>FileDiff()<CR>

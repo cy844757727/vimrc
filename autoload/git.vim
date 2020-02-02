@@ -129,17 +129,20 @@ function! s:TabPage()
     setlocal noreadonly modifiable
     call setline(1, s:FormatLog(''))
     setlocal readonly nomodifiable
+    setlocal nonu nospell nowrap foldcolumn=0
 
     exe 'silent belowright '.l:col.'vnew .Git_status'
     setlocal noreadonly modifiable
     call setline(1, s:FormatStatus())
     setlocal readonly nomodifiable
+    setlocal winfixwidth nospell nonu foldcolumn=0
     call search('^\s')
 
     exe 'silent belowright '.l:lin.'new .Git_branch'
     setlocal noreadonly modifiable
     call setline(1, s:FormatBranch())
     setlocal readonly nomodifiable
+    setlocal winfixheight nospell nonu nowrap foldcolumn=0
     call search('^\s')
 
     1wincmd w
@@ -147,6 +150,7 @@ function! s:TabPage()
     setlocal noreadonly modifiable
     call setline(1, s:FormatCommit('HEAD'))
     setlocal readonly nomodifiable
+    setlocal winfixheight nospell nonu foldcolumn=0
     call search('^>')
 
     3wincmd w
