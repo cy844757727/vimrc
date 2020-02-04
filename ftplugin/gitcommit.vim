@@ -8,9 +8,9 @@ endif
 let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
+
 setlocal buftype=nofile
 setlocal foldminlines=1
-setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
 
 nnoremap <buffer> <Space>      :silent! normal za<CR>
 nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
@@ -55,7 +55,7 @@ endfunction
 function <SID>FileDiff(...)
     let l:fileInfo = s:GetCurLinInfo()
 
-    if l:fileInfo[2] ==# 'M'
+    if l:fileInfo[2] =~# '[AM]'
         exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
                     \ 'git difftool -y ' . (a:0 == 0 ? l:fileInfo[1] : '') .
                     \ ' ' . l:fileInfo[0] . ' -- ' . l:fileInfo[-1]
@@ -103,7 +103,7 @@ function <SID>FileLog()
     let l:file = s:GetCurLinInfo()[-1]
 
     if !empty(l:file)
-        call git#Refresh('log', l:file)
+        call git#Refresh('log', {'filelog': l:file})
         1wincmd w
     endif
 endfunction

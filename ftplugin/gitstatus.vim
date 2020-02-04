@@ -9,7 +9,6 @@ let b:did_ftplugin = 1
 let b:curL = -1
 
 setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
-setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
 
 nnoremap <buffer> <space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
@@ -137,7 +136,7 @@ function <SID>FileLog()
     let l:fileInfo = s:GetCurLinInfo()
 
     if l:fileInfo[0] =~# '[SW]'
-        call git#Refresh('log', l:fileInfo[-1])
+        call git#Refresh('log', {'filelog': l:fileInfo[-1]})
         1wincmd w
     endif
 endfunction

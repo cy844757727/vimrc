@@ -10,7 +10,6 @@ let b:curL = -1
 
 setlocal buftype=nofile
 setlocal tabstop=1
-setlocal statusline=%2(\ %)\ Branch%=%2(\ %)
 
 nnoremap <buffer> <space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> a   :call <SID>ApplyStash()<CR>
@@ -154,13 +153,7 @@ function s:cursorJump()
 
     let l:lineInfo = s:GetCurLinInfo()
     if l:lineInfo[0] ==# 'T'
-        2wincmd w
-        setlocal noreadonly modifiable
-        silent edit!
-        call setline(1, systemlist('git show --raw ' . l:lineInfo[-1] . '|sed "s/^:.*\.\.\.\s*/>    /"'))
-        set filetype=gitcommit
-        setlocal nobuflisted readonly nomodifiable
-        4wincmd w
+        call git#Refresh('commit', {'commit': l:lineInfo[-1], 'reftype': 'tag'})
     endif
 
     let b:curL = line('.')

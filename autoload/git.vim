@@ -6,6 +6,7 @@ if exists('g:loaded_A_GIT_Manager') || !executable('git')
     finish
 endif
 let g:loaded_A_GIT_Manager = 1
+let s:config = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash'}
 
 
 function! git#Diff(arg) abort
@@ -20,8 +21,8 @@ endfunction
 " 
 "
 "
-function! s:FormatLog(target)
-    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . a:target)
+function! s:FormatLog()
+    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . s:config['filelog'])
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 
     for l:str in l:log
@@ -73,16 +74,18 @@ endfunction
 "
 "
 "
-function! s:FormatCommit(hash)
-    return systemlist(
-                \ 'git show --raw --pretty="'.
-                \ 'commit %H ... %p%n'.
-                \ 'Author:  %an  <%ae>%n'.
-                \ 'Date:    %ad%n'.
-                \ '%D%n%n'.
-                \ '         %s" '.
-                \ a:hash . ' | sed "s/^:.*\.\.\.\s*/>    /"'
-                \ )
+function! s:FormatCommit()
+    if s:config['reftype'] ==# 'tag'
+        let l:extra = ''
+    else
+        let l:extra = '--pretty="commit %H ... %p%n'.
+                    \ 'Author:  %an  <%ae>%n'.
+                    \ 'Date:    %ad%n'.
+                    \ '%D%n%n'.
+                    \ '         %s" '
+    endif
+
+    return systemlist('git show --raw '.l:extra.s:config['commit'].' | sed "s/^:.*\.\.\.\s*/>    /"')
 endfunction
 
 "
@@ -127,15 +130,18 @@ function! s:TabPage()
 
     silent $tabnew .Git_log
     setlocal noreadonly modifiable
-    call setline(1, s:FormatLog(''))
+    call setline(1, s:FormatLog())
     setlocal readonly nomodifiable
     setlocal nonu nospell nowrap foldcolumn=0 " local to window
+    let &l:statusline = '%2( %) Log'.(empty(s:config['filelog']) ?
+                \ '' : ' -- '.s:config['filelog']).'%=%2( %)'
 
     exe 'silent belowright '.l:col.'vnew .Git_status'
     setlocal noreadonly modifiable
     call setline(1, s:FormatStatus())
     setlocal readonly nomodifiable
     setlocal winfixwidth nospell nonu foldcolumn=0
+    setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
     call search('^\s')
 
     exe 'silent belowright '.l:lin.'new .Git_branch'
@@ -143,15 +149,18 @@ function! s:TabPage()
     call setline(1, s:FormatBranch())
     setlocal readonly nomodifiable
     setlocal winfixheight nospell nonu nowrap foldcolumn=0
+    setlocal statusline=%2(\ %)\ Branch%=%2(\ %)
     call search('^\s')
 
     1wincmd w
     exe 'silent belowright '.l:lin.'new .Git_commit'
     setlocal noreadonly modifiable
-    call setline(1, s:FormatCommit('HEAD'))
+    call setline(1, s:FormatCommit())
     setlocal readonly nomodifiable
     setlocal winfixheight nospell nonu foldcolumn=0
-    call search('^>')
+    setlocal statusline=%2(\ %)\ Commit%=%2(\ %)
+    call search(empty(s:config['filelog']) ? '^>' :
+                \ substitute(s:config['filelog'], '/', '\\/', 'g'))
 
     3wincmd w
     let t:tab_lable = ' Git-Manager'
@@ -168,6 +177,7 @@ function! git#Toggle()
             let t:git_tabpageManager = 1
             call git#Refresh('all')
         catch
+            let s:config = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash'}
             call s:TabPage()
         endtry
     endif
@@ -175,30 +185,35 @@ endfunction
 
 
 function git#Refresh(target, ...)
-    if !exists('t:git_tabpageManager')
+    let l:dict = a:0 == 0 ? {} : a:1
+    if !exists('t:git_tabpageManager') || type(l:dict) != type({})
         return
     endif
 
     let l:winnr = winnr()
+    call extend(s:config, l:dict)
 
     if a:target ==# 'all' || a:target ==# 'log'
         1wincmd w
         let l:pos = getpos('.')
         setlocal noreadonly modifiable
         silent edit!
-        call setline(1, s:FormatLog(a:0 ==0 ? '' : a:1))
+        call setline(1, s:FormatLog())
         setlocal readonly nomodifiable
         call setpos('.', l:pos)
-        let &l:statusline = '%2( %) Log'.(a:0 == 0 || empty(a:1) ? '' : ' -- '.a:1).'%=%2( %)'
+        let &l:statusline = '%2( %) Log'.(empty(s:config['filelog']) ?
+                    \ '' : ' -- '.s:config['filelog']).'%=%2( %)'
     endif
 
     if a:target ==# 'all' || a:target ==# 'commit'
         2wincmd w
         setlocal noreadonly modifiable
         silent edit!
-        call setline(1, s:FormatCommit(a:0 == 0 ? 'HEAD' : a:1))
+        call setline(1, s:FormatCommit())
         setlocal nobuflisted readonly nomodifiable
-        call search('^>')
+        set filetype=gitcommit
+        call search(empty(s:config['filelog']) ? '^>' :
+                    \ substitute(s:config['filelog'], '/', '\\/', 'g'))
     endif
 
     if a:target ==# 'all' || a:target ==# 'status'
@@ -223,7 +238,6 @@ function git#Refresh(target, ...)
 
     exec l:winnr . 'wincmd w'
     let t:tab_lable = ' Git-Manager'
-    let t:git_tabpageManager = 1
 endfunction
 
 

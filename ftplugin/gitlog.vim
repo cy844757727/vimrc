@@ -6,10 +6,9 @@ if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
-let b:curL = -1
+let s:curL = 0
 
 setlocal buftype=nofile
-setlocal statusline=%2(\ %)\ Log%=%2(\ %)
 
 nnoremap <buffer> <space>      :echo matchstr(getline('.'), ' .*$')<CR>
 nnoremap <buffer> <silent> t   :call <SID>TagCommit()<CR>
@@ -49,24 +48,21 @@ function <SID>RefreshCommitA(...)
 endfunction
 
 
-let s:curL = 0
 function s:CursorMoved()
     let l:lin = line('.')
 
-    if l:lin != s:curL
-        call s:RefreshCommit()
-        wincmd w
-        set ft=gitcommit
-        wincmd W
+    if l:lin == s:curL
+        return
     endif
 
+    call s:RefreshCommit()
     let s:curL = l:lin
 endfunction
 
 
 function s:LogTarget(target)
     if empty(a:target) || filereadable(a:target)
-        call git#Refresh('log', a:target)
+        call git#Refresh('log', {'filelog': a:target})
     endif
 endfunction
 
@@ -75,7 +71,7 @@ function s:RefreshCommit()
     let l:hash = matchstr(getline('.'), '\w\{7}')
 
     if !empty(l:hash)
-        call git#Refresh('commit', l:hash)
+        call git#Refresh('commit', {'commit': l:hash, 'reftype': 'hash'})
         1wincmd w
     endif
 endfunction
