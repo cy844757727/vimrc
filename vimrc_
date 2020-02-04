@@ -258,7 +258,7 @@ noremap  <silent> <C-right> :call misc#BufHisSwitch('next')<CR>
 map! <C-left> <Esc><C-left>
 map! <C-right> <Esc><C-right>
 
-let Git_GuiDiffTool = 1
+"let Git_GuiDiffTool = 1
 " Termdebug
 let g:termdebug_wide = 1
 " Plugin Configure ======================

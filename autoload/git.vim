@@ -300,7 +300,6 @@ function! git#Menu(menu)
     let l:char = nr2char(getchar())
     redraw!
 
-    let l:msg = 'NONE'
     if has_key(l:menu, l:char)
         let l:item = l:menu[l:char]
         echo get(l:item, 'tip', '')
@@ -337,7 +336,7 @@ function! git#Menu(menu)
         endif
     endif
 
-    if l:msg !=# 'NONE' && !git#MsgHandle(l:msg, 'all')
+    if exists('l:msg') && !git#MsgHandle(l:msg, 'all')
         echo l:msg
     endif
 endfunction
