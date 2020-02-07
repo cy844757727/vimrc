@@ -7,6 +7,7 @@ if exists('g:loaded_A_GIT_Manager') || !executable('git')
 endif
 let g:loaded_A_GIT_Manager = 1
 let s:default = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash', 'log': ['HEAD']}
+let s:config = copy(s:default)
 
 
 function! git#Diff(arg) abort
@@ -184,7 +185,7 @@ function! git#Toggle()
         tabclose
     else
         try
-            exe win_id2tabwin(win_findbuf(bufnr('Git_log'))[0])[0].'tabnext'
+            exe win_id2tabwin(win_findbuf(bufnr('.Git_log'))[0])[0].'tabnext'
             let t:git_tabpageManager = 1
             call git#Refresh('all')
         catch
