@@ -28,6 +28,9 @@ nnoremap <buffer> <silent> 2   :2wincmd w<CR>
 nnoremap <buffer> <silent> 3   :3wincmd w<CR>
 nnoremap <buffer> <silent> 4   :4wincmd w<CR>
 
+nnoremap <buffer> <silent> <C-right>    :call <SID>SwitchCommit('next')<CR>
+nnoremap <buffer> <silent> <C-left>     :call <SID>SwitchCommit('previous')<CR>
+
 "augroup Git_commit
 "	autocmd!
 "augroup END
@@ -106,6 +109,26 @@ function <SID>FileLog()
         call git#Refresh('log', {'filelog': l:file})
         1wincmd w
     endif
+endfunction
+
+function <SID>SwitchCommit(lr)
+    let l:dict = git#GetConfig(['commit', 'log'])
+    let [l:commit, l:log] = [l:dict['commit'], l:dict['log']]
+    let l:pos = index(l:log, l:commit)
+    if l:commit ==# 'HEAD' || l:pos == -1
+        let l:pos = 0
+        let l:commit = l:log[0]
+    endif
+
+    let l:pos = l:pos + (a:lr ==# 'next' ? 1 : -1)
+    if l:pos < 0 || l:pos >= len(l:log)
+        return
+    endif
+
+    call git#Refresh('commit', {'commit': l:log[l:pos]})
+   1wincmd w
+   call search('\<'.l:log[l:pos].'\>', a:lr ==# 'next' ? '' : 'b')
+   2wincmd w
 endfunction
 
 

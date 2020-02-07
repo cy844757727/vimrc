@@ -6,7 +6,7 @@ if exists('g:loaded_A_GIT_Manager') || !executable('git')
     finish
 endif
 let g:loaded_A_GIT_Manager = 1
-let s:config = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash'}
+let s:default = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash', 'log': ['HEAD']}
 
 
 function! git#Diff(arg) abort
@@ -22,6 +22,7 @@ endfunction
 "
 "
 function! s:FormatLog()
+    let s:config['log'] = map(systemlist('git log --oneline '.s:config['filelog']), "v:val[:6]")
     let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . s:config['filelog'])
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 
@@ -93,7 +94,7 @@ endfunction
 "
 function! s:FormatStatus()
     let l:status = systemlist('git status -bs')
-    if len(l:status) == 1
+    if len(l:status) < 2
         return l:status
     endif
 
@@ -187,7 +188,7 @@ function! git#Toggle()
             let t:git_tabpageManager = 1
             call git#Refresh('all')
         catch
-            let s:config = {'filelog': '', 'commit': 'HEAD', 'reftype': 'hash'}
+            let s:config = copy(s:default)
             call s:TabPage()
         endtry
     endif
@@ -259,6 +260,16 @@ function! git#MsgHandle(msg, target)
 
     call git#Refresh(a:target)
     return 0
+endfunction
+
+function git#GetConfig(list)
+    let l:dict = {}
+
+    for l:key in a:list
+        let l:dict[l:key] = get(s:config, l:key, -1)
+    endfor
+
+    return l:dict
 endfunction
 
 
