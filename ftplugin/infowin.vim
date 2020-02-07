@@ -27,7 +27,6 @@ nnoremap <silent> <buffer> P :call <SID>Preview('auto')<CR>
 nnoremap <silent> <buffer> <C-j> :call search('^\S')\|normal zt<CR>
 nnoremap <silent> <buffer> <C-k> :call search('^\S', 'b')\|normal zt<CR>
 
-let s:auto = 0
 " Record source window id
 let t:infowin_winid = win_getid(winnr()-1)
 
@@ -150,7 +149,7 @@ endfunction
 
 
 function s:PreviewClose()
-    let [s:auto, l:i] = [0, winnr('$')]
+    let l:i = winnr('$')
 
     while l:i > 0
         if getwinvar(l:i, 'infoWinPreview', 0)

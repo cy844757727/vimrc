@@ -147,3 +147,6 @@ call s:HI('cssValueLength', ['#3c98d9', 68])
 call s:HI('cssCommonAttr', ['#a7cfa3', 151])
 call s:HI('cssBraces')
 
+
+call s:HI('InfoWinMatch', ['#c9a936'])
+call s:HI('InfoWinColumnNr', ['#84898c', 102])

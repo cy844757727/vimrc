@@ -168,6 +168,16 @@ function! s:TabPage()
 endfunction
 
 
+"function git#BlameFile(file)
+"    let l:list = system('git blame '.a:file)
+"    silent! $tabnew .Git_blame
+"    call setline(1, l:list)
+"    setlocal readonly nomodifiable
+"    setlocal nonu nospell nowrap foldcolumn=0 signcolumn=no
+"    silent! exec 'vsplit '.a:file
+"endfunction
+
+
 function! git#Toggle()
     if exists('t:git_tabpageManager')
         tabclose

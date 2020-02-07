@@ -121,10 +121,18 @@ function! <SID>DeleteItem(...)
         return
     endif
 
-    if input('Confirm the deletion(yes/no): ') ==# 'yes'
+    if l:fileInfo[0] ==# 'U'
+        let l:ans = input('Confirm the file deletion (YES) or ignore file (yes): ')
         redraw!
-        call git#MsgHandle(system(
-                    \ (l:fileInfo[0] ==# 'U' ? 'rm ' : 'git rm --cached -- ') . l:fileInfo[-1]), 'status')
+        if l:ans ==# 'YES'
+            call git#MsgHandle(system('rm '.l:fileInfo[-1]), 'status')
+        elseif l:ans ==# 'yes'
+            call writefile([l:fileInfo[-1]], '.gitignore', 'a')
+            call git#Refresh('status')
+        endif
+    elseif input('Cancel file tracking(yes): ') ==# 'yes'
+        redraw!
+        call git#MsgHandle(system('git rm --cached -- ' . l:fileInfo[-1]), 'status')
     else
         redraw!
     endif
