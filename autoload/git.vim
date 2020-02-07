@@ -51,7 +51,7 @@ endfunction
 "
 "
 function! s:FormatBranch()
-    let l:content = ['Local:', ''] + map(systemlist('git branch -v'), "'    '.v:val")
+    let l:content = ['Local:', ''] + map(systemlist('git branch -vv'), "'    '.v:val")
     let l:remote = map(systemlist('git remote -v'), "'    '.v:val")
     let l:tag = map(systemlist('git tag|sort -nr'), "'    '.v:val")
     let l:stash = map(systemlist('git stash list'), "'    '.v:val")
