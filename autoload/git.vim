@@ -142,7 +142,8 @@ function! s:TabPage()
     setlocal noreadonly modifiable
     call setline(1, s:FormatStatus())
     setlocal readonly nomodifiable
-    setlocal winfixwidth nospell nonu foldcolumn=0
+    setlocal winfixwidth nospell nonu
+    setlocal foldcolumn=0 foldmethod=indent foldminlines=5
     setlocal statusline=%2(\ %)ﰧ\ Status%=%2(\ %)
     call search('^\s')
 
@@ -150,7 +151,8 @@ function! s:TabPage()
     setlocal noreadonly modifiable
     call setline(1, s:FormatBranch())
     setlocal readonly nomodifiable
-    setlocal winfixheight nospell nonu nowrap foldcolumn=0
+    setlocal winfixheight nospell nonu nowrap
+    setlocal foldcolumn=0 foldmethod=indent foldminlines=5
     setlocal statusline=%2(\ %)\ Branch%=%2(\ %)
     call search('^\s')
 

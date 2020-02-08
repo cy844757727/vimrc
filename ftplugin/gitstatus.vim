@@ -8,7 +8,7 @@ endif
 let b:did_ftplugin = 1
 let b:curL = -1
 
-setlocal buftype=nofile foldmethod=indent foldminlines=1 shiftwidth=1
+setlocal buftype=nofile shiftwidth=1
 
 nnoremap <buffer> <space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
@@ -28,6 +28,9 @@ nnoremap <buffer> <silent> 1   :1wincmd w<CR>
 nnoremap <buffer> <silent> 2   :2wincmd w<CR>
 nnoremap <buffer> <silent> 3   :3wincmd w<CR>
 nnoremap <buffer> <silent> 4   :4wincmd w<CR>
+
+nnoremap <buffer> <silent> <C-j> :call search('^\w\+:$', 'W')<CR>
+nnoremap <buffer> <silent> <C-k> :call search('^\w\+:$', 'bW')<CR>
 
 augroup Git_status
 	autocmd!

@@ -82,17 +82,17 @@ endfunction
 " Set vim global var, option, environment, command
 function s:EnvVimSet(key, Val)
     exe
-                \ a:key[0] =~# '[A-Z]' ? 'let g:'.a:key.'='.string(a:Val) :
-                \ a:key[0] ==# '&'     ? 'let &g:'.a:key[1:].'='.string(a:Val) :
-                \ a:key[0] ==# '$'     ? 'let '.a:key.'='.string(a:Val) :
-                \ a:key[0] ==# '\'     ? 'nnoremap '.a:key.' '.a:Val.'<CR>' :
-                \ a:key[0] ==# ':'     ? 'command! '.a:key[1:].' '.a:Val : ''
+                \ a:key[0:1] ==# 'g:' ? 'let '.a:key.'='.string(a:Val) :
+                \ a:key[0] ==# '&'    ? 'let '.a:key.'='.string(a:Val) :
+                \ a:key[0] ==# '$'    ? 'let '.a:key.'='.string(a:Val) :
+                \ a:key[0] ==# '\'    ? 'nnoremap '.a:key.' '.a:Val.'<CR>' :
+                \ a:key[0] ==# ':'    ? 'command! '.a:key[1:].' '.a:Val : ''
 endfunction
 
 " Delete vim global var, environment, command
 function s:EnvVimDelete(key, Val)
     exe
-                \ a:Val ==# 'g' ? 'unlet! g:'.a:key :
+                \ a:Val ==# 'g' ? 'unlet! '.a:key :
                 \ a:Val ==# 'e' ? 'let '.a:key.'=''''' :
                 \ a:Val ==# 'm' ? 'nunmap '.a:key :
                 \ a:Val ==# 'c' ? 'delcommand '.a:key[1:] : ''
@@ -159,12 +159,12 @@ function s:EnvAdd(key, Val)
     try
         let l:tmp = {'ENV': eval(a:Val)}
 
-        if a:key[0] =~# '[A-Z]'
+        if len(a:key) > 2 && a:key[0:1] ==# 'g:'
             " Global var
-            if !has_key(g:, a:key)
+            if !exists(a:key)
                 let l:tmp.ENV_NONE = 'g'
             elseif !has_key(g:ENV_NONE, a:key) && !has_key(g:ENV_DEFAULT, a:key)
-                let l:tmp.ENV_DEFAULT = g:[a:key]
+                let l:tmp.ENV_DEFAULT = g:[a:key[2:]]
             endif
         elseif a:key[0] ==# '&'
             " vim option
@@ -769,7 +769,7 @@ endfunction
 let s:commentChar = {
             \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
             \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
-            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#', 'sdc': '#',
             \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
             \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
             \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',

@@ -57,6 +57,7 @@ augroup vimrc
     autocmd BufRead,BufNewFile *.sv,*.svi,*.svh,*.svp,*.sva set filetype=systemverilog
     autocmd BufRead,BufNewFile *.d set filetype=make
     autocmd BufRead,BufNewFile *.tag,*.tags set filetype=tags
+    autocmd BufRead,BufNewFile *.edf set filetype=none
     autocmd BufRead ?* if &fenc=='latin1'|edit ++bin|endif
 	autocmd VimEnter * set nocp
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()

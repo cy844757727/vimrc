@@ -8,11 +8,10 @@ endif
 let b:did_ftplugin = 1
 let b:ale_enabled = 0
 
-
 setlocal buftype=nofile
 setlocal foldminlines=1
 
-nnoremap <buffer> <Space>      :silent! normal za<CR>
+nnoremap <buffer> <Space>      :echo getline('.')<CR>
 nnoremap <buffer> <silent> d   :call <SID>FileDiff()<CR>
 nnoremap <buffer> <silent> D   :call <SID>FileDiff(1)<CR>
 nnoremap <buffer> <silent> \d  :call <SID>DelFile()<CR>

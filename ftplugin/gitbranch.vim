@@ -29,6 +29,9 @@ nnoremap <buffer> <silent> 2   :2wincmd w<CR>
 nnoremap <buffer> <silent> 3   :3wincmd w<CR>
 nnoremap <buffer> <silent> 4   :4wincmd w<CR>
 
+nnoremap <buffer> <silent> <C-j> :call search('^\w\+:$', 'W')<CR>
+nnoremap <buffer> <silent> <C-k> :call search('^\w\+:$', 'bW')<CR>
+
 augroup Git_branch
 	autocmd!
 	autocmd CursorMoved <buffer> call s:cursorJump()
@@ -158,7 +161,6 @@ function s:cursorJump()
 
     let b:curL = line('.')
 endfunction
-
 
 function <SID>HelpDoc()
     echo
