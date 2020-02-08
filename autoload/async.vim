@@ -76,8 +76,7 @@ function! async#TermToggle(action, cmd) abort
 
     if l:winnr != -1
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
-"    elseif l:cmd == g:Async_shell && l:other != -1 && empty(l:postCmd)
-    elseif l:name  == s:defaultTermName  && l:other != -1 && empty(l:postCmd)
+    elseif l:name == s:defaultTermName && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
         exe l:other.'hide'
     elseif a:action !=# 'off'

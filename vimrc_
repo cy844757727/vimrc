@@ -155,9 +155,9 @@ nnoremap <C-@> :Ydc<CR>
 nnoremap <C-t> :echo<CR>
 " find / replace
 vnoremap <C-f> <Esc>k:exe '/'.getreg('*')<CR>
-nnoremap <C-f> viw<Esc>k:exe '/'.getreg('*')<CR>kn
+nnoremap <C-f> viw<Esc>k:exe '/\<'.getreg('*').'\>'<CR>kn
 vnoremap <C-h> <Esc>:call misc#StrSubstitute(getreg('*'))<CR>
-nnoremap <C-h> :call misc#StrSubstitute(expand('<cword>'))<CR>
+nnoremap <C-h> :call misc#StrSubstitute('\<'.expand('<cword>').'\>')<CR>
 imap <C-f> <Esc><C-f>
 imap <C-h> <Esc><C-h>
 

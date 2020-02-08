@@ -110,9 +110,9 @@ function s:EnvParse(opt)
     elseif a:opt ==# '-d'
         echo 'Default:' g:ENV_DEFAULT "\n---\nNone:" g:ENV_NONE
     elseif a:opt ==# '-i'
+        call extend(g:ENV, get(g:, 'env', {}), 'keep')
         for [l:key, l:Val] in items(g:ENV)
             call s:EnvVimSet(l:key, l:Val)
-            call extend(g:ENV, get(g:, 'env', {}), 'keep')
         endfor
     elseif a:opt ==# '-c'
         " Recovery environment
@@ -429,9 +429,15 @@ function s:F5Function.run()
     elseif &filetype ==# 'vim'
         source %
     else
-        let l:ex = !empty(glob('[mM]ake[fF]ile')) ? 'Asyncrun! make' :
-                    \ &ft ==# 'c'   ? 'Asyncrun! gcc -Wall -O0 -g3 % -o %<' :
-                    \ &ft ==# 'cpp' ? 'Asyncrun! g++ -Wall -O0 -g3 % -o %<' : ''
+        let l:makefile = findfile('makefile', '**')
+
+        if !empty(l:makefile)
+            let l:root = fnamemodify(l:makefile, ':h')
+            call misc#MakeTool('')
+        else
+            let l:ex = &ft ==# 'c'   ? 'Asyncrun! gcc -Wall -O0 -g3 % -o %<' :
+                        \ &ft ==# 'cpp' ? 'Asyncrun! g++ -Wall -O0 -g3 % -o %<' : ''
+        endif
     endif
 
     if exists('l:ex')
@@ -545,6 +551,11 @@ function! s:AgOnOut(job, msg) abort
     let s:infoDict.content[l:file] += [printf('%-5s %3s  %s', l:list[2].':', l:list[3].':', trim(l:list[4]))]
 endfunction
 
+function misc#MakeTool(opt)
+    let l:makefile = findfile('makefile', '**')
+    let l:root = fnamemodify(l:makefile, ':h')
+    exec 'Asyncrun! make '.get(g:, 'MakeOpt', '').' -C '.l:root.' '.a:opt
+endfunction
 
 " === Auto record file history in a window {{{1
 " BufEnter enent trigger (w:bufHis)
@@ -594,7 +605,9 @@ function! misc#BufHisSwitch(action)
     endif
 
     if bufexists(w:bufHis.list[-1])
-        silent update
+        if filereadable(w:bufHis.list[-1])
+            silent update
+        endif
         silent exe 'buffer '.w:bufHis.list[-1]
         call s:BufHisEcho()
     else
@@ -769,8 +782,8 @@ endfunction
 let s:commentChar = {
             \ 'c': '//', 'cpp': '//', 'java': '//', 'verilog': '//', 'systemverilog': '//',
             \ 'javascript': '//', 'go': '//', 'scala': '//', 'php': '//',
-            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#', 'sdc': '#',
-            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#',
+            \ 'sh': '#', 'python': '#', 'tcl': '#', 'perl': '#', 'make': '#', 'maple': '#',
+            \ 'awk': '#', 'ruby': '#', 'r': '#', 'python3': '#', 'csh': '#', 'conf': '#', 'sdc': '#',
             \ 'tex': '%', 'latex': '%', 'postscript': '%', 'matlab': '%',
             \ 'vhdl': '--', 'haskell': '--', 'lua': '--', 'sql': '--', 'openscript': '--',
             \ 'ada': '--',
