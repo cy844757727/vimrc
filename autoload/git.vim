@@ -77,17 +77,19 @@ endfunction
 "
 "
 function! s:FormatCommit()
+    let l:format = '--pretty="commit %H ... %p%n'.
+                \ 'Author:  %an  <%ae>%n'.
+                \ 'Date:    %ad%n'.
+                \ '%D%n%n'.
+                \ '         %s" '
     if s:config['reftype'] ==# 'tag'
-        let l:extra = ''
-    else
-        let l:extra = '--pretty="commit %H ... %p%n'.
-                    \ 'Author:  %an  <%ae>%n'.
-                    \ 'Date:    %ad%n'.
-                    \ '%D%n%n'.
-                    \ '         %s" '
+        let l:format = ''
     endif
 
-    return systemlist('git show --raw '.l:extra.s:config['commit'].' | sed "s/^:.*\.\.\.\s*/>    /"')
+    let l:list = systemlist('git show --raw '.l:format.s:config['commit'].' | sed -E ''s/^:+(\w{6} )+(\w{7}(\.\.\.)? )+/>    /''')
+    let s:config['parent'] = s:config['reftype'] ==# 'tag' ? [] : split(l:list[0])[3:]
+
+    return l:list
 endfunction
 
 "
@@ -382,10 +384,10 @@ endfunction
 
 function! git#CompleteBranch(L, C, P)
     if a:L =~ '^-'
-        return system("git help merge|sed -n 's/ \\+\\(-[-a-zA-Z]*\\).*/\\1/p'")
+        return system('git help merge|sed -E -n ''s/ +(-[-a-zA-Z]*).*/\1/p''')
     endif
 
-    return system("git branch|grep '^[^*]'|sed -n 's/^ \\+//p'")
+    return system('git branch|grep ''^[^*]''|sed -E -n ''s/^ +//p''')
 endfunction
 
 

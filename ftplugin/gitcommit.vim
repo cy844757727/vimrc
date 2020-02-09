@@ -44,22 +44,26 @@ function s:GetCurLinInfo()
         return ['', '', '']
     endif
 
-    let l:lin = search('^commit ', 'bn')
-    if l:lin == 0
+    let l:dict = git#GetConfig(['parent', 'commit'])
+    if empty(l:dict['parent'])
         return ['', '', '']
     endif
 
-    let l:hash = split(getline(l:lin))
-    return [l:hash[1], l:hash[3]] + split(l:line)[1:]
+    return [l:dict.commit, l:dict.parent] + split(l:line)[1:]
 endfunction
 
 
 function <SID>FileDiff(...)
     let l:fileInfo = s:GetCurLinInfo()
 
-    if l:fileInfo[2] =~# '[AM]'
+    if l:fileInfo[2] =~# '[AMD]'
+        let l:parents = l:fileInfo[1]
+        let l:parent = l:parents[0]
+        if len(l:parents) > 1
+            let l:parent = l:parents[input('Select parent commit(0:'.l:parents[0].'  1:'.l:parents[1].'): ')]
+        endif
         exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
-                    \ 'git difftool -y ' . (a:0 == 0 ? l:fileInfo[1] : '') .
+                    \ 'git difftool -y ' . (a:0 == 0 ? l:parent : '') .
                     \ ' ' . l:fileInfo[0] . ' -- ' . l:fileInfo[-1]
     endif
 endfunction
@@ -94,6 +98,14 @@ endfunction
 
 function <SID>CheckOutFile(...)
     let l:fileInfo = s:GetCurLinInfo()
+
+    if a:0 == 1
+        let l:parents = l:fileInfo[1]
+        let l:parent = l:parents[0]
+        if len(l:parents) > 1
+            let l:parent = l:parents[input('Select parent commit(0:'.l:parents[0].'  1:'.l:parents[1].'): ')]
+        endif
+    endif
 
     if !empty(l:fileInfo[0]) && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
         call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:fileInfo[1]) . ' -- ' . l:fileInfo[-1]), 'status')
