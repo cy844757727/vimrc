@@ -101,7 +101,7 @@ function <SID>Reset(opt)
     endif
 
     redraw!
-    call git#MsgHandle(system('git reset --'.a:action.' '.l:hash), 'all')
+    call git#MsgHandle(system('git reset --'.a:opt.' '.l:hash), 'all')
 endfunction
 
 
