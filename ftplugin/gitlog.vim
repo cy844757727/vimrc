@@ -15,8 +15,10 @@ nnoremap <buffer> <silent> t   :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> c   :call <SID>RefreshCommitA()<CR>
 nnoremap <buffer> <silent> C   :call <SID>RefreshCommitA(1)<CR>
 nnoremap <buffer> <silent> \l  :Log<CR>
-nnoremap <buffer> <silent> \rs :call <SID>Reset_Revert_Commit(1)<CR>
-nnoremap <buffer> <silent> \rv :call <SID>Reset_Revert_Commit()<CR>
+nnoremap <buffer> <silent> \rs :call <SID>Reset('soft')<CR>
+nnoremap <buffer> <silent> \Rs :call <SID>Reset('mixed')<CR>
+nnoremap <buffer> <silent> \RS :call <SID>Reset('hard')<CR>
+nnoremap <buffer> <silent> \rv :call <SID>Revert()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutNewBranck()<CR>
 nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
 nnoremap <buffer> <silent> M   :call git#Menu(0)<CR>
@@ -27,7 +29,7 @@ nnoremap <buffer> <silent> 3   :3wincmd w<CR>
 nnoremap <buffer> <silent> 4   :4wincmd w<CR>
 
 
-if exists('*<SID>Reset_Revert_Commit')
+if exists('*<SID>Reset')
     finish
 endif
 
@@ -89,16 +91,30 @@ function <SID>TagCommit()
 endfunction
 
 
-function <SID>Reset_Revert_Commit(...)
+function <SID>Reset(opt)
     let l:hash = matchstr(getline('.'), '\w\{7}')
 
-    if l:hash == '' || input('Are you sure to reset/revert commit(yes/no): ') != 'yes'
+
+    if l:hash == '' || input('Are you sure to reset --'.a:opt.' '.l:hash.' (yes/no): ') != 'yes'
         redraw!
         return
     endif
 
     redraw!
-    call git#MsgHandle(system('git '.(a:0 == 0 ? 'revert ' : 'reset --hard ').l:hash), 'all')
+    call git#MsgHandle(system('git reset --'.a:action.' '.l:hash), 'all')
+endfunction
+
+
+function <SID>Revert(...)
+    let l:hash = matchstr(getline('.'), '\w\{7}')
+
+    if l:hash == '' || input('Are you sure to revert '.l:hash.' (yes/no): ') != 'yes'
+        redraw!
+        return
+    endif
+
+    redraw!
+    call git#MsgHandle(system('git revert '.l:hash), 'all')
 endfunction
 
 
@@ -118,7 +134,9 @@ function <SID>HelpDoc()
                 \ "Git log quick help !?\n".
                 \ "==================================================\n".
                 \ "    t:       tag commit            (git tag)\n".
-                \ "    \\rs:     reset commit          (git reset --hard)\n".
+                \ "    \\rs:     reset commit          (git reset --soft)\n".
+                \ "    \\Rs:     reset commit          (git reset --mixed)\n".
+                \ "    \\RS:     reset commit          (git reset --hard)\n".
                 \ "    \\rv:     revert commit         (git revert)\n".
                 \ "    \\co:     checkout new branch   (git checkout -b)\n".
                 \ "    1234:    jump to 1234 wimdow"

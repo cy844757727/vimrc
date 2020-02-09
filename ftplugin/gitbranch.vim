@@ -42,7 +42,7 @@ if exists('*<SID>CheckOutBranch')
 endif
 
 
-function s:GetCurLinInfo()
+function s:GetLineInfo()
     let l:line = getline('.')
     if l:line !~# '^\s\+\S'
         return ['', '']
@@ -58,7 +58,7 @@ endfunction
 
 
 function <SID>ApplyStash()
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
     if l:lineInfo[0] ==# 'S'
         call git#MsgHandle(system('git stash apply ' . l:lineInfo[1][:-2]), 'status')
@@ -67,7 +67,7 @@ endfunction
 
 
 function <SID>CheckOutBranch()
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
     if l:lineInfo[0] ==# 'L' && l:lineInfo[1] !=# '*'
         let l:msg = system('git stash && git checkout ' . l:lineInfo[1])
@@ -86,7 +86,7 @@ endfunction
 
 
 function <SID>CheckOutNewBranch()
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
     if l:lineInfo[0] =~# '[LT]'
         if l:lineInfo[1] ==# '*'
@@ -102,7 +102,7 @@ endfunction
 
 
 function <SID>DeleteItem(...)
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
     if empty(l:lineInfo[0]) || (input('Confirm the deletion(yes/no): ') != 'yes')
         redraw!
@@ -129,7 +129,7 @@ endfunction
 
 
 function <SID>Merge_Rebase_Branch(flag)
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
     if l:lineInfo[0] ==# 'L' && l:lineInfo[1] !=# '*'
         let l:op = (a:flag % 2 ? 'merge ' : 'rebase ').(a:flag > 2 ? '--continue' : l:lineInfo[1])
@@ -154,7 +154,7 @@ function s:cursorJump()
         endif
     endwhile
 
-    let l:lineInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
     if l:lineInfo[0] ==# 'T'
         call git#Refresh('commit', {'commit': l:lineInfo[-1], 'reftype': 'tag'})
     endif

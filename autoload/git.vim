@@ -23,7 +23,7 @@ endfunction
 "
 "
 function! s:FormatLog()
-    let s:config['log'] = map(systemlist('git log --oneline '.s:config['filelog']), "v:val[:6]")
+    let s:config['log'] = systemlist('git log --oneline '.s:config['filelog'].' | awk ''{print($1)}''')
     let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . s:config['filelog'])
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 

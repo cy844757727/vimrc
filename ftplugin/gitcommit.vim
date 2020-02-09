@@ -17,6 +17,8 @@ nnoremap <buffer> <silent> D   :call <SID>FileDiff(1)<CR>
 nnoremap <buffer> <silent> \d  :call <SID>DelFile()<CR>
 nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
 nnoremap <buffer> <silent> e   :call <SID>EditFile()<CR>
+nnoremap <buffer> <silent> \rs :call <SID>ResetFile()<CR>
+nnoremap <buffer> <silent> \RS :call <SID>ResetFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(1)<CR>
 nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
@@ -38,7 +40,7 @@ if exists('*Git_MyCommitFoldInfo')
     finish
 endif
 
-function s:GetCurLinInfo()
+function s:GetLineInfo()
     let l:line = getline('.')
     if l:line !~# '^>    '
         return ['', '', '']
@@ -54,7 +56,7 @@ endfunction
 
 
 function <SID>FileDiff(...)
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:fileInfo = s:GetLineInfo()
 
     if l:fileInfo[2] =~# '[AMD]'
         let l:parents = l:fileInfo[1]
@@ -70,7 +72,7 @@ endfunction
 
 
 function <SID>EditFile()
-    let l:file = s:GetCurLinInfo()[-1]
+    let l:file = s:GetLineInfo()[-1]
 
     if filereadable(l:file)
         if exists('*misc#EditFile')
@@ -88,7 +90,7 @@ endfunction
 
 
 function <SID>DelFile()
-    let l:file = s:GetCurLinInfo()[-1]
+    let l:file = s:GetLineInfo()[-1]
 
     if filereadable(l:file) && input('Confirm remove file from repository(yes/no): ') == 'yes'
         call git#MsgHandle(system('git rm --cached -- ' . l:file), 'status')
@@ -96,8 +98,24 @@ function <SID>DelFile()
 endfunction
 
 
+function <SID>ResetFile(...)
+    let l:fileInfo = s:GetLineInfo()
+
+    if a:0 == 1
+        let l:parents = l:fileInfo[1]
+        let l:parent = l:parents[0]
+        if len(l:parents) > 1
+            let l:parent = l:parents[input('Select parent commit(0:'.l:parents[0].'  1:'.l:parents[1].'): ')]
+        endif
+    endif
+
+    if !empty(l:fileInfo[0]) && input('Confirm reset --mixed file from specified commit(yes/no): ') == 'yes'
+        call git#MsgHandle(system('git reset --mixed  ' . (a:0 == 0 ? l:fileInfo[0] : l:parent) . ' -- ' . l:fileInfo[-1]), 'status')
+    endif
+endfunction
+
 function <SID>CheckOutFile(...)
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:fileInfo = s:GetLineInfo()
 
     if a:0 == 1
         let l:parents = l:fileInfo[1]
@@ -108,13 +126,13 @@ function <SID>CheckOutFile(...)
     endif
 
     if !empty(l:fileInfo[0]) && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
-        call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:fileInfo[1]) . ' -- ' . l:fileInfo[-1]), 'status')
+        call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:parent) . ' -- ' . l:fileInfo[-1]), 'status')
     endif
 endfunction
 
 
 function <SID>FileLog()
-    let l:file = s:GetCurLinInfo()[-1]
+    let l:file = s:GetLineInfo()[-1]
 
     if !empty(l:file)
         call git#Refresh('log', {'filelog': l:file})
@@ -153,6 +171,8 @@ function <SID>HelpDoc()
                 \ "    \\l:      file log             (git log --oneline -- file)\n" .
                 \ "    \\d:      del file             (git rm --cached )\n" .
                 \ "    e:       edit file\n" .
+                \ "    \\rs:     reset file           (git reset --mixed hash --)\n" .
+                \ "    \\RS:     reset file           (git reset --mixed prehash --)\n" .
                 \ "    \\co:     checkout file         (git checkout hash --)\n" .
                 \ "    \\CO:     checkout file         (git checkout prehash --)\n" .
                 \ "    1234:    jump to 1234 wimdow"

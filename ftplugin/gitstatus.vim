@@ -42,7 +42,7 @@ if exists('*<SID>FileDiff')
 endif
 
 
-function s:GetCurLinInfo()
+function s:GetLineInfo()
     let l:line = getline('.')
     if l:line !~# '^\s\+\S'
         return ['', '']
@@ -58,7 +58,7 @@ endfunction
 
 
 function <SID>EditFile()
-    let l:file = s:GetCurLinInfo()[-1]
+    let l:file = s:GetLineInfo()[-1]
     if !filereadable(l:file)
         return
     endif
@@ -77,41 +77,41 @@ endfunction
 
 
 function <SID>FileDiff()
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
-    if l:fileInfo[1] ==# 'M'
+    if l:lineInfo[1] ==# 'M'
         exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
                     \ 'git difftool -y ' .
-                    \ (l:fileInfo[0] ==# 'S' ? ' --cached ' : ' ') .
-                    \ l:fileInfo[-1]
+                    \ (l:lineInfo[0] ==# 'S' ? ' --cached ' : ' ') .
+                    \ l:lineInfo[-1]
     endif
 endfunction
 
 
 function <SID>CancelStaged(...)
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
-    if a:0 != 0 || l:fileInfo[0] ==# 'S'
-        call git#MsgHandle(system('git reset HEAD' . (a:0 == 0 ? ' -- '.l:fileInfo[-1] : '')), 'status')
+    if a:0 != 0 || l:lineInfo[0] ==# 'S'
+        call git#MsgHandle(system('git reset HEAD' . (a:0 == 0 ? ' -- '.l:lineInfo[-1] : '')), 'status')
     endif
 endfunction
 
 
 function <SID>AddFile(...)
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
-    if a:0 != 0 || l:fileInfo[0] =~# '[WU]'
-        call git#MsgHandle(system('git add' . (a:0 == 0 ? ' -- '.l:fileInfo[-1] : ' .')), 'status')
+    if a:0 != 0 || l:lineInfo[0] =~# '[WU]'
+        call git#MsgHandle(system('git add' . (a:0 == 0 ? ' -- '.l:lineInfo[-1] : ' .')), 'status')
     endif
 endfunction
 
 
 function <SID>CheckOutFile()
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
-    if l:fileInfo[0] =~# '[SW]' && input('Confirm discarding changes in working directory(yes/no): ') ==# 'yes'
+    if l:lineInfo[0] =~# '[SW]' && input('Confirm discarding changes in working directory(yes/no): ') ==# 'yes'
         redraw!
-        call git#MsgHandle(system('git checkout -- ' . l:fileInfo[-1]), 'status')
+        call git#MsgHandle(system('git checkout -- ' . l:lineInfo[-1]), 'status')
     else
         redraw!
     endif
@@ -119,23 +119,23 @@ endfunction
 
 
 function! <SID>DeleteItem(...)
-    let l:fileInfo = s:GetCurLinInfo()
-    if empty(l:fileInfo[0])
+    let l:lineInfo = s:GetLineInfo()
+    if empty(l:lineInfo[0])
         return
     endif
 
-    if l:fileInfo[0] ==# 'U'
+    if l:lineInfo[0] ==# 'U'
         let l:ans = input('Confirm the file deletion (YES) or ignore file (yes): ')
         redraw!
         if l:ans ==# 'YES'
-            call git#MsgHandle(system('rm '.l:fileInfo[-1]), 'status')
+            call git#MsgHandle(system('rm '.l:lineInfo[-1]), 'status')
         elseif l:ans ==# 'yes'
-            call writefile([l:fileInfo[-1]], '.gitignore', 'a')
+            call writefile([l:lineInfo[-1]], '.gitignore', 'a')
             call git#Refresh('status')
         endif
     elseif input('Cancel file tracking(yes): ') ==# 'yes'
         redraw!
-        call git#MsgHandle(system('git rm --cached -- ' . l:fileInfo[-1]), 'status')
+        call git#MsgHandle(system('git rm --cached -- ' . l:lineInfo[-1]), 'status')
     else
         redraw!
     endif
@@ -144,10 +144,10 @@ endfunction
 
 
 function <SID>FileLog()
-    let l:fileInfo = s:GetCurLinInfo()
+    let l:lineInfo = s:GetLineInfo()
 
-    if l:fileInfo[0] =~# '[SW]'
-        call git#Refresh('log', {'filelog': l:fileInfo[-1]})
+    if l:lineInfo[0] =~# '[SW]'
+        call git#Refresh('log', {'filelog': l:lineInfo[-1]})
         1wincmd w
     endif
 endfunction
