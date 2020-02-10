@@ -87,8 +87,11 @@ function! s:FormatCommit()
     endif
 
     let l:list = systemlist('git show --raw '.l:format.s:config['commit'].' | sed -E ''s/^:+(\w{6} )+(\w{7}(\.\.\.)? )+/>    /''')
-    let s:config['parent'] = s:config['reftype'] ==# 'tag' ? [] : split(l:list[0])[3:]
+    if empty(l:list)
+        return []
+    endif
 
+    let s:config['parent'] = s:config['reftype'] ==# 'tag' ? [] : split(l:list[0])[3:]
     return l:list
 endfunction
 

@@ -8,13 +8,15 @@ if exists('g:loaded_a_misc')
     finish
 endif
 let g:loaded_a_misc = 1
+let s:preTabpage = {'before': 1, 'after': 1}
 
 
 augroup misc
     autocmd!
     autocmd BufEnter *[^0-9] call s:BufHisRecord()
-    autocmd TabLeave * call s:TabEvent('leave')
-    autocmd TabClosed * call s:TabEvent('close')
+    autocmd TabLeave * let s:preTabpage.before = tabpagenr()
+    autocmd TabEnter * let s:preTabpage.after = s:preTabpage.before
+    autocmd TabClosed * exec min([s:preTabpage.after, tabpagenr('$')]).'tabnext'
     autocmd User WorkSpaceSavePre call s:CleanBufferList()
 augroup END
 
@@ -718,18 +720,6 @@ function misc#SwitchToEmptyBuftype()
     return empty(&buftype)
 endfunction
 
-" tableave, tabclose event handle
-let s:preTabNr = {'0': 1, '1': 1, 'cur': 0}
-function s:TabEvent(act)
-    if a:act == 'leave'
-        let s:preTabNr[s:preTabNr.cur] = tabpagenr()
-        let s:preTabNr.cur = !s:preTabNr.cur
-    elseif a:act == 'close'
-        exe s:preTabNr[s:preTabNr.cur] > tabpagenr('$') ? '$tabnext' :
-                    \ s:preTabNr[s:preTabNr.cur].'tabnext'
-        let s:preTabNr[!s:preTabNr.cur] = s:preTabNr[s:preTabNr.cur]
-    endif
-endfunction
 
 " Specified range code formatting
 function! misc#CodeFormat() range

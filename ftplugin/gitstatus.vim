@@ -80,10 +80,8 @@ function <SID>FileDiff()
     let l:lineInfo = s:GetLineInfo()
 
     if l:lineInfo[1] ==# 'M'
-        exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
-                    \ 'git difftool -y ' .
-                    \ (l:lineInfo[0] ==# 'S' ? ' --cached ' : ' ') .
-                    \ l:lineInfo[-1]
+        exec (g:GIT_diffguitool ? 'Async! git difftool -g -y ' : '!git difftool -y ') .
+                    \ (l:lineInfo[0] ==# 'S' ? ' --cached -- ' : ' -- ') . l:lineInfo[-1]
     endif
 endfunction
 

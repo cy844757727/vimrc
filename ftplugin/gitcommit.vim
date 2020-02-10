@@ -59,14 +59,17 @@ function <SID>FileDiff(...)
     let l:fileInfo = s:GetLineInfo()
 
     if l:fileInfo[2] =~# '[AMD]'
-        let l:parents = l:fileInfo[1]
-        let l:parent = l:parents[0]
-        if len(l:parents) > 1
-            let l:parent = l:parents[input('Select parent commit(0:'.l:parents[0].'  1:'.l:parents[1].'): ')]
+        let l:parent = ''
+        if a:0 == 0
+            let l:parents = l:fileInfo[1]
+            let l:parent = l:parents[0]
+            if len(l:parents) > 1
+                let l:parent = l:parents[input('Select parent commit(0:'.l:parents[0].'  1:'.l:parents[1].'): ')]
+            endif
         endif
-        exec (exists('g:Git_GuiDiffTool') ? 'Async! ' : '!') .
-                    \ 'git difftool -y ' . (a:0 == 0 ? l:parent : '') .
-                    \ ' ' . l:fileInfo[0] . ' -- ' . l:fileInfo[-1]
+
+        exec (g:GIT_diffguitool ? 'Async! git difftool -g -y ' : '!git difftool -y ') .
+                    \ l:parent . ' ' . l:fileInfo[0] . ' -- ' . l:fileInfo[-1]
     endif
 endfunction
 
