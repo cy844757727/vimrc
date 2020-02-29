@@ -74,6 +74,19 @@ function! s:Sum(list)
 endfunction
 
 function! infoWin#Toggle(act) abort
+    if a:act ==# 'off'
+        let l:i = winnr('$')
+
+        while l:i > 0
+            if getwinvar(l:i, 'infoWinPreview', 0)
+                exe l:i.'close'
+                break
+            endif
+
+            let l:i -= 1
+        endwhile
+    endif
+
     if bufwinnr(s:bufnr) != -1
         exe bufwinnr(s:bufnr).(a:act ==# 'on' ? 'wincmd w' : 'hide')
     elseif a:act ==# 'off'

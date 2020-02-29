@@ -99,8 +99,8 @@ function! Vimrc_ClosePair(char)
     return getline('.')[col('.') - 1] == a:char ? "\<Right>" : a:char
 endfunction
 
-nnoremap \| :Async 
-vnoremap \| <Esc>:Asyncrun 
+noremap <silent> \| :call Async_run()<CR><BS>
+"nnoremap \|\| <Esc>:Asyncrun 
 noremap <silent> <C-j> :call misc#NextItem('next')<CR>
 noremap <silent> <C-k> :call misc#NextItem('previous')<CR>
 map! <C-j> <Esc><C-j>

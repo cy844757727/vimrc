@@ -90,7 +90,7 @@ function <SID>Preview(flag)
     let l:ex = l:lin.'gg'.(l:col > 1 ? '0'.(l:col-1).'l' : '').'zz'
 
     if l:cur != winnr('$') && getwinvar(l:cur + 1, 'infoWinPreview', 0)
-        if line('.') == s:currentLine && xor(s:auto, a:flag !=# 'auto')
+        if line('.') == s:currentLine
             exe (l:cur+1).'close'
             return
         endif

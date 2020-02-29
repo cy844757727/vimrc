@@ -33,6 +33,19 @@ command -bang SAsync :call async#JobStop('<bang>')
 command -nargs=+ -complete=file SGdb :call async#GdbStart(<q-args>, sign#Record('break', 'tbreak'))
 
 
+function! Async_run()
+    let l:cmd = input('|')
+    if l:cmd =~# '^\s*|'
+        let l:cmd = matchstr(l:cmd, '\v(^\s*\|\s*)\zs.*')
+        if !empty(l:cmd)
+            call async#JobRunOut('', l:cmd, {})
+        endif
+    elseif l:cmd =~# '\S'
+        call async#JobRun('', l:cmd, {}, {})
+    endif
+endfunction
+
+
 function! Async_CompleteTerm(L, C, P)
     let l:ex = split(a:C[:a:P])
 
