@@ -200,9 +200,10 @@ noremap <silent> <C-f10>   :call misc#ToggleBottomBar('quickfix', 'book')<CR>
 noremap <silent> <S-f10>   :call misc#ToggleBottomBar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottomBar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottomBar('terminal', '')<CR>
-noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'ipython3')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'jupyter-console')<CR>
 noremap <silent> <S-f12>   :call misc#ToggleBottomBar('terminal', 'python3')<CR>
-noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'dc_shell')<CR>
+"noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'dc_shell')<CR>
+noremap <silent> <C-S-f12> :call quickui#terminal#open('bash', {})<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
 map! <S-f8> <Esc><S-f8>
@@ -225,7 +226,7 @@ tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBott
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal', '')"])<CR>
 tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','ipython3')"])<CR>
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python3')"])<CR>
-tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
+"tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
 
 noremap <silent> <C-HOME> :1tabnext<CR>
 noremap <silent> <C-END> :$tabnext<CR>
@@ -267,7 +268,7 @@ let g:termdebug_wide = 1
 let g:async_termType = [
             \ 'python3',  'python2',  'python',
             \ 'ipython3', 'ipython2', 'ipython',
-            \ 'dc_shell', 'jupyter-console'
+            \ 'dc_shell', 'jupyter-console', 'csh'
             \ ]
 
 " === CtrlP ============ {{{1
@@ -500,7 +501,13 @@ function! PostLoadWorkSpace_Var()
         unlet g:WINVAR_BUFHIS
     endif
 endfunction
-
+"
+" === quickui.vim === {{{1
+let g:quickui_border_style=2
+let g:quickui_color_scheme = 'papercol'
+"let g:quickui_color_scheme = 'gruvbox'
+"let g:quickui_color_scheme = 'solarized'
+"let g:quickui_color_scheme = 'papercol-light'
 " === webdevicons.vim === {{{1
 " Extended icon
 let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols = {
@@ -524,5 +531,5 @@ let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
 
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 
-set tw=0
+set tw=10000000
 " vim:foldmethod=marker

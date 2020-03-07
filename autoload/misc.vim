@@ -315,20 +315,38 @@ function s:TaskQueueParse(opt)
 endfunction
 
 
+let s:task_queue_index = 0
 function s:TaskQueueSelect()
-    let [l:i, l:prompt, l:menu] = [1, 'Select one ...', {}]
-    for [l:key, l:Val] in items(get(g:ENV, '.task_queue', {}))
-        let l:prompt .= "\n".printf('  %2d:  %-15s  %s', l:i, l:key, string(l:Val))
-        let l:menu[l:i] = l:Val
-        let l:i += 1
-    endfor
-
-    if empty(l:menu)
-        echo 'Task queue is empty!'
+    let l:queue = get(g:ENV, '.task_queue', {})
+    if empty(l:queue)
+        echo 'Task queue is empty'
         return
     endif
 
-    let l:Task = get(l:menu, input(l:prompt."\n!?: "), 0)
+    let [l:i, l:prompt, l:menu, l:content] = [0, 'Select one ...', {}, []]
+    if exists('g:quickui#style#border')
+        for [l:key, l:Val] in items(l:queue)
+            let l:content += [l:key . "\t \t" .l:Val]
+            let l:menu[l:i] = l:Val
+            let l:i += 1
+        endfor
+        let l:sel = quickui#listbox#inputlist(l:content, 
+                    \ {'title': 'Task Queue', 'w': 60, 'h': 10, 'index': s:task_queue_index})
+        if l:sel != -1
+            let s:task_queue_index = l:sel
+        endif
+    else
+        let [l:i, l:prompt, l:menu] = [1, 'Select one ...', {}]
+        for [l:key, l:Val] in items(l:queue)
+            let l:prompt .= "\n".printf('  %2d:  %-15s  %s', l:i, l:key, string(l:Val))
+            let l:menu[l:i] = l:Val
+            let l:i += 1
+        endfor
+        let l:sel = input(l:promt."\n?!:")
+    end
+
+
+    let l:Task = get(l:menu, l:sel)
     let l:type = type(l:Task)
 
     if l:type == type('') || l:type == type([])
