@@ -25,7 +25,7 @@ let g:async_termType = get(g:, 'async_termType', [])
 
 " Command
 command -nargs=* -complete=customlist,Async_CompleteTerm TTerm :call async#TermToggle('toggle', <q-args>)
-command -nargs=* -complete=customlist,Async_CompleteTerm PTerm :call quickui#terminal#open(empty(<q-args>) ? g:Async_shell : <q-args>, {})
+command -nargs=* -complete=customlist,Async_CompleteTerm PTerm :call async#TermToggle('popup', <q-args>)
 command -nargs=* -complete=customlist,Async_CompleteTerm Term :call async#TermToggle('on', <q-args>)
 command -nargs=+ -complete=customlist,Async_CompleteTerm HTerm :call async#TermToggle('off', <q-args>)
 command -nargs=+ -bang -complete=customlist,Async_CompleteAsync Async :call async#JobRun('<bang>', <q-args>, {}, {})
@@ -56,7 +56,7 @@ function! Async_CompleteTerm(L, C, P)
         endif
     endfor
 
-    let l:default = filter(copy(g:async_terminalType), "v:val =~ '^".a:L."'")
+    let l:default = filter(copy(g:async_termType), "v:val =~ '^".a:L."'")
     return  (!empty(l:default) ? l:default + ['|'] : []) + getcompletion(a:L.'*', 'shellcmd')
 endfunction
 

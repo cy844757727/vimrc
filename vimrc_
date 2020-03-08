@@ -200,10 +200,9 @@ noremap <silent> <C-f10>   :call misc#ToggleBottomBar('quickfix', 'book')<CR>
 noremap <silent> <S-f10>   :call misc#ToggleBottomBar('quickfix', 'todo')<CR>
 noremap <silent> <C-S-f10> :call misc#ToggleBottomBar('quickfix', 'break')<CR>
 noremap <silent> <f12>     :call misc#ToggleBottomBar('terminal', '')<CR>
-noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'jupyter-console')<CR>
+noremap <silent> <C-f12>   :call misc#ToggleBottomBar('terminal', 'ipython3')<CR>
 noremap <silent> <S-f12>   :call misc#ToggleBottomBar('terminal', 'python3')<CR>
-"noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'dc_shell')<CR>
-noremap <silent> <C-S-f12> :call quickui#terminal#open('bash', {})<CR>
+noremap <silent> <C-S-f12> :call misc#ToggleBottomBar('terminal', 'popup')<CR>
 map! <f8> <Esc><f8>
 map! <C-f8> <Esc><C-f8>
 map! <S-f8> <Esc><S-f8>
@@ -226,7 +225,7 @@ tnoremap <silent> <C-S-f10> <C-w>N:call execute(['norm a', "call misc#ToggleBott
 tnoremap <silent> <f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal', '')"])<CR>
 tnoremap <silent> <C-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','ipython3')"])<CR>
 tnoremap <silent> <S-f12> <C-w>N:call execute(['norm a', "call misc#ToggleBottomBar('terminal','python3')"])<CR>
-"tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','dc_shell')"])<CR>
+tnoremap <silent> <C-S-f12> <C-w>N:call execute(['norm a',"call misc#ToggleBottomBar('terminal','popup')"])<CR>
 
 noremap <silent> <C-HOME> :1tabnext<CR>
 noremap <silent> <C-END> :$tabnext<CR>
@@ -268,7 +267,7 @@ let g:termdebug_wide = 1
 let g:async_termType = [
             \ 'python3',  'python2',  'python',
             \ 'ipython3', 'ipython2', 'ipython',
-            \ 'dc_shell', 'jupyter-console', 'csh'
+            \ 'jupyter-console', 'csh'
             \ ]
 
 " === CtrlP ============ {{{1

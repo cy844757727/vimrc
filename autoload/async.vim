@@ -29,7 +29,20 @@ let s:termOption = {
             \ 'term_kill':   'kill',
             \ 'term_finish': 'close',
             \ 'stoponexit':  'term',
+            \ 'hidden':      1,
             \ 'norestore':   1
+            \ }
+
+let s:termPopOpt = {
+            \ 'maxwidth': 80,
+            \ 'maxheight': 24,
+            \ 'minwidth': 80,
+            \ 'minheight': 24,
+            \ 'wrpa': 0,
+            \ 'maping': 0,
+            \ 'border': repeat([0], 9),
+            \ 'highlight': 'QuickTermBorder',
+            \ 'resize': 0
             \ }
 
 function s:termAnalyzeCmd(cmd)
@@ -38,7 +51,7 @@ function s:termAnalyzeCmd(cmd)
     let l:name = s:defaultTermName
 
     if !empty(l:list)
-        if index(g:async_termType + [l:cmd], l:list[0]) != -1
+        if index(g:async_termType, l:list[0]) != -1
             let l:cmd = remove(l:list, 0)
             let l:name = s:termPrefix . ': '.l:cmd.' '
         elseif l:list[0]
@@ -73,8 +86,16 @@ function! async#TermToggle(action, cmd) abort
     let [l:cmd, l:name, l:postCmd] = s:termAnalyzeCmd(a:cmd)
     let [l:winnr, l:bufnr, l:other] =
                 \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
+    let l:opt = extend(copy(s:termOption), {'term_name': l:name})
 
-    if l:winnr != -1
+    if winnr() == 0
+"        let l:postCmd = 'exit'
+"        let l:bufnr = bufnr()
+        call popup_close(g:quickui#terminal#current.winid)
+    elseif a:action == 'popup' || l:postCmd == 'popup'
+        call quickui#terminal#open(l:cmd, {})
+        let l:bufnr = bufnr()
+    elseif l:winnr != -1
         exe l:winnr.(a:action ==# 'on' ? 'wincmd w' : 'hide')
     elseif l:name == s:defaultTermName && l:other != -1 && empty(l:postCmd)
         " For default key always switch off terminal window
@@ -92,26 +113,23 @@ function! async#TermToggle(action, cmd) abort
 
         if l:bufnr == -1
             " Creat a terminal
-            exe 'belowright '.get(g:, 'BottomWinHeight', 15).'split'
-            let l:bufnr = term_start(l:cmd, extend(copy(s:termOption),
-                        \ {'term_name': l:name, 'curwin': 1}))
-        else
-            " Display terminal
-            silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).
-                        \ 'split +'.l:bufnr.'buffer'
+            let l:bufnr = term_start(l:cmd, l:opt)
         endif
+
+        " Display terminal
+        silent exe 'belowright '.get(g:, 'BottomWinHeight', 15).
+                    \ 'split +'.l:bufnr.'buffer'
 
         setlocal winfixheight
     elseif !empty(l:postCmd) && l:bufnr == -1
         " Allow background execution when first creating terminal
-        let l:bufnr = term_start(l:cmd, extend(copy(s:termOption),
-                    \ {'term_name': l:name, 'hidden': 1}))
+        let l:bufnr = term_start(l:cmd, l:opt)
         " Without this, buftype may be empty
         call setbufvar(l:bufnr, '&buftype', 'terminal')
     endif
 
     " Excuting postCmd after establishing a terminal
-    if !empty(l:postCmd)
+    if !empty(l:postCmd) && l:postCmd !=# 'popup'
         call term_sendkeys(l:bufnr, l:postCmd."\n")
     endif
 

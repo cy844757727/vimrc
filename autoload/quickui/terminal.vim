@@ -10,6 +10,7 @@
 " vim: set noet fenc=utf-8 ff=unix sts=4 sw=4 ts=4 :
 
 
+let s:bid = -1
 "----------------------------------------------------------------------
 " create a terminal popup
 "----------------------------------------------------------------------
@@ -48,11 +49,13 @@ function! quickui#terminal#create(cmd, opts)
 		if has_key(a:opts, 'cwd')
 			call quickui#core#chdir(a:opts.cwd)
 		endif
-		let bid = term_start(a:cmd, opts)
+        if !bufexists(s:bid)
+            let s:bid = term_start(a:cmd, opts)
+        endif
 		if has_key(a:opts, 'cwd')
 			call quickui#core#chdir(savedir)
 		endif
-		if bid <= 0
+		if s:bid <= 0
 			return -1
 		endif
 		let opts = {'maxwidth':w, 'maxheight':h, 'minwidth':w, 'minheight':h}
@@ -66,7 +69,7 @@ function! quickui#terminal#create(cmd, opts)
 		let opts.drag = get(a:opts, 'drag', 1)
 		let opts.resize = 0
 		let opts.callback = function('s:vim_popup_callback')
-		let winid = popup_create(bid, opts)
+		let winid = popup_create(s:bid, opts)
 		call popup_move(winid, {'line':hwnd.opts.line, 'col':hwnd.opts.col})
 		let hwnd.winid = winid
 		let g:quickui#terminal#current = hwnd
