@@ -41,7 +41,8 @@ function! quickui#terminal#create(cmd, opts)
 	endif
 	if has('nvim') == 0
 		let opts = {'hidden': 1, 'term_rows':h, 'term_cols':w}
-		let opts.term_kill = get(a:opts, 'term_kill', 'term')
+		let opts.term_kill = get(a:opts, 'term_kill', 'kill')
+        let opts.stoponexit = 'term'
 		let opts.norestore = 1
 		let opts.exit_cb = function('s:vim_term_exit')
 		let opts.term_finish = 'close'

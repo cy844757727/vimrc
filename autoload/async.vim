@@ -15,9 +15,6 @@ hi default AsyncDbgHl ctermfg=16 guifg=#8bebff
 sign define DBGCurrent text= texthl=AsyncDbgHl
 
 let s:displayIcon = {
-            \ '1': ' ➊ ', '2': ' ➋ ', '3': ' ➌ ',
-            \ '4': ' ➍ ', '5': ' ➎ ', '6': ' ➏ ',
-            \ '7': ' ➐ ', '8': ' ➑ ', '9': ' ➒ '
             \ }
 
 " Default terminal prefix
@@ -88,7 +85,7 @@ function! async#TermToggle(action, cmd) abort
                 \ [bufwinnr(l:name), bufnr(l:name), bufwinnr(s:termPrefix)]
     let l:opt = extend(copy(s:termOption), {'term_name': l:name})
 
-    if winnr() == 0
+    if winnr() == 0 && &buftype ==# 'terminal'
 "        let l:postCmd = 'exit'
 "        let l:bufnr = bufnr()
         call popup_close(g:quickui#terminal#current.winid)

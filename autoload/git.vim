@@ -86,7 +86,7 @@ function! s:FormatCommit()
         let l:format = ''
     endif
 
-    let l:list = systemlist('git show --raw '.l:format.s:config['commit'].' | sed -E ''s/^:+(\w{6} )+(\w{7}(\.\.\.)? )+/>    /''')
+    let l:list = systemlist('git show --raw '.l:format.s:config['commit'].' | sed -E ''s/^:+(\w{6} )+(\w{7,9}(\.\.\.)? )+/>    /''')
     if empty(l:list)
         return []
     endif
@@ -393,4 +393,4 @@ function! git#CompleteBranch(L, C, P)
     return system('git branch|grep ''^[^*]''|sed -E -n ''s/^ +//p''')
 endfunction
 
-
+" vim:tw=0

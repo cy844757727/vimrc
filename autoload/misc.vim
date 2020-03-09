@@ -726,6 +726,10 @@ endfunction
 
 " Switch to buffer with empty buftype
 function misc#SwitchToEmptyBuftype()
+    if winnr() == 0 && &buftype ==# 'terminal'
+        return
+    endif
+
     let l:ex = (index(['qf', 'infowin'], &ft) != -1 || bufname('%') =~# '\v^!Term') ?
                 \ 'wincmd W' : 'wincmd w'
 
@@ -1289,7 +1293,7 @@ function! misc#ToggleBottomBar(winType, type)
                 call execute(l:Val)
             endif
         endfor
-    elseif a:winType == 'quickfix'
+    elseif a:winType == 'quickfix' && !(winnr() == 0 && &buftype ==# 'terminal')
         call async#TermToggle('off', '')
 
         if a:type == 'book'
@@ -1306,7 +1310,9 @@ function! misc#ToggleBottomBar(winType, type)
             exe 'copen '.get(g:, 'BottomWinHeight', 15)
         endif
     elseif a:winType == 'terminal'
-        call misc#ToggleBottomBar('only', 'terminal')
+        if a:type !=# 'popup' && !(winnr() == 0 && &buftype ==# 'terminal')
+            call misc#ToggleBottomBar('only', 'terminal')
+        endif
         call async#TermToggle('toggle', a:type)
     endif
 endfunction
