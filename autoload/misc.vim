@@ -43,9 +43,11 @@ function misc#EnvUnlock()
 endfunction
 
 " Environment configure
-" Entries are segmented by semicolons,
-" keys and values are linked by equal signs.
-function! misc#EnvSet(config) abort
+" Type: [] -> remove all items listed in []
+" Type: {} -> add all items (key: val) listed in {}
+" Type: analyze string
+"       keys and values are linked by '=', and items delimited by ';'.
+function! misc#Env(config) abort
     unlockvar! g:ENV g:ENV_DEFAULT g:ENV_NONE
     let l:type = type(a:config)
 
@@ -91,8 +93,8 @@ function s:EnvVimSet(key, Val)
                 \ a:key[0] ==# ':'    ? 'command! '.a:key[1:].' '.a:Val : ''
 endfunction
 
-" Delete vim global var, environment, command
-function s:EnvVimDelete(key, Val)
+" Unset vim global var, environment, command
+function s:EnvVimUnset(key, Val)
     exe
                 \ a:Val ==# 'g' ? 'unlet! '.a:key :
                 \ a:Val ==# 'e' ? 'let '.a:key.'=''''' :
@@ -123,7 +125,7 @@ function s:EnvParse(opt)
         endfor
         " Delete environment
         for [l:key, l:Val] in items(g:ENV_DEFAULT)
-            call s:EnvVimDelete(l:key, l:Val)
+            call s:EnvVimUnset(l:key, l:Val)
         endfor
         call extend(filter(g:ENV, 'v:key[0] ==# ''.'''), get(g:, 'env', {}))
         let [g:ENV_DEFAULT, g:ENV_NONE] = [{}, {}]
@@ -151,7 +153,7 @@ function s:EnvRemove(key)
     if has_key(g:ENV_DEFAULT, a:key)
         call s:EnvVimSet(a:key, remove(g:ENV_DEFAULT, a:key))
     elseif has_key(g:ENV_NONE, a:key)
-        call s:EnvVimDelete(a:key, remove(g:ENV_NONE, a:key))
+        call s:EnvVimUnset(a:key, remove(g:ENV_NONE, a:key))
     endif
 endfunction
 

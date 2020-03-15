@@ -63,7 +63,7 @@ augroup vimrc
     autocmd User WorkSpaceSavePre call PreSaveWorkSpace_Var()
     autocmd User WorkSpaceLoadPre call async#JobRun('!', 'ctags -R -f .tags', {}, {'flag': '[I]'})
     autocmd User VimInfoLoadPre call misc#EnvUnlock()
-    autocmd User VimInfoLoadPost call misc#EnvSet('-i')
+    autocmd User VimInfoLoadPost call misc#Env('-i')
     autocmd User WorkSpaceLoadPost call PostLoadWorkSpace_Var()
 augroup END
 
@@ -71,7 +71,7 @@ augroup END
 command! Info :call misc#Information('detail')
 command! ATags :Async! ctags -R -f .tags
 command! -nargs=? -complete=custom,misc#CompleteSide ToggleSideWin :call misc#ToggleSideBar(<q-args>)
-command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#EnvSet(<q-args>)
+command! -nargs=? -complete=custom,misc#CompleteEnv Env :call misc#Env(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteTask Task :call misc#EnvTaskQueue(<q-args>)
 command! -nargs=? -complete=custom,misc#CompleteF5 F5 :call misc#F5Function(<q-args>)
 command! -nargs=* -count=15 Msg :call misc#MsgFilter(<count>, <f-args>)
