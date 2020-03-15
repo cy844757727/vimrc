@@ -164,20 +164,41 @@ function <SID>SwitchCommit(lr)
 endfunction
 
 
+let s:quickui_doc = [
+            \ '    <space>:    code fold | unfold      (za)',
+            \ '    <C-left>:   child commit',
+            \ '    <C-right>:  parent commit',
+            \ '    e:          edit file',
+            \ '    d:          diff file               (git difftool -y)',
+            \ '    D:          diff file               (git difftool -y, workspace)',
+            \ '    \l:         file log                (git log --oneline -- file)',
+            \ '    \d:         del file                (git rm --cached)',
+            \ '    \rs:        reset file              (git reset --mixed hash --)',
+            \ '    \RS:        reset file              (git reset --mixed prehash --)',
+            \ '    \co:        checkout file           (git checkout hash --)',
+            \ '    \CO:        checkout file           (git checkout prehash --)',
+            \ '    1234:       jump to 1234 window'
+            \ ]
+let s:quickui_opt = {'title': 'Map: commit', 'w': 80, 'h': len(s:quickui_doc)}
+
 function <SID>HelpDoc()
-    echo
-                \ "Git commit quick help !?\n" .
-                \ "==================================================\n" .
-                \ "    <spcae>: code fold | unfold    (za)\n" .
-                \ "    d:       diff file             (git difftool -y)\n" .
-                \ "    D:       diff file             (git difftool -y, workspace)\n" .
-                \ "    \\l:      file log             (git log --oneline -- file)\n" .
-                \ "    \\d:      del file             (git rm --cached )\n" .
-                \ "    e:       edit file\n" .
-                \ "    \\rs:     reset file           (git reset --mixed hash --)\n" .
-                \ "    \\RS:     reset file           (git reset --mixed prehash --)\n" .
-                \ "    \\co:     checkout file         (git checkout hash --)\n" .
-                \ "    \\CO:     checkout file         (git checkout prehash --)\n" .
-                \ "    1234:    jump to 1234 wimdow"
+    if exists('g:quickui#style#border')
+        call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
+    else
+        echo
+                    \ "Git commit quick help !?\n" .
+                    \ "==================================================\n" .
+                    \ "    <spcae>: code fold | unfold    (za)\n" .
+                    \ "    d:       diff file             (git difftool -y)\n" .
+                    \ "    D:       diff file             (git difftool -y, workspace)\n" .
+                    \ "    \\l:      file log             (git log --oneline -- file)\n" .
+                    \ "    \\d:      del file             (git rm --cached )\n" .
+                    \ "    e:       edit file\n" .
+                    \ "    \\rs:     reset file           (git reset --mixed hash --)\n" .
+                    \ "    \\RS:     reset file           (git reset --mixed prehash --)\n" .
+                    \ "    \\co:     checkout file         (git checkout hash --)\n" .
+                    \ "    \\CO:     checkout file         (git checkout prehash --)\n" .
+                    \ "    1234:    jump to 1234 wimdow"
+    endif
 endfunction
 

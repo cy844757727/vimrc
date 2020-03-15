@@ -162,19 +162,37 @@ function s:cursorJump()
     let b:curL = line('.')
 endfunction
 
+let s:quickui_doc = [
+            \ '    <space>:     echo',
+            \ '    a:           apply stash                  (git stash apply)',
+            \ '    c:           checkout branch              (git checkout)',
+            \ '    \d:          delete current item',
+            \ '    \D:          delete current item          (force)',
+            \ '    \m:          merge to current branch      (git merge)',
+            \ '    \M:          merge to current branch      (git merge --continue)',
+            \ '    \r:          rebase to current branch     (git rebase)',
+            \ '    \R:          rebase continue              (git rebase --continue)',
+            \ '    1234:        jump to 1234 window'
+            \ ]
+let s:quickui_opt = {'title': 'Map: branch', 'w': 80, 'h': len(s:quickui_doc)}
+
 function <SID>HelpDoc()
-    echo
-                \ "Git branch quick help !?\n" .
-                \ "==================================================\n" .
-                \ "    <space>: echo\n" .
-                \ "    a:       apply stash                (git stash apply)\n" .
-                \ "    c:       checkout branch            (git checkout)\n" .
-                \ "    \\d:      delete current item\n" .
-                \ "    \\D:      delete (force)\n" .
-                \ "    \\m:      merge to current branch    (git merge)\n" .
-                \ "    \\M:      merge to current branch    (git merge --continue)\n" .
-                \ "    \\r:      rebase to current branch   (git rebase)\n" .
-                \ "    \\R:      rebase continue            (git rebase --continue)\n" .
-                \ "    1234:    jump to 1234 window"
+    if exists('g:quickui#style#border')
+        call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
+    else
+        echo
+                    \ "Git branch quick help !?\n" .
+                    \ "==================================================\n" .
+                    \ "    <space>: echo\n" .
+                    \ "    a:       apply stash                (git stash apply)\n" .
+                    \ "    c:       checkout branch            (git checkout)\n" .
+                    \ "    \\d:      delete current item\n" .
+                    \ "    \\D:      delete (force)\n" .
+                    \ "    \\m:      merge to current branch    (git merge)\n" .
+                    \ "    \\M:      merge to current branch    (git merge --continue)\n" .
+                    \ "    \\r:      rebase to current branch   (git rebase)\n" .
+                    \ "    \\R:      rebase continue            (git rebase --continue)\n" .
+                    \ "    1234:    jump to 1234 window"
+    endif
 endfunction
 

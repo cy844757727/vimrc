@@ -128,17 +128,34 @@ function <SID>CheckOutNewBranck()
     endif
 endfunction
 
+let s:quickui_doc = [
+            \ '    t:           tag commit                 (git tag)',
+            \ '    c:           update commit detail       (git show)',
+            \ '    C:           update auto                (git show)',
+            \ '    \l:          log all                    (git log)',
+            \ '    \rs:         reset commit               (git reset --soft)',
+            \ '    \Rs:         reset commit               (git reset --mixed)',
+            \ '    \RS:         reset commit               (git reset --hard)',
+            \ '    \rv:         revert commit              (git revert)',
+            \ '    \co:         checkout new branch        (git checkout -b)',
+            \ '    1234:        jump to 1234 window'
+            \ ]
+let s:quickui_opt = {'title': 'Map: log', 'w': 80, 'h': len(s:quickui_doc)}
 
 function <SID>HelpDoc()
-    echo
-                \ "Git log quick help !?\n".
-                \ "==================================================\n".
-                \ "    t:       tag commit            (git tag)\n".
-                \ "    \\rs:     reset commit          (git reset --soft)\n".
-                \ "    \\Rs:     reset commit          (git reset --mixed)\n".
-                \ "    \\RS:     reset commit          (git reset --hard)\n".
-                \ "    \\rv:     revert commit         (git revert)\n".
-                \ "    \\co:     checkout new branch   (git checkout -b)\n".
-                \ "    1234:    jump to 1234 wimdow"
+    if exists('g:quickui#style#border')
+        call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
+    else
+        echo
+                    \ "Git log quick help !?\n".
+                    \ "==================================================\n".
+                    \ "    t:       tag commit            (git tag)\n".
+                    \ "    \\rs:     reset commit          (git reset --soft)\n".
+                    \ "    \\Rs:     reset commit          (git reset --mixed)\n".
+                    \ "    \\RS:     reset commit          (git reset --hard)\n".
+                    \ "    \\rv:     revert commit         (git revert)\n".
+                    \ "    \\co:     checkout new branch   (git checkout -b)\n".
+                    \ "    1234:    jump to 1234 wimdow"
+    endif
 endfunction
 

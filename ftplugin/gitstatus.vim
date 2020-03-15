@@ -171,21 +171,41 @@ function s:cursorJump()
 endfunction
 
 
+let s:quickui_doc = [
+            \ '    <space>:     echo',
+            \ '    d:           diff file                  (git difftool)',
+            \ '    r:           reset file staging         (git reset HEAD --)',
+            \ '    R:           reset all staged file      (git reset HEAD)',
+            \ '    a:           add file                   (git add)',
+            \ '    A:           add all file               (git add .)',
+            \ '    e:           edit file                  (new tabpage)',
+            \ '    \l:          file log                   (git rm)',
+            \ '    \d:          delete file                (git rm)',
+            \ '    \D:          delete file                (git rm -f)',
+            \ '    \co:         checkout file              (git checkout --)',
+            \ '    1234:        jump to 1234 window'
+            \ ]
+let s:quickui_opt = {'title': 'Map: status', 'w': 80, 'h': len(s:quickui_doc)}
+
 function <SID>HelpDoc()
-    echo
-                \ "Git Status quick help !?\n" .
-                \ "==================================================\n" .
-                \ "    <space>: echo\n" .
-                \ "    d:       diff file              (git difftool)\n" .
-                \ "    r:       reset file staging     (git reset HEAD --)\n" .
-                \ "    R:       reset all staged file  (git reset HEAD)\n" .
-                \ "    a:       add file               (git add)\n" .
-                \ "    A:       add all file           (git add .)\n" .
-                \ "    e:       edit file              (new tabpage)\n" .
-                \ "    \\l:      file log               (git rm)\n" .
-                \ "    \\d:      delete file            (git rm)\n" .
-                \ "    \\D:      delete file            (git rm -f)\n" .
-                \ "    \\co:     checkout file          (git checkout --)\n" .
-                \ "    1234:    jump to 1234 window"
+    if exists('g:quickui#style#border')
+        call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
+    else
+        echo
+                    \ "Git Status quick help !?\n" .
+                    \ "==================================================\n" .
+                    \ "    <space>: echo\n" .
+                    \ "    d:       diff file              (git difftool)\n" .
+                    \ "    r:       reset file staging     (git reset HEAD --)\n" .
+                    \ "    R:       reset all staged file  (git reset HEAD)\n" .
+                    \ "    a:       add file               (git add)\n" .
+                    \ "    A:       add all file           (git add .)\n" .
+                    \ "    e:       edit file              (new tabpage)\n" .
+                    \ "    \\l:      file log               (git rm)\n" .
+                    \ "    \\d:      delete file            (git rm)\n" .
+                    \ "    \\D:      delete file            (git rm -f)\n" .
+                    \ "    \\co:     checkout file          (git checkout --)\n" .
+                    \ "    1234:    jump to 1234 window"
+    endif
 endfunction
 
