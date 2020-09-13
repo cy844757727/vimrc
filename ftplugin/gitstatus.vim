@@ -21,6 +21,7 @@ nnoremap <buffer> <silent> \d  :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
 nnoremap <buffer> <silent> \D  :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
+vnoremap <buffer> <silent> \co :call <SID>CheckOutFile(2)<CR>
 nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
 nnoremap <buffer> <silent> M   :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ?   :call <SID>HelpDoc()<CR>
@@ -42,7 +43,7 @@ if exists('*<SID>FileDiff')
 endif
 
 
-function s:GetLineInfo()
+function s:GetLineInfo(...)
     let l:line = getline('.')
     if l:line !~# '^\s\+\S'
         return ['', '']
@@ -53,6 +54,15 @@ function s:GetLineInfo()
         return ['', '']
     endif
 
+    if a:0 != 0 && a:1 == 2
+        let l:rslt = [getline(l:lin)[0]]
+        for l:line in getline("'<", "'>")
+            if l:line =~# '^\s\+\S'
+                call add(l:rslt, split(l:line))
+            endif
+        endfor
+        return l:rslt
+    endif
     return [getline(l:lin)[0]] + split(l:line)
 endfunction
 
@@ -98,18 +108,38 @@ endfunction
 function <SID>AddFile(...)
     let l:lineInfo = s:GetLineInfo()
 
-    if a:0 != 0 || l:lineInfo[0] =~# '[WU]'
-        call git#MsgHandle(system('git add' . (a:0 == 0 ? ' -- '.l:lineInfo[-1] : ' .')), 'status')
+    if a:0 == 0
+        let l:cmd = ' -- ' . l:lineInfo[-1]
+    elseif l:lineInfo[0] != 'U'
+        let l:cmd = ' -u'
+    else
+        let l:cmd = ' .'
     endif
+    call git#MsgHandle(system('git add' . l:cmd), 'status')
+"    if a:0 != 0 || l:lineInfo[0] =~# '[WU]'
+"        call git#MsgHandle(system('git add' . (a:0 == 0 ? ' -- '.l:lineInfo[-1] : ' .')), 'status')
+"    endif
 endfunction
 
 
-function <SID>CheckOutFile()
-    let l:lineInfo = s:GetLineInfo()
+function <SID>CheckOutFile(...) range
+    if a:0 != 0 && a:1 == 2
+        let l:lineInfo = s:GetLineInfo(2)
+    else
+        let l:lineInfo = s:GetLineInfo()
+    endif
 
     if l:lineInfo[0] =~# '[SW]' && input('Confirm discarding changes in working directory(yes/no): ') ==# 'yes'
         redraw!
-        call git#MsgHandle(system('git checkout -- ' . l:lineInfo[-1]), 'status')
+        if a:0 != 0 && a:1 == 2
+            let l:msg = ''
+            for l:file in l:lineInfo[1:]
+                let l:msg .= system('git checkout -- ' . l:file[-1])
+            endfor
+            call git#MsgHandle(l:msg, 'status')
+        else
+            call git#MsgHandle(system('git checkout -- ' . l:lineInfo[-1]), 'status')
+        endif
     else
         redraw!
     endif

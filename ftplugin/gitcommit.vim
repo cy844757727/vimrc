@@ -21,6 +21,8 @@ nnoremap <buffer> <silent> \rs :call <SID>ResetFile()<CR>
 nnoremap <buffer> <silent> \RS :call <SID>ResetFile()<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 nnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(1)<CR>
+vnoremap <buffer> <silent> \co :call <SID>CheckOutFile(2)<CR>
+vnoremap <buffer> <silent> \CO :call <SID>CheckOutFile(3)<CR>
 nnoremap <buffer> <silent> m   :call git#Menu(1)<CR>
 nnoremap <buffer> <silent> M   :call git#Menu(0)<CR>
 nnoremap <buffer> <silent> ?   :call <SID>HelpDoc()<CR>
@@ -40,7 +42,7 @@ if exists('*Git_MyCommitFoldInfo')
     finish
 endif
 
-function s:GetLineInfo()
+function s:GetLineInfo(...)
     let l:line = getline('.')
     if l:line !~# '^>    '
         return ['', '', '']
@@ -51,6 +53,15 @@ function s:GetLineInfo()
         return ['', '', '']
     endif
 
+    if a:0 != 0 && a:1 == 2
+        let l:rslt = [l:dict.commit, l:dict.parent]
+        for l:line in getline("'<", "'>")
+            if l:line =~# '^>'
+                call add(l:rslt, split(l:line)[1:])
+            endif
+        endfor
+        return l:rslt
+    endif
     return [l:dict.commit, l:dict.parent] + split(l:line)[1:]
 endfunction
 
@@ -117,10 +128,14 @@ function <SID>ResetFile(...)
     endif
 endfunction
 
-function <SID>CheckOutFile(...)
-    let l:fileInfo = s:GetLineInfo()
+function <SID>CheckOutFile(...) range
+    if a:0 != 0 && a:1 >= 2
+        let l:fileInfo = s:GetLineInfo(2)
+    else
+        let l:fileInfo = s:GetLineInfo()
+    endif
 
-    if a:0 == 1
+    if a:0 != 0 && (a:1 == 1 || a:1 == 3)
         let l:parents = l:fileInfo[1]
         let l:parent = l:parents[0]
         if len(l:parents) > 1
@@ -129,7 +144,15 @@ function <SID>CheckOutFile(...)
     endif
 
     if !empty(l:fileInfo[0]) && input('Confirm checkout file from specified commit(yes/no): ') == 'yes'
-        call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:parent) . ' -- ' . l:fileInfo[-1]), 'status')
+        if a:0 != 0 && a:1 >= 2
+            let l:msg = ''
+            for l:file in l:fileInfo[2:]
+                let l:msg .= system('git checkout ' . (a:1 == 2 ? l:fileInfo[0] : l:parent) . ' -- ' . l:file[-1])
+            endfor
+            call git#MsgHandle(l:msg, 'status')
+        else
+            call git#MsgHandle(system('git checkout ' . (a:0 == 0 ? l:fileInfo[0] : l:parent) . ' -- ' . l:fileInfo[-1]), 'status')
+        endif
     endif
 endfunction
 
