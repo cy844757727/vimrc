@@ -19,6 +19,7 @@ nnoremap <buffer> <silent> A   :call <SID>AddFile(1)<CR>
 nnoremap <buffer> <silent> e   :call <SID>EditFile()<CR>
 nnoremap <buffer> <silent> \d  :call <SID>DeleteItem()<CR>
 nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
+nnoremap <buffer> <silent> \L  :call <SID>FileLog(1)<CR>
 nnoremap <buffer> <silent> \D  :call <SID>DeleteItem(1)<CR>
 nnoremap <buffer> <silent> \co :call <SID>CheckOutFile()<CR>
 vnoremap <buffer> <silent> \co :call <SID>CheckOutFile(2)<CR>
@@ -171,8 +172,18 @@ function! <SID>DeleteItem(...)
 endfunction
 
 
-function <SID>FileLog()
-    let l:lineInfo = s:GetLineInfo()
+function <SID>FileLog(...)
+    if a:0 == 0
+        let l:lineInfo = s:GetLineInfo()
+    elseif a:1 == 1
+        let l:lineInfo = ['W', '', input('Enter fielname(git log --oneline): ', '' , 'file')]
+        if !filereadable(l:lineInfo[-1])
+            echo 'Err: file non-exists !!!'
+            return
+        endif
+    else
+        return
+    endif
 
     if l:lineInfo[0] =~# '[SW]'
         call git#Refresh('log', {'filelog': l:lineInfo[-1]})
@@ -209,7 +220,8 @@ let s:quickui_doc = [
             \ '    a:           add file                   (git add)',
             \ '    A:           add all file               (git add .)',
             \ '    e:           edit file                  (new tabpage)',
-            \ '    \l:          file log                   (git rm)',
+            \ '    \l:          file log                   (git log --oneline )',
+            \ '    \L:          file log                   (git log --oneline [input()])',
             \ '    \d:          delete file                (git rm)',
             \ '    \D:          delete file                (git rm -f)',
             \ '    \co:         checkout file              (git checkout --)',
@@ -221,21 +233,7 @@ function <SID>HelpDoc()
     if exists('g:quickui#style#border')
         call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
     else
-        echo
-                    \ "Git Status quick help !?\n" .
-                    \ "==================================================\n" .
-                    \ "    <space>: echo\n" .
-                    \ "    d:       diff file              (git difftool)\n" .
-                    \ "    r:       reset file staging     (git reset HEAD --)\n" .
-                    \ "    R:       reset all staged file  (git reset HEAD)\n" .
-                    \ "    a:       add file               (git add)\n" .
-                    \ "    A:       add all file           (git add .)\n" .
-                    \ "    e:       edit file              (new tabpage)\n" .
-                    \ "    \\l:      file log               (git rm)\n" .
-                    \ "    \\d:      delete file            (git rm)\n" .
-                    \ "    \\D:      delete file            (git rm -f)\n" .
-                    \ "    \\co:     checkout file          (git checkout --)\n" .
-                    \ "    1234:    jump to 1234 window"
+        echo join(s:quickui_doc, "\n")
     endif
 endfunction
 

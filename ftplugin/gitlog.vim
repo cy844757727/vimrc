@@ -14,7 +14,8 @@ nnoremap <buffer> <space>      :echo matchstr(getline('.'), ' .*$')<CR>
 nnoremap <buffer> <silent> t   :call <SID>TagCommit()<CR>
 nnoremap <buffer> <silent> c   :call <SID>RefreshCommitA()<CR>
 nnoremap <buffer> <silent> C   :call <SID>RefreshCommitA(1)<CR>
-nnoremap <buffer> <silent> \l  :Log<CR>
+nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
+nnoremap <buffer> <silent> \L  :call <SID>FileLog(1)<CR>
 nnoremap <buffer> <silent> \rs :call <SID>Reset('soft')<CR>
 nnoremap <buffer> <silent> \Rs :call <SID>Reset('mixed')<CR>
 nnoremap <buffer> <silent> \RS :call <SID>Reset('hard')<CR>
@@ -33,7 +34,6 @@ if exists('*<SID>Reset')
     finish
 endif
 
-command -nargs=? -complete=file -buffer Log :call s:LogTarget(<q-args>)
 
 augroup Git_log
 augroup END
@@ -62,12 +62,16 @@ function s:CursorMoved()
 endfunction
 
 
-function s:LogTarget(target)
-    if empty(a:target) || filereadable(a:target)
-        call git#Refresh('log', {'filelog': a:target})
+function <SID>FileLog(...)
+    if a:0 != 0 && a:1 == 1
+        let l:file = input('Enter fielname(git log --oneline): ', '' , 'file')
+        if filereadable(l:file)
+            call git#Refresh('log', {'filelog': l:file})
+        endif
+    else
+        call git#Refresh('log', {'filelog': ''})
     endif
 endfunction
-
 
 function s:RefreshCommit()
     let l:hash = matchstr(getline('.'), '\w\{7}')
@@ -133,6 +137,7 @@ let s:quickui_doc = [
             \ '    c:           update commit detail       (git show)',
             \ '    C:           update auto                (git show)',
             \ '    \l:          log all                    (git log)',
+            \ '    \L:          log all                    (git log [input()])',
             \ '    \rs:         reset commit               (git reset --soft)',
             \ '    \Rs:         reset commit               (git reset --mixed)',
             \ '    \RS:         reset commit               (git reset --hard)',
@@ -146,16 +151,7 @@ function <SID>HelpDoc()
     if exists('g:quickui#style#border')
         call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
     else
-        echo
-                    \ "Git log quick help !?\n".
-                    \ "==================================================\n".
-                    \ "    t:       tag commit            (git tag)\n".
-                    \ "    \\rs:     reset commit          (git reset --soft)\n".
-                    \ "    \\Rs:     reset commit          (git reset --mixed)\n".
-                    \ "    \\RS:     reset commit          (git reset --hard)\n".
-                    \ "    \\rv:     revert commit         (git revert)\n".
-                    \ "    \\co:     checkout new branch   (git checkout -b)\n".
-                    \ "    1234:    jump to 1234 wimdow"
+        echo join(s:quickui_doc, "\n")
     endif
 endfunction
 

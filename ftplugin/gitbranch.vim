@@ -180,19 +180,7 @@ function <SID>HelpDoc()
     if exists('g:quickui#style#border')
         call quickui#textbox#open(s:quickui_doc, s:quickui_opt)
     else
-        echo
-                    \ "Git branch quick help !?\n" .
-                    \ "==================================================\n" .
-                    \ "    <space>: echo\n" .
-                    \ "    a:       apply stash                (git stash apply)\n" .
-                    \ "    c:       checkout branch            (git checkout)\n" .
-                    \ "    \\d:      delete current item\n" .
-                    \ "    \\D:      delete (force)\n" .
-                    \ "    \\m:      merge to current branch    (git merge)\n" .
-                    \ "    \\M:      merge to current branch    (git merge --continue)\n" .
-                    \ "    \\r:      rebase to current branch   (git rebase)\n" .
-                    \ "    \\R:      rebase continue            (git rebase --continue)\n" .
-                    \ "    1234:    jump to 1234 window"
+        echo join(s:quickui_doc, "\n")
     endif
 endfunction
 
