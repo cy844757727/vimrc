@@ -24,7 +24,7 @@ endfunction
 "
 function! s:FormatLog()
     let s:config['log'] = systemlist('git log --oneline '.s:config['filelog'].' | awk ''{print($1)}''')
-    let l:log = systemlist("git log --oneline --graph --branches --pretty=format:'^%h^  %an^ ﲊ %ar^%d  %s' " . s:config['filelog'])
+    let l:log = systemlist("git log --oneline --graph --branches --date=format:%Y-%m-%d --pretty=format:'^%h^  %an^ ﲊ %ad^%d  %s' " . s:config['filelog'])
     let [l:lenGraph, l:lenAuthor, l:lenTime] = [0, 0, 0]
 
     for l:str in l:log
@@ -264,7 +264,7 @@ function git#Blame(file)
         return
     endif
 
-    let l:content = systemlist('git blame --date=format:%Y-%m-%d ' . a:file)
+    let l:content = systemlist("git blame --date='format:%Y-%m-%d %H:%M' " . a:file)
     let l:index = stridx(l:content[0], ' 1)')+2
 "    call map(l:content, "v:val[:".(l:index+2)."]")
     let l:len = len(split(l:content[0])[0])-1
