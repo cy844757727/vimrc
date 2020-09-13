@@ -259,6 +259,42 @@ function git#Refresh(target, ...)
     let t:tab_lable = ' Git-Manager'
 endfunction
 
+function git#Blame(file)
+    if !filereadable(a:file)
+        return
+    endif
+
+    let l:content = systemlist('git blame --date=format:%Y-%m-%d ' . a:file)
+    let l:index = stridx(l:content[0], ' 1)')+2
+"    call map(l:content, "v:val[:".(l:index+2)."]")
+    let l:len = len(split(l:content[0])[0])-1
+    let [l:temp, l:content1] = ['', []]
+    let g:content=[]
+    for l:item in l:content
+        if l:item[:l:len] != l:temp
+            let l:temp = l:item[:l:len]
+            call add(l:content1, l:item[:l:index])
+        else
+            call add(l:content1, '')
+        endif
+    endfor
+    let l:name = fnamemodify(a:file, ':t:h')
+    exe 'tabedit GitBlame'.'_'.l:name
+    setlocal noreadonly modifiable
+    silent edit!
+    call setline(1, l:content1)
+    normal gg
+    exe 'vsplit '.a:file
+    normal gg
+    setlocal scrollbind signcolumn=no
+    wincmd w
+    exe 'vertical resize '.(l:index+1)
+    setlocal nonu scrollbind readonly nomodifiable buftype=nofile signcolumn=no filetype=no nobuflisted
+    let &l:statusline = 'Git blame: '.l:name
+    wincmd w
+    let t:tab_lable = 'GitBlame: '.l:name
+endfunction
+
 
 function! git#MsgHandle(msg, target)
     if a:msg =~ 'error:\|fatal'

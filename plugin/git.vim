@@ -10,6 +10,7 @@ let g:GIT_diffguitool = get(g:, 'GIT_diffguitool', 0)
 
 command! -nargs=+ -complete=customlist,GIT_CompleteGit Git :echo system('git ' . "<args>")
 command! -nargs=* -complete=customlist,GIT_CompleteGit Gdiff :call git#Diff(<q-args>)
+command! -nargs=1 -complete=file GitBlame : call git#Blame(<q-args>)
 command! GitManager :call git#Toggle()
 
 
