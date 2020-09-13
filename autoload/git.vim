@@ -265,8 +265,11 @@ function git#Blame(file)
     endif
 
     let l:content = systemlist("git blame --date='format:%Y-%m-%d %H:%M' " . a:file)
+    if len(l:content) == 0
+        echo 'New file !!!'
+        return
+    endif
     let l:index = stridx(l:content[0], ' 1)')+2
-"    call map(l:content, "v:val[:".(l:index+2)."]")
     let l:len = len(split(l:content[0])[0])-1
     let [l:temp, l:content1] = ['', []]
     let g:content=[]
@@ -279,20 +282,33 @@ function git#Blame(file)
         endif
     endfor
     let l:name = fnamemodify(a:file, ':t:h')
-    exe 'tabedit GitBlame'.'_'.l:name
+    exe 'tabedit '.l:name.'.Git_blame'
     setlocal noreadonly modifiable
     silent edit!
     call setline(1, l:content1)
+    setlocal winfixwidth nospell nonu
     normal gg
     exe 'vsplit '.a:file
+    let l:win_id = win_getid()
     normal gg
     setlocal scrollbind signcolumn=no
     wincmd w
     exe 'vertical resize '.(l:index+1)
-    setlocal nonu scrollbind readonly nomodifiable buftype=nofile signcolumn=no filetype=no nobuflisted
-    let &l:statusline = 'Git blame: '.l:name
+    setlocal scrollbind readonly nomodifiable signcolumn=no
+    let b:target_winid = l:win_id
+    let &l:statusline = 'GitBlame: '.l:name
     wincmd w
     let t:tab_lable = 'GitBlame: '.l:name
+endfunction
+
+function git#Log(file)
+    if !filereadable(a:file)
+        return
+    endif
+    if !exists('t:git_tabpageManager')
+        call git#Toggle()
+    endif
+    call git#Refresh('log', {'filelog': a:file})
 endfunction
 
 

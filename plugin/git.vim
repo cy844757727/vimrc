@@ -11,6 +11,7 @@ let g:GIT_diffguitool = get(g:, 'GIT_diffguitool', 0)
 command! -nargs=+ -complete=customlist,GIT_CompleteGit Git :echo system('git ' . "<args>")
 command! -nargs=* -complete=customlist,GIT_CompleteGit Gdiff :call git#Diff(<q-args>)
 command! -nargs=1 -complete=file GitBlame : call git#Blame(<q-args>)
+command! -nargs=1 -complete=file GitLog :call git#Log(<q-args>)
 command! GitManager :call git#Toggle()
 
 
@@ -20,6 +21,7 @@ augroup Git_manager
 	autocmd BufWinEnter .Git_commit set filetype=gitcommit|set nobuflisted
 	autocmd BufWinEnter .Git_status set filetype=gitstatus|set nobuflisted
 	autocmd BufWinEnter .Git_branch set filetype=gitbranch|set nobuflisted
+    autocmd BufWinEnter *.Git_blame set filetype=gitblame|set nobuflisted
 augroup END
 
 
