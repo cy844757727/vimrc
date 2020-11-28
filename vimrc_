@@ -133,7 +133,8 @@ nnoremap <silent> \l :call Vimrc_leader('LeaderfLine')<CR>
 vnoremap <silent> \l :call Vimrc_leader('LeaderfLinePattern '.getreg('*'))<CR>
 nnoremap <silent> \L :call Vimrc_leader('LeaderfLineAll')<CR>
 vnoremap <silent> \L :call Vimrc_leader('LeaderfLineAllPattern '.getreg('*'))<CR>
-nnoremap <silent> \F :LeaderfBuffer<CR>
+nnoremap <silent> \b :LeaderfBuffer<CR>
+nnoremap <silent> \F :LeaderfFile %:h<CR>
 nnoremap <silent> \f :LeaderfFile<CR>
 
 function! Vimrc_leader(cmd) range

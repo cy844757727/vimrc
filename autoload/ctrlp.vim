@@ -142,7 +142,14 @@ let [s:lcmap, s:prtmaps] = ['nn <buffer> <silent>', {
 	\ 'MarkToOpen()':         ['<c-z>'],
 	\ 'OpenMulti()':          ['<c-o>'],
 	\ 'PrtExit()':            ['<esc>', '<c-c>', '<c-g>'],
+  \ 'TestC()':              ['<c-b>']
 	\ }]
+
+function <SID>TestC()
+  call s:PrtExit()
+  let g:dbg = 'test'
+  echo 'tst ctrlp'
+endfunction
 
 if !has('gui_running')
 	cal add(s:prtmaps['PrtBS()'], remove(s:prtmaps['PrtCurLeft()'], 0))

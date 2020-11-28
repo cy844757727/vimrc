@@ -1,38 +1,101 @@
-#
-top_module = 
-filelist = filelist.f
+# ---------------------
+SHELL := env bash
+# ---------------------
+top := top
 
-# option configure
-opt_vcs = -full64 -ssf *.novf
+# ------ file target -------------
+flist_verdi := ${WORK_DIR}/run_verdi/$(top).f
+flist_vcs   := ${WORK_DIR}/run_vcs/$(top).f
+flist_genus := ${WORK_DIR}/run_genus/gen_flist/$(top).f
+file_list   := $(flist_verdi) $(flist_vcs) $(flist_genus)
+flist_all   := $(shell find ${PROJ_TOP} -type f -wholename '*/ft/*.f')
+vfile_all   := $(shell find ${RTL_DIR}  -type f -name '*.v')
 
+msim_simv   := ${WORK_DIR}/run_msim/sim_lib/simv
+syntax_file := ${WORK_DIR}/misc/verilator.syntax
 
-.PYTHON: main dbg vcs verdi dve spy
+# --- register file ---
 
-main: vcs verdi
-dbg: verdi
+# ------- msim ---------------------
+sim     := default
+default := -ca
+regr    := 
+regrn   := 
+-include msim.mk
+sim_opt := $($(sim))
 
-vcs:
-	@echo "compile ..."
-	vcs $(opt_vcs) -f $(filelist)
-	@echo "compile done ..."
+# ------- phony target -------------
+verdi      := bsub -q verdi_q -Is verdi -f $(flist_verdi) -top $(top)
+lint       :=
+cdc        :=
+sdc        :=
+msim       := $(if $(findstring regr,$(sim)),mrun,msim) $(sim_opt)
+msim_gui   := msim -verdi
+msim_cln   := msim -clean
+genus      := implc.pl -syn $(if $(rdir),-rdir $(rdir))
+genus_init := cd ${PROJ_TOP} && implc.pl -ip -m $(top) -senv -p t12
+vcs        := bsub -Is vcs -full64 -sverilog -lua -kdb -timescale=1ns/100ps +define+FUNC -f $(flist_vcs)
+simv       := bsub -q sim_q -Is ./simv
+simv_gui   := bsub -q verdi_q -Is verdi -f $(flist_vcs) -top $(top) -fsdb $(top).fsdb
+syn        :=
 
-verdi:
-	@echo "launch verdi ..."
-	verdi -f $(filelist) -top $(top_module)
-	@echo "done"
+common_all := verdi lint cdc sdc msim genus vcs simv syn
+$(foreach var,$(common_all),$(eval override $(var)_dir := run_$(var)))
+$(foreach var,$(common_all),$(eval override $(var)_clr := rm -rf $($(var)_dir)))
 
-dve:
-	@echo "launch dve ..."
-	./simv -gui
-	@echo "done ..."
+back_all  := simv_gui
+other_all := msim_gui msim_cln genus_init simv_gui
+override simv_dir := $(vcs_dir)
+phony_all := $(common_all) $(common_all:=_clr) $(other_all)
 
-spy:
-	@echo "launch spyglass ..."
-	spyglass -f $(filelist)
-	@echo "done ..."
+# -------- env chk -------------------
+ifneq (${WORK_DIR},$(patsubst %/work,%,$(shell pwd))/work)
+$(warning ERR: please se first !!! ${WORK_DIR})
+endif
+
+# --- msim sim chk ---
+ifneq ($(sim),)
+$(if $(sim_opt),,$(error ERR: no sim target found !!!))
+endif
+
+msim_ca_en := $(if $(findstring -ca,$(msim)),,1)
+msim_ca_en := $(if $(findstring -clean,$(msim)),,$(msim_ca_en))
+
+# --- function def ---
+fun_get_dir = $($(subst _gui,,$(subst _cln,,$1))_dir)
+
+# ------------------------------------
+.PHONY: $(phony_all) main clean info vsim
+maim: verdi
+vsim: vcs simv
+
+# --- phony all ---
+$(phony_all): override cmd  = $($@) $(opt)
+$(phony_all): override path = ${WORK_DIR}/$(call fun_get_dir,$@)
+$(foreach tar,$(phony_all),$(eval $(tar): $(flist_$(tar))))
+msim: $(if $(msim_ca_en),$(msim_simv))
+$(phony_all):
+	@-mkdir -p $(path) 2>/dev/null
+	@echo "!!$@\n->$(path)\n>>$(subst $(path),,$(cmd))"
+	@cd $(path) && $(cmd) $(if $(filter $@,$(back_all)),&)
+
+# --- file list ---
+$(file_list):   override cmd := gen_flist.pl -m $(top) $(fopt)
+$(flist_genus): override cmd += -ge -syn
+$(file_list): $(flist_all)
+	@-mkdir -p $(@D)
+	@echo "!! gen_flist\n>>$(cmd)"
+	@cd $(@D) && $(cmd) && test -f $@
+
+$(msim_simv): $(vfile_all) $(flist_all)
+	@echo "!! msim -ca" && rm -f $@
+	@cd $(msim_dir) && msim -ca && test -f $@
+
+info:
+	@awk 'BEGIN{en=0}{if($$1=="sim_opt")en=0;if(en==1)print $$0;if($$1=="sim")en=1}' makefile
 
 clean:
 	@echo "clean up ..."
-	-rm -rf *.novf *.log
+	@cd ${WORK_DIR} && rm -rf run_*
 
 
