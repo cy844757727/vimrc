@@ -413,7 +413,7 @@ function! misc#F5Function(type) range abort
 endfunction
 
 
-" Task
+" F5Function.task(): Run task define by local enironment task, bind to Ctrl-F5 {{{2
 function s:F5Function.task(...)
     let l:Task = exists('b:task') ? b:task :
                 \ exists('w:task') ? w:task :
@@ -438,37 +438,33 @@ endfunction
 let s:F5Function.task_queue = function('s:TaskQueueSelect')
 let s:F5Function.task_visual = function(s:F5Function.task, ['visual'])
 
-" Run
+" F5Function.run(): Run script or make, bind to F5 in normal mode{{{2
 function s:F5Function.run()
     update
 
-    if &filetype =~# 'verilog' && executable('vlib')
-        let l:ex = isdirectory('work') ? 'Asyncrun vlog -work work %' :
-                    \ 'Asyncrun vlib work && vmap work work && vlog -work work %'
-    elseif index(['sh', 'python', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+    if index(['sh', 'python', 'bash', 'perl', 'tcl', 'ruby', 'awk'], &ft) != -1
+        # run script in internal terminal
         call misc#ToggleBottomBar('only', 'terminal')
         call async#ScriptRun(expand('%'))
     elseif &filetype ==# 'vim'
+        # source vim-script
         source %
-    else
-        let l:makefile = findfile('makefile', '**')
-
-        if !empty(l:makefile)
-            let l:root = fnamemodify(l:makefile, ':h')
-            call misc#MakeTool('')
-        else
-            let l:ex = &ft ==# 'c'   ? 'Asyncrun! gcc -Wall -O0 -g3 % -o %<' :
-                        \ &ft ==# 'cpp' ? 'Asyncrun! g++ -Wall -O0 -g3 % -o %<' : ''
-        endif
-    endif
-
-    if exists('l:ex')
+    elseif misc#MakeTool('')
+        # try to execute make
+        return
+    elseif &ft ==# 'c'
+        # compile single c code
         call misc#ToggleBottomBar('only', 'quickfix')
-        exe l:ex
+        Asyncrun! gcc -Wall -O0 -g3 % -o %<
+    elseif &ft ==# 'cpp'
+        # compile single cpp code
+        call misc#ToggleBottomBar('only', 'quickfix')
+        Asyncrun! g++ -Wall -O0 -g3 % -o %<
     endif
+
 endfunction
 
-" Debug
+" Debug {{{2
 function s:F5Function.debug()
     update
     let l:breakPoint = sign#Record('break', 'tbreak')
@@ -489,9 +485,9 @@ function s:F5Function.debug()
     endif
 endfunction
 
-" Visual
+" F5Function.visual(): Run the selected code fragment, bind to F5 in visual mode{{{2
 function s:F5Function.visual()
-    if index(['sh', 'python', 'ruby'], &ft) != -1
+    if index(['sh', 'python', 'ruby', 'bash'], &ft) != -1
         call misc#ToggleBottomBar('only', 'terminal')
         call async#ScriptRun('visual')
     elseif &filetype ==# 'vim'
@@ -575,8 +571,12 @@ endfunction
 
 function misc#MakeTool(opt)
     let l:makefile = findfile('makefile', '**')
+    if empty(l:makefile)
+        return 0
+    endif
     let l:root = fnamemodify(l:makefile, ':h')
     exec 'Asyncrun! make '.get(g:, 'MakeOpt', '').' -C '.l:root.' '.a:opt
+    return 1
 endfunction
 
 " === Auto record file history in a window {{{1

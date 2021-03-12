@@ -392,14 +392,13 @@ function! async#ScriptRun(file) abort
     if a:file !=# 'visual'
         let l:cmd = 'clear'
         let l:postCmd = l:interpreter.' '.shellescape(l:file)
+        call term_sendkeys(async#TermToggle('on', l:cmd), l:postCmd."\n")
     elseif !empty(visualmode())
-        let l:cmd = get(g:Async_interactive, l:interpreter, l:interpreter)
-        let l:postCmd = join(filter(getline(line('''<'), line('''>')), "v:val =~ '\\S'"), "\n")."\n"
-    else
-        return
+        let l:cmd = l:interpreter
+        let l:postCmd = substitute(join(getline(line('''<'), line('''>')), "\n"), "\n\n", "\n", 'g')
+        call term_sendkeys(async#TermToggle('on', l:cmd), l:postCmd."\n")
     endif
 
-    call term_sendkeys(async#TermToggle('on', l:cmd), l:postCmd."\n")
 endfunction
 
 

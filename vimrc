@@ -167,7 +167,7 @@ noremap <silent> <f3>     :call misc#SaveFile()<CR>
 noremap <silent> <f4>     :call misc#WinResize()<CR>
 nnoremap <silent> <f5>    :call misc#F5Function('run')<CR>
 vnoremap <silent> <f5>    :call misc#F5Function('visual')<CR>
-noremap <silent> <C-f5>   :call misc#F5Function('debug')<CR>
+noremap <silent> <C-f5>   :call misc#F5Function('task')<CR>
 nnoremap <silent> <S-f5>  :call misc#F5Function('task')<CR>
 vnoremap <silent> <S-f5>  :call misc#F5Function('task_visual')<CR>
 noremap <silent> <C-S-f5> :call misc#F5Function('task_queue')<CR>
@@ -532,4 +532,5 @@ let g:WebDevIconsUnicodeDecorateFileNodesExactSymbols = {
 let g:WebDevIconsNerdTreeBeforeGlyphPadding = ''
 
 set tw=10000000
+set backspace=2
 " vim:foldmethod=marker
