@@ -19,7 +19,8 @@ let s:displayIcon = {
 
 " Default terminal prefix
 let s:termPrefix = '!Term'
-let s:defaultTermName = s:termPrefix . ': '.g:Async_shell.' '
+"let s:defaultTermName = s:termPrefix . ': '.g:Async_shell.' '
+let s:defaultTermName = s:termPrefix . ': 0 '
 
 " Default terminal option
 let s:termOption = {
@@ -53,7 +54,7 @@ function s:termAnalyzeCmd(cmd)
             let l:name = s:termPrefix . ': '.l:cmd.' '
         elseif l:list[0]
             let l:num = remove(l:list, 0) + 0
-            let l:name = s:termPrefix . get(s:displayIcon, l:num, ': '.l:num.' ')
+            let l:name = s:termPrefix . ': '.l:num.' '
         endif
     endif
 
@@ -143,7 +144,12 @@ function! async#TermSwitch(...) abort
     let l:termList = filter(split(execute('ls R'), "\n"), "v:val =~# '".s:termPrefix."'")
 
     if len(l:termList) > 1
+        " get bufnr, bufname and sorted by name
         call map(l:termList, "split(v:val)[0] + 0")
+        call map(l:termList, "bufname(v:val)")
+        call sort(l:termList)
+        call map(l:termList, "bufnr(v:val)")
+
         let l:ind = index(l:termList, bufnr('%'))
         let l:ind = a:0 == 0 || a:1 == 'next' ?
                     \ (l:ind + 1) % len(l:termList) : l:ind - 1
