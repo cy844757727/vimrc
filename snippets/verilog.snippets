@@ -46,8 +46,8 @@ snippet alw
 	end
 
 snippet alwa
-	always @(posedge clk, negedge rst_) begin
-		if(!rst_)${1}
+	always @(posedge clk, negedge rst_n) begin
+		if(!rst_n)${1}
 	end
 
 snippet alws
@@ -94,7 +94,7 @@ snippet apb
 	output [31:0]          prdata;
 	output                 pready;
 	output                 pslverr;
-
+	${2}
 
 snippet axi4
 	// AMBA AXI bus versison:4 ----------------------------------
@@ -145,7 +145,7 @@ snippet axi4
 	input                       axi$1_rlast;
 	input                       axi$1_rvalid;
 	output                      axi$1_rready;
-
+	${6}
 
 snippet axi3
 	// AMBA AXI bus versison:3 ----------------------------------
@@ -193,5 +193,5 @@ snippet axi3
 	input                       axi$1_rlast;
 	input                       axi$1_rvalid;
 	output                      axi$1_rready;
-
+	${6}
 
