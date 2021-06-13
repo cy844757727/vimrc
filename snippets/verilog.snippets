@@ -147,6 +147,63 @@ snippet axi4
 	output                      axi$1_rready;
 	${6}
 
+
+snippet axi4p
+	// AMBA AXI bus versison:4 ----------------------------------
+	// global signal
+	input                       axi${1:/*seq num*/}_aclk;
+	input                       axi$1_aresetn;
+	// write address channel
+	input  [${2:/*id width*/}:0]               axi$1_awid;
+	input  [${3:/*addr width*/}:0]               axi$1_awaddr;
+	input  [7:0]                axi$1_awlen;
+	input  [2:0]                axi$1_awsize;
+	input  [1:0]                axi$1_awburst;
+	input                       axi$1_awlock;
+	input  [3:0]                axi$1_awcache;
+	input  [2:0]                axi$1_awprot;
+	input  [3:0]                axi$1_awqos;
+	input  [3:0]                axi$1_awregion;
+	input                       axi$1_awvalid;
+	output                      axi$1_awready;
+	// write data channel
+	input  [${4:/*data width*/}:0]              axi$1_wdata;
+	input  [${5:/*strb width*/}:0]               axi$1_wstrb;
+	input                       axi$1_wlast;
+	input                       axi$1_wvalid;
+	output                      axi$1_wready;
+	// write response channel
+	output [$2:0]               axi$1_bid;
+	output [1:0]                axi$1_bresp;
+	output                      axi$1_bvalid;
+	input                       axi$1_bready;
+	// read address channel
+	input  [$2:0]               axi$1_arid;
+	input  [$3:0]               axi$1_araddr;
+	input  [7:0]                axi$1_arlen;
+	input  [2:0]                axi$1_arsize;
+	input  [1:0]                axi$1_arburst;
+	input                       axi$1_arlock;
+	input  [3:0]                axi$1_arcache;
+	input  [2:0]                axi$1_arprot;
+	input  [3:0]                axi$1_arqos;
+	input  [3:0]                axi$1_arregion;
+	input                       axi$1_arvalid;
+	output                      axi$1_arready;
+	// read data channel
+	input  [$2:0]               axi$1_rid;
+	input  [$4:0]              axi$1_rdata;
+	output [1:0]                axi$1_rresp;
+	input                       axi$1_rlast;
+	input                       axi$1_rvalid;
+	output                      axi$1_rready;
+	// low-power control
+	input                       axi$1_csysreq;
+	output                      axi$1_csysack;
+	output                      axi$1_cactive;
+	${6}
+
+
 snippet axi3
 	// AMBA AXI bus versison:3 ----------------------------------
 	// global signal
@@ -193,5 +250,58 @@ snippet axi3
 	input                       axi$1_rlast;
 	input                       axi$1_rvalid;
 	output                      axi$1_rready;
+	${6}
+
+
+snippet axi3p
+	// AMBA AXI bus versison:3 ----------------------------------
+	// global signal
+	input                       axi${1:/*seq num*/}_aclk;
+	input                       axi$1_aresetn;
+	// write address channel
+	input  [${2:/*id width*/}:0]               axi$1_awid;
+	input  [${3:/*addr width*/}:0]               axi$1_awaddr;
+	input  [3:0]                axi$1_awlen;
+	input  [2:0]                axi$1_awsize;
+	input  [1:0]                axi$1_awburst;
+	input  [1:0]                axi$1_awlock;
+	input  [3:0]                axi$1_awcache;
+	input  [2:0]                axi$1_awprot;
+	input                       axi$1_awvalid;
+	output                      axi$1_awready;
+	// write data channel
+	input  [$2:0]               axi$1_wid;
+	input  [${4:/*data width*/}:0]               axi$1_wdata;
+	input  [${5:/*strb width*/}:0]                axi$1_wstrb;
+	input                       axi$1_wlast;
+	input                       axi$1_wvalid;
+	output                      axi$1_wready;
+	// write response channel
+	output [$2:0]               axi$1_bid;
+	output [1:0]                axi$1_bresp;
+	output                      axi$1_bvalid;
+	input                       axi$1_bready;
+	// read address channel
+	input  [$2:0]               axi$1_arid;
+	input  [$3:0]               axi$1_araddr;
+	input  [7:0]                axi$1_arlen;
+	input  [2:0]                axi$1_arsize;
+	input  [1:0]                axi$1_arburst;
+	input                       axi$1_arlock;
+	input  [3:0]                axi$1_arcache;
+	input  [2:0]                axi$1_arprot;
+	input                       axi$1_arvalid;
+	output                      axi$1_arready;
+	// read data channel
+	input  [$2:0]               axi$1_rid;
+	input  [$4:0]               axi$1_rdata;
+	output [1:0]                axi$1_rresp;
+	input                       axi$1_rlast;
+	input                       axi$1_rvalid;
+	output                      axi$1_rready;
+	// low-power control
+	input                       axi$1_csysreq;
+	output                      axi$1_csysack;
+	output                      axi$1_cactive;
 	${6}
 
