@@ -47,7 +47,7 @@ def main():
         'localparam': functools.partial(HDLParam, param='localparam')
         }
     cmd = sys.argv[1]
-    PATH, vfile = cmdVFile.get(cmd, HDLVFile)(sys.argv[2])
+    vfile = cmdVFile.get(cmd, HDLVFile)(sys.argv[2])
     if cmd in cmdVFile:
         content = vfile
     elif cmd in cmdVStruct:
@@ -65,8 +65,7 @@ def main():
 
 
 def HDLVFile(vfile, searchAll=False):
-    global PATH, FLIST, INCDIR
-    return _search_vfile(vfile, flist=FLIST, incdir=INCDIR, path=PATH, searchAll=searchAll)
+    return _search_vfile(vfile, searchAll=searchAll)
 
 
 # auto generate arg
@@ -211,7 +210,30 @@ def HDLAutoReg(vstruct):
 
 
 def HDLFake(vstruct):
-    pass
+    content = ['// ------------------------------------------------',
+               '// AutoGenerate verilog fake file by vgen.py',
+               '// ------------------------------------------------']
+    content += [''] + HDLAutoArg(vstruct) + ['']
+    # parameter
+    for var in vstruct['parameter']:
+        content += ['parameter ' + var + ' = ' + vstruct['var'][var]['val'] + ';']
+    content += ['']
+    # localparam
+    for var in vstruct['localparam']:
+        content += ['localparam ' + var + ' = ' + vstruct['var'][var]['val'] + ';']
+    content += ['']
+    # port
+    for port in ('input', 'output', 'inout'):
+        for var in vstruct[port]:
+            width = _Gen_Width(vstruct['var'][var], 'index')
+            content += [port + ' ' + width + var + ';']
+        content += ['']
+    # tie output
+    for var in vstruct['output']:
+        val = _Gen_Width(vstruct['var'][var], 'val')
+        content += ['assign ' + var + ' = ' + val + ';']
+    content += ['', 'endmodule', '']
+    return content
 
 
 def HDLNet(vstruct, net='input'):
@@ -227,69 +249,96 @@ def HDLVStruct(vstruct):
     return vstruct
 #    print(json.dumps(vstruct, indent=4))
 
+
+
 # ---------------------------------------------------------------
 #    verilog file search .v .sv, search order: flist, incdir, path
 # ---------------------------------------------------------------
-def _search_vfile(vfile, flist=[], incdir=[], path='.', searchAll=False):
+def _search_vfile(vfile, searchAll=False):
+    global FLIST
     if os.path.isfile(vfile) and (vfile.endswith('.v') or vfile.endswith('.sv')):
-        return path, vfile
-    # fullmatch, -1: search all file, 0: not search all file
-    # add 'None' make sure fullmatch > 0
-    fullmatch, matchs = -1 if searchAll else 0, [None]
+        return vfile
+    matchDict = {'most': '~!@#$%^&*'*100, 'full': None, 'all': []}
     # search file in filelist first
-    for subfile in flist:
-        subfile = subfile.strip()
-        if not os.path.isfile(subfile) or (not subfile.endswith('.v') and not subfile.endswith('.sv')):
-            continue
+    FLIST = [subfile for subfile in FLIST if os.path.isfile(subfile)]  # Keep existing files only
+    if _search_flist(vfile, matchDict, searchAll):
+        return matchDict['full']
+    # search file in incdir second
+    if _search_incdir(vfile, matchDict, searchAll):
+        return matchDict['full']
+    # search file in localpath third
+    if _search_path(vfile, matchDict, searchAll):
+        return matchDict['full']
+    if searchAll:
+        return matchDict['all']
+    return matchDict['most'] if os.path.isfile(matchDict['most']) else None
+
+
+# search file in filelist, the results are saved in the 'matchDict'
+# return True if fullmatch else False
+def _search_flist(vfile, matchDict, searchAll):
+    global FLIST, INCDIR
+    for subfile in FLIST:
         basename = os.path.basename(subfile)
         dirname = os.path.dirname(subfile)
-        if dirname not in incdir: # update incdir
-            incdir.append(dirname)
-        fullmatch = _search_judge(vfile, subfile, basename, fullmatch, matchs)
-        if fullmatch > 0:
-            return path, matchs.pop(index=fullmatch)
-    # search file in incdir second
-    for root in incdir:
-        if not os.path.isdir(root):
-            continue
-        for subfile in glob.glob(root + '/*.'):
+        if dirname not in INCDIR: # update incdir
+            INCDIR.append(dirname)
+        if _search_judge(vfile, subfile, basename, matchDict, searchAll):
+            return True
+    return False
+
+
+# search file in incdir, the results are saved in the 'matchDict'
+# return True if fullmatch else False
+def _search_incdir(vfile, matchDict, searchAll):
+    global FLIST, INCDIR
+    for root in INCDIR:
+        for subfile in glob.iglob(os.path.join(root, '*')):
             if not subfile.endswith('.v') and not subfile.endswith('.sv'):
                 continue
-            if subfile not in flist:
-                flist.append(subfile) # update filelist
+            if subfile not in FLIST:
+                FLIST.append(subfile) # update filelist
             basename = os.path.basename(subfile)
-            fullmatch = _search_judge(vfile, subfile, basename, fullmatch, matchs)
-            if fullmatch > 0:
-                return path, matchs.pop(index=fullmatch)
-    # search file in localpath third
-    if isinstance(path, str):
-        path = os.walk(path)
+            if _search_judge(vfile, subfile, basename, matchDict, searchAll):
+                return True
+    return False
+
+
+# search file in path, the results are saved in the 'matchDict'
+# return True if fullmatch else False
+def _search_path(vfile, matchDict, searchAll):
+    global FLIST, INCDIR, PATH
+    if isinstance(PATH, str):
+        PATH = os.walk(PATH)
     while True:
         try:
-            root, _, files = next(path)
+            root, _, files = next(PATH)
         except StopIteration:
             break
-        if root in incdir:
+        if root in INCDIR:
             continue
         for basename in files:
             if not basename.endswith('.v') and not basename.endswith('.sv'):
                 continue
-            incdir.append(root)  # update incdir
             subfile = os.path.join(root, basename)
-            if subfile not in flist:
-                flist.append(subfile) # update filelist
-            fullmatch = _search_judge(vfile, subfile, basename, fullmatch, matchs)
-            if fullmatch > 0:
-                return path, matchs.pop(fullmatch)
-    return path, matchs[1:] if searchAll else matchs[-1]
+            if subfile not in FLIST:
+                FLIST.append(subfile) # update filelist
+            if _search_judge(vfile, subfile, basename, matchDict, searchAll):
+                return True
+        INCDIR.append(root)
+    return False
 
 
-def _search_judge(vfile, subfile, basename, fullmatch, matchs):
-    if vfile in basename and subfile not in matchs:
-        matchs.append(subfile)
-    if fullmatch != -1 and basename in (vfile, vfile + '.v', vfile + '.sv'): # full match
-        fullmatch = len(matchs) - 1
-    return fullmatch
+# Judge file match
+def _search_judge(vfile, subfile, basename, matchDict, searchAll):
+    if vfile in basename and subfile not in matchDict['all']:
+        matchDict['all'].append(subfile)
+    if not searchAll and basename in (vfile, vfile + '.v', vfile + '.sv'): # full match
+        matchDict['full'] = subfile
+        return True
+    if len(subfile.replace(vfile, '')) < len(matchDict['most'].replace(vfile, '')): # most match
+        matchDict['most'] = subfile
+    return False
 
 
 # ---------------------------------------------------------------
@@ -347,7 +396,7 @@ _keywords_ignore_str = '|'.join((r'\b'+item+r'\b' for item in _keywords_ignore))
 _compiler_directives_ignore_str = '|'.join((item+r'\b' for item in _compiler_directives_ignore))
 
 _token_spec = [
-        ('line_comment',      r'//.*\n'),
+        ('line_comment',      r'//.*?\n'),
         ('block_comment',     r'/\*.*?\*/'),
         ('attributes',        r'\(\*.*?\*\)'),
         ('function',          r'\bfunction\b.*?\bendfunction\b'),
@@ -383,7 +432,7 @@ _token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec),
 _comment_regex = re.compile('|'.join([pair[1] for pair in _token_spec[0:3]]), re.S)
 _width_regex = re.compile(r'\[(.*?)\]')
 _word_regex = re.compile(r'[a-zA-Z_]\w*')
-_expression_regex = re.compile(r'(\w+)\s*=\s*([^=][^,;]+)')
+_expression_regex = re.compile(r'(\w+)\s*=\s*([^=,;][^,;]*)')
 _connect_regex = re.compile(r'\.(\w+)\((.*?)\)')
 
 _vstruct_template = {
@@ -405,7 +454,7 @@ _vstruct_template = {
 # ----------------------------------------
 # parse verilog code to vstruct 
 # ----------------------------------------
-def _VStruct(vcontent, dbg=0):
+def _VStruct(vcontent, dbg=False):
     parse_func = {
         'module':      _parse_module,
         'parameter':   _parse_parameter,
@@ -434,6 +483,11 @@ def _VStruct(vcontent, dbg=0):
     return vstruct
 
 
+# get module name of verilog file
+def _parse_module(vstruct, kind, value):
+    vstruct[kind] = value.split()[-1].strip()
+
+
 def _parse_directives(define, kind, value):
     value = value.strip()
     if kind in ('dir_ifdef', 'dir_ifndef'):
@@ -442,12 +496,6 @@ def _parse_directives(define, kind, value):
         define[-1] = value
     elif kind == 'dir_endif':
         define.pop()
-
-
-
-# get module name of verilog file
-def _parse_module(vstruct, kind, value):
-    vstruct[kind] = value.split()[-1].strip()
 
 
 # param parser: parameter and localparam
@@ -527,6 +575,29 @@ def _parse_inst(vstruct, kind, value):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
     for net0, net1 in _connect_regex.findall(value[inst.end():]):
         vstruct['var'][inst_name]['port'][net0] = net1.replace(' ', '').strip()
+
+
+def _Gen_Width(var, style='index'):
+    msb, lsb = var['msb'], var['lsb']
+    if style == 'index':
+        return '' if not msb else '['+msb+':'+lsb+'] '
+    if style == 'width':
+        if not msb:
+            return '1'
+        if msb.isdigit() and lsb.isdigit():
+            return str(int(msb)-int(lsb)+1)
+    if style == 'val':
+        if not msb:
+            return "1'b0"
+        if lsb.isdigit():
+            if msb.isdigit():
+                return str(int(msb)-int(lsb)+1)+"'d0"
+            if lsb == '0':
+                if msb.endswith('-1'):
+                    return '{'+msb[:-2]+"{1'b0}}"
+                return '{'+msb+"+1{1'b0}}"
+        return '{'+msb+'-'+lsb+"+1{1'b0}}"
+    return ''
 
 
 if __name__ == '__main__':
