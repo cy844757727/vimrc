@@ -8,37 +8,43 @@ import glob
 #import json
 import functools
 
-if len(sys.argv) < 3:
-    print('ERR: not enough argument !!!')
-    sys.exit(1)
-
+# ---------------------------------------------------
 # global varialbes
+# ---------------------------------------------------
 PATH = os.getcwd()
 MAXLEN = 79
 FLIST = []
 INCDIR = []
 STYLE = {'arg': 1, 'inst': 1}
+# argv expand
+CMD = sys.argv[1] if len(sys.argv) > 1 else None
+VFILE = sys.argv[2] if len(sys.argv) > 2 else None
+EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 
 
-# argv[0]: cmd, argv[1]: file
-if len(sys.argv) > 3:
-    extra_arg = sys.argv[3:]
-else:
-    extra_arg = [None]
-
-
+# ---------------------------------------------------
+# function define
+# ---------------------------------------------------
+# main function
 def main():
-    global PATH
+    global CMD, VFILE
+    # argument judge
+    if not VFILE:
+        print('ERR: not enough argument !!!')
+        sys.exit(1)
     cmdVFile = {
         'vfile':      HDLVFile,
-        'vfiles':     functools.partial(HDLVFile, searchAll=True)
+        'vfiles':     functools.partial(HDLVFile, searchAll=True),
+        'flist':      HDLFlist,
+        'incdir':     HDLIncdir
         }
     cmdVStruct = {
         'autoarg':    HDLAutoArg,
-        'autoinst':   functools.partial(HDLAutoInst, template=extra_arg[0]),
+        'autoinst':   functools.partial(HDLAutoInst, template=EXTRA[0]),
         'autowire':   HDLAutoWire,
         'autoreg':    HDLAutoReg,
         'struct':     HDLVStruct,
+        'undef':      HDLUndef,
         'fake':       HDLFake,
         'input':      functools.partial(HDLNet, net='input'),
         'output':     functools.partial(HDLNet, net='output'),
@@ -46,18 +52,18 @@ def main():
         'parameter':  functools.partial(HDLParam, param='parameter'),
         'localparam': functools.partial(HDLParam, param='localparam')
         }
-    cmd = sys.argv[1]
-    vfile = cmdVFile.get(cmd, HDLVFile)(sys.argv[2])
-    if cmd in cmdVFile:
+    _initial_env() # initial INCDIR and FLIST
+    vfile = cmdVFile.get(CMD, HDLVFile)(VFILE)
+    if not vfile:
+        print(None)
+        sys.exit(2)
+    if CMD in cmdVFile:
         content = vfile
-    elif cmd in cmdVStruct:
-        if not vfile:
-            print(None)
-            sys.exit(2)
+    elif CMD in cmdVStruct:
         with open(vfile, 'r') as fh:
             vcontent = ''.join(fh.readlines())
         vstruct = _VStruct(vcontent)
-        content = cmdVStruct[cmd](vstruct)
+        content = cmdVStruct[CMD](vstruct)
     if isinstance(content, (list, set)):
         print('\n'.join(content))
     else:
@@ -68,6 +74,9 @@ def HDLVFile(vfile, searchAll=False):
     return _search_vfile(vfile, searchAll=searchAll)
 
 
+# ---------------------------------------------------------------
+# autogeneration function
+# ---------------------------------------------------------------
 # auto generate arg
 def HDLAutoArg(vstruct):
     global MAXLEN, STYLE
@@ -131,6 +140,7 @@ def _AutoInstTemplate(module, template):
     return 'u_'+module, None
 
 
+# for AUTOTEMPLATE
 def _AutoInstComment(vstruct, inst_struct):
     global STYLE
     comment = ['// ------------------------------------------',
@@ -180,7 +190,7 @@ def _AutoInstParameter(vstruct, inst_struct):
     return content
 
 
-# format autoinst connect
+# format autoinst port connection
 def _AutoInstConnect(vstruct, inst_struct):
     content = []
     inst_port = inst_struct['port'] if inst_struct else {}
@@ -209,6 +219,30 @@ def HDLAutoReg(vstruct):
     pass
 
 
+def HDLNet(vstruct, net='input'):
+    pass
+
+
+def HDLParam(vstruct, param='parameter'):
+    pass
+
+
+
+# ---------------------------------------------------------------
+# Miscellaneous function
+# ---------------------------------------------------------------
+# Automatically generate undef file for define file
+def HDLUndef(vstruct):
+    content = ['// ------------------------------------------------',
+               '// AutoGenerate verilog undef file by vgen.py',
+               '// ------------------------------------------------']
+    content += ['']
+    for define in vstruct['define']:
+        content += ['`ifdef '+define, '    `undef '+define, '`endif', '']
+    return content
+
+
+# generate fake file for verilog file
 def HDLFake(vstruct):
     content = ['// ------------------------------------------------',
                '// AutoGenerate verilog fake file by vgen.py',
@@ -236,15 +270,27 @@ def HDLFake(vstruct):
     return content
 
 
-def HDLNet(vstruct, net='input'):
-    pass
+# generate include file from flist or module
+def HDLIncdir(vfile):
+    if vfile.endswith('.f') and os.path.isfile(vfile):
+        return _flist2incdir(vfile)
+    vfile = _search_vfile(vfile)
+    if not vfile:
+        return []
+    return _module2incdir(vfile)
 
 
-def HDLParam(vstruct, param='parameter'):
-    pass
+# parsing module file and get flist
+def HDLFlist(vfile):
+    if vfile.endswith('.f') and os.path.isfile(vfile):
+        return _flist2flist(vfile)
+    vfile = _search_vfile(vfile)
+    if not vfile:
+        return []
+    return _module2flist(vfile)
 
 
-
+# return vstruct
 def HDLVStruct(vstruct):
     return vstruct
 #    print(json.dumps(vstruct, indent=4))
@@ -254,7 +300,29 @@ def HDLVStruct(vstruct):
 # ---------------------------------------------------------------
 #    verilog file search .v .sv, search order: flist, incdir, path
 # ---------------------------------------------------------------
-def _search_vfile(vfile, searchAll=False):
+# initial global var: INCDIR, FLIST
+# using environment default: VGEN_INCDIR, VGEN_FLIST
+def _initial_env(incdir=os.environ.get('VGEN_INCDIR', ''), flist=os.environ.get('VGEN_FLIST', '')):
+    global INCDIR, FLIST
+    # initial include directory
+    if os.path.isfile(incdir):
+        with open(incdir, 'r') as fh:
+            for line in fh:
+                line = line.strip()
+                if line.startswith('+incdir+'):
+                    line = line[8:]
+                if os.path.isdir(line):
+                    INCDIR.append(line)
+    # initial filelist
+    if os.path.isfile(flist):
+        with open(flist, 'r') as fh:
+            for line in fh:
+                line = line.strip()
+                if os.path.isfile(line) and (line.endswith('.v') or line.endswith('.sv')):
+                    FLIST.append(line)
+
+
+def _search_vfile(vfile, searchAll=False, fullmatch=False):
     global FLIST
     if os.path.isfile(vfile) and (vfile.endswith('.v') or vfile.endswith('.sv')):
         return vfile
@@ -269,6 +337,8 @@ def _search_vfile(vfile, searchAll=False):
     # search file in localpath third
     if _search_path(vfile, matchDict, searchAll):
         return matchDict['full']
+    if fullmatch:
+        return None
     if searchAll:
         return matchDict['all']
     return matchDict['most'] if os.path.isfile(matchDict['most']) else None
@@ -342,7 +412,60 @@ def _search_judge(vfile, subfile, basename, matchDict, searchAll):
 
 
 # ---------------------------------------------------------------
-#    verilog parser
+#    filelist/incdir relevent
+# ---------------------------------------------------------------
+# convert flist file to include file
+def _flist2incdir(vfile):
+    content = []
+    with open(vfile, 'r') as fh:
+        for line in fh:
+            line = line.strip()
+            if (line.endswith('constant.v') or line.endswith('define.v') or \
+                    line.startswith('`define') or line.startswith('+incdir+')) and \
+                    line not in content:
+                content.append(line)
+            elif line.endswith('.v') or line.endswith('.sv'):
+                root = os.path.dirname(line)
+                root = '+incdir+'+root
+                if os.path.isdir(root[8:]) and root not in content:
+                    content.append(root)
+    return content
+
+
+# Parsing module to filelist
+def _module2flist(vfile):
+    content = [vfile]
+    with open(vfile, 'r') as fh:
+        vcontent = ''.join(fh.readlines())
+    vstruct = _VStruct(vcontent)
+    module_exist = [vstruct['module']]
+    module_search = [vstruct['var'][var]['module'] for var in vstruct['inst']]
+    while module_search:
+        module = module_search.pop()
+        if module in module_exist:
+            continue
+        module_exist.append(module)
+        vfile = _search_vfile(module, fullmatch=True)
+        if not vfile:
+            continue
+        content.append(vfile)
+        with open(vfile, 'r') as fh:
+            vcontent = ''.join(fh.readlines())
+        vstruct = _VStruct(vcontent)
+        module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
+    return content
+
+
+# Parsing module to incdir
+def _module2incdir(vfile):
+    return ['+incdir+'+os.path.dirname(line) for line in _module2flist(vfile)]
+
+
+def _flist2flist(vfile):
+    return [vfile]
+
+# ---------------------------------------------------------------
+#    verilog file parser
 # ---------------------------------------------------------------
 # verilog all keywords, copy from IEEE verilog 2001
 _keywords_all = {
@@ -383,7 +506,7 @@ _keywords_match = {
 
 # compiler directives to be matched
 _compiler_directives_match = {
-        '`ifdef', '`ifndef', '`elsif', '`else', '`endif'
+        '`ifdef', '`ifndef', '`elsif', '`else', '`endif', '`define'
         }
 
 # ---------------------------------------------------------------
@@ -411,6 +534,7 @@ _token_spec = [
         ('direct',            _compiler_directives_ignore_str),       # Macro
         ('keyword',           _keywords_ignore_str),                  # ignore unuseless keyword
         ('module',            r'\bmodule\s+\w+'),                     # module match start
+        ('define',            r'`define\s+.*?\n'),
         ('dir_ifdef',         r'`ifdef\s+\w+'),
         ('dir_ifndef',        r'`ifndef\s+\w+'),
         ('dir_elsif',         r'`elsif\s+\w+'),
@@ -439,7 +563,8 @@ _vstruct_template = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
         'reg':    [], 'wire':      [], 'assign':     [],
-        'eq':     [], 'var':       {}, 'inst':       [],
+        'define': [], 'eq':        [], 'var':        {},
+        'inst':   [],
         'len':    { # record length for string format
             'parameter':  {'var': 0, 'val': 0},
             'localparam': {'var': 0, 'val': 0},
@@ -456,6 +581,7 @@ _vstruct_template = {
 # ----------------------------------------
 def _VStruct(vcontent, dbg=False):
     parse_func = {
+        'define':      _parse_define,
         'module':      _parse_module,
         'parameter':   _parse_parameter,
         'localparam':  _parse_parameter,
@@ -496,6 +622,17 @@ def _parse_directives(define, kind, value):
         define[-1] = value
     elif kind == 'dir_endif':
         define.pop()
+
+
+# define parser: `define
+def _parse_define(vstruct, kind, value):
+    define = value.strip().split()
+    if len(define) < 2:
+        return
+    vstruct[kind].append(define[1])
+    val = ''.join(define[2:]) if len(define) >= 3 else ''
+    vstruct['var']['`'+define[1]] = {'kind': kind, 'val': val}
+
 
 
 # param parser: parameter and localparam
