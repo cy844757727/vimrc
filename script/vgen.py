@@ -208,6 +208,7 @@ def _AutoInstConnect(vstruct, inst_struct):
 
 # Automatically generate undefined instance output/inout port
 def HDLAutoWire(vstruct):
+    _initial_define(os.getenv('VGEN_DEFINE', ''))
     content = ['/*AUTOWIRE*/', '// Automatically generate undefined instances output/inout port']
     wire_exists = vstruct['output'] + vstruct['inout'] + vstruct['wire']
     input_net = []
@@ -277,12 +278,16 @@ def log2(num):
 _upperWord_regex = re.compile(r'[A-Z_][A-Z_0-9]*')
 # parse parameter expression
 def _HDLAutoWireParamExpr(expr, inst, vstruct):
+    global DEFINE
     if not expr or expr.isdigit():
         return expr
     params = _upperWord_regex.findall(expr)
     while params:
         param = params.pop()
-        if param in inst['parameter']:
+        define = '`'+param
+        if param in DEFINE and define in expr:
+            expr = expr.replace(define, DEFINE['define'])
+        elif param in inst['parameter']:
             expr = expr.replace(param, inst['parameter'][param])
         elif param in vstruct['parameter'] or param in vstruct['localparam']:
             expr = expr.replace(param, vstruct['var'][param]['val'])
@@ -382,11 +387,20 @@ def HDLVStruct(vstruct):
 # ---------------------------------------------------------------
 #    verilog file search .v .sv, search order: flist, incdir, path
 # ---------------------------------------------------------------
-# initial global var: INCDIR, FLIST
-# using environment default: VGEN_INCDIR, VGEN_FLIST
-def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FLIST', '')):
-    global INCDIR, FLIST
-    # initial include directory
+# initial global var: INCDIR, FLIST, DEFINE
+# using environment default: VGEN_INCDIR, VGEN_FLIST, VGEN_DEFINES
+def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FLIST', ''),
+                 defines=os.getenv('VGEN_DEFINE', ''), target=('incdir', 'flist')):
+    if 'incdir' in target:
+        _initial_incdir(incdirs)
+    if 'flist' in target:
+        _initial_flist(flists)
+    if 'define' in target:
+        _initial_define(defines)
+
+
+def _initial_incdir(incdirs):
+    global INCDIR
     for incdir in incdirs.split(':'):
         if not os.path.isfile(incdir):
             continue
@@ -397,7 +411,10 @@ def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FL
                     line = line[8:]
                 if os.path.isdir(line):
                     INCDIR.append(line)
-    # initial filelist
+
+
+def _initial_flist(flists):
+    global FLIST
     for flist in flists.split(':'):
         if not os.path.isfile(flist):
             continue
@@ -406,6 +423,24 @@ def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FL
                 line = line.strip()
                 if os.path.isfile(line) and (line.endswith('.v') or line.endswith('.sv')):
                     FLIST.append(line)
+
+
+def _initial_define(defines):
+    global DEFINE
+    for define in defines.split(':'):
+        if not os.path.isfile(define):
+            continue
+        with open(define, 'r') as fh:
+            for line in fh:
+                line = line.strip().split()
+                if len(line) < 2:
+                    continue
+                if line[0] == '`define':
+                    val = ''.join(line[2:]) if len(line) > 2 else ''
+                    DEFINE[line[1]] = val
+                elif line[0] == '`undef' and line[1] in DEFINE:
+                    del DEFINE[line[1]]
+
 
 
 def _search_vfile(vfile, searchAll=False, fullmatch=False):
