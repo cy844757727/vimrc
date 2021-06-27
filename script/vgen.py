@@ -15,6 +15,7 @@ PATH = os.getcwd()
 MAXLEN = 79
 FLIST = []
 INCDIR = []
+DEFINE = {}
 STYLE = {'arg': 1, 'inst': 1}
 # argv expand
 CMD = sys.argv[1] if len(sys.argv) > 1 else None
@@ -45,12 +46,7 @@ def main():
         'autoreg':    HDLAutoReg,
         'struct':     HDLVStruct,
         'undef':      HDLUndef,
-        'fake':       HDLFake,
-        'input':      functools.partial(HDLNet, net='input'),
-        'output':     functools.partial(HDLNet, net='output'),
-        'inout':      functools.partial(HDLNet, net='inout'),
-        'parameter':  functools.partial(HDLParam, param='parameter'),
-        'localparam': functools.partial(HDLParam, param='localparam')
+        'fake':       HDLFake
         }
     _initial_env() # initial INCDIR and FLIST
     vfile = cmdVFile.get(CMD, HDLVFile)(VFILE)
@@ -210,21 +206,100 @@ def _AutoInstConnect(vstruct, inst_struct):
     return content
 
 
-
+# Automatically generate undefined instance output/inout port
 def HDLAutoWire(vstruct):
-    pass
+    content = ['/*AUTOWIRE*/', '// Automatically generate undefined instances output/inout port']
+    wire_exists = vstruct['output'] + vstruct['inout'] + vstruct['wire']
+    input_net = []
+    # format wire declaration of instants output,inout port
+    for inst in vstruct['inst']:
+        subcontent = []
+        length, nets = _HDLAutoWireConnect(vstruct['var'][inst])
+        strFormat = 'wire {:'+str(length)+'} {};'
+        for net, val in nets.items():
+            if net in wire_exists:
+                continue
+            elif val['kind'] == 'input':
+                input_net.append((net, val['width']))
+                continue
+            wire_exists.append(net)
+            subcontent.append(strFormat.format(val['width'], net))
+        if subcontent:
+            content += ['// form instant of '+inst] + subcontent
+    content += ['// End of autowire']
+    # undefined net of instants input port
+    input_content = []
+    wire_exists += vstruct['input'] + vstruct['reg']
+    for net, width in input_net:
+        if net in wire_exists:
+            continue
+        input_content.append('reg '+width+' '+net+';')
+    input_comment = ['// undefined net for instants input port'] if input_content else []
+    return input_comment + input_content + content
+
+
+# get connect signal width from source file
+_identifier_regex = re.compile(r'[a-z_][a-z_0-9]*')
+def _HDLAutoWireConnect(inst):
+    connect, length = {}, 1
+    inst_vfile = _search_vfile(inst['module'], fullmatch=True)
+    if not inst_vfile:
+        return None
+    with open(inst_vfile, 'r') as fh:
+        vcontent = ''.join(fh.readlines())
+    inst_vstruct = _VStruct(vcontent)
+    for port, net in inst['port'].items():
+        net = _identifier_regex.match(net)
+        port = inst_vstruct['var'].get(port, {'kind': ''})
+        if not net or port['kind'] not in ('input', 'output', 'inout'):
+            continue
+        net = net.group()
+        port['msb'] = _HDLAutoWireParamExpr(port['msb'], inst, inst_vstruct)
+        port['lsb'] = _HDLAutoWireParamExpr(port['lsb'], inst, inst_vstruct)
+        if port['msb'] and port['lsb']:
+            width = '[' + port['msb'] + ':' + port['lsb'] + ']'
+        else:
+            width = ''
+        connect[net] = {'kind': port['kind'], 'width': width}
+        length = max(length, len(width))
+    return length, connect
+
+
+# define function used in verilog
+# for eval function in _HDLAutoWireParamExpr
+def log2(num):
+    value = 1
+    while 2**value < num:
+        value += 1
+    return value
+
+
+_upperWord_regex = re.compile(r'[A-Z_][A-Z_0-9]*')
+# parse parameter expression
+def _HDLAutoWireParamExpr(expr, inst, vstruct):
+    if not expr or expr.isdigit():
+        return expr
+    params = _upperWord_regex.findall(expr)
+    while params:
+        param = params.pop()
+        if param in inst['parameter']:
+            expr = expr.replace(param, inst['parameter'][param])
+        elif param in vstruct['parameter'] or param in vstruct['localparam']:
+            expr = expr.replace(param, vstruct['var'][param]['val'])
+        else:
+            continue
+        params += _upperWord_regex.findall(expr)
+    try:
+        expr = eval(expr)
+        return str(expr) if expr != 0 else ''
+    except:
+        return expr
+
 
 
 def HDLAutoReg(vstruct):
-    pass
+    return vstruct
 
-
-def HDLNet(vstruct, net='input'):
-    pass
-
-
-def HDLParam(vstruct, param='parameter'):
-    pass
 
 
 
@@ -292,6 +367,13 @@ def HDLFlist(vfile):
 
 # return vstruct
 def HDLVStruct(vstruct):
+    del vstruct['eq']
+    del vstruct['len']
+    del vstruct['assign']
+    for key in ('parameter', 'localparam', 'input', 'output', 'inout',
+                'define', 'inst', 'reg', 'wire'):
+        if not vstruct[key]:
+            del vstruct[key]
     return vstruct
 #    print(json.dumps(vstruct, indent=4))
 
@@ -302,10 +384,12 @@ def HDLVStruct(vstruct):
 # ---------------------------------------------------------------
 # initial global var: INCDIR, FLIST
 # using environment default: VGEN_INCDIR, VGEN_FLIST
-def _initial_env(incdir=os.environ.get('VGEN_INCDIR', ''), flist=os.environ.get('VGEN_FLIST', '')):
+def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FLIST', '')):
     global INCDIR, FLIST
     # initial include directory
-    if os.path.isfile(incdir):
+    for incdir in incdirs.split(':'):
+        if not os.path.isfile(incdir):
+            continue
         with open(incdir, 'r') as fh:
             for line in fh:
                 line = line.strip()
@@ -314,7 +398,9 @@ def _initial_env(incdir=os.environ.get('VGEN_INCDIR', ''), flist=os.environ.get(
                 if os.path.isdir(line):
                     INCDIR.append(line)
     # initial filelist
-    if os.path.isfile(flist):
+    for flist in flists.split(':'):
+        if not os.path.isfile(flist):
+            continue
         with open(flist, 'r') as fh:
             for line in fh:
                 line = line.strip()
@@ -337,11 +423,9 @@ def _search_vfile(vfile, searchAll=False, fullmatch=False):
     # search file in localpath third
     if _search_path(vfile, matchDict, searchAll):
         return matchDict['full']
-    if fullmatch:
-        return None
-    if searchAll:
-        return matchDict['all']
-    return matchDict['most'] if os.path.isfile(matchDict['most']) else None
+    return None if fullmatch else \
+            matchDict['all'] if searchAll else \
+            matchDict['most'] if os.path.isfile(matchDict['most']) else None
 
 
 # search file in filelist, the results are saved in the 'matchDict'
@@ -462,6 +546,7 @@ def _module2incdir(vfile):
 
 
 def _flist2flist(vfile):
+    # for future
     return [vfile]
 
 # ---------------------------------------------------------------
@@ -518,42 +603,44 @@ _compiler_directives_ignore = _compiler_directives_all - _compiler_directives_ma
 _keywords_ignore_str = '|'.join((r'\b'+item+r'\b' for item in _keywords_ignore))
 _compiler_directives_ignore_str = '|'.join((item+r'\b' for item in _compiler_directives_ignore))
 
-_token_spec = [
-        ('line_comment',      r'//.*?\n'),
-        ('block_comment',     r'/\*.*?\*/'),
-        ('attributes',        r'\(\*.*?\*\)'),
-        ('function',          r'\bfunction\b.*?\bendfunction\b'),
-        ('task',              r'\btask\b.*?\bendtask'),
-        ('if',                r'\bif\s*\(.*?\)'),
-        ('elseif',            r'\belse\s+if\s*\(.*?\)'),
-        ('for',               r'\bfor\s*\(.*?\)'),
-        ('while',             r'\bwhile\s*\(.*?\)'),
-        ('always',            r'\balways\s*@(\*|\(.*?\))'),
-        ('case',              r'\bcase[xz]?\s*\(.*?\)'),
-        ('dollar',            r'$\w+(\(.*?\))?;'),                    # system call
-        ('direct',            _compiler_directives_ignore_str),       # Macro
-        ('keyword',           _keywords_ignore_str),                  # ignore unuseless keyword
-        ('module',            r'\bmodule\s+\w+'),                     # module match start
-        ('define',            r'`define\s+.*?\n'),
-        ('dir_ifdef',         r'`ifdef\s+\w+'),
-        ('dir_ifndef',        r'`ifndef\s+\w+'),
-        ('dir_elsif',         r'`elsif\s+\w+'),
-        ('dir_else',          r'`else'),
-        ('dir_endif',         r'`endif'),
-        ('parameter',         r'(?<=\bparameter\b)\s+.*?[;)]'),
-        ('input',             r'(?<=\binput\b).*?\n'),
-        ('output',            r'(?<=\boutput\b).*?\n'),
-        ('inout',             r'(?<=\binout\b).*?\n'),
-        ('localparam',        r'(?<=\blocalparam\b).*?;'),
-        ('reg',               r'(?<=\breg\b).*?;'),
-        ('wire',              r'(?<=\bwire\b).*?;'),
-        ('assign',            r'(?<=\bassign\b).*?;'),
-        ('eq',                r'\w+\s*<?=[^=].*?;'),
-        ('inst',              r'\w+\s+(#\(.*?\)\s+)?\w+\s*\(.*?\);')
-        ]
+_token_spec = {
+        'line_comment':      r'//.*?\n',
+        'block_comment':     r'/\*.*?\*/',
+        'attributes':        r'\(\*.*?\*\)',
+        'function':          r'\bfunction\b.*?\bendfunction\b',
+        'task':              r'\btask\b.*?\bendtask',
+        'if':                r'\bif\s*\(.*?\)',
+        'elseif':            r'\belse\s+if\s*\(.*?\)',
+        'for':               r'\bfor\s*\(.*?\)',
+        'while':             r'\bwhile\s*\(.*?\)',
+        'always':            r'\balways\s*@(\*|\(.*?\))',
+        'case':              r'\bcase[xz]?\s*\(.*?\)',
+        'dollar':            r'$\w+(\(.*?\))?;',                    # system call
+        'direct':            _compiler_directives_ignore_str,       # Macro
+        'keyword':           _keywords_ignore_str,                  # ignore unuseless keyword
+        'module':            r'\bmodule\s+\w+',                     # module match start
+        'define':            r'`define\s+.*?\n',
+        'dir_ifdef':         r'`ifdef\s+\w+',
+        'dir_ifndef':        r'`ifndef\s+\w+',
+        'dir_elsif':         r'`elsif\s+\w+',
+        'dir_else':          r'`else',
+        'dir_endif':         r'`endif',
+        'parameter':         r'(?<=\bparameter\b)\s+.*?[;)]',
+        'input':             r'(?<=\binput\b).*?\n',
+        'output':            r'(?<=\boutput\b).*?\n',
+        'inout':             r'(?<=\binout\b).*?\n',
+        'localparam':        r'(?<=\blocalparam\b).*?;',
+        'reg':               r'(?<=\breg\b).*?;',
+        'wire':              r'(?<=\bwire\b).*?;',
+        'assign':            r'(?<=\bassign\b).*?;',
+        'eq':                r'\w+\s*<?=[^=].*?;',
+        'inst':              r'\w+\s+(#\(.*?\)\s+)?\w+\s*\(.*?\);'
+        }
 
-_token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec), re.S)
-_comment_regex = re.compile('|'.join([pair[1] for pair in _token_spec[0:3]]), re.S)
+_token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec.items()), re.S)
+_comment_regex = re.compile(_token_spec['line_comment']+'|'+
+                            _token_spec['block_comment']+'|'+
+                            _token_spec['attributes'], re.S)
 _width_regex = re.compile(r'\[(.*?)\]')
 _word_regex = re.compile(r'[a-zA-Z_]\w*')
 _expression_regex = re.compile(r'(\w+)\s*=\s*([^=,;][^,;]*)')
@@ -707,7 +794,8 @@ def _parse_inst(vstruct, kind, value):
         return
     inst_name = inst.group().strip()
     vstruct[kind].append(inst_name)
-    vstruct['var'][inst_name] = {'module': module.group(), 'parameter': {}, 'port': {}}
+    vstruct['var'][inst_name] = {'kind': kind, 'module': module.group(),
+                                 'parameter': {}, 'port': {}}
     for net0, net1 in _connect_regex.findall(value[:inst.end()]):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
     for net0, net1 in _connect_regex.findall(value[inst.end():]):
