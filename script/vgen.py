@@ -3,7 +3,7 @@
 import os
 import sys
 import re
-import copy
+#import copy
 import glob
 #import json
 import functools
@@ -29,16 +29,12 @@ EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 # main function
 def main():
     global CMD, VFILE
-    # argument judge
-    if not VFILE:
-        print('ERR: not enough argument !!!')
-        sys.exit(1)
     cmdVFile = {
         'vfile':      HDLVFile,
         'vfiles':     functools.partial(HDLVFile, searchAll=True),
         'flist':      HDLFlist,
         'incdir':     HDLIncdir
-        }
+        } # VFILE
     cmdVStruct = {
         'autoarg':    HDLAutoArg,
         'autoinst':   functools.partial(HDLAutoInst, template=EXTRA[0]),
@@ -47,19 +43,18 @@ def main():
         'struct':     HDLVStruct,
         'undef':      HDLUndef,
         'fake':       HDLFake
-        }
-    _initial_env() # initial INCDIR and FLIST
-    vfile = cmdVFile.get(CMD, HDLVFile)(VFILE)
-    if not vfile:
-        print(None)
-        sys.exit(2)
+        } # vstruct
+    _check_argument(list(cmdVFile.keys()) + list(cmdVStruct.keys())) # all allowed sub-cmd
+    _initial_env() # initial INCDIR, FLIST and DEFINE
     if CMD in cmdVFile:
-        content = vfile
+        content = cmdVFile[CMD](VFILE)
     elif CMD in cmdVStruct:
+        vfile = _search_vfile(VFILE)
+        if not vfile:
+            _err_handle('err_vfile')
         with open(vfile, 'r') as fh:
             vcontent = ''.join(fh.readlines())
-        vstruct = _VStruct(vcontent)
-        content = cmdVStruct[CMD](vstruct)
+        content = cmdVStruct[CMD](_vstruct_analyze(vcontent))
     if isinstance(content, (list, set)):
         print('\n'.join(content))
     else:
@@ -68,6 +63,29 @@ def main():
 
 def HDLVFile(vfile, searchAll=False):
     return _search_vfile(vfile, searchAll=searchAll)
+
+
+# ---------------------------------------------------------------
+# argument check
+# ---------------------------------------------------------------
+def _check_argument(subcmds):
+    global CMD, VFILE
+    err = 'err_arg' if not CMD else \
+          'err_cmd' if CMD not in subcmds else \
+          'err_arg' if not VFILE else 'None'
+    _err_handle(err)
+
+
+def _err_handle(err):
+    global CMD, VFILE
+    # get msg & level
+    err_msg = {'err_cmd':   ['ERR: Unrecongnized sub-command "'+str(CMD)+'"', 1],
+               'err_arg':   ['ERR: missing argument', 2],
+               'err_vfile': ['ERR: Cannot find verilog file "'+str(VFILE)+'"', 3]
+               }.get(err, ['None', 0])
+    if err_msg[1]:
+        print(err_msg[0])
+        sys.exit(err_msg[1])
 
 
 # ---------------------------------------------------------------
@@ -102,10 +120,10 @@ def HDLAutoArg(vstruct):
 
 # generate auto instant
 def HDLAutoInst(vstruct, template=None):
-    inst_name, inst_struct = _AutoInstTemplate(vstruct['module'], template)
-    comment = _AutoInstComment(vstruct, inst_struct)
-    parameter = _AutoInstParameter(vstruct, inst_struct)
-    port = _AutoInstConnect(vstruct, inst_struct)
+    inst_name, inst_struct = _AutoInst_template(vstruct['module'], template)
+    comment = _AutoInst_comment(vstruct, inst_struct)
+    parameter = _AutoInst_parameter(vstruct, inst_struct)
+    port = _AutoInst_connect(vstruct, inst_struct)
     # content merge
     content = comment + ['', vstruct['module']]
     if parameter:
@@ -121,7 +139,7 @@ def HDLAutoInst(vstruct, template=None):
 
 
 # get instant template
-def _AutoInstTemplate(module, template):
+def _AutoInst_template(module, template):
     if not template:
         return 'u_'+module, None
     if os.path.isfile(template):
@@ -129,7 +147,7 @@ def _AutoInstTemplate(module, template):
             vcontent = ''.join(fh.readlines())
     else:
         vcontent = template
-    vstruct = _VStruct(vcontent)
+    vstruct = _vstruct_analyze(vcontent)
     for inst in vstruct['inst']:
         if vstruct['var'][inst]['module'] == module:
             return inst, vstruct['var'][inst]
@@ -137,7 +155,7 @@ def _AutoInstTemplate(module, template):
 
 
 # for AUTOTEMPLATE
-def _AutoInstComment(vstruct, inst_struct):
+def _AutoInst_comment(vstruct, inst_struct):
     global STYLE
     comment = ['// ------------------------------------------',
                '// instant of ' + vstruct['module'] + '.v',
@@ -164,7 +182,7 @@ def _AutoInstComment(vstruct, inst_struct):
 
 
 # format autoinst parameter
-def _AutoInstParameter(vstruct, inst_struct):
+def _AutoInst_parameter(vstruct, inst_struct):
     content = []
     parameter = inst_struct['parameter'] if inst_struct else vstruct['parameter']
     if not parameter:
@@ -187,7 +205,7 @@ def _AutoInstParameter(vstruct, inst_struct):
 
 
 # format autoinst port connection
-def _AutoInstConnect(vstruct, inst_struct):
+def _AutoInst_connect(vstruct, inst_struct):
     content = []
     inst_port = inst_struct['port'] if inst_struct else {}
     # construct format string
@@ -215,7 +233,7 @@ def HDLAutoWire(vstruct):
     # format wire declaration of instants output,inout port
     for inst in vstruct['inst']:
         subcontent = []
-        length, nets = _HDLAutoWireConnect(vstruct['var'][inst])
+        length, nets = _AutoWire_connect(vstruct['var'][inst])
         strFormat = 'wire {:'+str(length)+'} {};'
         for net, val in nets.items():
             if net in wire_exists:
@@ -240,23 +258,23 @@ def HDLAutoWire(vstruct):
 
 
 # get connect signal width from source file
-_identifier_regex = re.compile(r'[a-z_][a-z_0-9]*')
-def _HDLAutoWireConnect(inst):
+_regex_identifier = re.compile(r'[a-z_][a-z_0-9]*')
+def _AutoWire_connect(inst):
     connect, length = {}, 1
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
         return None
     with open(inst_vfile, 'r') as fh:
         vcontent = ''.join(fh.readlines())
-    inst_vstruct = _VStruct(vcontent)
+    inst_vstruct = _vstruct_analyze(vcontent)
     for port, net in inst['port'].items():
-        net = _identifier_regex.match(net)
+        net = _regex_identifier.match(net)
         port = inst_vstruct['var'].get(port, {'kind': ''})
         if not net or port['kind'] not in ('input', 'output', 'inout'):
             continue
         net = net.group()
-        port['msb'] = _HDLAutoWireParamExpr(port['msb'], inst, inst_vstruct)
-        port['lsb'] = _HDLAutoWireParamExpr(port['lsb'], inst, inst_vstruct)
+        port['msb'] = _AutoWire_paramexpr(port['msb'], inst, inst_vstruct)
+        port['lsb'] = _AutoWire_paramexpr(port['lsb'], inst, inst_vstruct)
         if port['msb'] and port['lsb']:
             width = '[' + port['msb'] + ':' + port['lsb'] + ']'
         else:
@@ -267,7 +285,7 @@ def _HDLAutoWireConnect(inst):
 
 
 # define function used in verilog
-# for eval function in _HDLAutoWireParamExpr
+# for eval function in _AutoWire_paramexpr
 def log2(num):
     value = 1
     while 2**value < num:
@@ -275,13 +293,13 @@ def log2(num):
     return value
 
 
-_upperWord_regex = re.compile(r'[A-Z_][A-Z_0-9]*')
+_regex_upper_word = re.compile(r'[A-Z_][A-Z_0-9]*')
 # parse parameter expression
-def _HDLAutoWireParamExpr(expr, inst, vstruct):
+def _AutoWire_paramexpr(expr, inst, vstruct):
     global DEFINE
     if not expr or expr.isdigit():
         return expr
-    params = _upperWord_regex.findall(expr)
+    params = _regex_upper_word.findall(expr)
     while params:
         param = params.pop()
         define = '`'+param
@@ -293,7 +311,7 @@ def _HDLAutoWireParamExpr(expr, inst, vstruct):
             expr = expr.replace(param, vstruct['var'][param]['val'])
         else:
             continue
-        params += _upperWord_regex.findall(expr)
+        params += _regex_upper_word.findall(expr)
     try:
         expr = eval(expr)
         return str(expr) if expr != 0 else ''
@@ -314,7 +332,7 @@ def HDLAutoReg(vstruct):
 # Automatically generate undef file for define file
 def HDLUndef(vstruct):
     content = ['// ------------------------------------------------',
-               '// AutoGenerate verilog undef file by vgen.py',
+               '// AutoGeneration verilog undef file by vgen.py',
                '// ------------------------------------------------']
     content += ['']
     for define in vstruct['define']:
@@ -325,7 +343,7 @@ def HDLUndef(vstruct):
 # generate fake file for verilog file
 def HDLFake(vstruct):
     content = ['// ------------------------------------------------',
-               '// AutoGenerate verilog fake file by vgen.py',
+               '// AutoGeneration verilog fake file by vgen.py',
                '// ------------------------------------------------']
     content += [''] + HDLAutoArg(vstruct) + ['']
     # parameter
@@ -443,6 +461,7 @@ def _initial_define(defines):
 
 
 
+# search verilog file (.v, .sv) base on flist, incdir, path
 def _search_vfile(vfile, searchAll=False, fullmatch=False):
     global FLIST
     if os.path.isfile(vfile) and (vfile.endswith('.v') or vfile.endswith('.sv')):
@@ -556,7 +575,7 @@ def _module2flist(vfile):
     content = [vfile]
     with open(vfile, 'r') as fh:
         vcontent = ''.join(fh.readlines())
-    vstruct = _VStruct(vcontent)
+    vstruct = _vstruct_analyze(vcontent)
     module_exist = [vstruct['module']]
     module_search = [vstruct['var'][var]['module'] for var in vstruct['inst']]
     while module_search:
@@ -570,7 +589,7 @@ def _module2flist(vfile):
         content.append(vfile)
         with open(vfile, 'r') as fh:
             vcontent = ''.join(fh.readlines())
-        vstruct = _VStruct(vcontent)
+        vstruct = _vstruct_analyze(vcontent)
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
     return content
 
@@ -638,7 +657,7 @@ _compiler_directives_ignore = _compiler_directives_all - _compiler_directives_ma
 _keywords_ignore_str = '|'.join((r'\b'+item+r'\b' for item in _keywords_ignore))
 _compiler_directives_ignore_str = '|'.join((item+r'\b' for item in _compiler_directives_ignore))
 
-_token_spec = {
+_spec_token = {
         'line_comment':      r'//.*?\n',
         'block_comment':     r'/\*.*?\*/',
         'attributes':        r'\(\*.*?\*\)',
@@ -672,16 +691,21 @@ _token_spec = {
         'inst':              r'\w+\s+(#\(.*?\)\s+)?\w+\s*\(.*?\);'
         }
 
-_token_regex = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _token_spec.items()), re.S)
-_comment_regex = re.compile(_token_spec['line_comment']+'|'+
-                            _token_spec['block_comment']+'|'+
-                            _token_spec['attributes'], re.S)
-_width_regex = re.compile(r'\[(.*?)\]')
-_word_regex = re.compile(r'[a-zA-Z_]\w*')
-_expression_regex = re.compile(r'(\w+)\s*=\s*([^=,;][^,;]*)')
-_connect_regex = re.compile(r'\.(\w+)\((.*?)\)')
+_regex_token = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _spec_token.items()), re.S)
+_regex_comment = re.compile(_spec_token['line_comment']+'|'+
+                            _spec_token['block_comment']+'|'+
+                            _spec_token['attributes'], re.S)
+_regex_width = re.compile(r'\[(.*?)\]')
+_regex_word = re.compile(r'[a-zA-Z_]\w*')
+_regex_expression = re.compile(r'(\w+)\s*=\s*([^=,;][^,;]*)')
+_regex_connect = re.compile(r'\.(\w+)\((.*?)\)')
 
-_vstruct_template = {
+
+# ----------------------------------------
+# parse verilog code to vstruct 
+# ----------------------------------------
+def _vstruct_analyze(vcontent, dbg=False):
+    vstruct = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
         'reg':    [], 'wire':      [], 'assign':     [],
@@ -695,48 +719,42 @@ _vstruct_template = {
             'inout':      {'var': 0, 'msb': 0, 'lsb': 0},
             'reg':        {'var': 0, 'msb': 0, 'lsb': 0},
             'wire':       {'var': 0, 'msb': 0, 'lsb': 0}
-            }
+                }
         }
-
-# ----------------------------------------
-# parse verilog code to vstruct 
-# ----------------------------------------
-def _VStruct(vcontent, dbg=False):
     parse_func = {
-        'define':      _parse_define,
-        'module':      _parse_module,
-        'parameter':   _parse_parameter,
-        'localparam':  _parse_parameter,
-        'input':       _parse_net,
-        'output':      _parse_net,
-        'inout':       _parse_net,
-        'reg':         _parse_net,
-        'wire':        _parse_net,
-        'assign':      _parse_expression,
-        'eq':          _parse_expression,
-        'inst':        _parse_inst
+        'define':      _vparse_define,
+        'module':      _vparse_module,
+        'parameter':   _vparse_parameter,
+        'localparam':  _vparse_parameter,
+        'input':       _vparse_net,
+        'output':      _vparse_net,
+        'inout':       _vparse_net,
+        'reg':         _vparse_net,
+        'wire':        _vparse_net,
+        'assign':      _vparse_expression,
+        'eq':          _vparse_expression,
+        'inst':        _vparse_inst
         }
     define = []
-    vstruct = copy.deepcopy(_vstruct_template)
-    for mo in _token_regex.finditer(vcontent):
+    for mo in _regex_token.finditer(vcontent):
         if dbg:
             print(mo.lastgroup, ':', mo.group())
-        kind, value = mo.lastgroup, _comment_regex.sub('', mo.group()).strip()
+        kind, value = mo.lastgroup, _regex_comment.sub('', mo.group()).strip()
         if kind in parse_func:
             parse_func[kind](vstruct, kind, value)
         elif kind.startswith('dir_'):
-            _parse_directives(define, kind, value)
+            _vparse_directives(define, kind, value)
         elif kind == 'keyword' and value == 'endmodule':
             break
     return vstruct
 
 
 # get module name of verilog file
-def _parse_module(vstruct, kind, value):
+def _vparse_module(vstruct, kind, value):
     vstruct[kind] = value.split()[-1].strip()
 
 
-def _parse_directives(define, kind, value):
+def _vparse_directives(define, kind, value):
     value = value.strip()
     if kind in ('dir_ifdef', 'dir_ifndef'):
         define.append(value)
@@ -747,7 +765,7 @@ def _parse_directives(define, kind, value):
 
 
 # define parser: `define
-def _parse_define(vstruct, kind, value):
+def _vparse_define(vstruct, kind, value):
     define = value.strip().split()
     if len(define) < 2:
         return
@@ -758,11 +776,11 @@ def _parse_define(vstruct, kind, value):
 
 
 # param parser: parameter and localparam
-def _parse_parameter(vstruct, kind, value):
+def _vparse_parameter(vstruct, kind, value):
     value = value.strip()
     if value.endswith(')'): # #(parameter ...) may endswith ')'
         value = value[:-1]
-    for var, val in _expression_regex.findall(value):
+    for var, val in _regex_expression.findall(value):
         val = val.replace(' ', '').strip()
         vstruct[kind].append(var)
         vstruct['var'][var] = {'kind': kind, 'val': val}
@@ -774,20 +792,20 @@ def _parse_parameter(vstruct, kind, value):
 _net_word_ignore = ('signed', 'scalared', 'vectored', 'supply0', 'supply1',
                     'strong0', 'strong1', 'pull0', 'pull1', 'weak0', 'weak1', 'small',
                     'medium', 'large', 'input', 'output', 'inout', 'reg', 'wire')
-def _parse_net(vstruct, kind, value):
+def _vparse_net(vstruct, kind, value):
     regtype = False  # used for output scene
     value = value.split('=', 1)[0].strip()  # consider: wire var = ...
-    width = _width_regex.search(value)
+    width = _regex_width.search(value)
     start = width.end() if width else 0
     value = value[start:]
     if width and ':' in width.group(1) and value[0] != ';':
         msb, lsb = width.group(1).split(':', 1)
     else:
         msb, lsb = '', ''
-    memWidth = _width_regex.search(value) # consider memory type
+    memWidth = _regex_width.search(value) # consider memory type
     if memWidth:
         value = value[:memWidth.start()]
-    for var in _word_regex.findall(value):
+    for var in _regex_word.findall(value):
         if kind == 'output' and var == 'reg': # output reg
             regtype = True
         elif kind == 'reg' and var in vstruct['output']: # reg def for output
@@ -803,37 +821,37 @@ def _parse_net(vstruct, kind, value):
 
 
 # expression parser: assign statement or =,<= in always block
-_delay_regex = re.compile(r'#\S+')
-def _parse_expression(vstruct, kind, value):
+_regex_delay = re.compile(r'#\S+')
+def _vparse_expression(vstruct, kind, value):
     value = value.split('=', 1)[0].strip()
-    value = _delay_regex.sub('', value)      # remove delay
-    value = _width_regex.sub('', value)      # remove width [...]
-    for word in _word_regex.findall(value):  # consider {a,b,..} = ...
+    value = _regex_delay.sub('', value)      # remove delay
+    value = _regex_width.sub('', value)      # remove width [...]
+    for word in _regex_word.findall(value):  # consider {a,b,..} = ...
         if word not in vstruct[kind]:
-            vstruct[kind].append(_word_regex.search(value.strip()).group())
+            vstruct[kind].append(_regex_word.search(value.strip()).group())
 
 
 # instant parser
-_inst_name_regex = re.compile(r'(?<=\))\s*\w+\s*(?=\()')
-def _parse_inst(vstruct, kind, value):
+_regex_inst_name = re.compile(r'(?<=\))\s*\w+\s*(?=\()')
+def _vparse_inst(vstruct, kind, value):
     value = value.strip()
-    module = _word_regex.match(value)
+    module = _regex_word.match(value)
     if not module:
         return
     value = value[module.end():].strip()
     if value.startswith('#('):
-        inst = _inst_name_regex.search(value)
+        inst = _regex_inst_name.search(value)
     else:
-        inst = _word_regex.match(value)
+        inst = _regex_word.match(value)
     if not inst:
         return
     inst_name = inst.group().strip()
     vstruct[kind].append(inst_name)
     vstruct['var'][inst_name] = {'kind': kind, 'module': module.group(),
                                  'parameter': {}, 'port': {}}
-    for net0, net1 in _connect_regex.findall(value[:inst.end()]):
+    for net0, net1 in _regex_connect.findall(value[:inst.end()]):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
-    for net0, net1 in _connect_regex.findall(value[inst.end():]):
+    for net0, net1 in _regex_connect.findall(value[inst.end():]):
         vstruct['var'][inst_name]['port'][net0] = net1.replace(' ', '').strip()
 
 
