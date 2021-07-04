@@ -44,7 +44,7 @@ def main():
         'undef':      HDLUndef,
         'fake':       HDLFake
         } # vstruct
-    _check_argument(list(cmdVFile.keys()) + list(cmdVStruct.keys())) # all allowed sub-cmd
+    _check_argument(list(cmdVFile) + list(cmdVStruct)) # all allowed sub-cmd
     _initial_env() # initial INCDIR, FLIST and DEFINE
     if CMD in cmdVFile:
         content = cmdVFile[CMD](VFILE)
@@ -234,6 +234,8 @@ def HDLAutoWire(vstruct):
     for inst in vstruct['inst']:
         subcontent = []
         length, nets = _AutoWire_connect(vstruct['var'][inst])
+        if not nets:
+            continue
         strFormat = 'wire {:'+str(length)+'} {};'
         for net, val in nets.items():
             if net in wire_exists:
@@ -245,7 +247,7 @@ def HDLAutoWire(vstruct):
             subcontent.append(strFormat.format(val['width'], net))
         if subcontent:
             content += ['// form instant of '+inst] + subcontent
-    content += ['// End of autowire']
+    content += ['// End of automatics']
     # undefined net of instants input port
     input_content = []
     wire_exists += vstruct['input'] + vstruct['reg']
@@ -258,12 +260,12 @@ def HDLAutoWire(vstruct):
 
 
 # get connect signal width from source file
-_regex_identifier = re.compile(r'[a-z_][a-z_0-9]*')
+_regex_identifier = re.compile(r'[A-Za-z_][A-Za-z_0-9]*')
 def _AutoWire_connect(inst):
     connect, length = {}, 1
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
-        return None
+        return None, None
     with open(inst_vfile, 'r') as fh:
         vcontent = ''.join(fh.readlines())
     inst_vstruct = _vstruct_analyze(vcontent)
@@ -315,13 +317,23 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
     try:
         expr = eval(expr)
         return str(expr) if expr != 0 else ''
-    except:
+    except (NameError, TypeError):
         return expr
 
 
 
 def HDLAutoReg(vstruct):
-    return vstruct
+    content = ['/*AUTOREG*/',
+               '// Automatically generate register for undeclared output']
+    length = vstruct['len']['output']
+    length = length['msb'] + length['lsb'] + 3
+    strFormat = 'reg  {:'+str(length)+'} {};'
+    for output in vstruct['output']:
+        if output in vstruct['eq'] and output not in vstruct['reg']:
+            width = _Gen_Width(vstruct['var'][output], style='index')
+            content += [strFormat.format(width, output)]
+    content += ['// End of automatics']
+    return content
 
 
 
@@ -332,7 +344,7 @@ def HDLAutoReg(vstruct):
 # Automatically generate undef file for define file
 def HDLUndef(vstruct):
     content = ['// ------------------------------------------------',
-               '// AutoGeneration verilog undef file by vgen.py',
+               '// Automatically generate verilog undef-file by vgen.py',
                '// ------------------------------------------------']
     content += ['']
     for define in vstruct['define']:
@@ -343,7 +355,7 @@ def HDLUndef(vstruct):
 # generate fake file for verilog file
 def HDLFake(vstruct):
     content = ['// ------------------------------------------------',
-               '// AutoGeneration verilog fake file by vgen.py',
+               '// Automatically generate verilog fake-file by vgen.py',
                '// ------------------------------------------------']
     content += [''] + HDLAutoArg(vstruct) + ['']
     # parameter
