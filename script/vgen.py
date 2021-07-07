@@ -33,8 +33,10 @@ def main():
         'vfile':      HDLVFile,
         'vfiles':     functools.partial(HDLVFile, searchAll=True),
         'flist':      HDLFlist,
-        'incdir':     HDLIncdir
-        } # VFILE
+        'incdir':     HDLIncdir,
+        'autofmt':    HDLAutoFmt,
+        'autofile':   HDLAutoFile
+        } # base on argument only
     cmdVStruct = {
         'autoarg':    HDLAutoArg,
         'autoinst':   functools.partial(HDLAutoInst, template=EXTRA[0]),
@@ -43,18 +45,18 @@ def main():
         'struct':     HDLVStruct,
         'undef':      HDLUndef,
         'fake':       HDLFake
-        } # vstruct
+        } # Need to search for verilog file, then parsed to vstruct
     _check_argument(list(cmdVFile) + list(cmdVStruct)) # all allowed sub-cmd
-    _initial_env() # initial INCDIR, FLIST and DEFINE
+    _initial_env() # initial INCDIR, FLIST and DEFINE for search verilog file
+    # execue specified function
     if CMD in cmdVFile:
         content = cmdVFile[CMD](VFILE)
     elif CMD in cmdVStruct:
         vfile = _search_vfile(VFILE)
         if not vfile:
             _err_handle('err_vfile')
-        with open(vfile, 'r') as fh:
-            vcontent = ''.join(fh.readlines())
-        content = cmdVStruct[CMD](_vstruct_analyze(vcontent))
+        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True))
+    # print result
     if isinstance(content, (list, set)):
         print('\n'.join(content))
     else:
@@ -62,7 +64,10 @@ def main():
 
 
 def HDLVFile(vfile, searchAll=False):
-    return _search_vfile(vfile, searchAll=searchAll)
+    vfile = _search_vfile(vfile, searchAll=searchAll)
+    if not vfile:
+        return ''
+    return vfile
 
 
 # ---------------------------------------------------------------
@@ -142,12 +147,7 @@ def HDLAutoInst(vstruct, template=None):
 def _AutoInst_template(module, template):
     if not template:
         return 'u_'+module, None
-    if os.path.isfile(template):
-        with open(template, 'r') as fh:
-            vcontent = ''.join(fh.readlines())
-    else:
-        vcontent = template
-    vstruct = _vstruct_analyze(vcontent)
+    vstruct = _vstruct_analyze(template, isfile=os.path.isfile(template))
     for inst in vstruct['inst']:
         if vstruct['var'][inst]['module'] == module:
             return inst, vstruct['var'][inst]
@@ -266,9 +266,7 @@ def _AutoWire_connect(inst):
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
         return None, None
-    with open(inst_vfile, 'r') as fh:
-        vcontent = ''.join(fh.readlines())
-    inst_vstruct = _vstruct_analyze(vcontent)
+    inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True)
     for port, net in inst['port'].items():
         net = _regex_identifier.match(net)
         port = inst_vstruct['var'].get(port, {'kind': ''})
@@ -336,7 +334,139 @@ def HDLAutoReg(vstruct):
     return content
 
 
+# auto format&update code base on vcontent:
+# AUTOSTM, AUTOINST, AUTOTIE
+def HDLAutoFmt(vcontent, extra=EXTRA[0]):
+    if os.path.isfile(vcontent):
+        with open(vcontent, 'r') as fh:
+            vcontent = ''.join(fh.readlines())
+    content = _AutoFmt_stm(vcontent, extra) if r'/*AUTOSTM' in vcontent else \
+              _AutoFmt_inst(vcontent) if r'/*AUTOINST*/' in vcontent else \
+              _AutoFmt_tie(vcontent, extra) if r'/*AUTOTIE*/' in vcontent else ''
+    return content
 
+
+# auto format state-matchine
+def _AutoFmt_stm(vcontent, extra):
+    content = _AutoFmt_stm_param(vcontent) if 'localparam ' in vcontent else \
+              _AutoFmt_stm_wire(vcontent, extra) if 'wire ' in vcontent else \
+              _AutoFmt_stm_case(vcontent, extra)  if 'case(' in vcontent else ''
+    return content
+
+
+# auto-update localparam definition
+def _AutoFmt_stm_param(vcontent):
+    global MAXLEN
+    stm, arg = _AutoFmt_stm_get(vcontent)
+    if not stm:
+        return ''
+    words = _regex_word.findall(vcontent)
+    try:
+        start = words.index('localparam') + 1
+    except ValueError:
+        return ''
+    content = ['/*AUTOSTM:'+stm+(' '+arg if arg else '') + '*/']
+    words = [word for word in words[start:] 
+             if not word.endswith('_WIDTH') and  word != 'localparam']
+    if not words:
+        return ''
+    length = max([len(word) for word in words])
+    width = str(len(words) if arg else log2(len(words)))
+    content += ['localparam '+stm+'_WIDTH = '+width+';']
+    if arg:
+        strFormat = '{} {:'+str(length)+'} = '+width+'\'b{},'
+        for ind, word in enumerate(words):
+            text = '          ' if ind else 'localparam'
+            content += [strFormat.format(text, word.upper(), bin(1<<ind)[2:])]
+    else:
+        content += ['localparam ']
+        for ind, word in enumerate(words):
+            text = word.ljust(length, ' ')+' = '+width+'\'b'+bin(ind)[2:]+','
+            if len(content[-1]) + len(text) + 1 > MAXLEN:
+                content += ['           '+text]
+            else:
+                content[-1] += content[-1]+' '+text
+    content[-1] = content[-1][:-1] + ';'
+    return content
+
+
+# auto-gen wire st_... = ... ;
+def _AutoFmt_stm_wire(vcontent, extra):
+    if not extra:
+        return ''
+    stm, _ = _AutoFmt_stm_get(vcontent)
+    if not stm:
+        return ''
+    content = ['/*AUTOSTM:'+stm+'*/']
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
+    params = [param for param in vstruct['localparam'] if param.startswith(stm+'_')]
+    if not params:
+        return ''
+    length = max([len(param) for param in params])
+    strFormat = 'wire st_{:'+str(length)+'} = state_'+stm.lower()+' == {};'
+    content += [strFormat.format(param.lower(), param) for param in params]
+    return content
+
+
+# auto-update case() ... endcase
+def _AutoFmt_stm_case(vcontent, extra):
+    if not extra:
+        return ''
+    stm, _ = _AutoFmt_stm_get(vcontent)
+    if not stm:
+        return ''
+    content = ['case(state_'+stm.lower()+') /*AUTOSTM:'+stm+'*/']
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
+    params = [param for param in vstruct['localparam'] if param.startswith(stm+'_')]
+    if not params:
+        return ''
+    start = vcontent.index('case(')
+    if 'endcase' in content:
+        end = vcontent.index('endcase')
+        vcontent = vcontent[start:end].split('\n')
+    else:
+        vcontent = vcontent[start:].split('\n')
+    try:
+        vcontent.pop()
+        vcontent.pop(0)
+    except IndexError:
+        return ''
+    params = [param+':' for param in params]
+    length = max([len(param) for param in params])
+    strFormat = '    {:'+str(length)+'} nxt_state_'+stm.lower()+' = ;'
+    regex_param_start = re.compile(r'\s*[A-Z_][A-Z_0-9]*:')
+    for param in params:
+        text = strFormat.format(param)
+        if vcontent and vcontent[0].strip().startswith(param):
+            content += [vcontent.pop(0)]
+            while vcontent and not regex_param_start.match(vcontent[0]):
+                content += [content.pop(0)]
+        else:
+            content += [text]
+    content += ['endcase']
+    return content
+
+
+# get stm type & arg
+def _AutoFmt_stm_get(vcontent):
+    stm = re.match(r'/\*AUTOSTM:?\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
+    if not stm:
+        return None, None
+    return stm.groups()
+
+
+
+def _AutoFmt_inst(vcontent):
+    return vcontent
+
+
+def _AutoFmt_tie(vcontent, extra):
+    return vcontent
+
+
+
+def HDLAutoFile(vfile):
+    return ''
 
 # ---------------------------------------------------------------
 # Miscellaneous function
@@ -553,11 +683,11 @@ def _search_path(vfile, matchDict, searchAll):
 def _search_judge(vfile, subfile, basename, matchDict, searchAll):
     if vfile in basename and subfile not in matchDict['all']:
         matchDict['all'].append(subfile)
+        if len(subfile.replace(vfile, '')) < len(matchDict['most'].replace(vfile, '')): # most match
+            matchDict['most'] = subfile
     if not searchAll and basename in (vfile, vfile + '.v', vfile + '.sv'): # full match
         matchDict['full'] = subfile
         return True
-    if len(subfile.replace(vfile, '')) < len(matchDict['most'].replace(vfile, '')): # most match
-        matchDict['most'] = subfile
     return False
 
 
@@ -585,9 +715,7 @@ def _flist2incdir(vfile):
 # Parsing module to filelist
 def _module2flist(vfile):
     content = [vfile]
-    with open(vfile, 'r') as fh:
-        vcontent = ''.join(fh.readlines())
-    vstruct = _vstruct_analyze(vcontent)
+    vstruct = _vstruct_analyze(vfile, isfile=True)
     module_exist = [vstruct['module']]
     module_search = [vstruct['var'][var]['module'] for var in vstruct['inst']]
     while module_search:
@@ -599,9 +727,7 @@ def _module2flist(vfile):
         if not vfile:
             continue
         content.append(vfile)
-        with open(vfile, 'r') as fh:
-            vcontent = ''.join(fh.readlines())
-        vstruct = _vstruct_analyze(vcontent)
+        vstruct = _vstruct_analyze(vfile, isfile=True)
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
     return content
 
@@ -714,9 +840,9 @@ _regex_connect = re.compile(r'\.(\w+)\((.*?)\)')
 
 
 # ----------------------------------------
-# parse verilog code to vstruct 
+# parse verilog file/content to vstruct 
 # ----------------------------------------
-def _vstruct_analyze(vcontent, dbg=False):
+def _vstruct_analyze(vcontent, isfile=False, dbg=False):
     vstruct = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
@@ -748,6 +874,9 @@ def _vstruct_analyze(vcontent, dbg=False):
         'inst':        _vparse_inst
         }
     define = []
+    if isfile:
+        with open(vcontent, 'r') as fh:
+            vcontent = ''.join(fh.readlines())
     for mo in _regex_token.finditer(vcontent):
         if dbg:
             print(mo.lastgroup, ':', mo.group())
@@ -867,6 +996,7 @@ def _vparse_inst(vstruct, kind, value):
         vstruct['var'][inst_name]['port'][net0] = net1.replace(' ', '').strip()
 
 
+# TODO
 def _Gen_Width(var, style='index'):
     msb, lsb = var['msb'], var['lsb']
     if style == 'index':
