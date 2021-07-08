@@ -812,11 +812,7 @@ _spec_token = {
         'keyword':           _keywords_ignore_str,                  # ignore unuseless keyword
         'module':            r'\bmodule\s+\w+',                     # module match start
         'define':            r'`define\s+.*?\n',
-        'dir_ifdef':         r'`ifdef\s+\w+',
-        'dir_ifndef':        r'`ifndef\s+\w+',
-        'dir_elsif':         r'`elsif\s+\w+',
-        'dir_else':          r'`else',
-        'dir_endif':         r'`endif',
+        'ifdef':             r'`(ifdef|ifndef|elsif|else|endif)\s+\w+',
         'parameter':         r'(?<=\bparameter\b)\s+.*?[;)]',
         'input':             r'(?<=\binput\b).*?\n',
         'output':            r'(?<=\boutput\b).*?\n',
@@ -842,13 +838,16 @@ _regex_connect = re.compile(r'\.(\w+)\((.*?)\)')
 # ----------------------------------------
 # parse verilog file/content to vstruct 
 # ----------------------------------------
+# record condition define for all parse-function: `ifdef, `elsif
+IFDEF_RECORD = {'insertion': 0, 'inside': True, 'ifdef': []} 
+
 def _vstruct_analyze(vcontent, isfile=False, dbg=False):
     vstruct = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
         'reg':    [], 'wire':      [], 'assign':     [],
         'define': [], 'eq':        [], 'var':        {},
-        'inst':   [],
+        'inst':   [], 'ifdef':     [], # insertion position
         'len':    { # record length for string format
             'parameter':  {'var': 0, 'val': 0},
             'localparam': {'var': 0, 'val': 0},
@@ -871,9 +870,9 @@ def _vstruct_analyze(vcontent, isfile=False, dbg=False):
         'wire':        _vparse_net,
         'assign':      _vparse_expression,
         'eq':          _vparse_expression,
+        'ifdef':       _vparse_directives,
         'inst':        _vparse_inst
         }
-    define = []
     if isfile:
         with open(vcontent, 'r') as fh:
             vcontent = ''.join(fh.readlines())
@@ -883,8 +882,6 @@ def _vstruct_analyze(vcontent, isfile=False, dbg=False):
         kind, value = mo.lastgroup, _regex_comment.sub('', mo.group()).strip()
         if kind in parse_func:
             parse_func[kind](vstruct, kind, value)
-        elif kind.startswith('dir_'):
-            _vparse_directives(define, kind, value)
         elif kind == 'keyword' and value == 'endmodule':
             break
     return vstruct
@@ -895,14 +892,36 @@ def _vparse_module(vstruct, kind, value):
     vstruct[kind] = value.split()[-1].strip()
 
 
-def _vparse_directives(define, kind, value):
-    value = value.strip()
-    if kind in ('dir_ifdef', 'dir_ifndef'):
-        define.append(value)
-    elif kind in ('dir_elsif', 'dir_else') and define:
-        define[-1] = value
-    elif kind == 'dir_endif':
-        define.pop()
+def _vparse_directives(vstruct, kind, value):
+    global IFDEF_RECORD
+    value = value.strip().split()
+    if len(value) != 2:
+        return
+    if value[0] in ('`ifdef', '`ifndef', '`elsif'):
+        if value[0] == '`elsif' and IFDEF_RECORD['ifdef']:
+            IFDEF_RECORD['ifdef'][-1] += '`ifdef '+value[1]
+        else:
+            IFDEF_RECORD['ifdef'] += ['`ifdef '+value[1]]
+        IFDEF_RECORD['inside'] = value[0] != '`ifndef'
+    elif value[0] == '`else':
+        IFDEF_RECORD['inside'] = not IFDEF_RECORD['inside']
+    elif IFDEF_RECORD['ifdef'] and value[0] == '`endif':
+        IFDEF_RECORD.pop()
+    if IFDEF_RECORD:
+        _ifdef_update(vstruct)
+
+
+def _ifdef_update(vstruct):
+    global IFDEF_RECORD
+    IFDEF_RECORD['insertion'] = len(vstruct['ifdef'])
+    for ifdef in IFDEF_RECORD['ifdef']:
+        if ifdef not in vstruct['ifdef']:
+            vstruct['ifdef'] = vstruct['ifdef'][:IFDEF_RECORD['insertion']] + \
+                               [ifdef, '`else', '`endif'] + \
+                               vstruct['ifdef'][IFDEF_RECORD['insertion']:]
+            IFDEF_RECORD['insertion'] += 1 if IFDEF_RECORD['inside'] else 2
+            return
+
 
 
 # define parser: `define
