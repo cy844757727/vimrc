@@ -812,7 +812,7 @@ _spec_token = {
         'keyword':           _keywords_ignore_str,                  # ignore unuseless keyword
         'module':            r'\bmodule\s+\w+',                     # module match start
         'define':            r'`define\s+.*?\n',
-        'ifdef':             r'`(ifdef|ifndef|elsif|else|endif)\s+\w+',
+        'ifdef':             r'`(ifdef|ifndef|elsif)\s+\w+|`(else|endif)',
         'parameter':         r'(?<=\bparameter\b)\s+.*?[;)]',
         'input':             r'(?<=\binput\b).*?\n',
         'output':            r'(?<=\boutput\b).*?\n',
@@ -839,7 +839,7 @@ _regex_connect = re.compile(r'\.(\w+)\((.*?)\)')
 # parse verilog file/content to vstruct 
 # ----------------------------------------
 # record condition define for all parse-function: `ifdef, `elsif
-IFDEF_RECORD = {'insertion': 0, 'inside': True, 'ifdef': []} 
+IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []} 
 
 def _vstruct_analyze(vcontent, isfile=False, dbg=False):
     vstruct = {
@@ -895,33 +895,62 @@ def _vparse_module(vstruct, kind, value):
 def _vparse_directives(vstruct, kind, value):
     global IFDEF_RECORD
     value = value.strip().split()
-    if len(value) != 2:
-        return
     if value[0] in ('`ifdef', '`ifndef', '`elsif'):
-        if value[0] == '`elsif' and IFDEF_RECORD['ifdef']:
-            IFDEF_RECORD['ifdef'][-1] += '`ifdef '+value[1]
+        if value[0] == '`elsif' and IFDEF_RECORD[kind]:
+            IFDEF_RECORD[kind][-1] = '`ifdef '+value[1]
+            IFDEF_RECORD['inside'][-1] = True
         else:
-            IFDEF_RECORD['ifdef'] += ['`ifdef '+value[1]]
-        IFDEF_RECORD['inside'] = value[0] != '`ifndef'
-    elif value[0] == '`else':
-        IFDEF_RECORD['inside'] = not IFDEF_RECORD['inside']
-    elif IFDEF_RECORD['ifdef'] and value[0] == '`endif':
-        IFDEF_RECORD.pop()
-    if IFDEF_RECORD:
+            IFDEF_RECORD[kind] += ['`ifdef '+value[1]]
+        IFDEF_RECORD['inside'] += [value[0] != '`ifndef']
+    elif value[0] == '`else' and IFDEF_RECORD[kind]:
+        IFDEF_RECORD['inside'][-1] = not IFDEF_RECORD['inside'][-1]
+    elif value[0] == '`endif' and IFDEF_RECORD[kind]:
+        IFDEF_RECORD['ifdef'].pop()
+        IFDEF_RECORD['inside'].pop()
+    if IFDEF_RECORD[kind]:
         _ifdef_update(vstruct)
 
 
 def _ifdef_update(vstruct):
     global IFDEF_RECORD
-    IFDEF_RECORD['insertion'] = len(vstruct['ifdef'])
-    for ifdef in IFDEF_RECORD['ifdef']:
+    if not vstruct['ifdef']:
+        vstruct['ifdef'] = [IFDEF_RECORD['ifdef'][0], '`else', '`endif']
+        IFDEF_RECORD['insertion'] = 1 if IFDEF_RECORD['inside'][0] else 2
+        return
+    IFDEF_RECORD['insertion'] = 0
+    for inside, ifdef in zip(IFDEF_RECORD['inside'], IFDEF_RECORD['ifdef']):
         if ifdef not in vstruct['ifdef']:
             vstruct['ifdef'] = vstruct['ifdef'][:IFDEF_RECORD['insertion']] + \
                                [ifdef, '`else', '`endif'] + \
                                vstruct['ifdef'][IFDEF_RECORD['insertion']:]
-            IFDEF_RECORD['insertion'] += 1 if IFDEF_RECORD['inside'] else 2
+            IFDEF_RECORD['insertion'] += 1 if inside else 2
             return
+        # find `ifdef
+        match = [True]
+        while ifdef != vstruct['ifdef'][IFDEF_RECORD['insertion']] and match[-1]:
+            if vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`ifdef'):
+                match += [False]
+            elif vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`endif') and match:
+                match.pop()
+            IFDEF_RECORD['insertion'] += 1
+        IFDEF_RECORD['insertion'] += 1
+        # find `else or `endif
+        match = [False]
+        match_str = '`else' if inside else '`endif'
+        while not vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith(match_str) or match[-1]:
+            if vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`ifdef'):
+                match += [True]
+            elif vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`endif') and match:
+                match.pop()
+            IFDEF_RECORD['insertion'] += 1
 
+
+def _ifdef_insertion(vstruct, var):
+    global IFDEF_RECORD
+    if IFDEF_RECORD['ifdef']:
+        vstruct['var'][var]['ifdef'] = True
+        vstruct['ifdef'].insert(IFDEF_RECORD['insertion'], var)
+        IFDEF_RECORD['insertion'] += 1
 
 
 # define parser: `define
@@ -931,8 +960,9 @@ def _vparse_define(vstruct, kind, value):
         return
     vstruct[kind].append(define[1])
     val = ''.join(define[2:]) if len(define) >= 3 else ''
-    vstruct['var']['`'+define[1]] = {'kind': kind, 'val': val}
-
+    define[1] = '`'+define[1]
+    vstruct['var'][define[1]] = {'kind': kind, 'val': val}
+    _ifdef_insertion(vstruct, define[1])
 
 
 # param parser: parameter and localparam
@@ -946,6 +976,7 @@ def _vparse_parameter(vstruct, kind, value):
         vstruct['var'][var] = {'kind': kind, 'val': val}
         vstruct['len'][kind] = {'var': max(len(var), vstruct['len'][kind]['var']),
                                 'val': max(len(val), vstruct['len'][kind]['val'])}
+        _ifdef_insertion(vstruct, var)
 
 
 # net parser: input ouput inout reg wire
@@ -978,11 +1009,13 @@ def _vparse_net(vstruct, kind, value):
                                     'lsb': max(len(lsb), vstruct['len'][kind]['lsb'])}
             if regtype:
                 vstruct['reg'].append(var)
+        _ifdef_insertion(vstruct, var)
 
 
 # expression parser: assign statement or =,<= in always block
 _regex_delay = re.compile(r'#\S+')
 def _vparse_expression(vstruct, kind, value):
+    global IFDEF_RECORD
     value = value.split('=', 1)[0].strip()
     value = _regex_delay.sub('', value)      # remove delay
     value = _regex_width.sub('', value)      # remove width [...]
@@ -994,6 +1027,7 @@ def _vparse_expression(vstruct, kind, value):
 # instant parser
 _regex_inst_name = re.compile(r'(?<=\))\s*\w+\s*(?=\()')
 def _vparse_inst(vstruct, kind, value):
+    global IFDEF_RECORD
     value = value.strip()
     module = _regex_word.match(value)
     if not module:
@@ -1009,6 +1043,7 @@ def _vparse_inst(vstruct, kind, value):
     vstruct[kind].append(inst_name)
     vstruct['var'][inst_name] = {'kind': kind, 'module': module.group(),
                                  'parameter': {}, 'port': {}}
+    _ifdef_insertion(vstruct, inst_name)
     for net0, net1 in _regex_connect.findall(value[:inst.end()]):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
     for net0, net1 in _regex_connect.findall(value[inst.end():]):
