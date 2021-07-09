@@ -99,13 +99,17 @@ def _err_handle(err):
 # auto generate arg
 def HDLAutoArg(vstruct):
     global MAXLEN, STYLE
-    last_index = 0
-    content = ['module '+vstruct['module']+' ( /*AUTOARG*/'] if STYLE['arg'] else []
+    content, last_index = _AutoArg_ifdef(vstruct)
+    if content:
+        content = (['module '+vstruct['module']+' ('] if STYLE['arg'] else []) \
+                   + content + ['    /*AUTOARG*/']
+    else:
+        content = ['module '+vstruct['module']+' ( /*AUTOARG*/'] if STYLE['arg'] else []
     for port in ('output', 'input', 'inout'):
         if vstruct[port]:
             content += ['    // '+port, '    ']
         for var in vstruct[port]:
-            if var not in vstruct['var']:
+            if vstruct['var'].get(var, {'ifdef': True}).get('ifdef', False):
                 continue
             if len(content[-1]) < MAXLEN:
                 content[-1] += var + ', '
@@ -123,11 +127,29 @@ def HDLAutoArg(vstruct):
     return content
 
 
+def _AutoArg_ifdef(vstruct):
+    global MAXLEN
+    content, lastindex = [], 0
+    for ifdef in vstruct['ifdef']:
+        if ifdef.startswith('`'):
+            content += [ifdef]
+        elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
+            if content[-1].startswith('`'):
+                content += ['    ']
+            if len(content[-1]) < MAXLEN:
+                content[-1] += ifdef+', '
+            else:
+                content += ['    '+ifdef+', ']
+            lastindex = len(content) - 1
+    return content, lastindex
+
+
 # generate auto instant
 def HDLAutoInst(vstruct, template=None):
     inst_name, inst_struct = _AutoInst_template(vstruct['module'], template)
     comment = _AutoInst_comment(vstruct, inst_struct)
     parameter = _AutoInst_parameter(vstruct, inst_struct)
+    ifdef = _AutoInst_ifdef(vstruct, inst_struct)
     port = _AutoInst_connect(vstruct, inst_struct)
     # content merge
     content = comment + ['', vstruct['module']]
@@ -135,10 +157,17 @@ def HDLAutoInst(vstruct, template=None):
         content[-1] += ' #( // parameter'
         content += parameter + [')']
     # append inst name
-    if len(content[-1] + inst_name) < 30:
-        content[-1] += ' ' + inst_name + ' ( /*AUTOINST*/'
+    if ifdef:
+        if len(content[-1] + inst_name) < 30:
+            content[-1] += ' ' + inst_name + ' ('
+        else:
+            content += [inst_name + ' ( ']
+        content += ifdef + ['    /*AUTOINST*/']
     else:
-        content += [inst_name + ' ( /*AUTOINST*/']
+        if len(content[-1] + inst_name) < 30:
+            content[-1] += ' ' + inst_name + ' ( /*AUTOINST*/'
+        else:
+            content += [inst_name + ' ( /*AUTOINST*/']
     content += port + [');']
     return content
 
@@ -204,6 +233,24 @@ def _AutoInst_parameter(vstruct, inst_struct):
     return content
 
 
+# ifdef port connect
+def _AutoInst_ifdef(vstruct, inst_struct):
+    content = []
+    inst_port = inst_struct['port'] if inst_struct else {}
+    # construct format string
+    length0 = vstruct['len']
+    length0 = max(length0['input']['var'], length0['output']['var'], length0['inout']['var']) + 1
+    length1 = max(length0, max([len(val) for val in inst_port.values()] + [1]))
+    strFormat = '    .{:'+str(length0)+'} ( {:'+str(length1)+'} ),'
+    for ifdef in vstruct['ifdef']:
+        if ifdef.startswith('`'):
+            content += [ifdef]
+        elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
+            val = inst_port.get(ifdef, ifdef)
+            content += [strFormat.format(ifdef, val)]
+    return content
+
+
 # format autoinst port connection
 def _AutoInst_connect(vstruct, inst_struct):
     content = []
@@ -218,8 +265,9 @@ def _AutoInst_connect(vstruct, inst_struct):
         if vstruct[port]:
             content += ['    // '+port]
         for var in vstruct[port]:
-            val = inst_port.get(var, var)
-            content += [strFormat.format(var, val)]
+            if not vstruct['var'][var].get('ifdef', False):
+                val = inst_port.get(var, var)
+                content += [strFormat.format(var, val)]
     content[-1] = content[-1][:-1]
     return content
 
@@ -317,7 +365,6 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
         return str(expr) if expr != 0 else ''
     except (NameError, TypeError):
         return expr
-
 
 
 def HDLAutoReg(vstruct):
@@ -455,14 +502,12 @@ def _AutoFmt_stm_get(vcontent):
     return stm.groups()
 
 
-
 def _AutoFmt_inst(vcontent):
     return vcontent
 
 
 def _AutoFmt_tie(vcontent, extra):
     return vcontent
-
 
 
 def HDLAutoFile(vfile):
@@ -543,7 +588,6 @@ def HDLVStruct(vstruct):
 #    print(json.dumps(vstruct, indent=4))
 
 
-
 # ---------------------------------------------------------------
 #    verilog file search .v .sv, search order: flist, incdir, path
 # ---------------------------------------------------------------
@@ -600,7 +644,6 @@ def _initial_define(defines):
                     DEFINE[line[1]] = val
                 elif line[0] == '`undef' and line[1] in DEFINE:
                     del DEFINE[line[1]]
-
 
 
 # search verilog file (.v, .sv) base on flist, incdir, path
@@ -870,7 +913,7 @@ def _vstruct_analyze(vcontent, isfile=False, dbg=False):
         'wire':        _vparse_net,
         'assign':      _vparse_expression,
         'eq':          _vparse_expression,
-        'ifdef':       _vparse_directives,
+        'ifdef':       _vparse_directive,
         'inst':        _vparse_inst
         }
     if isfile:
@@ -892,7 +935,7 @@ def _vparse_module(vstruct, kind, value):
     vstruct[kind] = value.split()[-1].strip()
 
 
-def _vparse_directives(vstruct, kind, value):
+def _vparse_directive(vstruct, kind, value):
     global IFDEF_RECORD
     value = value.strip().split()
     if value[0] in ('`ifdef', '`ifndef', '`elsif'):
