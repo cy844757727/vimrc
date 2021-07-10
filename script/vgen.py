@@ -1,4 +1,18 @@
 #!/bin/env python3
+# =========================================================
+# Author: YanCai <844757727@qq.com>
+# Description: verilog parser & auto-generation ...
+# --- Supported environment variables ---------------------
+# VGEN_FLIST:  Specify list-file, that contains the required verilog-file
+# VGEN_INCDIR: Specify path-file, including the path of verilog-file
+# VGEN_DEFINE: Specify macro-file that contains the macro definition
+# --- Note ------------------------------------------------
+# The tool first searches the file from the filelist,
+# and then searches the file in the path specified by include if it is not found,
+# and finally searches the file in the local path
+# --- Usage -----------------------------------------------
+# vgen.py <subcmd> <file-target> [extra ...]
+# =========================================================
 
 import os
 import sys
