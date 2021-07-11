@@ -25,11 +25,11 @@ import functools
 # ---------------------------------------------------
 # global varialbes
 # ---------------------------------------------------
-PATH = os.getcwd()
-MAXLEN = 79
 FLIST = []
 INCDIR = []
 DEFINE = {}
+MAXLEN = 79
+PATH = os.getcwd()
 STYLE = {'arg': 1, 'inst': 1}
 # argv expand
 CMD = sys.argv[1] if len(sys.argv) > 1 else None
@@ -113,32 +113,33 @@ def _err_handle(err):
 # auto generate arg
 def HDLAutoArg(vstruct):
     global MAXLEN, STYLE
-    content, last_index = _AutoArg_ifdef(vstruct)
-    if content:
+    if not vstruct['module']:
+        return ''
+    ifdef, last_index = _AutoArg_ifdef(vstruct)
+    if ifdef:
+        last_index += 1 if STYLE['arg'] else 0
         content = (['module '+vstruct['module']+' ('] if STYLE['arg'] else []) \
-                   + content + ['    /*AUTOARG*/']
+                   + ifdef + ['    /*AUTOARG*/']
     else:
         content = ['module '+vstruct['module']+' ( /*AUTOARG*/'] if STYLE['arg'] else []
     for port in ('output', 'input', 'inout'):
         if vstruct[port]:
             content += ['    // '+port, '    ']
         for var in vstruct[port]:
-            if vstruct['var'].get(var, {'ifdef': True}).get('ifdef', False):
+            if 'ifdef' in vstruct['var'][var].get('attr', set()):
                 continue
             if len(content[-1]) < MAXLEN:
                 content[-1] += var + ', '
             else:
                 if content[-1].endswith(', '):
-                    content[-1] = content[-1][:-1]
+                    content[-1] = content[-1][:-1] # remove space
                 content += ['    '+var+', ']
-        if content[-1].endswith(', '):
-            content[-1] = content[-1][:-1]
-        last_index = len(content) - 1
+            last_index = len(content) - 1
+        if len(content) > 1 and content[-1] == '    ' and content[-2] == '    // '+port:
+            del content[-2:]
     if last_index > 0:
-        content[last_index] = content[last_index][:-1]
-    if STYLE['arg']:
-        content += [');']
-    return content
+        content[last_index] = content[last_index][:-2] # remove , and space
+    return content + ([');'] if STYLE['arg'] else [])
 
 
 def _AutoArg_ifdef(vstruct):
@@ -155,21 +156,28 @@ def _AutoArg_ifdef(vstruct):
             else:
                 content += ['    '+ifdef+', ']
             lastindex = len(content) - 1
+    if lastindex == 0:
+        return None, 0
     return content, lastindex
 
 
 # generate auto instant
 def HDLAutoInst(vstruct, template=None):
+    if not vstruct['module']:
+        return ''
     inst_name, inst_struct = _AutoInst_template(vstruct['module'], template)
     comment = _AutoInst_comment(vstruct, inst_struct)
     parameter = _AutoInst_parameter(vstruct, inst_struct)
-    ifdef = _AutoInst_ifdef(vstruct, inst_struct)
+    ifdef, lastindex0 = _AutoInst_ifdef(vstruct, inst_struct)
     port = _AutoInst_connect(vstruct, inst_struct)
+    if not ifdef and not port:
+        return ''
     # content merge
     content = comment + ['', vstruct['module']]
     if parameter:
         content[-1] += ' #( // parameter'
         content += parameter + [')']
+    preindex = len(content)
     # append inst name
     if ifdef:
         if len(content[-1] + inst_name) < 30:
@@ -177,20 +185,28 @@ def HDLAutoInst(vstruct, template=None):
         else:
             content += [inst_name + ' ( ']
         content += ifdef + ['    /*AUTOINST*/']
+        lastindex0 += preindex
     else:
         if len(content[-1] + inst_name) < 30:
             content[-1] += ' ' + inst_name + ' ( /*AUTOINST*/'
         else:
             content += [inst_name + ' ( /*AUTOINST*/']
-    content += port + [');']
-    return content
+    if port:
+        port[-1] = port[-1][:-1]
+        content += port
+    elif lastindex0 > 0:
+        content[lastindex0] = content[lastindex0][:-1]
+    return content + [');']
 
 
 # get instant template
 def _AutoInst_template(module, template):
     if not template:
         return 'u_'+module, None
-    vstruct = _vstruct_analyze(template, isfile=os.path.isfile(template))
+    if isinstance(template, dict):
+        vstruct = template
+    else:
+        vstruct = _vstruct_analyze(template, isfile=os.path.isfile(template))
     for inst in vstruct['inst']:
         if vstruct['var'][inst]['module'] == module:
             return inst, vstruct['var'][inst]
@@ -249,7 +265,7 @@ def _AutoInst_parameter(vstruct, inst_struct):
 
 # ifdef port connect
 def _AutoInst_ifdef(vstruct, inst_struct):
-    content = []
+    content, lastindex = [], 0
     inst_port = inst_struct['port'] if inst_struct else {}
     # construct format string
     length0 = vstruct['len']
@@ -262,7 +278,10 @@ def _AutoInst_ifdef(vstruct, inst_struct):
         elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
             val = inst_port.get(ifdef, ifdef)
             content += [strFormat.format(ifdef, val)]
-    return content
+            lastindex = len(content) - 1
+    if lastindex == 0:
+        return None, 0
+    return content, lastindex
 
 
 # format autoinst port connection
@@ -279,10 +298,11 @@ def _AutoInst_connect(vstruct, inst_struct):
         if vstruct[port]:
             content += ['    // '+port]
         for var in vstruct[port]:
-            if not vstruct['var'][var].get('ifdef', False):
+            if 'ifdef' not in vstruct['var'][var].get('attr', set()):
                 val = inst_port.get(var, var)
                 content += [strFormat.format(var, val)]
-    content[-1] = content[-1][:-1]
+        if content and content[-1] == '    // '+port:
+            content.pop()
     return content
 
 
@@ -292,10 +312,11 @@ def HDLAutoWire(vstruct):
     content = ['/*AUTOWIRE*/', '// Automatically generate undefined instances output/inout port']
     wire_exists = vstruct['output'] + vstruct['inout'] + vstruct['wire']
     input_net = []
+    repeated_port = []
     # format wire declaration of instants output,inout port
     for inst in vstruct['inst']:
         subcontent = []
-        length, nets = _AutoWire_connect(vstruct['var'][inst])
+        repeated, length, nets = _AutoWire_connect(vstruct['var'][inst])
         if not nets:
             continue
         strFormat = 'wire {:'+str(length)+'} {};'
@@ -309,6 +330,9 @@ def HDLAutoWire(vstruct):
             subcontent.append(strFormat.format(val['width'], net))
         if subcontent:
             content += ['// form instant of '+inst] + subcontent
+        if repeated:
+            repeated_port += ['// repeated port in ifdef from instant of '+inst] + \
+                             ['//  '+str(item) for item in repeated]
     content += ['// End of automatics']
     # undefined net of instants input port
     input_content = []
@@ -317,24 +341,28 @@ def HDLAutoWire(vstruct):
         if net in wire_exists:
             continue
         input_content.append('reg '+width+' '+net+';')
-    input_comment = ['// undefined net for instants input port'] if input_content else []
-    return input_comment + input_content + content
+    input_content = ['// undefined net for instants input port'] + input_content \
+                    if input_content else []
+    return repeated_port + input_content + content
 
 
 # get connect signal width from source file
 _regex_identifier = re.compile(r'[A-Za-z_][A-Za-z_0-9]*')
 def _AutoWire_connect(inst):
-    connect, length = {}, 1
+    repeated, connect, length = [], {}, 1
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
-        return None, None
+        return None, None, None
     inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True)
-    for port, net in inst['port'].items():
+    for var, net in inst['port'].items():
         net = _regex_identifier.match(net)
-        port = inst_vstruct['var'].get(port, {'kind': ''})
+        port = inst_vstruct['var'].get(var, {'kind': 'None'})
         if not net or port['kind'] not in ('input', 'output', 'inout'):
             continue
         net = net.group()
+        if {'repeated', 'ifdef'} <= port.get('attr', set()):
+            repeated += [(var, net)]
+            continue
         port['msb'] = _AutoWire_paramexpr(port['msb'], inst, inst_vstruct)
         port['lsb'] = _AutoWire_paramexpr(port['lsb'], inst, inst_vstruct)
         if port['msb'] and port['lsb']:
@@ -343,7 +371,7 @@ def _AutoWire_connect(inst):
             width = ''
         connect[net] = {'kind': port['kind'], 'width': width}
         length = max(length, len(width))
-    return length, connect
+    return repeated, length, connect
 
 
 # define function used in verilog
@@ -382,17 +410,23 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
 
 
 def HDLAutoReg(vstruct):
+    repeated = set()
     content = ['/*AUTOREG*/',
                '// Automatically generate register for undeclared output']
     length = vstruct['len']['output']
     length = length['msb'] + length['lsb'] + 3
     strFormat = 'reg  {:'+str(length)+'} {};'
     for output in vstruct['output']:
-        if output in vstruct['eq'] and output not in vstruct['reg']:
-            width = _Gen_Width(vstruct['var'][output], style='index')
-            content += [strFormat.format(width, output)]
+        if output in vstruct['eq'] and 'regtype' not in vstruct['var'][output].get('attr', set()):
+            if {'ifdef', 'repeated'} <= vstruct['var'][output].get('attr', set()):
+                repeated |= {'//  '+output}
+            else:
+                width = _Gen_Width(vstruct['var'][output], style='index')
+                content += [strFormat.format(width, output)]
+    if repeated:
+        repeated = ['// repeated output (regtye) in ifdef'] + list(repeated)
     content += ['// End of automatics']
-    return content
+    return repeated + content
 
 
 # auto format&update code base on vcontent:
@@ -409,28 +443,29 @@ def HDLAutoFmt(vcontent, extra=EXTRA[0]):
 
 # auto format state-matchine
 def _AutoFmt_stm(vcontent, extra):
+    vcontent += ' ' # Make sure there is at least one space
     content = _AutoFmt_stm_param(vcontent) if 'localparam ' in vcontent else \
-              _AutoFmt_stm_wire(vcontent, extra) if 'wire ' in vcontent else \
-              _AutoFmt_stm_case(vcontent, extra)  if 'case(' in vcontent else ''
+              _AutoFmt_stm_case(vcontent, extra) if 'case(' in vcontent else \
+              _AutoFmt_stm_wire(vcontent, extra) # if 'wire ' in vcontent else \
     return content
 
 
 # auto-update localparam definition
 def _AutoFmt_stm_param(vcontent):
     global MAXLEN
+    maxlen = max(MAXLEN, 90)
     stm, arg = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
+    # remove line-comment, block-comment, 'localparam'
+    vcontent = re.sub(r'=[^,;]*[,;]|localparam|/\*.*?\*/|//.*?\n', '', vcontent)
+    # find all param
     words = _regex_word.findall(vcontent)
-    try:
-        start = words.index('localparam') + 1
-    except ValueError:
-        return ''
-    content = ['/*AUTOSTM:'+stm+(' '+arg if arg else '') + '*/']
-    words = [word for word in words[start:] 
-             if not word.endswith('_WIDTH') and  word != 'localparam']
+    # remove special param, endswith _WIDTH
+    words = [word for word in words if not word.endswith('_WIDTH')]
     if not words:
         return ''
+    content = ['/*AUTOSTM:'+stm+(' '+arg if arg else '') + '*/']
     length = max([len(word) for word in words])
     width = str(len(words) if arg else log2(len(words)))
     content += ['localparam '+stm+'_WIDTH = '+width+';']
@@ -438,15 +473,17 @@ def _AutoFmt_stm_param(vcontent):
         strFormat = '{} {:'+str(length)+'} = '+width+'\'b{},'
         for ind, word in enumerate(words):
             text = '          ' if ind else 'localparam'
-            content += [strFormat.format(text, word.upper(), bin(1<<ind)[2:])]
+            content += [strFormat.format(text, word.upper(),
+                                         bin(1<<ind)[2:].rjust(int(width), '0'))]
     else:
-        content += ['localparam ']
+        content += ['localparam']
         for ind, word in enumerate(words):
-            text = word.ljust(length, ' ')+' = '+width+'\'b'+bin(ind)[2:]+','
-            if len(content[-1]) + len(text) + 1 > MAXLEN:
+            ind = bin(ind)[2:]
+            text = word.ljust(length, ' ')+' = '+width+'\'b'+ind.rjust(int(width), '0')+','
+            if len(content[-1]) + len(text) + 1 > maxlen:
                 content += ['           '+text]
             else:
-                content[-1] += content[-1]+' '+text
+                content[-1] = content[-1]+' '+text
     content[-1] = content[-1][:-1] + ';'
     return content
 
@@ -460,7 +497,8 @@ def _AutoFmt_stm_wire(vcontent, extra):
         return ''
     content = ['/*AUTOSTM:'+stm+'*/']
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
-    params = [param for param in vstruct['localparam'] if param.startswith(stm+'_')]
+    params = [param for param in vstruct['localparam']
+              if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
         return ''
     length = max([len(param) for param in params])
@@ -478,30 +516,31 @@ def _AutoFmt_stm_case(vcontent, extra):
         return ''
     content = ['case(state_'+stm.lower()+') /*AUTOSTM:'+stm+'*/']
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
-    params = [param for param in vstruct['localparam'] if param.startswith(stm+'_')]
+    params = [param for param in vstruct['localparam']
+              if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
         return ''
-    start = vcontent.index('case(')
-    if 'endcase' in content:
-        end = vcontent.index('endcase')
-        vcontent = vcontent[start:end].split('\n')
-    else:
-        vcontent = vcontent[start:].split('\n')
-    try:
-        vcontent.pop()
-        vcontent.pop(0)
-    except IndexError:
-        return ''
+    vcontent = vcontent.strip().split('\n')
     params = [param+':' for param in params]
     length = max([len(param) for param in params])
     strFormat = '    {:'+str(length)+'} nxt_state_'+stm.lower()+' = ;'
     regex_param_start = re.compile(r'\s*[A-Z_][A-Z_0-9]*:')
+    # find start: case() /*AUTOSTM*/
+    while vcontent and 'AUTOSTM' not in vcontent[0]:
+        vcontent.pop(0)
+    if vcontent:
+        vcontent.pop(0)
     for param in params:
         text = strFormat.format(param)
         if vcontent and vcontent[0].strip().startswith(param):
-            content += [vcontent.pop(0)]
+            text = vcontent.pop(0).strip().split(':', 1)
+            text[0] += ':'
+            content += ['    '+text[0].ljust(length, ' ')+text[1]]
             while vcontent and not regex_param_start.match(vcontent[0]):
-                content += [content.pop(0)]
+                if 'endcase' in vcontent[0]:
+                    vcontent = []
+                    break
+                content += [(' '*(18+length+len(stm)))+vcontent.pop(0).strip()]
         else:
             content += [text]
     content += ['endcase']
@@ -510,14 +549,24 @@ def _AutoFmt_stm_case(vcontent, extra):
 
 # get stm type & arg
 def _AutoFmt_stm_get(vcontent):
-    stm = re.match(r'/\*AUTOSTM:?\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
+    stm = re.search(r'/\*AUTOSTM:\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
     if not stm:
         return None, None
     return stm.groups()
 
 
 def _AutoFmt_inst(vcontent):
-    return vcontent
+    inst_vstruct = _vstruct_analyze(vcontent, isfile=False)
+    if not inst_vstruct['inst']:
+        return ''
+    module = inst_vstruct['var'][inst_vstruct['inst'][0]]['module']
+    vfile = _search_vfile(module, fullmatch=True)
+    if not vfile:
+        return ''
+    vstruct = _vstruct_analyze(vfile, isfile=True)
+    if vstruct['module'] != module:
+        return ''
+    return HDLAutoInst(vstruct, inst_vstruct)
 
 
 def _AutoFmt_tie(vcontent, extra):
@@ -1002,16 +1051,30 @@ def _ifdef_update(vstruct):
             IFDEF_RECORD['insertion'] += 1
 
 
-def _ifdef_insertion(vstruct, var):
+# update attr info, include ifdef, regtype, repeated
+def _attr_update(vstruct, var, attr):
     global IFDEF_RECORD
     if IFDEF_RECORD['ifdef']:
-        vstruct['var'][var]['ifdef'] = True
-        vstruct['ifdef'].insert(IFDEF_RECORD['insertion'], var)
-        IFDEF_RECORD['insertion'] += 1
+        attr |= {'ifdef'}
+        exists, ind = False, IFDEF_RECORD['insertion'] - 1
+        while ind >= 0 and not vstruct['ifdef'][ind].startswith('`'):
+            if vstruct['ifdef'][ind] == var:
+                exists = True
+                break
+            ind -= 1
+        if not exists:
+            vstruct['ifdef'].insert(IFDEF_RECORD['insertion'], var)
+            IFDEF_RECORD['insertion'] += 1
+    if attr:
+        if 'attr' in vstruct['var'][var]:
+            vstruct['var'][var]['attr'] |= attr
+        else:
+            vstruct['var'][var]['attr'] = attr
 
 
 # define parser: `define
 def _vparse_define(vstruct, kind, value):
+    attr = set()
     define = value.strip().split()
     if len(define) < 2:
         return
@@ -1019,11 +1082,12 @@ def _vparse_define(vstruct, kind, value):
     val = ''.join(define[2:]) if len(define) >= 3 else ''
     define[1] = '`'+define[1]
     vstruct['var'][define[1]] = {'kind': kind, 'val': val}
-    _ifdef_insertion(vstruct, define[1])
+    _attr_update(vstruct, define[1], attr)
 
 
 # param parser: parameter and localparam
 def _vparse_parameter(vstruct, kind, value):
+    attr = set()
     value = value.strip()
     if value.endswith(')'): # #(parameter ...) may endswith ')'
         value = value[:-1]
@@ -1033,7 +1097,7 @@ def _vparse_parameter(vstruct, kind, value):
         vstruct['var'][var] = {'kind': kind, 'val': val}
         vstruct['len'][kind] = {'var': max(len(var), vstruct['len'][kind]['var']),
                                 'val': max(len(val), vstruct['len'][kind]['val'])}
-        _ifdef_insertion(vstruct, var)
+        _attr_update(vstruct, var, attr)
 
 
 # net parser: input ouput inout reg wire
@@ -1041,7 +1105,7 @@ _net_word_ignore = ('signed', 'scalared', 'vectored', 'supply0', 'supply1',
                     'strong0', 'strong1', 'pull0', 'pull1', 'weak0', 'weak1', 'small',
                     'medium', 'large', 'input', 'output', 'inout', 'reg', 'wire')
 def _vparse_net(vstruct, kind, value):
-    regtype = False  # used for output scene
+    regtype, attr = False, set()
     value = value.split('=', 1)[0].strip()  # consider: wire var = ...
     width = _regex_width.search(value)
     start = width.end() if width else 0
@@ -1054,19 +1118,26 @@ def _vparse_net(vstruct, kind, value):
     if memWidth:
         value = value[:memWidth.start()]
     for var in _regex_word.findall(value):
-        if kind == 'output' and var == 'reg': # output reg
+        attr -= {'repeated'}
+        if not regtype:
+            attr -= {'regtype'}
+        if kind == 'output' and var == 'reg': # output reg for all var
             regtype = True
-        elif kind == 'reg' and var in vstruct['output']: # reg def for output
+            attr |= {'regtype'}
+        elif kind == 'reg' and var in vstruct['output']: # reg def for current var
             vstruct['reg'].append(var)
+            attr |= {'regtype'}
         elif var not in _net_word_ignore:
             vstruct[kind].append(var)
+            if var in vstruct['var']:
+                attr |= {'repeated'}
             vstruct['var'][var] = {'kind': kind, 'msb': msb, 'lsb': lsb}
             vstruct['len'][kind] = {'var': max(len(var), vstruct['len'][kind]['var']),
                                     'msb': max(len(msb), vstruct['len'][kind]['msb']),
                                     'lsb': max(len(lsb), vstruct['len'][kind]['lsb'])}
-            if regtype:
-                vstruct['reg'].append(var)
-        _ifdef_insertion(vstruct, var)
+        if regtype:
+            vstruct['reg'].append(var)
+        _attr_update(vstruct, var, attr)
 
 
 # expression parser: assign statement or =,<= in always block
@@ -1084,6 +1155,7 @@ def _vparse_expression(vstruct, kind, value):
 # instant parser
 _regex_inst_name = re.compile(r'(?<=\))\s*\w+\s*(?=\()')
 def _vparse_inst(vstruct, kind, value):
+    attr = set()
     global IFDEF_RECORD
     value = value.strip()
     module = _regex_word.match(value)
@@ -1100,7 +1172,7 @@ def _vparse_inst(vstruct, kind, value):
     vstruct[kind].append(inst_name)
     vstruct['var'][inst_name] = {'kind': kind, 'module': module.group(),
                                  'parameter': {}, 'port': {}}
-    _ifdef_insertion(vstruct, inst_name)
+    _attr_update(vstruct, inst_name, attr)
     for net0, net1 in _regex_connect.findall(value[:inst.end()]):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
     for net0, net1 in _regex_connect.findall(value[inst.end():]):
