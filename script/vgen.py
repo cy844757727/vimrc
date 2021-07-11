@@ -131,14 +131,14 @@ def HDLAutoArg(vstruct):
             if len(content[-1]) < MAXLEN:
                 content[-1] += var + ', '
             else:
-                if content[-1].endswith(', '):
-                    content[-1] = content[-1][:-1] # remove space
+                if content:
+                    content[-1] = content[-1].rstrip() # remove space
                 content += ['    '+var+', ']
             last_index = len(content) - 1
         if len(content) > 1 and content[-1] == '    ' and content[-2] == '    // '+port:
             del content[-2:]
     if last_index > 0:
-        content[last_index] = content[last_index][:-2] # remove , and space
+        content[last_index] = content[last_index].rstrip()[:-1] # remove ,
     return content + ([');'] if STYLE['arg'] else [])
 
 
@@ -147,6 +147,8 @@ def _AutoArg_ifdef(vstruct):
     content, lastindex = [], 0
     for ifdef in vstruct['ifdef']:
         if ifdef.startswith('`'):
+            if content:
+                content[-1] = content[-1].rstrip() # remove space
             content += [ifdef]
         elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
             if content[-1].startswith('`'):
@@ -154,6 +156,8 @@ def _AutoArg_ifdef(vstruct):
             if len(content[-1]) < MAXLEN:
                 content[-1] += ifdef+', '
             else:
+                if content:
+                    content[-1] = content[-1].rstrip() # remove space
                 content += ['    '+ifdef+', ']
             lastindex = len(content) - 1
     if lastindex == 0:
@@ -535,7 +539,7 @@ def _AutoFmt_stm_case(vcontent, extra):
         if vcontent and vcontent[0].strip().startswith(param):
             text = vcontent.pop(0).strip().split(':', 1)
             text[0] += ':'
-            content += ['    '+text[0].ljust(length, ' ')+text[1]]
+            content += ['    '+text[0].ljust(length, ' ')+text[1].strip()]
             while vcontent and not regex_param_start.match(vcontent[0]):
                 if 'endcase' in vcontent[0]:
                     vcontent = []
@@ -938,7 +942,7 @@ _regex_comment = re.compile(_spec_token['line_comment']+'|'+
 _regex_width = re.compile(r'\[(.*?)\]')
 _regex_word = re.compile(r'[a-zA-Z_]\w*')
 _regex_expression = re.compile(r'(\w+)\s*=\s*([^=,;][^,;]*)')
-_regex_connect = re.compile(r'\.(\w+)\((.*?)\)')
+_regex_connect = re.compile(r'\.(\w+)\s*\((.*?)\)')
 
 
 # ----------------------------------------
