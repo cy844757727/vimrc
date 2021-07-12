@@ -313,47 +313,50 @@ def _AutoInst_connect(vstruct, inst_struct):
 # Automatically generate undefined instance output/inout port
 def HDLAutoWire(vstruct):
     _initial_define(os.getenv('VGEN_DEFINE', ''))
-    content = ['/*AUTOWIRE*/', '// Automatically generate undefined instances output/inout port']
+    content, input_net = [], []
     wire_exists = vstruct['output'] + vstruct['inout'] + vstruct['wire']
-    input_net = []
-    repeated_port = []
-    # format wire declaration of instants output,inout port
+    # collect wire_net
+    wire_net, comment = [], []
     for inst in vstruct['inst']:
-        subcontent = []
-        repeated, length, nets = _AutoWire_connect(vstruct['var'][inst])
+        repeated, nets = _AutoWire_connect(vstruct['var'][inst])
+        comment += ['// from instant of '+inst]
         if not nets:
             continue
-        strFormat = 'wire {:'+str(length)+'} {};'
         for net, val in nets.items():
             if net in wire_exists:
                 continue
             elif val['kind'] == 'input':
-                input_net.append((net, val['width']))
+                input_net += [(net, val['width'])]
                 continue
-            wire_exists.append(net)
-            subcontent.append(strFormat.format(val['width'], net))
-        if subcontent:
-            content += ['// form instant of '+inst] + subcontent
+            wire_exists += [net]
+            wire_net += [(val['width'], net, len(comment)-1)]
         if repeated:
-            repeated_port += ['// repeated port in ifdef from instant of '+inst] + \
-                             ['//  '+str(item) for item in repeated]
-    content += ['// End of automatics']
-    # undefined net of instants input port
-    input_content = []
+            content += ['// repeated port in ifdef from instant of '+inst] + \
+                       ['//  '+str(item) for item in repeated]
+    # undefined input
     wire_exists += vstruct['input'] + vstruct['reg']
-    for net, width in input_net:
-        if net in wire_exists:
-            continue
-        input_content.append('reg '+width+' '+net+';')
-    input_content = ['// undefined net for instants input port'] + input_content \
-                    if input_content else []
-    return repeated_port + input_content + content
+    input_net = ['reg '+width+' '+net+';' for net, width in input_net if net not in wire_exists]
+    if input_net:
+        content += ['// undefined net for instants input port'] + input_net
+    # autowire
+    content += ['/*AUTOWIRE*/',
+                '// Automatically generate undefined instances output/inout port']
+    ind_comment = -1
+    length = max([len(item[0]) for item in wire_net] + [1])
+    strFormat = 'wire {:'+str(length)+'} {};'
+    for item in wire_net:
+        if ind_comment != item[2]:
+            ind_comment = item[2]
+            content += [comment[ind_comment]]
+        content += [strFormat.format(item[0], item[1])]
+    content += ['// End of automatics']
+    return content
 
 
 # get connect signal width from source file
 _regex_identifier = re.compile(r'[A-Za-z_][A-Za-z_0-9]*')
 def _AutoWire_connect(inst):
-    repeated, connect, length = [], {}, 1
+    repeated, connect = [], {}
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
         return None, None, None
@@ -374,8 +377,7 @@ def _AutoWire_connect(inst):
         else:
             width = ''
         connect[net] = {'kind': port['kind'], 'width': width}
-        length = max(length, len(width))
-    return repeated, length, connect
+    return repeated, connect
 
 
 # define function used in verilog
@@ -409,7 +411,8 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
     try:
         expr = eval(expr)
         return str(expr) if expr != 0 else ''
-    except (NameError, TypeError):
+    #except (NameError, TypeError):
+    except:
         return expr
 
 
@@ -681,7 +684,7 @@ def _initial_incdir(incdirs):
                 if line.startswith('+incdir+'):
                     line = line[8:]
                 if os.path.isdir(line):
-                    INCDIR.append(line)
+                    INCDIR += [line]
 
 
 def _initial_flist(flists):
@@ -693,7 +696,7 @@ def _initial_flist(flists):
             for line in fh:
                 line = line.strip()
                 if os.path.isfile(line) and (line.endswith('.v') or line.endswith('.sv')):
-                    FLIST.append(line)
+                    FLIST += [line]
 
 
 def _initial_define(defines):
@@ -742,7 +745,7 @@ def _search_flist(vfile, matchDict, searchAll):
         basename = os.path.basename(subfile)
         dirname = os.path.dirname(subfile)
         if dirname not in INCDIR: # update incdir
-            INCDIR.append(dirname)
+            INCDIR += [dirname]
         if _search_judge(vfile, subfile, basename, matchDict, searchAll):
             return True
     return False
@@ -757,7 +760,7 @@ def _search_incdir(vfile, matchDict, searchAll):
             if not subfile.endswith('.v') and not subfile.endswith('.sv'):
                 continue
             if subfile not in FLIST:
-                FLIST.append(subfile) # update filelist
+                FLIST += [subfile] # update filelist
             basename = os.path.basename(subfile)
             if _search_judge(vfile, subfile, basename, matchDict, searchAll):
                 return True
@@ -782,17 +785,17 @@ def _search_path(vfile, matchDict, searchAll):
                 continue
             subfile = os.path.join(root, basename)
             if subfile not in FLIST:
-                FLIST.append(subfile) # update filelist
+                FLIST += [subfile] # update filelist
             if _search_judge(vfile, subfile, basename, matchDict, searchAll):
                 return True
-        INCDIR.append(root)
+        INCDIR += [root]
     return False
 
 
 # Judge file match
 def _search_judge(vfile, subfile, basename, matchDict, searchAll):
     if vfile in basename and subfile not in matchDict['all']:
-        matchDict['all'].append(subfile)
+        matchDict['all'] += [subfile]
         if len(subfile.replace(vfile, '')) < len(matchDict['most'].replace(vfile, '')): # most match
             matchDict['most'] = subfile
     if not searchAll and basename in (vfile, vfile + '.v', vfile + '.sv'): # full match
@@ -813,12 +816,12 @@ def _flist2incdir(vfile):
             if (line.endswith('constant.v') or line.endswith('define.v') or \
                     line.startswith('`define') or line.startswith('+incdir+')) and \
                     line not in content:
-                content.append(line)
+                content += [line]
             elif line.endswith('.v') or line.endswith('.sv'):
                 root = os.path.dirname(line)
                 root = '+incdir+'+root
                 if os.path.isdir(root[8:]) and root not in content:
-                    content.append(root)
+                    content += [root]
     return content
 
 
@@ -832,11 +835,11 @@ def _module2flist(vfile):
         module = module_search.pop()
         if module in module_exist:
             continue
-        module_exist.append(module)
+        module_exist += [module]
         vfile = _search_vfile(module, fullmatch=True)
         if not vfile:
             continue
-        content.append(vfile)
+        content += [vfile]
         vstruct = _vstruct_analyze(vfile, isfile=True)
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
     return content
@@ -1082,7 +1085,7 @@ def _vparse_define(vstruct, kind, value):
     define = value.strip().split()
     if len(define) < 2:
         return
-    vstruct[kind].append(define[1])
+    vstruct[kind] += [define[1]]
     val = ''.join(define[2:]) if len(define) >= 3 else ''
     define[1] = '`'+define[1]
     vstruct['var'][define[1]] = {'kind': kind, 'val': val}
@@ -1097,7 +1100,7 @@ def _vparse_parameter(vstruct, kind, value):
         value = value[:-1]
     for var, val in _regex_expression.findall(value):
         val = val.replace(' ', '').strip()
-        vstruct[kind].append(var)
+        vstruct[kind] += [var]
         vstruct['var'][var] = {'kind': kind, 'val': val}
         vstruct['len'][kind] = {'var': max(len(var), vstruct['len'][kind]['var']),
                                 'val': max(len(val), vstruct['len'][kind]['val'])}
@@ -1109,7 +1112,6 @@ _net_word_ignore = ('signed', 'scalared', 'vectored', 'supply0', 'supply1',
                     'strong0', 'strong1', 'pull0', 'pull1', 'weak0', 'weak1', 'small',
                     'medium', 'large', 'input', 'output', 'inout', 'reg', 'wire')
 def _vparse_net(vstruct, kind, value):
-    regtype, attr = False, set()
     value = value.split('=', 1)[0].strip()  # consider: wire var = ...
     width = _regex_width.search(value)
     start = width.end() if width else 0
@@ -1118,30 +1120,29 @@ def _vparse_net(vstruct, kind, value):
         msb, lsb = width.group(1).split(':', 1)
     else:
         msb, lsb = '', ''
+    regtype = False
     memWidth = _regex_width.search(value) # consider memory type
     if memWidth:
         value = value[:memWidth.start()]
     for var in _regex_word.findall(value):
-        attr -= {'repeated'}
-        if not regtype:
-            attr -= {'regtype'}
-        if kind == 'output' and var == 'reg': # output reg for all var
+        attr = set()
+        if var == 'reg' and kind == 'output' and not regtype: # output reg for all var
             regtype = True
+            continue
+        if kind == 'reg' and var in vstruct['output']: # reg def for current var
             attr |= {'regtype'}
-        elif kind == 'reg' and var in vstruct['output']: # reg def for current var
-            vstruct['reg'].append(var)
-            attr |= {'regtype'}
-        elif var not in _net_word_ignore:
-            vstruct[kind].append(var)
+        elif not (kind == 'wire' and vstruct['var'].get(var, {'kind': 'None'}) in 
+                  ('input', 'output', 'inout')) and var not in _net_word_ignore:
+            vstruct[kind] += [var]
             if var in vstruct['var']:
                 attr |= {'repeated'}
             vstruct['var'][var] = {'kind': kind, 'msb': msb, 'lsb': lsb}
             vstruct['len'][kind] = {'var': max(len(var), vstruct['len'][kind]['var']),
                                     'msb': max(len(msb), vstruct['len'][kind]['msb']),
                                     'lsb': max(len(lsb), vstruct['len'][kind]['lsb'])}
-        if regtype:
-            vstruct['reg'].append(var)
-        _attr_update(vstruct, var, attr)
+        if regtype or 'regtype' in attr:
+            vstruct['reg'] += [var]
+        _attr_update(vstruct, var, attr | ({'regtype'} if regtype else set()))
 
 
 # expression parser: assign statement or =,<= in always block
@@ -1153,7 +1154,7 @@ def _vparse_expression(vstruct, kind, value):
     value = _regex_width.sub('', value)      # remove width [...]
     for word in _regex_word.findall(value):  # consider {a,b,..} = ...
         if word not in vstruct[kind]:
-            vstruct[kind].append(_regex_word.search(value.strip()).group())
+            vstruct[kind] += [_regex_word.search(value.strip()).group()]
 
 
 # instant parser
@@ -1173,7 +1174,7 @@ def _vparse_inst(vstruct, kind, value):
     if not inst:
         return
     inst_name = inst.group().strip()
-    vstruct[kind].append(inst_name)
+    vstruct[kind] += [inst_name]
     vstruct['var'][inst_name] = {'kind': kind, 'module': module.group(),
                                  'parameter': {}, 'port': {}}
     _attr_update(vstruct, inst_name, attr)

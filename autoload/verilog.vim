@@ -88,7 +88,6 @@ function s:autofmt_stm(content, start, end)
 endfunction
 
 
-let g:dbg=[]
 function s:autofmt_inst(content, start, end)
     let l:tmpfile = tempname()
     call writefile(a:content, l:tmpfile)
@@ -125,7 +124,8 @@ function s:autofmt_inst(content, start, end)
     else
         call append(l:start-1, l:content[3:])
     endif
-    call cursor(l:start, 0)
+    normal 0
+    call search('\v^[A-Za-z]', 'cW')
     silent! write
 endfunction
 
@@ -214,7 +214,23 @@ function verilog#autoarg()
 endfunction
 
 
+" alias for old
+function verilog#HDLAutoReg()
+    call verilog#autoreg()
+endfunction
 
-function verilog#waive(delete, wfile) range
-    " code
+function verilog#HDLAutoWire()
+    call verilog#autowire()
+endfunction
+
+function verilog#HDLAutoInst()
+    call verilog#autoinst()
+endfunction
+
+function verilog#HDLAutoArg()
+    call verilog#autoarg()
+endfunction
+
+function verilog#HDLFmt()
+    call verilog#autofmt()
 endfunction
