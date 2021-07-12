@@ -215,3 +215,6 @@ endfunction
 
 
 
+function verilog#waive(delete, wfile) range
+    " code
+endfunction

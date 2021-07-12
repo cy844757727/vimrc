@@ -949,7 +949,7 @@ _regex_connect = re.compile(r'\.(\w+)\s*\((.*?)\)')
 # parse verilog file/content to vstruct 
 # ----------------------------------------
 # record condition define for all parse-function: `ifdef, `elsif
-IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []} 
+IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
 
 def _vstruct_analyze(vcontent, isfile=False, dbg=False):
     vstruct = {
