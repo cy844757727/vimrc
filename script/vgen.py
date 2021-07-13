@@ -36,7 +36,6 @@ CMD = sys.argv[1] if len(sys.argv) > 1 else None
 VFILE = sys.argv[2] if len(sys.argv) > 2 else None
 EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 
-
 # ---------------------------------------------------
 # function define
 # ---------------------------------------------------
@@ -69,7 +68,8 @@ def main():
         vfile = _search_vfile(VFILE)
         if not vfile:
             _err_handle('err_vfile')
-        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True))
+        inc = _parser_kind_set(CMD)
+        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True, inc=inc))
     # print result
     if isinstance(content, (list, set)):
         print('\n'.join(content))
@@ -105,6 +105,22 @@ def _err_handle(err):
     if err_msg[1]:
         print(err_msg[0])
         sys.exit(err_msg[1])
+
+
+# ---------------------------------------------------------------
+# initial parser for include or mask some kind
+# ---------------------------------------------------------------
+def _parser_kind_set(cmd):
+    return {
+        'autoarg':  {'ifdef', 'module', 'input', 'output', 'inout'},
+        'autoinst': {'ifdef', 'module', 'input', 'output', 'inout', 'parameter'},
+        'autowire': {'input', 'output', 'inout', 'reg', 'wire', 'inst'},
+        'autoreg':  {'output', 'reg', 'eq'},
+        'struct':   {'ifdef', 'module', 'parameter', 'localparam', 'input',
+                     'output', 'inout', 'reg', 'wire', 'inst', 'define'},
+        'undef':    {'define'},
+        'fake':     {'ifdef', 'module', 'input', 'output', 'inout'}
+        }.get(cmd, set())
 
 
 # ---------------------------------------------------------------
@@ -325,7 +341,7 @@ def HDLAutoWire(vstruct):
         for net, val in nets.items():
             if net in wire_exists:
                 continue
-            elif val['kind'] == 'input':
+            if val['kind'] == 'input':
                 input_net += [(net, val['width'])]
                 continue
             wire_exists += [net]
@@ -360,7 +376,8 @@ def _AutoWire_connect(inst):
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
         return None, None, None
-    inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True)
+    inc = {'ifdef', 'module', 'input', 'output', 'inout', 'parameter', 'localparam'}
+    inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True, inc=inc)
     for var, net in inst['port'].items():
         net = _regex_identifier.match(net)
         port = inst_vstruct['var'].get(var, {'kind': 'None'})
@@ -432,6 +449,8 @@ def HDLAutoReg(vstruct):
                 content += [strFormat.format(width, output)]
     if repeated:
         repeated = ['// repeated output (regtye) in ifdef'] + list(repeated)
+    else:
+        repeated = []
     content += ['// End of automatics']
     return repeated + content
 
@@ -503,7 +522,8 @@ def _AutoFmt_stm_wire(vcontent, extra):
     if not stm:
         return ''
     content = ['/*AUTOSTM:'+stm+'*/']
-    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
+    inc = {'localparam'}
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), inc=inc)
     params = [param for param in vstruct['localparam']
               if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
@@ -522,7 +542,8 @@ def _AutoFmt_stm_case(vcontent, extra):
     if not stm:
         return ''
     content = ['case(state_'+stm.lower()+') /*AUTOSTM:'+stm+'*/']
-    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra))
+    inc = {'localparam'}
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), inc=inc)
     params = [param for param in vstruct['localparam']
               if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
@@ -563,14 +584,16 @@ def _AutoFmt_stm_get(vcontent):
 
 
 def _AutoFmt_inst(vcontent):
-    inst_vstruct = _vstruct_analyze(vcontent, isfile=False)
+    inc = {'inst'}
+    inst_vstruct = _vstruct_analyze(vcontent, isfile=False, inc=inc)
     if not inst_vstruct['inst']:
         return ''
     module = inst_vstruct['var'][inst_vstruct['inst'][0]]['module']
     vfile = _search_vfile(module, fullmatch=True)
     if not vfile:
         return ''
-    vstruct = _vstruct_analyze(vfile, isfile=True)
+    inc = {'ifdef', 'module', 'parameter', 'localparam', 'input', 'output', 'inout'}
+    vstruct = _vstruct_analyze(vfile, isfile=True, inc=inc)
     if vstruct['module'] != module:
         return ''
     return HDLAutoInst(vstruct, inst_vstruct)
@@ -828,7 +851,7 @@ def _flist2incdir(vfile):
 # Parsing module to filelist
 def _module2flist(vfile):
     content = [vfile]
-    vstruct = _vstruct_analyze(vfile, isfile=True)
+    vstruct = _vstruct_analyze(vfile, isfile=True, inc={'module', 'inst'})
     module_exist = [vstruct['module']]
     module_search = [vstruct['var'][var]['module'] for var in vstruct['inst']]
     while module_search:
@@ -840,14 +863,18 @@ def _module2flist(vfile):
         if not vfile:
             continue
         content += [vfile]
-        vstruct = _vstruct_analyze(vfile, isfile=True)
+        vstruct = _vstruct_analyze(vfile, isfile=True, inc={'module', 'inst'})
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
     return content
 
 
 # Parsing module to incdir
 def _module2incdir(vfile):
-    return ['+incdir+'+os.path.dirname(line) for line in _module2flist(vfile)]
+    content = []
+    for line in _module2flist(vfile):
+        if line not in content:
+            content += ['+incdir+'+os.path.dirname(line)]
+    return content
 
 
 def _flist2flist(vfile):
@@ -954,7 +981,8 @@ _regex_connect = re.compile(r'\.(\w+)\s*\((.*?)\)')
 # record condition define for all parse-function: `ifdef, `elsif
 IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
 
-def _vstruct_analyze(vcontent, isfile=False, dbg=False):
+def _vstruct_analyze(vcontent, isfile=False, dbg=False, inc=set(), msk=set()):
+    global PARSE_KIND_MSK, PARSE_KIND_INC
     vstruct = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
@@ -986,6 +1014,8 @@ def _vstruct_analyze(vcontent, isfile=False, dbg=False):
         'ifdef':       _vparse_directive,
         'inst':        _vparse_inst
         }
+    parse_func = {key: val for key, val in parse_func.items()
+                  if key in inc and key not in msk}
     if isfile:
         with open(vcontent, 'r') as fh:
             vcontent = ''.join(fh.readlines())
@@ -1131,7 +1161,7 @@ def _vparse_net(vstruct, kind, value):
             continue
         if kind == 'reg' and var in vstruct['output']: # reg def for current var
             attr |= {'regtype'}
-        elif not (kind == 'wire' and vstruct['var'].get(var, {'kind': 'None'}) in 
+        elif not (kind == 'wire' and vstruct['var'].get(var, {'kind': 'None'})['kind'] in 
                   ('input', 'output', 'inout')) and var not in _net_word_ignore:
             vstruct[kind] += [var]
             if var in vstruct['var']:

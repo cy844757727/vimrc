@@ -125,7 +125,7 @@ function s:autofmt_inst(content, start, end)
         call append(l:start-1, l:content[3:])
     endif
     normal 0
-    call search('\v^[A-Za-z]', 'cW')
+    call search('\v^\s*'.l:module)
     silent! write
 endfunction
 
