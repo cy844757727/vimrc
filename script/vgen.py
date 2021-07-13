@@ -36,6 +36,8 @@ CMD = sys.argv[1] if len(sys.argv) > 1 else None
 VFILE = sys.argv[2] if len(sys.argv) > 2 else None
 EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 
+# debug mode
+DEBUG = False
 # ---------------------------------------------------
 # function define
 # ---------------------------------------------------
@@ -483,12 +485,10 @@ def _AutoFmt_stm_param(vcontent):
     stm, arg = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
-    # remove line-comment, block-comment, 'localparam'
-    vcontent = re.sub(r'=[^,;]*[,;]|localparam|/\*.*?\*/|//.*?\n', '', vcontent)
+    # remove line-comment, block-comment, 'localparam', value, _WIDTH
+    vcontent = re.sub(r'=[^,;]*[,;]|localparam|/\*.*?\*/|//.*?\n|[A-Za-z_]\w*_WIDTH', '', vcontent)
     # find all param
     words = _regex_word.findall(vcontent)
-    # remove special param, endswith _WIDTH
-    words = [word for word in words if not word.endswith('_WIDTH')]
     if not words:
         return ''
     content = ['/*AUTOSTM:'+stm+(' '+arg if arg else '') + '*/']
@@ -981,8 +981,8 @@ _regex_connect = re.compile(r'\.(\w+)\s*\((.*?)\)')
 # record condition define for all parse-function: `ifdef, `elsif
 IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
 
-def _vstruct_analyze(vcontent, isfile=False, dbg=False, inc=set(), msk=set()):
-    global PARSE_KIND_MSK, PARSE_KIND_INC
+def _vstruct_analyze(vcontent, isfile=False, inc=set(), msk=set()):
+    global DEBUG
     vstruct = {
         'module': '', 'parameter': [], 'localparam': [],
         'input':  [], 'output':    [], 'inout':      [],
@@ -1020,7 +1020,7 @@ def _vstruct_analyze(vcontent, isfile=False, dbg=False, inc=set(), msk=set()):
         with open(vcontent, 'r') as fh:
             vcontent = ''.join(fh.readlines())
     for mo in _regex_token.finditer(vcontent):
-        if dbg:
+        if DEBUG: # debug mode
             print(mo.lastgroup, ':', mo.group())
         kind, value = mo.lastgroup, _regex_comment.sub('', mo.group()).strip()
         if kind in parse_func:
