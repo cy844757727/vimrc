@@ -114,6 +114,8 @@ function s:autofmt_inst(content, start, end)
         if l:ind1 > 0 && l:ind1+1 <= l:start-1
             if trim(join(getline(l:ind1+1, l:start-1))) !~# '\S'
                 let l:start = l:ind
+            else
+                call cursor(l:start, 0)
             endif
         endif
     endif
@@ -125,7 +127,7 @@ function s:autofmt_inst(content, start, end)
         call append(l:start-1, l:content[3:])
     endif
     normal 0
-    call search('\v^\s*'.l:module)
+    call search('\v^\s*'.l:module, 'bcW')
     silent! write
 endfunction
 
@@ -139,8 +141,9 @@ function! verilog#autoinst() range
     let l:content = []
     for l:line in getline(a:firstline, a:lastline)
         let l:space = matchstr(l:line, '\v^\s*')
-        let l:module = split(trim(l:line))[0]
-        let l:subcontent = systemlist('vgen autoinst '.l:module)
+        let l:module = split(trim(l:line))
+        let l:format = len(l:module) > 1 ? "'".join(l:module[1:])."'" : ''
+        let l:subcontent = systemlist('vgen autoinst '.l:module[0].' '.l:format)
         if len(l:subcontent) > 3
             call map(l:subcontent, '"'.l:space.'"'.'.v:val')
             let l:content += l:subcontent + ['']
@@ -149,6 +152,7 @@ function! verilog#autoinst() range
     if !empty(l:content)
         call deletebufline(bufname(), a:firstline, a:lastline)
         call append(a:firstline-1, l:content)
+        call search('\v^\s*'.l:module[0], 'bcW')
         silent! write
     endif
 endfunction

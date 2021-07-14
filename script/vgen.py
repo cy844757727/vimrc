@@ -25,6 +25,9 @@ import functools
 # ---------------------------------------------------
 # global varialbes
 # ---------------------------------------------------
+# debug mode
+DEBUG = False
+# Preset variables
 FLIST = []
 INCDIR = []
 DEFINE = {}
@@ -36,8 +39,21 @@ CMD = sys.argv[1] if len(sys.argv) > 1 else None
 VFILE = sys.argv[2] if len(sys.argv) > 2 else None
 EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 
-# debug mode
-DEBUG = False
+
+# Environment configure
+PROJ_DIR = os.getenv('PROJ_DIR', None)
+if PROJ_DIR and PROJ_DIR in PATH: # Environment check
+    if 'RTL_DIR' in os.environ:
+        PATH = os.environ('RTL_DIR')
+    WORK_DIR = os.getenv('WORK_DIR', os.path.join(PROJ_DIR, 'work'))
+else: # self configure
+    WORK_DIR = os.path.join(PATH, 'work')
+# file set
+VERILATOR = os.path.join(WORK_DIR, 'misc', 'verilator')
+FILELIST = glob.glob(os.path.join(WORK_DIR, 'run_verdi', '*.f'))
+FILELIST = FILELIST[0] if FILELIST else None
+
+
 # ---------------------------------------------------
 # function define
 # ---------------------------------------------------
@@ -227,12 +243,28 @@ def _AutoInst_template(module, template):
         return 'u_'+module, None
     if isinstance(template, dict):
         vstruct = template
+    elif os.path.isfile(template):
+        vstruct = _vstruct_analyze(template, isfile=True)
     else:
-        vstruct = _vstruct_analyze(template, isfile=os.path.isfile(template))
+        vstruct = _AutoInst_template_format(module, template)
     for inst in vstruct['inst']:
         if vstruct['var'][inst]['module'] == module:
             return inst, vstruct['var'][inst]
     return 'u_'+module, None
+
+
+def _AutoInst_template_format(module, template):
+    vstruct = {'inst': [], 'var': {}}
+    if not isinstance(template, str):
+        return vstruct
+    inst = re.match(r'[A-Za-z_]\w*', template.strip())
+    inst = inst.group() if inst else 'u_'+module
+    vstruct['inst'] = [inst]
+    vstruct['var'][inst] = {'module': module, 'parameter': {}, 'port': {}}
+    for net0, net1 in _regex_connect.findall(template):
+        key = 'parameter' if net0.isupper() else 'port'
+        vstruct['var'][inst][key][net0] = net1.replace(' ', '').strip()
+    return vstruct
 
 
 # for AUTOTEMPLATE
@@ -258,7 +290,7 @@ def _AutoInst_comment(vstruct, inst_struct):
                 continue
             comment += [strFormat.format(var, val)]
     comment[-1] = comment[-1][:-1]
-    comment += ['*/']
+    comment += ['); */']
     return comment
 
 
@@ -688,9 +720,12 @@ def HDLVStruct(vstruct):
 # using environment default: VGEN_INCDIR, VGEN_FLIST, VGEN_DEFINES
 def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FLIST', ''),
                  defines=os.getenv('VGEN_DEFINE', ''), target=('incdir', 'flist')):
+    global VERILATOR, FILELIST
     if 'incdir' in target:
+        incdirs = (VERILATOR+':' if VERILATOR else '')+incdirs
         _initial_incdir(incdirs)
     if 'flist' in target:
+        flists = (FILELIST+':' if FILELIST else '')+flists
         _initial_flist(flists)
     if 'define' in target:
         _initial_define(defines)
@@ -801,7 +836,7 @@ def _search_path(vfile, matchDict, searchAll):
             root, _, files = next(PATH)
         except StopIteration:
             break
-        if root in INCDIR:
+        if 'work/' in root or root in INCDIR: # mask work-dir
             continue
         for basename in files:
             if not basename.endswith('.v') and not basename.endswith('.sv'):
