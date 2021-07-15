@@ -44,7 +44,7 @@ EXTRA = sys.argv[3:] if len(sys.argv) > 3 else [None]
 PROJ_DIR = os.getenv('PROJ_DIR', None)
 if PROJ_DIR and PROJ_DIR in PATH: # Environment check
     if 'RTL_DIR' in os.environ:
-        PATH = os.environ('RTL_DIR')
+        PATH = os.environ['RTL_DIR']
     WORK_DIR = os.getenv('WORK_DIR', os.path.join(PROJ_DIR, 'work'))
 else: # self configure
     WORK_DIR = os.path.join(PATH, 'work')
