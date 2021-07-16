@@ -49,7 +49,7 @@ if PROJ_DIR and PROJ_DIR in PATH: # Environment check
 else: # self configure
     WORK_DIR = os.path.join(PATH, 'work')
 # file set
-VERILATOR = os.path.join(WORK_DIR, 'misc', 'verilator')
+VERILATOR = os.path.join(WORK_DIR, 'misc', 'verilator.syntax')
 FILELIST = glob.glob(os.path.join(WORK_DIR, 'run_verdi', '*.f'))
 FILELIST = FILELIST[0] if FILELIST else None
 
@@ -86,8 +86,8 @@ def main():
         vfile = _search_vfile(VFILE)
         if not vfile:
             _err_handle('err_vfile')
-        inc = _parser_kind_set(CMD)
-        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True, inc=inc))
+        kinds = _parser_kind_set(CMD)
+        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True, kinds=kinds))
     # print result
     if isinstance(content, (list, set)):
         print('\n'.join(content))
@@ -130,15 +130,15 @@ def _err_handle(err):
 # ---------------------------------------------------------------
 def _parser_kind_set(cmd):
     return {
-        'autoarg':  {'ifdef', 'module', 'input', 'output', 'inout'},
-        'autoinst': {'ifdef', 'module', 'input', 'output', 'inout', 'parameter'},
-        'autowire': {'input', 'output', 'inout', 'reg', 'wire', 'inst'},
-        'autoreg':  {'output', 'reg', 'eq'},
-        'struct':   {'ifdef', 'module', 'parameter', 'localparam', 'input',
-                     'output', 'inout', 'reg', 'wire', 'inst', 'define'},
-        'undef':    {'define'},
-        'fake':     {'ifdef', 'module', 'input', 'output', 'inout'}
-        }.get(cmd, set())
+        'autoarg':  ('ifdef', 'module', 'input', 'output', 'inout'),
+        'autoinst': ('ifdef', 'module', 'input', 'output', 'inout', 'parameter'),
+        'autowire': ('input', 'output', 'inout', 'reg', 'wire', 'inst'),
+        'autoreg':  ('output', 'reg', 'eq'),
+        'struct':   ('ifdef', 'module', 'parameter', 'localparam', 'input',
+                     'output', 'inout', 'reg', 'wire', 'inst', 'define'),
+        'undef':    ('define'),
+        'fake':     ('ifdef', 'module', 'input', 'output', 'inout')
+        }[cmd]
 
 
 # ---------------------------------------------------------------
@@ -183,7 +183,12 @@ def _AutoArg_ifdef(vstruct):
         if ifdef.startswith('`'):
             if content:
                 content[-1] = content[-1].rstrip() # remove space
-            content += [ifdef]
+            if ifdef == '`endif' and content[-1] == '`else':
+                content[-1] = ifdef
+            elif ifdef == '`else' and content[-1].startswith('`ifdef'):
+                content[-1] = '`ifndef '+content[-1].split()[-1]
+            else:
+                content += [ifdef]
         elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
             if content[-1].startswith('`'):
                 content += ['    ']
@@ -328,7 +333,12 @@ def _AutoInst_ifdef(vstruct, inst_struct):
     strFormat = '    .{:'+str(length0)+'} ( {:'+str(length1)+'} ),'
     for ifdef in vstruct['ifdef']:
         if ifdef.startswith('`'):
-            content += [ifdef]
+            if ifdef == '`endif' and content[-1] == '`else':
+                content[-1] = ifdef
+            elif ifdef == '`else' and content[-1].startswith('`ifdef'):
+                content[-1] = '`ifndef '+content[-1].split()[-1]
+            else:
+                content += [ifdef]
         elif ifdef in vstruct['input'] + vstruct['output'] + vstruct['inout']:
             val = inst_port.get(ifdef, ifdef)
             content += [strFormat.format(ifdef, val)]
@@ -410,8 +420,8 @@ def _AutoWire_connect(inst):
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
         return None, None, None
-    inc = {'ifdef', 'module', 'input', 'output', 'inout', 'parameter', 'localparam'}
-    inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True, inc=inc)
+    kinds = ('ifdef', 'module', 'input', 'output', 'inout', 'parameter', 'localparam')
+    inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True, kinds=kinds)
     for var, net in inst['port'].items():
         net = _regex_identifier.match(net)
         port = inst_vstruct['var'].get(var, {'kind': 'None'})
@@ -554,8 +564,8 @@ def _AutoFmt_stm_wire(vcontent, extra):
     if not stm:
         return ''
     content = ['/*AUTOSTM:'+stm+'*/']
-    inc = {'localparam'}
-    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), inc=inc)
+    kinds = ('localparam')
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
     params = [param for param in vstruct['localparam']
               if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
@@ -574,8 +584,8 @@ def _AutoFmt_stm_case(vcontent, extra):
     if not stm:
         return ''
     content = ['case(state_'+stm.lower()+') /*AUTOSTM:'+stm+'*/']
-    inc = {'localparam'}
-    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), inc=inc)
+    kinds = ('localparam')
+    vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
     params = [param for param in vstruct['localparam']
               if param.startswith(stm+'_') and not param.endswith('_WIDTH')]
     if not params:
@@ -616,16 +626,16 @@ def _AutoFmt_stm_get(vcontent):
 
 
 def _AutoFmt_inst(vcontent):
-    inc = {'inst'}
-    inst_vstruct = _vstruct_analyze(vcontent, isfile=False, inc=inc)
+    kinds = ('inst')
+    inst_vstruct = _vstruct_analyze(vcontent, isfile=False, kinds=kinds)
     if not inst_vstruct['inst']:
         return ''
     module = inst_vstruct['var'][inst_vstruct['inst'][0]]['module']
     vfile = _search_vfile(module, fullmatch=True)
     if not vfile:
         return ''
-    inc = {'ifdef', 'module', 'parameter', 'localparam', 'input', 'output', 'inout'}
-    vstruct = _vstruct_analyze(vfile, isfile=True, inc=inc)
+    kinds = ('ifdef', 'module', 'parameter', 'localparam', 'input', 'output', 'inout')
+    vstruct = _vstruct_analyze(vfile, isfile=True, kinds=kinds)
     if vstruct['module'] != module:
         return ''
     return HDLAutoInst(vstruct, inst_vstruct)
@@ -710,7 +720,6 @@ def HDLVStruct(vstruct):
         if not vstruct[key]:
             del vstruct[key]
     return vstruct
-#    print(json.dumps(vstruct, indent=4))
 
 
 # ---------------------------------------------------------------
@@ -782,6 +791,7 @@ def _search_vfile(vfile, searchAll=False, fullmatch=False):
     matchDict = {'most': '~!@#$%^&*'*100, 'full': None, 'all': []}
     # search file in filelist first
     FLIST = [subfile for subfile in FLIST if os.path.isfile(subfile)]  # Keep existing files only
+    vfile = _search_special(vfile)
     if _search_flist(vfile, matchDict, searchAll):
         return matchDict['full']
     # search file in incdir second
@@ -793,6 +803,11 @@ def _search_vfile(vfile, searchAll=False, fullmatch=False):
     return None if fullmatch else \
             matchDict['all'] if searchAll else \
             matchDict['most'] if os.path.isfile(matchDict['most']) else None
+
+
+# specal case, single file multiple module
+def _search_special(vfile):
+    return 'mx_cell' if vfile.startswith('mx_cell_') else vfile
 
 
 # search file in filelist, the results are saved in the 'matchDict'
@@ -886,7 +901,8 @@ def _flist2incdir(vfile):
 # Parsing module to filelist
 def _module2flist(vfile):
     content = [vfile]
-    vstruct = _vstruct_analyze(vfile, isfile=True, inc={'module', 'inst'})
+    kinds = ('module', 'inst')
+    vstruct = _vstruct_analyze(vfile, isfile=True, kinds=kinds)
     module_exist = [vstruct['module']]
     module_search = [vstruct['var'][var]['module'] for var in vstruct['inst']]
     while module_search:
@@ -898,7 +914,7 @@ def _module2flist(vfile):
         if not vfile:
             continue
         content += [vfile]
-        vstruct = _vstruct_analyze(vfile, isfile=True, inc={'module', 'inst'})
+        vstruct = _vstruct_analyze(vfile, isfile=True, kinds=kinds)
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
     return content
 
@@ -1013,62 +1029,13 @@ _regex_connect = re.compile(r'\.(\w+)\s*\((.*?)\)')
 # ----------------------------------------
 # parse verilog file/content to vstruct 
 # ----------------------------------------
-# record condition define for all parse-function: `ifdef, `elsif
-IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
-
-def _vstruct_analyze(vcontent, isfile=False, inc=set(), msk=set()):
-    global DEBUG
-    vstruct = {
-        'module': '', 'parameter': [], 'localparam': [],
-        'input':  [], 'output':    [], 'inout':      [],
-        'reg':    [], 'wire':      [], 'assign':     [],
-        'define': [], 'eq':        [], 'var':        {},
-        'inst':   [], 'ifdef':     [], # insertion position
-        'len':    { # record length for string format
-            'parameter':  {'var': 0, 'val': 0},
-            'localparam': {'var': 0, 'val': 0},
-            'input':      {'var': 0, 'msb': 0, 'lsb': 0},
-            'output':     {'var': 0, 'msb': 0, 'lsb': 0},
-            'inout':      {'var': 0, 'msb': 0, 'lsb': 0},
-            'reg':        {'var': 0, 'msb': 0, 'lsb': 0},
-            'wire':       {'var': 0, 'msb': 0, 'lsb': 0}
-                }
-        }
-    parse_func = {
-        'define':      _vparse_define,
-        'module':      _vparse_module,
-        'parameter':   _vparse_parameter,
-        'localparam':  _vparse_parameter,
-        'input':       _vparse_net,
-        'output':      _vparse_net,
-        'inout':       _vparse_net,
-        'reg':         _vparse_net,
-        'wire':        _vparse_net,
-        'assign':      _vparse_expression,
-        'eq':          _vparse_expression,
-        'ifdef':       _vparse_directive,
-        'inst':        _vparse_inst
-        }
-    parse_func = {key: val for key, val in parse_func.items()
-                  if key in inc and key not in msk}
-    if isfile:
-        with open(vcontent, 'r') as fh:
-            vcontent = ''.join(fh.readlines())
-    for mo in _regex_token.finditer(vcontent):
-        if DEBUG: # debug mode
-            print(mo.lastgroup, ':', mo.group())
-        kind, value = mo.lastgroup, _regex_comment.sub('', mo.group()).strip()
-        if kind in parse_func:
-            parse_func[kind](vstruct, kind, value)
-        elif kind == 'keyword' and value == 'endmodule':
-            break
-    return vstruct
-
-
 # get module name of verilog file
 def _vparse_module(vstruct, kind, value):
     vstruct[kind] = value.split()[-1].strip()
 
+
+# record condition define for all parse-function: `ifdef, `elsif
+IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
 
 def _vparse_directive(vstruct, kind, value):
     global IFDEF_RECORD
@@ -1079,7 +1046,7 @@ def _vparse_directive(vstruct, kind, value):
             IFDEF_RECORD['inside'][-1] = True
         else:
             IFDEF_RECORD[kind] += ['`ifdef '+value[1]]
-        IFDEF_RECORD['inside'] += [value[0] != '`ifndef']
+            IFDEF_RECORD['inside'] += [value[0] != '`ifndef']
     elif value[0] == '`else' and IFDEF_RECORD[kind]:
         IFDEF_RECORD['inside'][-1] = not IFDEF_RECORD['inside'][-1]
     elif value[0] == '`endif' and IFDEF_RECORD[kind]:
@@ -1091,36 +1058,35 @@ def _vparse_directive(vstruct, kind, value):
 
 def _ifdef_update(vstruct):
     global IFDEF_RECORD
-    if not vstruct['ifdef']:
-        vstruct['ifdef'] = [IFDEF_RECORD['ifdef'][0], '`else', '`endif']
-        IFDEF_RECORD['insertion'] = 1 if IFDEF_RECORD['inside'][0] else 2
-        return
-    IFDEF_RECORD['insertion'] = 0
+    start, end = 0, len(vstruct['ifdef'])
     for inside, ifdef in zip(IFDEF_RECORD['inside'], IFDEF_RECORD['ifdef']):
-        if ifdef not in vstruct['ifdef']:
-            vstruct['ifdef'] = vstruct['ifdef'][:IFDEF_RECORD['insertion']] + \
+        start = _ifdef_update_find(vstruct, ifdef, start, end) # find `ifdef
+        if start == end: # not find `ifdef, new
+            vstruct['ifdef'] = vstruct['ifdef'][:start] + \
                                [ifdef, '`else', '`endif'] + \
-                               vstruct['ifdef'][IFDEF_RECORD['insertion']:]
-            IFDEF_RECORD['insertion'] += 1 if inside else 2
+                               vstruct['ifdef'][start:]
+            IFDEF_RECORD['insertion'] = start + (1 if inside else 2)
             return
-        # find `ifdef
-        match = [True]
-        while ifdef != vstruct['ifdef'][IFDEF_RECORD['insertion']] and match[-1]:
-            if vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`ifdef'):
-                match += [False]
-            elif vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`endif') and match:
-                match.pop()
-            IFDEF_RECORD['insertion'] += 1
-        IFDEF_RECORD['insertion'] += 1
-        # find `else or `endif
-        match = [False]
-        match_str = '`else' if inside else '`endif'
-        while not vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith(match_str) or match[-1]:
-            if vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`ifdef'):
-                match += [True]
-            elif vstruct['ifdef'][IFDEF_RECORD['insertion']].startswith('`endif') and match:
-                match.pop()
-            IFDEF_RECORD['insertion'] += 1
+        start += 1
+        ind = _ifdef_update_find(vstruct, '`else', start, end)
+        if inside:
+            end = ind
+        else:
+            start = ind + 1
+            end = _ifdef_update_find(vstruct, '`endif', start, end)
+    IFDEF_RECORD['insertion'] = end
+
+
+def _ifdef_update_find(vstruct, tag, start, end):
+    global IFDEF_RECORD
+    match, ind = [False], start
+    while ind < end and tag != vstruct['ifdef'][ind] or (match and match[-1]):
+        if vstruct['ifdef'][ind].startswith('`ifdef'):
+            match += [True]
+        elif vstruct['ifdef'][ind].startswith('`endif') and match:
+            match.pop()
+        ind += 1
+    return ind
 
 
 # update attr info, include ifdef, regtype, repeated
@@ -1247,6 +1213,59 @@ def _vparse_inst(vstruct, kind, value):
         vstruct['var'][inst_name]['parameter'][net0] = net1.replace(' ', '').strip()
     for net0, net1 in _regex_connect.findall(value[inst.end():]):
         vstruct['var'][inst_name]['port'][net0] = net1.replace(' ', '').strip()
+
+# ------------------------------------------------------------------
+# parser main function
+VPARSER_FUNC = {
+    'define':      _vparse_define,
+    'module':      _vparse_module,
+    'parameter':   _vparse_parameter,
+    'localparam':  _vparse_parameter,
+    'input':       _vparse_net,
+    'output':      _vparse_net,
+    'inout':       _vparse_net,
+    'reg':         _vparse_net,
+    'wire':        _vparse_net,
+    'assign':      _vparse_expression,
+    'eq':          _vparse_expression,
+    'ifdef':       _vparse_directive,
+    'inst':        _vparse_inst
+    }
+VPARSER_FUNC_KINDS = VPARSER_FUNC.keys()
+
+def _vstruct_analyze(vcontent, isfile=False, kinds=VPARSER_FUNC_KINDS):
+    global DEBUG, VPARSER_FUNC
+    vstruct = {
+        'module': '', 'parameter': [], 'localparam': [],
+        'input':  [], 'output':    [], 'inout':      [],
+        'reg':    [], 'wire':      [], 'assign':     [],
+        'define': [], 'eq':        [], 'var':        {},
+        'inst':   [], 'ifdef':     [], # insertion position
+        'len':    { # record length for string format
+            'parameter':  {'var': 0, 'val': 0},
+            'localparam': {'var': 0, 'val': 0},
+            'input':      {'var': 0, 'msb': 0, 'lsb': 0},
+            'output':     {'var': 0, 'msb': 0, 'lsb': 0},
+            'inout':      {'var': 0, 'msb': 0, 'lsb': 0},
+            'reg':        {'var': 0, 'msb': 0, 'lsb': 0},
+            'wire':       {'var': 0, 'msb': 0, 'lsb': 0}
+                }
+        }
+    if isfile:
+        with open(vcontent, 'r') as fh:
+            vcontent = ''.join(fh.readlines())
+    for mo in _regex_token.finditer(vcontent):
+        if DEBUG: # debug mode
+            print(mo.lastgroup, ':', mo.group())
+        kind, value = mo.lastgroup, _regex_comment.sub('', mo.group()).strip()
+        if kind in kinds:
+            VPARSER_FUNC[kind](vstruct, kind, value)
+        elif kind == 'keyword' and value == 'endmodule':
+            break
+    return vstruct
+
+# ------------------------------------------------------------------
+
 
 
 # TODO
