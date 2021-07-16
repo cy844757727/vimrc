@@ -11,7 +11,7 @@
 # and then searches the file in the path specified by include if it is not found,
 # and finally searches the file in the local path
 # --- Usage -----------------------------------------------
-# vgen.py <subcmd> <file-target> [extra ...]
+# vgen.py <subcmd> <file-target> [extra ... / +define+... / +incdir+...]
 # =========================================================
 
 import os
@@ -65,6 +65,7 @@ def main():
         'vfiles':     functools.partial(HDLVFile, searchAll=True),
         'flist':      HDLFlist,
         'incdir':     HDLIncdir,
+        'define':     HDLDefine,
         'autofmt':    HDLAutoFmt,
         'autofile':   HDLAutoFile
         } # base on argument only
@@ -86,8 +87,7 @@ def main():
         vfile = _search_vfile(VFILE)
         if not vfile:
             _err_handle('err_vfile')
-        kinds = _parser_kind_set(CMD)
-        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True, kinds=kinds))
+        content = cmdVStruct[CMD](_vstruct_analyze(vfile, isfile=True))
     # print result
     if isinstance(content, (list, set)):
         print('\n'.join(content))
@@ -109,7 +109,7 @@ def _check_argument(subcmds):
     global CMD, VFILE
     err = 'err_arg' if not CMD else \
           'err_cmd' if CMD not in subcmds else \
-          'err_arg' if not VFILE else 'None'
+          'err_arg' if not VFILE and CMD != 'define' else 'None'
     _err_handle(err)
 
 
@@ -126,24 +126,9 @@ def _err_handle(err):
 
 
 # ---------------------------------------------------------------
-# initial parser for include or mask some kind
-# ---------------------------------------------------------------
-def _parser_kind_set(cmd):
-    return {
-        'autoarg':  ('ifdef', 'module', 'input', 'output', 'inout'),
-        'autoinst': ('ifdef', 'module', 'input', 'output', 'inout', 'parameter'),
-        'autowire': ('input', 'output', 'inout', 'reg', 'wire', 'inst'),
-        'autoreg':  ('output', 'reg', 'eq'),
-        'struct':   ('ifdef', 'module', 'parameter', 'localparam', 'input',
-                     'output', 'inout', 'reg', 'wire', 'inst', 'define'),
-        'undef':    ('define'),
-        'fake':     ('ifdef', 'module', 'input', 'output', 'inout')
-        }[cmd]
-
-
-# ---------------------------------------------------------------
 # autogeneration function
 # ---------------------------------------------------------------
+# AUTOARG, AUTOWIRE, AUTOREG, STM, AUTOINST, AUTOTIE (todo)
 # auto generate arg
 def HDLAutoArg(vstruct):
     global MAXLEN, STYLE
@@ -180,7 +165,9 @@ def _AutoArg_ifdef(vstruct):
     global MAXLEN
     content, lastindex = [], 0
     for ifdef in vstruct['ifdef']:
-        if ifdef.startswith('`'):
+        if ifdef.startswith('`ifdef') or ifdef.startswith('`ifndef') or \
+                ifdef.startswith('`elsif') or ifdef.startswith('`else') or \
+                ifdef.startswith('`endif'):
             if content:
                 content[-1] = content[-1].rstrip() # remove space
             if ifdef == '`endif' and content[-1] == '`else':
@@ -249,7 +236,7 @@ def _AutoInst_template(module, template):
     if isinstance(template, dict):
         vstruct = template
     elif os.path.isfile(template):
-        vstruct = _vstruct_analyze(template, isfile=True)
+        vstruct = _vstruct_analyze(template, isfile=True, kinds=('module', 'inst'))
     else:
         vstruct = _AutoInst_template_format(module, template)
     for inst in vstruct['inst']:
@@ -332,7 +319,9 @@ def _AutoInst_ifdef(vstruct, inst_struct):
     length1 = max(length0, max([len(val) for val in inst_port.values()] + [1]))
     strFormat = '    .{:'+str(length0)+'} ( {:'+str(length1)+'} ),'
     for ifdef in vstruct['ifdef']:
-        if ifdef.startswith('`'):
+        if ifdef.startswith('`ifdef') or ifdef.startswith('`ifndef') or \
+                ifdef.startswith('`elsif') or ifdef.startswith('`else') or \
+                ifdef.startswith('`endif'):
             if ifdef == '`endif' and content[-1] == '`else':
                 content[-1] = ifdef
             elif ifdef == '`else' and content[-1].startswith('`ifdef'):
@@ -372,7 +361,6 @@ def _AutoInst_connect(vstruct, inst_struct):
 
 # Automatically generate undefined instance output/inout port
 def HDLAutoWire(vstruct):
-    _initial_define(os.getenv('VGEN_DEFINE', ''))
     content, input_net = [], []
     wire_exists = vstruct['output'] + vstruct['inout'] + vstruct['wire']
     # collect wire_net
@@ -505,7 +493,7 @@ def HDLAutoFmt(vcontent, extra=EXTRA[0]):
     if os.path.isfile(vcontent):
         with open(vcontent, 'r') as fh:
             vcontent = ''.join(fh.readlines())
-    content = _AutoFmt_stm(vcontent, extra) if r'/*AUTOSTM' in vcontent else \
+    content = _AutoFmt_stm(vcontent, extra) if r'/*STM' in vcontent or r'/*AUTOSTM' in vcontent else \
               _AutoFmt_inst(vcontent) if r'/*AUTOINST*/' in vcontent else \
               _AutoFmt_tie(vcontent, extra) if r'/*AUTOTIE*/' in vcontent else ''
     return content
@@ -533,7 +521,7 @@ def _AutoFmt_stm_param(vcontent):
     words = _regex_word.findall(vcontent)
     if not words:
         return ''
-    content = ['/*AUTOSTM:'+stm+(' '+arg if arg else '') + '*/']
+    content = ['/*STM:'+stm+(' '+arg if arg else '') + '*/']
     length = max([len(word) for word in words])
     width = str(len(words) if arg else log2(len(words)))
     content += ['localparam '+stm+'_WIDTH = '+width+';']
@@ -547,6 +535,8 @@ def _AutoFmt_stm_param(vcontent):
         content += ['localparam']
         for ind, word in enumerate(words):
             ind = bin(ind)[2:]
+            if not word.startswith(stm+'_'):
+                word = stm + '_' + word
             text = word.ljust(length, ' ')+' = '+width+'\'b'+ind.rjust(int(width), '0')+','
             if len(content[-1]) + len(text) + 1 > maxlen:
                 content += ['           '+text]
@@ -563,7 +553,7 @@ def _AutoFmt_stm_wire(vcontent, extra):
     stm, _ = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
-    content = ['/*AUTOSTM:'+stm+'*/']
+    content = ['/*STM:'+stm+'*/']
     kinds = ('localparam')
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
     params = [param for param in vstruct['localparam']
@@ -583,7 +573,7 @@ def _AutoFmt_stm_case(vcontent, extra):
     stm, _ = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
-    content = ['case(state_'+stm.lower()+') /*AUTOSTM:'+stm+'*/']
+    content = ['case(state_'+stm.lower()+') /*STM:'+stm+'*/']
     kinds = ('localparam')
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
     params = [param for param in vstruct['localparam']
@@ -596,7 +586,7 @@ def _AutoFmt_stm_case(vcontent, extra):
     strFormat = '    {:'+str(length)+'} nxt_state_'+stm.lower()+' = ;'
     regex_param_start = re.compile(r'\s*[A-Z_][A-Z_0-9]*:')
     # find start: case() /*AUTOSTM*/
-    while vcontent and 'AUTOSTM' not in vcontent[0]:
+    while vcontent and 'STM' not in vcontent[0]:
         vcontent.pop(0)
     if vcontent:
         vcontent.pop(0)
@@ -619,7 +609,7 @@ def _AutoFmt_stm_case(vcontent, extra):
 
 # get stm type & arg
 def _AutoFmt_stm_get(vcontent):
-    stm = re.search(r'/\*AUTOSTM:\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
+    stm = re.search(r'/\*(?:AUTO)?STM:\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
     if not stm:
         return None, None
     return stm.groups()
@@ -660,6 +650,15 @@ def HDLUndef(vstruct):
     for define in vstruct['define']:
         content += ['`ifdef '+define, '    `undef '+define, '`endif', '']
     return content
+
+
+def HDLDefine(vfile):
+    global DEFINE
+    if vfile:
+        vfile = _search_vfile(vfile)
+        if vfile:
+            _initial_define_vfile(vfile)
+    return DEFINE
 
 
 # generate fake file for verilog file
@@ -728,59 +727,100 @@ def HDLVStruct(vstruct):
 # initial global var: INCDIR, FLIST, DEFINE
 # using environment default: VGEN_INCDIR, VGEN_FLIST, VGEN_DEFINES
 def _initial_env(incdirs=os.getenv('VGEN_INCDIR', ''), flists=os.getenv('VGEN_FLIST', ''),
-                 defines=os.getenv('VGEN_DEFINE', ''), target=('incdir', 'flist')):
+                 defines=os.getenv('VGEN_DEFINE', '')):
     global VERILATOR, FILELIST
-    if 'incdir' in target:
-        incdirs = (VERILATOR+':' if VERILATOR else '')+incdirs
-        _initial_incdir(incdirs)
-    if 'flist' in target:
-        flists = (FILELIST+':' if FILELIST else '')+flists
-        _initial_flist(flists)
-    if 'define' in target:
-        _initial_define(defines)
+    # initial include directories
+    incdirs = (VERILATOR+':' if VERILATOR else '')+incdirs
+    _initial_incdir(incdirs)
+    # initial file list
+    flists = (FILELIST+':' if FILELIST else '')+flists
+    _initial_flist(flists)
+    # initial define
+    _initial_define(defines)
 
 
 def _initial_incdir(incdirs):
     global INCDIR
+    # parse from arguments
+    for incdir in [VFILE] + EXTRA:
+        if incdir and incdir.startswith('+incdir+'):
+            incdir = incdir[8:]
+            if os.path.isdir(incdir):
+                INCDIR += [incdir]
+    # parse from environment
     for incdir in incdirs.split(':'):
-        if not os.path.isfile(incdir):
-            continue
-        with open(incdir, 'r') as fh:
-            for line in fh:
-                line = line.strip()
-                if line.startswith('+incdir+'):
-                    line = line[8:]
-                if os.path.isdir(line):
-                    INCDIR += [line]
+        if incdir.startswith('+incdir+'):
+            incdir = incdir[8:]
+            if os.path.isdir(incdir):
+                INCDIR += [incdir]
+        elif os.path.isfile(incdir):
+            with open(incdir, 'r') as fh:
+                for line in fh:
+                    line = line.strip()
+                    if line.startswith('+incdir+') and os.path.isdir(line[8:]):
+                        INCDIR += [line[8:]]
 
 
 def _initial_flist(flists):
     global FLIST
     for flist in flists.split(':'):
-        if not os.path.isfile(flist):
-            continue
-        with open(flist, 'r') as fh:
-            for line in fh:
-                line = line.strip()
-                if os.path.isfile(line) and (line.endswith('.v') or line.endswith('.sv')):
-                    FLIST += [line]
+        if os.path.isfile(flist):
+            with open(flist, 'r') as fh:
+                for line in fh:
+                    line = line.strip()
+                    if os.path.isfile(line) and (line.endswith('.v') or line.endswith('.sv')):
+                        FLIST += [line]
 
 
+# parser define file
 def _initial_define(defines):
-    global DEFINE
+    global DEFINE, VFILE, EXTRA
+    # parse from arguments
+    for define in [VFILE] + EXTRA:
+        if define and define.startswith('+define+'):
+            for item in define[8:].split('+'):
+                item = item.split('=')
+                if item[0]:
+                    DEFINE[item[0]] = item[1] if len(item) > 1 else None
+    # parse from environment
     for define in defines.split(':'):
-        if not os.path.isfile(define):
-            continue
-        with open(define, 'r') as fh:
-            for line in fh:
-                line = line.strip().split()
-                if len(line) < 2:
-                    continue
-                if line[0] == '`define':
-                    val = ''.join(line[2:]) if len(line) > 2 else ''
-                    DEFINE[line[1]] = val
-                elif line[0] == '`undef' and line[1] in DEFINE:
-                    del DEFINE[line[1]]
+        if define.startswith('+define+'):
+            for item in define[8:].split('+'):
+                item = item.split('=')
+                if item[0]:
+                    DEFINE[item[0]] = item[1] if len(item) > 1 else None
+        # parse from file
+        elif os.path.isfile(define):
+            _initial_define_vfile(define)
+
+
+def _initial_define_vfile(vfile):
+    global DEFINE
+    ifdef, elsif = [True], True
+    with open(vfile, 'r') as fh:
+        for line in fh:
+            line = line.strip().split()
+            if not line:
+                continue
+            length = len(line)
+            if line[0] == '`ifdef' and length > 1:
+                ifdef += [line[1] in DEFINE and ifdef[-1]]
+                elsif = ifdef[-1]
+            elif line[0] == '`elsif' and length > 1 and len(ifdef) > 1:
+                ifdef[-1] = line[1] in DEFINE and ifdef[-2]
+                elsif = elsif or ifdef[-1]
+            elif line[0] == '`ifndef' and length > 1:
+                ifdef += [line[1] not in DEFINE and ifdef[-1]]
+                elsif = ifdef[-1]
+            elif line[0] == '`else' and len(ifdef) > 1:
+                ifdef[-1] = not (ifdef[-1] or elsif) and ifdef[-2]
+            elif line[0] == '`endif' and len(ifdef) > 1:
+                ifdef.pop()
+                elsif = ifdef[-1]
+            elif line[0] == '`define' and ifdef[-1] and length > 1:
+                DEFINE[line[1]] = line[2] if length > 2 else None
+            elif line[0] == '`undef' and ifdef[-1] and length > 1 and line[1] in DEFINE:
+                del DEFINE[line[1]]
 
 
 # search verilog file (.v, .sv) base on flist, incdir, path
@@ -844,12 +884,15 @@ def _search_incdir(vfile, matchDict, searchAll):
 # return True if fullmatch else False
 def _search_path(vfile, matchDict, searchAll):
     global FLIST, INCDIR, PATH
+    if not PATH:
+        return False
     if isinstance(PATH, str):
         PATH = os.walk(PATH)
     while True:
         try:
             root, _, files = next(PATH)
         except StopIteration:
+            PATH = None
             break
         if 'work/' in root or root in INCDIR: # mask work-dir
             continue
@@ -900,6 +943,8 @@ def _flist2incdir(vfile):
 
 # Parsing module to filelist
 def _module2flist(vfile):
+    global MAXLEN
+    blackbox = []
     content = [vfile]
     kinds = ('module', 'inst')
     vstruct = _vstruct_analyze(vfile, isfile=True, kinds=kinds)
@@ -912,25 +957,44 @@ def _module2flist(vfile):
         module_exist += [module]
         vfile = _search_vfile(module, fullmatch=True)
         if not vfile:
+            blackbox += [module]
             continue
         content += [vfile]
         vstruct = _vstruct_analyze(vfile, isfile=True, kinds=kinds)
         module_search += [vstruct['var'][var]['module'] for var in vstruct['inst']]
-    return content
+    precontent = ['// black box', '// ']
+    for item in blackbox:
+        if len(precontent[-1] + item) > MAXLEN:
+            precontent += ['// ' + item]
+        else:
+            precontent[-1] = precontent[-1] + ' ' + item
+    return (precontent if precontent[1] != '// ' else []) + content
 
 
 # Parsing module to incdir
 def _module2incdir(vfile):
     content = []
     for line in _module2flist(vfile):
+        line = '+incdir+'+os.path.dirname(line)
         if line not in content:
-            content += ['+incdir+'+os.path.dirname(line)]
+            content += [line]
     return content
 
 
 def _flist2flist(vfile):
+    flist = _flist2flist_search(vfile)
+    if not flist:
+        return ''
     # for future
     return [vfile]
+
+
+def _flist2flist_search(vfile):
+    if vfile.endswith('.f'):
+        if os.path.isfile(vfile):
+            return vfile
+        return None
+
 
 # ---------------------------------------------------------------
 #    verilog file parser
@@ -1035,21 +1099,24 @@ def _vparse_module(vstruct, kind, value):
 
 
 # record condition define for all parse-function: `ifdef, `elsif
-IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': []}
+IFDEF_RECORD = {'insertion': 0, 'inside': [], 'ifdef': [], 'elsif': 0}
 
 def _vparse_directive(vstruct, kind, value):
     global IFDEF_RECORD
     value = value.strip().split()
     if value[0] in ('`ifdef', '`ifndef', '`elsif'):
-        if value[0] == '`elsif' and IFDEF_RECORD[kind]:
-            IFDEF_RECORD[kind][-1] = '`ifdef '+value[1]
-            IFDEF_RECORD['inside'][-1] = True
-        else:
-            IFDEF_RECORD[kind] += ['`ifdef '+value[1]]
-            IFDEF_RECORD['inside'] += [value[0] != '`ifndef']
+        IFDEF_RECORD[kind] += ['`ifdef '+value[1]]
+        IFDEF_RECORD['inside'] += [value[0] != '`ifndef']
+        if value[0] == '`elsif':
+            IFDEF_RECORD['elsif'] += 1
+            IFDEF_RECORD['inside'][-2] = not IFDEF_RECORD['inside'][-2]
     elif value[0] == '`else' and IFDEF_RECORD[kind]:
         IFDEF_RECORD['inside'][-1] = not IFDEF_RECORD['inside'][-1]
     elif value[0] == '`endif' and IFDEF_RECORD[kind]:
+        while IFDEF_RECORD['elsif']:
+            IFDEF_RECORD['ifdef'].pop()
+            IFDEF_RECORD['inside'].pop()
+            IFDEF_RECORD['elsif'] -= 1
         IFDEF_RECORD['ifdef'].pop()
         IFDEF_RECORD['inside'].pop()
     if IFDEF_RECORD[kind]:

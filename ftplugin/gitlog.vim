@@ -12,6 +12,8 @@ setlocal buftype=nofile
 
 nnoremap <buffer> <space>      :echo matchstr(getline('.'), ' .*$')<CR>
 nnoremap <buffer> <silent> t   :call <SID>TagCommit()<CR>
+nnoremap <buffer> <silent> s   :call <SID>SignCommit()<CR>
+nnoremap <buffer> <silent> S   :call <SID>JumpSignCommit()<CR>
 nnoremap <buffer> <silent> c   :call <SID>RefreshCommitA()<CR>
 nnoremap <buffer> <silent> C   :call <SID>RefreshCommitA(1)<CR>
 nnoremap <buffer> <silent> \l  :call <SID>FileLog()<CR>
@@ -74,7 +76,7 @@ function <SID>FileLog(...)
 endfunction
 
 function s:RefreshCommit()
-    let l:hash = matchstr(getline('.'), '\w\{7}')
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
 
     if !empty(l:hash)
         call git#Refresh('commit', {'commit': l:hash, 'reftype': 'hash'})
@@ -84,7 +86,7 @@ endfunction
 
 
 function <SID>TagCommit()
-    let l:hash = matchstr(getline('.'), '\w\{7}')
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
 
     if !empty(l:hash)
         let l:tag = input('[option] [-a] [-m Note] Tag ('.l:hash.'): ')
@@ -95,8 +97,31 @@ function <SID>TagCommit()
 endfunction
 
 
+function <SID>SignCommit()
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
+
+    if !empty(l:hash)
+        if exists('b:sign_hash') && (b:sign_hash == l:hash)
+            unlet b:sign_hash
+            call git#Refresh('log')
+        else
+            let b:sign_hash = l:hash
+            let b:sign_line = line('.')
+            call git#Refresh('log')
+        endif
+    endif
+endfunction
+
+
+function <SID>JumpSignCommit()
+    if exists('b:sign_hash') && exists('b:sign_line')
+        call cursor(b:sign_line, 0)
+    endif
+endfunction
+
+
 function <SID>Reset(opt)
-    let l:hash = matchstr(getline('.'), '\w\{7}')
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
 
 
     if l:hash == '' || input('Are you sure to reset --'.a:opt.' '.l:hash.' (yes/no): ') != 'yes'
@@ -110,7 +135,7 @@ endfunction
 
 
 function <SID>Revert(...)
-    let l:hash = matchstr(getline('.'), '\w\{7}')
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
 
     if l:hash == '' || input('Are you sure to revert '.l:hash.' (yes/no): ') != 'yes'
         redraw!
@@ -123,7 +148,7 @@ endfunction
 
 
 function <SID>CheckOutNewBranck()
-    let l:hash = matchstr(getline('.'), '\w\{7}')
+    let l:hash = matchstr(getline('.'), '\w\{7,}')
     if l:hash != ''
         let l:name = input('Enter new branch name(start from '.l:hash.'): ')
         if l:name =~# '\S'

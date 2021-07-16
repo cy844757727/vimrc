@@ -221,7 +221,8 @@ function git#Refresh(target, ...)
         setlocal readonly nomodifiable
         call setpos('.', l:pos)
         let &l:statusline = '%2( %) Log'.(empty(s:config['filelog']) ?
-                    \ '' : ' -- '.s:config['filelog']).'%=%2( %)'
+                    \ '' : ' -- '.s:config['filelog']).
+                    \(empty(get(b:, 'sign_hash', '')) ? '' : ' -- [ '.b:sign_hash.' ]').'%=%2( %)'
     endif
 
     if a:target ==# 'all' || a:target ==# 'commit'

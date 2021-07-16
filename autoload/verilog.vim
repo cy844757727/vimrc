@@ -33,7 +33,7 @@ function! verilog#autofmt()
     " Execute automatic call
     let l:content = getline(l:start, l:end)
     for l:item in l:content
-        if l:item =~# '\v/\*AUTOSTM'
+        if l:item =~# '\v/\*(AUTO)?STM'
             call s:autofmt_stm(l:content, l:start, l:end)
             break
         endif
@@ -55,7 +55,7 @@ function s:autofmt_stm(content, start, end)
         " Boundary determination
         if l:content[0] =~# '\v^\s*case\('
             norma $
-            let l:start = search('\v/\*AUTOSTM', 'bcnW')
+            let l:start = search('\v/\*(AUTO)?STM', 'bcnW')
             if l:start <= 0 || l:start < a:start
                 return
             endif
