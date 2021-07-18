@@ -17,7 +17,7 @@
 import os
 import sys
 import re
-#import copy
+import copy
 import glob
 #import json
 import functools
@@ -119,7 +119,7 @@ def _err_handle(err):
     err_msg = {'err_cmd':   ['ERR: Unrecongnized sub-command "'+str(CMD)+'"', 1],
                'err_arg':   ['ERR: missing argument', 2],
                'err_vfile': ['ERR: Cannot find verilog file "'+str(VFILE)+'"', 3]
-               }.get(err, ['None', 0])
+              }.get(err, ['None', 0])
     if err_msg[1]:
         print(err_msg[0])
         sys.exit(err_msg[1])
@@ -515,12 +515,15 @@ def _AutoFmt_stm_param(vcontent):
     stm, arg = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
+    stm = stm.upper()
     # remove line-comment, block-comment, 'localparam', value, _WIDTH
     vcontent = re.sub(r'=[^,;]*[,;]|localparam|/\*.*?\*/|//.*?\n|[A-Za-z_]\w*_WIDTH', '', vcontent)
     # find all param
     words = _regex_word.findall(vcontent)
     if not words:
         return ''
+    words = [(stm+'_' if not word.upper().startswith(stm) else '')+word.upper()
+             for word in words]
     content = ['/*STM:'+stm+(' '+arg if arg else '') + '*/']
     length = max([len(word) for word in words])
     width = str(len(words) if arg else log2(len(words)))
@@ -529,14 +532,11 @@ def _AutoFmt_stm_param(vcontent):
         strFormat = '{} {:'+str(length)+'} = '+width+'\'b{},'
         for ind, word in enumerate(words):
             text = '          ' if ind else 'localparam'
-            content += [strFormat.format(text, word.upper(),
-                                         bin(1<<ind)[2:].rjust(int(width), '0'))]
+            content += [strFormat.format(text, word, bin(1<<ind)[2:].rjust(int(width), '0'))]
     else:
         content += ['localparam']
         for ind, word in enumerate(words):
             ind = bin(ind)[2:]
-            if not word.startswith(stm+'_'):
-                word = stm + '_' + word
             text = word.ljust(length, ' ')+' = '+width+'\'b'+ind.rjust(int(width), '0')+','
             if len(content[-1]) + len(text) + 1 > maxlen:
                 content += ['           '+text]
@@ -553,6 +553,7 @@ def _AutoFmt_stm_wire(vcontent, extra):
     stm, _ = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
+    stm = stm.upper()
     content = ['/*STM:'+stm+'*/']
     kinds = ('localparam')
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
@@ -573,6 +574,7 @@ def _AutoFmt_stm_case(vcontent, extra):
     stm, _ = _AutoFmt_stm_get(vcontent)
     if not stm:
         return ''
+    stm = stm.upper()
     content = ['case(state_'+stm.lower()+') /*STM:'+stm+'*/']
     kinds = ('localparam')
     vstruct = _vstruct_analyze(extra, isfile=os.path.isfile(extra), kinds=kinds)
@@ -609,7 +611,7 @@ def _AutoFmt_stm_case(vcontent, extra):
 
 # get stm type & arg
 def _AutoFmt_stm_get(vcontent):
-    stm = re.search(r'/\*(?:AUTO)?STM:\s*([A-Z_][A-Z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
+    stm = re.search(r'/\*(?:AUTO)?STM:\s*([A-Za-z_][A-Za-z_0-9]*)\s*(\w+)?\s*\*/', vcontent)
     if not stm:
         return None, None
     return stm.groups()
@@ -691,22 +693,34 @@ def HDLFake(vstruct):
 
 # generate include file from flist or module
 def HDLIncdir(vfile):
-    if vfile.endswith('.f') and os.path.isfile(vfile):
-        return _flist2incdir(vfile)
-    vfile = _search_vfile(vfile)
-    if not vfile:
-        return []
-    return _module2incdir(vfile)
+    content = []
+    defines = ['+define+'+key+('='+val if val else '') for key, val in DEFINE.items()]
+    # For the generated file list
+    if vfile.endswith('.f') and os.path.isfile(vfile) and '/ft/' not in vfile:
+        content = defines + _flist2incdir(vfile)
+    else: # search match filelist or parse module
+        content = HDLFlist(vfile)
+        if content:
+            content = defines + _flist2incdir(content)
+    return content
 
 
 # parsing module file and get flist
 def HDLFlist(vfile):
-    if vfile.endswith('.f') and os.path.isfile(vfile):
-        return _flist2flist(vfile)
-    vfile = _search_vfile(vfile)
-    if not vfile:
-        return []
-    return _module2flist(vfile)
+    global DEFINE
+    defines = ['+define+'+key+('='+val if val else '') for key, val in DEFINE.items()]
+    flist_init, content = _flist2flist(vfile)
+    if flist_init:
+        content = defines + content
+        flist_mco = flist_init[:-2]+'_mco.f'
+        if os.path.isfile(flist_mco):
+            _, content_mco = _flist2flist(flist_mco)
+            content += content_mco
+    else:
+        vfile = _search_vfile(vfile)
+        if vfile:
+            content = defines + _module2flist(vfile)
+    return content
 
 
 # return vstruct
@@ -926,18 +940,22 @@ def _search_judge(vfile, subfile, basename, matchDict, searchAll):
 # convert flist file to include file
 def _flist2incdir(vfile):
     content = []
-    with open(vfile, 'r') as fh:
-        for line in fh:
-            line = line.strip()
-            if (line.endswith('constant.v') or line.endswith('define.v') or \
-                    line.startswith('`define') or line.startswith('+incdir+')) and \
-                    line not in content:
-                content += [line]
-            elif line.endswith('.v') or line.endswith('.sv'):
-                root = os.path.dirname(line)
-                root = '+incdir+'+root
-                if os.path.isdir(root[8:]) and root not in content:
-                    content += [root]
+    if isinstance(vfile, list):
+        lines = vfile
+    else:
+        with open(vfile, 'r') as fh:
+            lines = fh.readlines()
+    for line in lines:
+        line = line.strip()
+        if (line.endswith('constant.v') or line.endswith('define.v') or \
+                line.startswith('`define') or line.startswith('+incdir+')) and \
+                line not in content:
+            content += [line]
+        elif line.endswith('.v') or line.endswith('.sv'):
+            root = os.path.dirname(line)
+            root = '+incdir+'+root
+            if os.path.isdir(root[8:]) and root not in content:
+                content += [root]
     return content
 
 
@@ -982,11 +1000,41 @@ def _module2incdir(vfile):
 
 
 def _flist2flist(vfile):
-    flist = _flist2flist_search(vfile)
-    if not flist:
-        return ''
-    # for future
-    return [vfile]
+    global DEFINE
+    flist_init = _flist2flist_search(vfile)
+    if not flist_init:
+        return None, None
+    defines = copy.deepcopy(DEFINE)
+    flists, vfiles, exists_flists = [flist_init], [], []
+    while flists:
+        ifdef, elsif = [True], True
+        flist = flists.pop(0)
+        exists_flists += [flist]
+        rtl_path = os.path.join(os.path.split(flist)[0], 'rtl')
+        with open(flist, 'r') as fh:
+            for line in fh:
+                line = line.strip().rstrip('/').split()
+                if not line:
+                    continue
+                if line[0].startswith('`'):
+                    elsif = _flist2flist_ifdef(defines, ifdef, elsif, line)
+                elif not ifdef or not ifdef[-1]:
+                    continue
+                elif line[0] == '-f' and len(line) > 1:
+                    new = _flist2flist_env(line[1], rtl_path)
+                    if new and new not in exists_flists and os.path.isfile(new):
+                        flists += [new]
+                elif line[0].startswith('+define+'):
+                    vfiles += [line[0]]
+                elif line[0].startswith('+incdir+'):
+                    new = _flist2flist_env(line[0][8:], rtl_path)
+                    if new and os.path.isdir(new):
+                        vfiles += ['+incdir+'+new]
+                else:
+                    new = _flist2flist_env(line[0], rtl_path)
+                    if new and new not in vfiles and os.path.isfile(new):
+                        vfiles += [new]
+    return  flist_init, vfiles
 
 
 def _flist2flist_search(vfile):
@@ -994,7 +1042,63 @@ def _flist2flist_search(vfile):
         if os.path.isfile(vfile):
             return vfile
         return None
+    for root, _, flists in os.walk(os.getcwd()):
+        if not root.endswith('/ft') or '/work/' in root:
+            continue
+        for flist in flists:
+            if flist in (vfile, vfile+'.f'):
+                return os.path.join(root, flist)
+    return None
 
+
+def _flist2flist_ifdef(defines, ifdef, elsif, line):
+    length = len(line)
+    if line[0] == '`ifdef' and length > 1:
+        ifdef += [line[1] in defines and ifdef[-1]]
+        elsif = ifdef[-1]
+    elif line[0] == '`elsif' and length > 1 and len(ifdef) > 1:
+        ifdef[-1] = line[1] in defines and ifdef[-2]
+        elsif = elsif or ifdef[-1]
+    elif line[0] == '`ifndef' and length > 1:
+        ifdef += [line[1] not in defines and ifdef[-1]]
+        elsif = ifdef[-1]
+    elif line[0] == '`else' and len(ifdef) > 1:
+        ifdef[-1] = not (ifdef[-1] or elsif) and ifdef[-2]
+    elif line[0] == '`endif' and len(ifdef) > 1:
+        ifdef.pop()
+        elsif = ifdef[-1]
+    #elif line[0] == '`define' and ifdef[-1] and length > 1:
+    #    defines[line[1]] = line[2] if length > 2 else None
+    elif line[0] == '`undef' and ifdef[-1] and length > 1 and line[1] in defines:
+        del defines[line[1]]
+    return elsif
+
+
+# get absolute path
+def _flist2flist_env(line, rtl_path):
+    rslt = None
+    if line.startswith('./'):
+        rslt = os.path.join(rtl_path, line[2:])
+    elif line.startswith('../'):
+        rslt = os.path.join(os.path.split(rtl_path)[0], line[3:])
+    elif line.startswith('/'):
+        rslt = line
+    elif line.startswith('$'):
+        line = line[1:].split('/', 1)
+        env = os.getenv(line[0].strip('{}'), None)
+        if not env:
+            pass
+        elif len(line) == 1:
+            rslt = env.rstrip('/') 
+        else:
+            rslt = os.path.join(env, line[1])
+    else:
+        rslt = os.path.join(rtl_path, line)
+    return rslt
+
+
+def _flist2flist_log():
+    pass
 
 # ---------------------------------------------------------------
 #    verilog file parser

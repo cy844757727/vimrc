@@ -1,4 +1,3 @@
-source ~/.vim/vimrc_
 colorscheme codeschool
 set guifont=DejaVuSansMono\ Nerd\ Font\ Mono\ 12
 set guifont=DroidSansMono\ Nerd\ Font\ Mono\ 13
