@@ -407,7 +407,7 @@ def _AutoWire_connect(inst):
     repeated, connect = [], {}
     inst_vfile = _search_vfile(inst['module'], fullmatch=True)
     if not inst_vfile:
-        return None, None, None
+        return None, None
     kinds = ('ifdef', 'module', 'input', 'output', 'inout', 'parameter', 'localparam')
     inst_vstruct = _vstruct_analyze(inst_vfile, isfile=True, kinds=kinds)
     for var, net in inst['port'].items():
@@ -458,7 +458,7 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
             continue
         params += _regex_upper_word.findall(expr)
     try:
-        expr = eval(expr)
+        expr = int(eval(expr))
         return str(expr) if expr != 0 else ''
     #except (NameError, TypeError):
     except:
@@ -1331,10 +1331,12 @@ def _vparse_net(vstruct, kind, value):
         if var == 'reg' and kind == 'output' and not regtype: # output reg for all var
             regtype = True
             continue
+        if var in _net_word_ignore:
+            continue
         if kind == 'reg' and var in vstruct['output']: # reg def for current var
             attr |= {'regtype'}
         elif not (kind == 'wire' and vstruct['var'].get(var, {'kind': 'None'})['kind'] in 
-                  ('input', 'output', 'inout')) and var not in _net_word_ignore:
+                  ('input', 'output', 'inout')):
             vstruct[kind] += [var]
             if var in vstruct['var']:
                 attr |= {'repeated'}
