@@ -456,7 +456,8 @@ def _AutoWire_paramexpr(expr, inst, vstruct):
             expr = expr.replace(param, vstruct['var'][param]['val'])
         else:
             continue
-        params += _regex_upper_word.findall(expr)
+        if param not in expr:
+            params += _regex_upper_word.findall(expr)
     try:
         expr = int(eval(expr))
         return str(expr) if expr != 0 else ''
@@ -1181,7 +1182,7 @@ _spec_token = {
         'wire':              r'(?<=\bwire\b).*?;',
         'assign':            r'(?<=\bassign\b).*?;',
         'eq':                r'\w+\s*<?=[^=].*?;',
-        'inst':              r'\w+\s+(#\(.*?\)\s+)?\w+\s*\(.*?\);'
+        'inst':              r'\w+\s+(#\(.*?\)\s*)?\w+\s*\(.*?\);'
         }
 
 _regex_token = re.compile('|'.join('(?P<%s>%s)' % pair for pair in _spec_token.items()), re.S)
